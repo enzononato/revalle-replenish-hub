@@ -1,6 +1,7 @@
 import { StatCard } from '@/components/ui/StatCard';
-import { mockStats, mockProtocolos } from '@/data/mockData';
-import { FileText, CheckCircle, Clock, Truck } from 'lucide-react';
+import { RankingCard } from '@/components/ui/RankingCard';
+import { mockStats, mockProtocolos, topMotoristas, topClientes, topProdutos } from '@/data/mockData';
+import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { 
   BarChart, 
@@ -42,7 +43,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Em Aberto"
           value={mockStats.emAberto}
@@ -71,12 +72,41 @@ export default function Dashboard() {
           variant="info"
           delay={300}
         />
+        <StatCard
+          title="Total Hoje"
+          value={mockStats.totalHoje}
+          icon={Calendar}
+          variant="primary"
+          delay={400}
+        />
+      </div>
+
+      {/* Rankings */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <RankingCard
+          title="Top 5 Motoristas"
+          icon={<Users className="text-primary" size={20} />}
+          items={topMotoristas}
+          delay={500}
+        />
+        <RankingCard
+          title="Top 5 Clientes (PDVs)"
+          icon={<Building2 className="text-info" size={20} />}
+          items={topClientes}
+          delay={600}
+        />
+        <RankingCard
+          title="Top 5 Produtos"
+          icon={<Package className="text-success" size={20} />}
+          items={topProdutos}
+          delay={700}
+        />
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bar Chart */}
-        <div className="card-stats animate-slide-up" style={{ animationDelay: '400ms' }}>
+        <div className="card-stats animate-slide-up" style={{ animationDelay: '800ms' }}>
           <h3 className="font-heading text-lg font-semibold mb-4">Protocolos da Semana</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={barData}>
@@ -97,7 +127,7 @@ export default function Dashboard() {
         </div>
 
         {/* Pie Chart */}
-        <div className="card-stats animate-slide-up" style={{ animationDelay: '500ms' }}>
+        <div className="card-stats animate-slide-up" style={{ animationDelay: '900ms' }}>
           <h3 className="font-heading text-lg font-semibold mb-4">Status dos Protocolos</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -122,7 +152,7 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Protocols */}
-      <div className="card-stats animate-slide-up" style={{ animationDelay: '600ms' }}>
+      <div className="card-stats animate-slide-up" style={{ animationDelay: '1000ms' }}>
         <h3 className="font-heading text-lg font-semibold mb-4">Protocolos Recentes</h3>
         <div className="overflow-x-auto">
           <table className="w-full">

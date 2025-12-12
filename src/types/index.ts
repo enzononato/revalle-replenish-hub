@@ -15,8 +15,25 @@ export interface Motorista {
   dataNascimento: string;
   unidade: string;
   whatsapp: string;
+  email?: string;
   codigoPdv?: string;
   createdAt: string;
+}
+
+export interface Produto {
+  codigo: string;
+  nome: string;
+  unidade: string;
+  quantidade: number;
+  validade: string;
+  observacao?: string;
+}
+
+export interface Observacao {
+  id: string;
+  data: string;
+  hora: string;
+  texto: string;
 }
 
 export interface Protocolo {
@@ -31,6 +48,18 @@ export interface Protocolo {
   lancado: boolean;
   enviadoLancar: boolean;
   enviadoEncerrar: boolean;
+  tipoReposicao?: string;
+  causa?: string;
+  unidadeId?: number;
+  unidadeNome?: string;
+  codigoPdv?: string;
+  mapa?: string;
+  notaFiscal?: string;
+  observacaoGeral?: string;
+  produtos?: Produto[];
+  fotos?: string[];
+  historicoObservacoes?: Observacao[];
+  habilitarReenvio?: boolean;
   createdAt: string;
 }
 
@@ -39,4 +68,11 @@ export interface DashboardStats {
   encerrados: number;
   totalProtocolos: number;
   totalMotoristas: number;
+  totalHoje: number;
+}
+
+export interface RankingItem {
+  id: string;
+  nome: string;
+  quantidade: number;
 }

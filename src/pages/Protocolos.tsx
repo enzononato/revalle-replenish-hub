@@ -5,6 +5,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ProtocoloDetails } from '@/components/ProtocoloDetails';
 import { 
   Select,
   SelectContent,
@@ -13,12 +14,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Eye, CheckCircle, XCircle, Send, Filter, X } from 'lucide-react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Edit, Power } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Protocolos() {
@@ -35,11 +36,13 @@ export default function Protocolos() {
       p.numero.toLowerCase().includes(search.toLowerCase()) ||
       p.motorista.nome.toLowerCase().includes(search.toLowerCase()) ||
       p.motorista.whatsapp.includes(search) ||
-      p.motorista.codigoPdv?.includes(search);
+      p.motorista.codigoPdv?.includes(search) ||
+      p.codigoPdv?.includes(search) ||
+      p.mapa?.includes(search);
     
     const statusMatch = statusFilter === 'todos' || p.status === statusFilter;
     const motoristaMatch = motoristaFilter === 'todos' || p.motorista.id === motoristaFilter;
-    const dataMatch = !dataFilter || p.data === dataFilter;
+    const dataMatch = !dataFilter || p.data.includes(dataFilter.split('-').reverse().join('/'));
     
     return searchMatch && statusMatch && motoristaMatch && dataMatch;
   });
@@ -92,7 +95,7 @@ export default function Protocolos() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Buscar por Código PDV, Motorista ou WhatsApp..."
+          placeholder="Buscar por Código PDV, Motorista, WhatsApp ou MAPA..."
           className="flex-1"
         />
         <Button 
@@ -260,14 +263,30 @@ export default function Protocolos() {
                 </td>
                 <td className="p-4">
                   <div className="flex justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedProtocolo(protocolo)}
-                      className="text-primary hover:text-primary/80"
-                    >
-                      <Eye size={16} />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setSelectedProtocolo(protocolo)}>
+                          <Eye size={16} className="mr-2" />
+                          Ver Detalhes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit size={16} className="mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleEnviarEncerrar(protocolo.id)}
+                          disabled={!protocolo.lancado || protocolo.enviadoEncerrar}
+                        >
+                          <Power size={16} className="mr-2" />
+                          Encerrar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </td>
               </tr>
@@ -283,72 +302,11 @@ export default function Protocolos() {
       </div>
 
       {/* Detail Dialog */}
-      <Dialog open={!!selectedProtocolo} onOpenChange={() => setSelectedProtocolo(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-heading text-xl">
-              Detalhes do Protocolo
-            </DialogTitle>
-          </DialogHeader>
-          {selectedProtocolo && (
-            <div className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Número</p>
-                  <p className="font-medium">{selectedProtocolo.numero}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
-                  <StatusBadge status={selectedProtocolo.status} />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Data/Hora</p>
-                  <p className="font-medium">{selectedProtocolo.data} às {selectedProtocolo.hora}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">SLA</p>
-                  <p className="font-medium">{selectedProtocolo.sla}</p>
-                </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <p className="text-sm text-muted-foreground mb-2">Motorista</p>
-                <div className="bg-muted p-4 rounded-lg">
-                  <p className="font-medium">{selectedProtocolo.motorista.nome}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Código: {selectedProtocolo.motorista.codigo}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    WhatsApp: {selectedProtocolo.motorista.whatsapp}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Unidade: {selectedProtocolo.motorista.unidade}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 border-t pt-4">
-                <div className="flex items-center gap-2">
-                  {selectedProtocolo.validacao ? (
-                    <CheckCircle className="text-success" size={18} />
-                  ) : (
-                    <XCircle className="text-muted-foreground" size={18} />
-                  )}
-                  <span className="text-sm">Validação</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {selectedProtocolo.lancado ? (
-                    <CheckCircle className="text-success" size={18} />
-                  ) : (
-                    <XCircle className="text-muted-foreground" size={18} />
-                  )}
-                  <span className="text-sm">Lançado</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ProtocoloDetails
+        protocolo={selectedProtocolo}
+        open={!!selectedProtocolo}
+        onClose={() => setSelectedProtocolo(null)}
+      />
     </div>
   );
 }
