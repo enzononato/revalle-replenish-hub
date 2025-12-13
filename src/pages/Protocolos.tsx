@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProtocoloDetails } from '@/components/ProtocoloDetails';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Select,
   SelectContent,
@@ -25,11 +26,17 @@ import { toast } from 'sonner';
 export default function Protocolos() {
   const [protocolos, setProtocolos] = useState<Protocolo[]>(mockProtocolos);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('todos');
+  const [activeTab, setActiveTab] = useState<string>('aberto');
   const [motoristaFilter, setMotoristaFilter] = useState<string>('todos');
   const [dataFilter, setDataFilter] = useState('');
   const [selectedProtocolo, setSelectedProtocolo] = useState<Protocolo | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+
+  const countByStatus = {
+    aberto: protocolos.filter(p => p.status === 'aberto').length,
+    em_andamento: protocolos.filter(p => p.status === 'em_andamento').length,
+    encerrado: protocolos.filter(p => p.status === 'encerrado').length,
+  };
 
   const filteredProtocolos = protocolos.filter(p => {
     const searchMatch = 
@@ -40,7 +47,7 @@ export default function Protocolos() {
       p.codigoPdv?.includes(search) ||
       p.mapa?.includes(search);
     
-    const statusMatch = statusFilter === 'todos' || p.status === statusFilter;
+    const statusMatch = p.status === activeTab;
     const motoristaMatch = motoristaFilter === 'todos' || p.motorista.id === motoristaFilter;
     const dataMatch = !dataFilter || p.data.includes(dataFilter.split('-').reverse().join('/'));
     
@@ -84,12 +91,11 @@ export default function Protocolos() {
   };
 
   const clearFilters = () => {
-    setStatusFilter('todos');
     setMotoristaFilter('todos');
     setDataFilter('');
   };
 
-  const hasActiveFilters = statusFilter !== 'todos' || motoristaFilter !== 'todos' || dataFilter;
+  const hasActiveFilters = motoristaFilter !== 'todos' || dataFilter;
 
   return (
     <div className="space-y-6">
@@ -121,25 +127,25 @@ export default function Protocolos() {
         </Button>
       </div>
 
+      {/* Status Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="bg-muted/50">
+          <TabsTrigger value="aberto" className="data-[state=active]:bg-background">
+            Abertos ({countByStatus.aberto})
+          </TabsTrigger>
+          <TabsTrigger value="em_andamento" className="data-[state=active]:bg-background">
+            Em andamento ({countByStatus.em_andamento})
+          </TabsTrigger>
+          <TabsTrigger value="encerrado" className="data-[state=active]:bg-background">
+            Encerrados ({countByStatus.encerrado})
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {/* Filters */}
       {showFilters && (
         <div className="card-stats animate-scale-in">
           <div className="flex flex-wrap gap-4 items-end">
-            <div className="space-y-2 min-w-[180px]">
-              <label className="text-sm font-medium text-muted-foreground">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="aberto">Aberto</SelectItem>
-                  <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                  <SelectItem value="encerrado">Encerrado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
             <div className="space-y-2 min-w-[180px]">
               <label className="text-sm font-medium text-muted-foreground">Motorista</label>
               <Select value={motoristaFilter} onValueChange={setMotoristaFilter}>
