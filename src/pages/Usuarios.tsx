@@ -231,7 +231,7 @@ export default function Usuarios() {
             {filteredUsuarios.map((usuario) => (
               <tr 
                 key={usuario.id} 
-                className="border-b border-border hover:bg-muted/50 transition-colors"
+                className="border-b border-border"
               >
                 <td className="p-4">
                   <div className="flex items-center gap-3">

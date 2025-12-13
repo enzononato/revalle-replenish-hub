@@ -244,7 +244,7 @@ export default function Motoristas() {
             {filteredMotoristas.map((motorista) => (
               <tr 
                 key={motorista.id} 
-                className="border-b border-border hover:bg-muted/50 transition-colors"
+                className="border-b border-border"
               >
                 <td className="p-4 font-medium">{motorista.nome}</td>
                 <td className="p-4">
