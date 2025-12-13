@@ -22,6 +22,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Edit, Power } from 'lucide-react';
 import { toast } from 'sonner';
+import { differenceInDays, parseISO } from 'date-fns';
+
+const calcularSlaDias = (createdAt: string): number => {
+  const dataProtocolo = parseISO(createdAt);
+  const hoje = new Date();
+  return differenceInDays(hoje, dataProtocolo);
+};
+
+const getSlaColor = (dias: number): string => {
+  if (dias >= 15) return 'text-red-600 bg-red-100';
+  if (dias > 7) return 'text-yellow-600 bg-yellow-100';
+  return 'text-green-600 bg-green-100';
+};
 
 export default function Protocolos() {
   const [protocolos, setProtocolos] = useState<Protocolo[]>(mockProtocolos);
@@ -223,7 +236,16 @@ export default function Protocolos() {
                 <td className="p-4 font-medium">{protocolo.numero}</td>
                 <td className="p-4">{protocolo.motorista.nome}</td>
                 <td className="p-4 text-muted-foreground">{protocolo.motorista.whatsapp}</td>
-                <td className="p-4">{protocolo.sla}</td>
+                <td className="p-4">
+                  {(() => {
+                    const dias = calcularSlaDias(protocolo.createdAt);
+                    return (
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${getSlaColor(dias)}`}>
+                        {dias} {dias === 1 ? 'dia' : 'dias'}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td className="p-4 text-center">
                   <button
                     onClick={() => handleToggleValidacao(protocolo.id)}
