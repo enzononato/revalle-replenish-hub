@@ -129,15 +129,24 @@ export default function Protocolos() {
 
       {/* Status Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="aberto" className="data-[state=active]:bg-background">
-            Abertos ({countByStatus.aberto})
+        <TabsList className="bg-transparent gap-2 h-auto p-0">
+          <TabsTrigger 
+            value="aberto" 
+            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-2xl px-3 py-1.5 text-sm transition-colors"
+          >
+            Abertos <span className="ml-1 font-bold">({countByStatus.aberto})</span>
           </TabsTrigger>
-          <TabsTrigger value="em_andamento" className="data-[state=active]:bg-background">
-            Em andamento ({countByStatus.em_andamento})
+          <TabsTrigger 
+            value="em_andamento" 
+            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-2xl px-3 py-1.5 text-sm transition-colors"
+          >
+            Em andamento <span className="ml-1 font-bold">({countByStatus.em_andamento})</span>
           </TabsTrigger>
-          <TabsTrigger value="encerrado" className="data-[state=active]:bg-background">
-            Encerrados ({countByStatus.encerrado})
+          <TabsTrigger 
+            value="encerrado" 
+            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-2xl px-3 py-1.5 text-sm transition-colors"
+          >
+            Encerrados <span className="ml-1 font-bold">({countByStatus.encerrado})</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -180,10 +189,6 @@ export default function Protocolos() {
         </div>
       )}
 
-      {/* Results count */}
-      <p className="text-sm text-muted-foreground">
-        {filteredProtocolos.length} protocolo(s) encontrado(s)
-      </p>
 
       {/* Table */}
       <div className="card-stats animate-fade-in overflow-x-auto">
