@@ -62,16 +62,24 @@ export default function Protocolos() {
   };
 
   const handleToggleLancado = (id: string) => {
-    setProtocolos(prev => prev.map(p => 
-      p.id === id ? { ...p, lancado: !p.lancado, status: !p.lancado ? 'em_andamento' as const : p.status } : p
-    ));
+    setProtocolos(prev => prev.map(p => {
+      if (p.id !== id) return p;
+      const newLancado = !p.lancado;
+      // Regra: Validação + Lançado = Em Andamento
+      const newStatus = (p.validacao && newLancado) ? 'em_andamento' as const : 'aberto' as const;
+      return { ...p, lancado: newLancado, status: p.status === 'encerrado' ? p.status : newStatus };
+    }));
     toast.success('Status de lançamento atualizado!');
   };
 
   const handleToggleValidacao = (id: string) => {
-    setProtocolos(prev => prev.map(p => 
-      p.id === id ? { ...p, validacao: !p.validacao } : p
-    ));
+    setProtocolos(prev => prev.map(p => {
+      if (p.id !== id) return p;
+      const newValidacao = !p.validacao;
+      // Regra: Validação + Lançado = Em Andamento
+      const newStatus = (newValidacao && p.lancado) ? 'em_andamento' as const : 'aberto' as const;
+      return { ...p, validacao: newValidacao, status: p.status === 'encerrado' ? p.status : newStatus };
+    }));
     toast.success('Validação atualizada!');
   };
 
