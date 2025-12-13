@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Plus, Trash2, Send } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { X, Plus, Trash2, Send, Search, User } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -18,8 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Protocolo, Produto } from '@/types';
+import { Protocolo, Produto, Motorista } from '@/types';
+import { mockMotoristas } from '@/data/mockData';
 
 interface CreateProtocoloModalProps {
   open: boolean;
@@ -43,6 +49,19 @@ const formatWhatsApp = (value: string) => {
   return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 3)} ${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
 };
 
+const formatWhatsAppFromRaw = (raw: string) => {
+  const numbers = raw.replace(/\D/g, '');
+  if (numbers.length >= 12) {
+    // Format: 5571999999999 -> (71) 9 9999-9999
+    const ddd = numbers.slice(2, 4);
+    const first = numbers.slice(4, 5);
+    const mid = numbers.slice(5, 9);
+    const end = numbers.slice(9, 13);
+    return `(${ddd}) ${first} ${mid}-${end}`;
+  }
+  return raw;
+};
+
 const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtocoloModalProps) => {
   const [mapa, setMapa] = useState('');
   const [codigoPdv, setCodigoPdv] = useState('');
@@ -52,6 +71,36 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [observacao, setObservacao] = useState('');
+  
+  // Driver selection state
+  const [selectedMotorista, setSelectedMotorista] = useState<Motorista | null>(null);
+  const [motoristaSearch, setMotoristaSearch] = useState('');
+  const [showMotoristaDropdown, setShowMotoristaDropdown] = useState(false);
+
+  // Filter drivers based on search
+  const filteredMotoristas = useMemo(() => {
+    if (!motoristaSearch.trim()) return mockMotoristas;
+    const searchLower = motoristaSearch.toLowerCase();
+    return mockMotoristas.filter(m => 
+      m.nome.toLowerCase().includes(searchLower) || 
+      m.codigo.includes(motoristaSearch)
+    );
+  }, [motoristaSearch]);
+
+  const handleSelectMotorista = (motorista: Motorista) => {
+    setSelectedMotorista(motorista);
+    setMotoristaSearch('');
+    setShowMotoristaDropdown(false);
+    // Auto-fill WhatsApp and email from driver
+    setWhatsapp(formatWhatsAppFromRaw(motorista.whatsapp));
+    setEmail(motorista.email || '');
+  };
+
+  const handleClearMotorista = () => {
+    setSelectedMotorista(null);
+    setWhatsapp('');
+    setEmail('');
+  };
 
   const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatWhatsApp(e.target.value);
@@ -83,10 +132,16 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
     setEmail('');
     setWhatsapp('');
     setObservacao('');
+    setSelectedMotorista(null);
+    setMotoristaSearch('');
   };
 
   const handleSubmit = () => {
     // Validação
+    if (!selectedMotorista) {
+      toast.error('Selecione um motorista');
+      return;
+    }
     if (!mapa.trim()) {
       toast.error('MAPA é obrigatório');
       return;
@@ -108,8 +163,8 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
       return;
     }
     const whatsappNumbers = whatsapp.replace(/\D/g, '');
-    if (whatsappNumbers.length < 11) {
-      toast.error('WhatsApp é obrigatório e deve ter 11 dígitos');
+    if (whatsappNumbers.length < 10) {
+      toast.error('WhatsApp é obrigatório');
       return;
     }
 
@@ -119,16 +174,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
     const novoProtocolo: Protocolo = {
       id: Date.now().toString(),
       numero: protocoloNumero,
-      motorista: {
-        id: Date.now().toString(),
-        nome: 'Motorista',
-        codigo: 'MOT001',
-        dataNascimento: '',
-        unidade: '',
-        whatsapp: whatsapp,
-        email: email || undefined,
-        createdAt: now.toISOString(),
-      },
+      motorista: selectedMotorista,
       data: format(now, 'dd/MM/yyyy'),
       hora: format(now, 'HH:mm'),
       sla: '0 dias',
@@ -170,6 +216,87 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Seleção de Motorista */}
+          <div className="space-y-2">
+            <Label>
+              Motorista <span className="text-destructive">*</span>
+            </Label>
+            {selectedMotorista ? (
+              <div className="flex items-center justify-between bg-muted/50 p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{selectedMotorista.nome}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Código: {selectedMotorista.codigo} • {selectedMotorista.unidade}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={handleClearMotorista}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+            ) : (
+              <Popover open={showMotoristaDropdown} onOpenChange={setShowMotoristaDropdown}>
+                <PopoverTrigger asChild>
+                  <div className="relative">
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={motoristaSearch}
+                      onChange={(e) => {
+                        setMotoristaSearch(e.target.value);
+                        setShowMotoristaDropdown(true);
+                      }}
+                      onFocus={() => setShowMotoristaDropdown(true)}
+                      placeholder="Buscar por nome ou código do motorista..."
+                      className="pl-9"
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-[var(--radix-popover-trigger-width)] p-0 bg-background border shadow-lg" 
+                  align="start"
+                  sideOffset={4}
+                >
+                  <div className="max-h-60 overflow-y-auto">
+                    {filteredMotoristas.length === 0 ? (
+                      <div className="p-3 text-sm text-muted-foreground text-center">
+                        Nenhum motorista encontrado
+                      </div>
+                    ) : (
+                      filteredMotoristas.map((motorista) => (
+                        <button
+                          key={motorista.id}
+                          type="button"
+                          onClick={() => handleSelectMotorista(motorista)}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left border-b last:border-b-0"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <User size={16} className="text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{motorista.nome}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Cód: {motorista.codigo} • {motorista.unidade}
+                            </p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+
           {/* Linha 1: MAPA, Código PDV, Nota Fiscal */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
