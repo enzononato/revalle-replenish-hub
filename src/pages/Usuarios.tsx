@@ -216,7 +216,7 @@ export default function Usuarios() {
       />
 
       {/* Table */}
-      <div className="card-stats animate-fade-in overflow-x-auto">
+      <div className="bg-card rounded-xl p-6 shadow-md animate-fade-in overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="table-header">

@@ -275,7 +275,7 @@ STATUS: Validado: ${protocolo.validacao ? 'Sim' : 'Não'} | Lançado: ${protocol
       </p>
 
       {/* Table */}
-      <div className="card-stats animate-fade-in overflow-x-auto">
+      <div className="bg-card rounded-xl p-6 shadow-md animate-fade-in overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
