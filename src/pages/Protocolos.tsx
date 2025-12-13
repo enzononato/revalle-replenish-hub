@@ -231,7 +231,7 @@ export default function Protocolos() {
               <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Protocolo</th>
               <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Motorista</th>
               <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">WhatsApp</th>
-              <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">SLA</th>
+              <th className="text-center p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">SLA</th>
               <th className="text-center p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Validação</th>
               <th className="text-center p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Lançado</th>
               <th className="text-center p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Lançar</th>
@@ -265,12 +265,12 @@ export default function Protocolos() {
                     {protocolo.motorista.whatsapp}
                   </span>
                 </td>
-                <td className="p-4 border-r border-[#E5E7EB]">
+                <td className="p-4 text-center border-r border-[#E5E7EB]">
                   {(() => {
                     const dias = calcularSlaDias(protocolo.createdAt);
                     return (
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[13px] font-medium ${getSlaColor(dias)}`}>
-                        {dias} {dias === 1 ? 'dia' : 'dias'}
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${getSlaColor(dias)}`}>
+                        {dias}d
                       </span>
                     );
                   })()}
