@@ -20,7 +20,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, ChevronRight, Phone, Download, Plus, EyeOff, Trash2 } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, ChevronRight, Phone, Download, Plus, EyeOff, Trash2, FileText } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { differenceInDays, parseISO, format, isAfter, isBefore, parse } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
@@ -56,47 +57,54 @@ export default function Protocolos() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  const filteredProtocolos = protocolos.filter(p => {
-    // Não mostrar protocolos ocultos (exceto para admin que os ocultou)
-    if (p.oculto) return false;
-    
-    const searchMatch = 
-      p.numero.toLowerCase().includes(search.toLowerCase()) ||
-      p.motorista.nome.toLowerCase().includes(search.toLowerCase()) ||
-      p.motorista.whatsapp.includes(search) ||
-      p.codigoPdv?.includes(search) ||
-      p.mapa?.includes(search);
-    
-    const statusMatch = activeTab === 'todos' || p.status === activeTab;
-    
-    // Filtro de data inicial
-    let dataInicialMatch = true;
-    if (dataInicialFilter) {
-      const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
-      const dataInicial = parseISO(dataInicialFilter);
-      dataInicialMatch = !isBefore(dataProtocolo, dataInicial);
-    }
-    
-    // Filtro de data final
-    let dataFinalMatch = true;
-    if (dataFinalFilter) {
-      const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
-      const dataFinal = parseISO(dataFinalFilter);
-      dataFinalMatch = !isAfter(dataProtocolo, dataFinal);
-    }
-    
-    // Filtro de lançado
-    const lancadoMatch = lancadoFilter === 'todos' || 
-      (lancadoFilter === 'sim' && p.lancado) || 
-      (lancadoFilter === 'nao' && !p.lancado);
-    
-    // Filtro de validado
-    const validadoMatch = validadoFilter === 'todos' || 
-      (validadoFilter === 'sim' && p.validacao) || 
-      (validadoFilter === 'nao' && !p.validacao);
-    
-    return searchMatch && statusMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch;
-  });
+  const filteredProtocolos = protocolos
+    .filter(p => {
+      // Não mostrar protocolos ocultos (exceto para admin que os ocultou)
+      if (p.oculto) return false;
+      
+      const searchMatch = 
+        p.numero.toLowerCase().includes(search.toLowerCase()) ||
+        p.motorista.nome.toLowerCase().includes(search.toLowerCase()) ||
+        p.motorista.whatsapp.includes(search) ||
+        p.codigoPdv?.includes(search) ||
+        p.mapa?.includes(search);
+      
+      const statusMatch = activeTab === 'todos' || p.status === activeTab;
+      
+      // Filtro de data inicial
+      let dataInicialMatch = true;
+      if (dataInicialFilter) {
+        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        const dataInicial = parseISO(dataInicialFilter);
+        dataInicialMatch = !isBefore(dataProtocolo, dataInicial);
+      }
+      
+      // Filtro de data final
+      let dataFinalMatch = true;
+      if (dataFinalFilter) {
+        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        const dataFinal = parseISO(dataFinalFilter);
+        dataFinalMatch = !isAfter(dataProtocolo, dataFinal);
+      }
+      
+      // Filtro de lançado
+      const lancadoMatch = lancadoFilter === 'todos' || 
+        (lancadoFilter === 'sim' && p.lancado) || 
+        (lancadoFilter === 'nao' && !p.lancado);
+      
+      // Filtro de validado
+      const validadoMatch = validadoFilter === 'todos' || 
+        (validadoFilter === 'sim' && p.validacao) || 
+        (validadoFilter === 'nao' && !p.validacao);
+      
+      return searchMatch && statusMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch;
+    })
+    // Ordenar por SLA: mais antigos primeiro (maior SLA = topo)
+    .sort((a, b) => {
+      const slaA = calcularSlaDias(a.createdAt);
+      const slaB = calcularSlaDias(b.createdAt);
+      return slaB - slaA;
+    });
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredProtocolos.length / pageSize);
@@ -255,7 +263,10 @@ STATUS: Validado: ${protocolo.validacao ? 'Sim' : 'Não'} | Lançado: ${protocol
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-3xl font-bold text-foreground">Painel de Controle Revalle</h1>
+        <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+          <FileText className="text-primary" size={32} />
+          Protocolos
+        </h1>
         <p className="text-muted-foreground mt-1">Gerencie os protocolos de reposição</p>
       </div>
 
@@ -421,7 +432,12 @@ STATUS: Validado: ${protocolo.validacao ? 'Sim' : 'Não'} | Lançado: ${protocol
               return (
                 <tr 
                   key={protocolo.id} 
-                  className={`border-b border-[#E5E7EB] ${selectedIndex === globalIndex ? 'bg-blue-50' : ''}`}
+                  className={cn(
+                    "border-b-2 border-border transition-all duration-200",
+                    index % 2 === 0 ? 'bg-card' : 'bg-muted/30',
+                    selectedIndex === globalIndex && 'bg-primary/10 border-l-4 border-l-primary',
+                    "hover:bg-primary/5 hover:shadow-sm"
+                  )}
                 >
                   <td className="p-4 border-r border-[#E5E7EB]">
                     <div className="text-[14px] text-[#1F2937]">
