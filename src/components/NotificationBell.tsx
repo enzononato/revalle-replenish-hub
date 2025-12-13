@@ -1,7 +1,7 @@
-import { Bell, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { Bell, AlertTriangle, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
-import { formatDistanceToNow, differenceInDays, parseISO } from 'date-fns';
+import { formatDistanceToNow, differenceInDays, parseISO, format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import {
@@ -12,6 +12,8 @@ import {
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Link } from 'react-router-dom';
 
+const DISMISSED_KEY = 'critical_sla_dismissed_date';
+
 const calcularSlaDias = (createdAt: string): number => {
   const dataProtocolo = parseISO(createdAt);
   const hoje = new Date();
@@ -21,6 +23,20 @@ const calcularSlaDias = (createdAt: string): number => {
 export function NotificationBell() {
   const { protocolos } = useProtocolos();
   const [isOpen, setIsOpen] = useState(false);
+  const [isDismissedToday, setIsDismissedToday] = useState(false);
+
+  // Check if critical notification was dismissed today
+  useEffect(() => {
+    const dismissedDate = localStorage.getItem(DISMISSED_KEY);
+    if (dismissedDate) {
+      try {
+        const date = parseISO(dismissedDate);
+        setIsDismissedToday(isToday(date));
+      } catch {
+        setIsDismissedToday(false);
+      }
+    }
+  }, []);
 
   // Get recent open protocols (last 5)
   const recentProtocolos = protocolos
@@ -33,6 +49,15 @@ export function NotificationBell() {
     !p.oculto && p.status !== 'encerrado' && calcularSlaDias(p.createdAt) >= 15
   ).length;
 
+  // Show critical only if not dismissed today
+  const showCritical = criticalCount > 0 && !isDismissedToday;
+
+  const handleDismissCritical = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    localStorage.setItem(DISMISSED_KEY, new Date().toISOString());
+    setIsDismissedToday(true);
+  };
+
   const count = recentProtocolos.length;
 
   return (
@@ -41,14 +66,14 @@ export function NotificationBell() {
         <button
           className={cn(
             "relative p-2.5 rounded-xl transition-all duration-300",
-            criticalCount > 0 
+            showCritical 
               ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40"
               : "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/30 hover:shadow-xl hover:shadow-amber-500/40",
             "hover:scale-110 hover:-rotate-12",
             count > 0 && "animate-wiggle"
           )}
         >
-          {criticalCount > 0 ? (
+          {showCritical ? (
             <AlertTriangle size={22} className="drop-shadow-sm" />
           ) : (
             <Bell size={22} className="drop-shadow-sm" />
@@ -56,7 +81,7 @@ export function NotificationBell() {
           {count > 0 && (
             <span className={cn(
               "absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold rounded-full shadow-md",
-              criticalCount > 0 ? "bg-white text-red-600" : "bg-destructive text-destructive-foreground"
+              showCritical ? "bg-white text-red-600" : "bg-destructive text-destructive-foreground"
             )}>
               {count}
             </span>
@@ -70,7 +95,7 @@ export function NotificationBell() {
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/50">
           <div className="flex items-center gap-2">
-            {criticalCount > 0 ? (
+            {showCritical ? (
               <AlertTriangle size={18} className="text-red-500" />
             ) : (
               <Bell size={18} className="text-amber-500" />
@@ -78,7 +103,7 @@ export function NotificationBell() {
             <span className="font-semibold text-foreground">Notificações</span>
           </div>
           <div className="flex gap-2">
-            {criticalCount > 0 && (
+            {showCritical && (
               <span className="px-2 py-0.5 text-xs font-medium bg-red-500/20 text-red-600 rounded-full flex items-center gap-1">
                 <AlertTriangle size={10} />
                 {criticalCount} crítico{criticalCount !== 1 ? 's' : ''}
@@ -93,14 +118,26 @@ export function NotificationBell() {
         </div>
         
         {/* Critical SLA Warning */}
-        {criticalCount > 0 && (
+        {showCritical && (
           <div className="px-4 py-3 bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-900">
-            <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-              <AlertTriangle size={16} />
-              <span className="text-sm font-medium">
-                {criticalCount} protocolo{criticalCount !== 1 ? 's' : ''} com SLA crítico (&gt;15 dias)
-              </span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                <AlertTriangle size={16} />
+                <span className="text-sm font-medium">
+                  {criticalCount} protocolo{criticalCount !== 1 ? 's' : ''} com SLA crítico
+                </span>
+              </div>
+              <button
+                onClick={handleDismissCritical}
+                className="p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900 transition-colors text-red-600 dark:text-red-400"
+                title="Dispensar até amanhã"
+              >
+                <X size={14} />
+              </button>
             </div>
+            <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+              Clique no X para dispensar até amanhã
+            </p>
           </div>
         )}
         
