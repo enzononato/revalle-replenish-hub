@@ -18,21 +18,29 @@ import {
   Image, 
   MessageSquare,
   FileText,
-  Clock
+  Clock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useState } from 'react';
 
 interface ProtocoloDetailsProps {
   protocolo: Protocolo | null;
+  protocolos: Protocolo[];
+  currentIndex: number;
   open: boolean;
   onClose: () => void;
+  onNavigate: (index: number) => void;
 }
 
-export function ProtocoloDetails({ protocolo, open, onClose }: ProtocoloDetailsProps) {
+export function ProtocoloDetails({ protocolo, protocolos, currentIndex, open, onClose, onNavigate }: ProtocoloDetailsProps) {
   const [habilitarReenvio, setHabilitarReenvio] = useState(protocolo?.habilitarReenvio || false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   if (!protocolo) return null;
+
+  const canGoPrevious = currentIndex > 0;
+  const canGoNext = currentIndex < protocolos.length - 1;
 
   const handleDownload = () => {
     const content = `
@@ -103,10 +111,35 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               <FileText className="text-primary" size={24} />
               Detalhes do Protocolo
             </DialogTitle>
-            <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
-              <Download size={16} />
-              Download
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 border rounded-lg px-2 py-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onNavigate(currentIndex - 1)}
+                  disabled={!canGoPrevious}
+                  className="h-7 w-7 p-0"
+                >
+                  <ChevronLeft size={18} />
+                </Button>
+                <span className="text-sm text-muted-foreground px-2">
+                  {currentIndex + 1} de {protocolos.length}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onNavigate(currentIndex + 1)}
+                  disabled={!canGoNext}
+                  className="h-7 w-7 p-0"
+                >
+                  <ChevronRight size={18} />
+                </Button>
+              </div>
+              <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
+                <Download size={16} />
+                Download
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="space-y-6 mt-4">

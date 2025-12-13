@@ -19,9 +19,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Edit, Power, ChevronRight, Phone } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Edit, Power, ChevronRight, Phone, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, format } from 'date-fns';
 
 const calcularSlaDias = (createdAt: string): number => {
   const dataProtocolo = parseISO(createdAt);
@@ -107,15 +107,56 @@ export default function Protocolos() {
     toast.success('Validação atualizada!');
   };
 
-  const handleNextProtocolo = (currentIndex: number) => {
-    if (currentIndex < filteredProtocolos.length - 1) {
-      const nextProtocolo = filteredProtocolos[currentIndex + 1];
-      setSelectedProtocolo(nextProtocolo);
-      setSelectedIndex(currentIndex + 1);
-      toast.info(`Avançando para protocolo ${nextProtocolo.numero}`);
-    } else {
-      toast.info('Este é o último protocolo da lista.');
+  const handleNavigateProtocolo = (index: number) => {
+    if (index >= 0 && index < filteredProtocolos.length) {
+      setSelectedProtocolo(filteredProtocolos[index]);
+      setSelectedIndex(index);
     }
+  };
+
+  const handleDownloadAll = () => {
+    const content = filteredProtocolos.map(protocolo => `
+================================================================================
+PROTOCOLO: ${protocolo.numero}
+================================================================================
+DATA: ${protocolo.data} | HORA: ${protocolo.hora} | STATUS: ${protocolo.status.toUpperCase()}
+
+MOTORISTA
+---------
+Nome: ${protocolo.motorista.nome}
+Código: ${protocolo.motorista.codigo}
+WhatsApp: ${protocolo.motorista.whatsapp}
+E-mail: ${protocolo.motorista.email || '-'}
+
+CLIENTE
+-------
+Código PDV: ${protocolo.codigoPdv || '-'}
+MAPA: ${protocolo.mapa || '-'}
+Nota Fiscal: ${protocolo.notaFiscal || '-'}
+
+OBSERVAÇÃO
+----------
+${protocolo.observacaoGeral || '-'}
+
+PRODUTOS
+--------
+${protocolo.produtos?.map(p => 
+  `${p.codigo} | ${p.nome} | ${p.unidade} | Qtd: ${p.quantidade} | Val: ${p.validade}`
+).join('\n') || 'Nenhum produto'}
+
+STATUS: Validado: ${protocolo.validacao ? 'Sim' : 'Não'} | Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
+`).join('\n');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `protocolos_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`${filteredProtocolos.length} protocolo(s) exportado(s)!`);
   };
 
   const clearFilters = () => {
@@ -140,19 +181,30 @@ export default function Protocolos() {
           placeholder="Buscar por Código PDV, Motorista, WhatsApp ou MAPA..."
           className="flex-1"
         />
-        <Button 
-          variant="outline" 
-          onClick={() => setShowFilters(!showFilters)}
-          className="lg:w-auto"
-        >
-          <Filter size={18} className="mr-2" />
-          Filtros
-          {hasActiveFilters && (
-            <span className="ml-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
-              !
-            </span>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleDownloadAll}
+            disabled={filteredProtocolos.length === 0}
+            className="lg:w-auto"
+          >
+            <Download size={18} className="mr-2" />
+            Download Todos
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowFilters(!showFilters)}
+            className="lg:w-auto"
+          >
+            <Filter size={18} className="mr-2" />
+            Filtros
+            {hasActiveFilters && (
+              <span className="ml-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+                !
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Status Tabs */}
@@ -243,7 +295,7 @@ export default function Protocolos() {
             {filteredProtocolos.map((protocolo, index) => (
               <tr 
                 key={protocolo.id} 
-                className={`border-b border-[#E5E7EB] hover:bg-muted/50 transition-colors ${selectedIndex === index ? 'bg-blue-50' : ''}`}
+                className={`border-b border-[#E5E7EB] ${selectedIndex === index ? 'bg-blue-50' : ''}`}
               >
                 <td className="p-4 border-r border-[#E5E7EB]">
                   <div className="text-[14px] text-[#1F2937]">
@@ -269,8 +321,8 @@ export default function Protocolos() {
                   {(() => {
                     const dias = calcularSlaDias(protocolo.createdAt);
                     return (
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${getSlaColor(dias)}`}>
-                        {dias}d
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium ${getSlaColor(dias)}`}>
+                        {dias} {dias === 1 ? 'dia' : 'dias'}
                       </span>
                     );
                   })()}
@@ -334,15 +386,6 @@ export default function Protocolos() {
                 </td>
                 <td className="p-4">
                   <div className="flex justify-end items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleNextProtocolo(index)}
-                      title="Próximo Protocolo"
-                      className="text-[#64748B] hover:text-[#1E3A8A] hover:bg-[#E0E7FF]"
-                    >
-                      <ChevronRight size={18} />
-                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -387,11 +430,14 @@ export default function Protocolos() {
       {/* Detail Dialog */}
       <ProtocoloDetails
         protocolo={selectedProtocolo}
+        protocolos={filteredProtocolos}
+        currentIndex={selectedIndex ?? 0}
         open={!!selectedProtocolo}
         onClose={() => {
           setSelectedProtocolo(null);
           setSelectedIndex(null);
         }}
+        onNavigate={handleNavigateProtocolo}
       />
     </div>
   );
