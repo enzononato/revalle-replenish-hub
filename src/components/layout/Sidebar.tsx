@@ -67,8 +67,8 @@ export function Sidebar() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-sidebar-border">
-            <h1 className="font-heading text-2xl font-bold text-sidebar-foreground">
-              <span className="text-sidebar-primary">Revalle</span>
+            <h1 className="font-heading text-2xl font-bold text-white">
+              Revalle
             </h1>
             <p className="text-sm text-sidebar-foreground/60 mt-1">Sistema de Reposição</p>
           </div>
@@ -116,7 +116,6 @@ export function Sidebar() {
           <div className="p-4 border-t border-sidebar-border">
             <div className="px-4">
               <p className="font-medium text-sidebar-foreground">{user?.nome}</p>
-              <p className="text-sm text-sidebar-foreground/60">{user?.email}</p>
               <span className={cn(
                 "inline-block mt-2 px-2 py-1 rounded text-xs font-medium capitalize",
                 isAdmin 
