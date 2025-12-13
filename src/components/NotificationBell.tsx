@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Link } from 'react-router-dom';
 
 const DISMISSED_KEY = 'critical_sla_dismissed_date';
+const DISMISSED_NOTIFICATIONS_KEY = 'dismissed_notifications';
 
 const calcularSlaDias = (createdAt: string): number => {
   const dataProtocolo = parseISO(createdAt);
@@ -20,10 +21,16 @@ const calcularSlaDias = (createdAt: string): number => {
   return differenceInDays(hoje, dataProtocolo);
 };
 
+interface DismissedNotification {
+  id: string;
+  dismissedAt: string;
+}
+
 export function NotificationBell() {
   const { protocolos } = useProtocolos();
   const [isOpen, setIsOpen] = useState(false);
   const [isDismissedToday, setIsDismissedToday] = useState(false);
+  const [dismissedNotifications, setDismissedNotifications] = useState<DismissedNotification[]>([]);
 
   // Check if critical notification was dismissed today
   useEffect(() => {
@@ -36,11 +43,31 @@ export function NotificationBell() {
         setIsDismissedToday(false);
       }
     }
+
+    // Load dismissed individual notifications
+    const savedDismissed = localStorage.getItem(DISMISSED_NOTIFICATIONS_KEY);
+    if (savedDismissed) {
+      try {
+        const dismissed: DismissedNotification[] = JSON.parse(savedDismissed);
+        // Filter out old dismissed notifications (keep only today's)
+        const todayDismissed = dismissed.filter(d => {
+          try {
+            return isToday(parseISO(d.dismissedAt));
+          } catch {
+            return false;
+          }
+        });
+        setDismissedNotifications(todayDismissed);
+        localStorage.setItem(DISMISSED_NOTIFICATIONS_KEY, JSON.stringify(todayDismissed));
+      } catch {
+        setDismissedNotifications([]);
+      }
+    }
   }, []);
 
-  // Get recent open protocols (last 5)
+  // Get recent open protocols (last 5), excluding dismissed ones
   const recentProtocolos = protocolos
-    .filter(p => p.status === 'aberto' && !p.oculto)
+    .filter(p => p.status === 'aberto' && !p.oculto && !dismissedNotifications.some(d => d.id === p.id))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
@@ -56,6 +83,17 @@ export function NotificationBell() {
     e.stopPropagation();
     localStorage.setItem(DISMISSED_KEY, new Date().toISOString());
     setIsDismissedToday(true);
+  };
+
+  const handleDismissNotification = (e: React.MouseEvent, protocoloId: string) => {
+    e.stopPropagation();
+    const newDismissed: DismissedNotification = {
+      id: protocoloId,
+      dismissedAt: new Date().toISOString()
+    };
+    const updated = [...dismissedNotifications, newDismissed];
+    setDismissedNotifications(updated);
+    localStorage.setItem(DISMISSED_NOTIFICATIONS_KEY, JSON.stringify(updated));
   };
 
   const count = recentProtocolos.length;
@@ -187,7 +225,16 @@ export function NotificationBell() {
                         </span>
                       </div>
                     </div>
-                    <StatusBadge status={protocolo.status} />
+                    <div className="flex flex-col items-end gap-1">
+                      <StatusBadge status={protocolo.status} />
+                      <button
+                        onClick={(e) => handleDismissNotification(e, protocolo.id)}
+                        className="p-1 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                        title="Dispensar até amanhã"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
