@@ -1,8 +1,11 @@
+import { useMemo } from 'react';
 import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
-import { mockStats, mockProtocolos, topMotoristas, topClientes, topProdutos } from '@/data/mockData';
+import { topMotoristas, topClientes, topProdutos } from '@/data/mockData';
+import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { format, isToday, parseISO } from 'date-fns';
 import { 
   BarChart, 
   Bar, 
@@ -16,24 +19,74 @@ import {
   Cell
 } from 'recharts';
 
-const barData = [
-  { name: 'Seg', abertos: 4, encerrados: 3 },
-  { name: 'Ter', abertos: 3, encerrados: 5 },
-  { name: 'Qua', abertos: 6, encerrados: 4 },
-  { name: 'Qui', abertos: 2, encerrados: 6 },
-  { name: 'Sex', abertos: 5, encerrados: 3 },
-];
-
-const pieData = [
-  { name: 'Abertos', value: mockStats.emAberto },
-  { name: 'Em Andamento', value: 1 },
-  { name: 'Encerrados', value: mockStats.encerrados },
-];
-
 const COLORS = ['hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(160, 84%, 39%)'];
 
 export default function Dashboard() {
-  const recentProtocolos = mockProtocolos.slice(0, 5);
+  const { protocolos } = useProtocolos();
+
+  // Estatísticas dinâmicas
+  const stats = useMemo(() => {
+    const emAberto = protocolos.filter(p => p.status === 'aberto' && !p.oculto).length;
+    const emAndamento = protocolos.filter(p => p.status === 'em_andamento' && !p.oculto).length;
+    const encerrados = protocolos.filter(p => p.status === 'encerrado' && !p.oculto).length;
+    const totalProtocolos = protocolos.filter(p => !p.oculto).length;
+    
+    // Contar motoristas únicos
+    const motoristasUnicos = new Set(protocolos.map(p => p.motorista.id)).size;
+    
+    // Protocolos de hoje
+    const totalHoje = protocolos.filter(p => {
+      try {
+        return isToday(parseISO(p.createdAt)) && !p.oculto;
+      } catch {
+        return false;
+      }
+    }).length;
+
+    return { emAberto, emAndamento, encerrados, totalProtocolos, motoristasUnicos, totalHoje };
+  }, [protocolos]);
+
+  // Dados do gráfico de pizza
+  const pieData = useMemo(() => [
+    { name: 'Abertos', value: stats.emAberto },
+    { name: 'Em Andamento', value: stats.emAndamento },
+    { name: 'Encerrados', value: stats.encerrados },
+  ], [stats]);
+
+  // Dados do gráfico de barras (últimos 5 dias)
+  const barData = useMemo(() => {
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const today = new Date();
+    const result = [];
+    
+    for (let i = 4; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dayName = days[date.getDay()];
+      const dateStr = format(date, 'yyyy-MM-dd');
+      
+      const dayProtocolos = protocolos.filter(p => {
+        try {
+          return format(parseISO(p.createdAt), 'yyyy-MM-dd') === dateStr && !p.oculto;
+        } catch {
+          return false;
+        }
+      });
+      
+      result.push({
+        name: dayName,
+        abertos: dayProtocolos.filter(p => p.status === 'aberto').length,
+        encerrados: dayProtocolos.filter(p => p.status === 'encerrado').length,
+      });
+    }
+    
+    return result;
+  }, [protocolos]);
+
+  // Protocolos recentes
+  const recentProtocolos = useMemo(() => 
+    protocolos.filter(p => !p.oculto).slice(0, 5),
+  [protocolos]);
 
   return (
     <div className="space-y-8">
@@ -46,35 +99,35 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Em Aberto"
-          value={mockStats.emAberto}
+          value={stats.emAberto}
           icon={Clock}
           variant="warning"
           delay={0}
         />
         <StatCard
           title="Encerrados"
-          value={mockStats.encerrados}
+          value={stats.encerrados}
           icon={CheckCircle}
           variant="success"
           delay={100}
         />
         <StatCard
           title="Total de Protocolos"
-          value={mockStats.totalProtocolos}
+          value={stats.totalProtocolos}
           icon={FileText}
           variant="primary"
           delay={200}
         />
         <StatCard
           title="Total de Motoristas"
-          value={mockStats.totalMotoristas}
+          value={stats.motoristasUnicos}
           icon={Truck}
           variant="info"
           delay={300}
         />
         <StatCard
           title="Total Hoje"
-          value={mockStats.totalHoje}
+          value={stats.totalHoje}
           icon={Calendar}
           variant="primary"
           delay={400}
@@ -166,7 +219,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {recentProtocolos.map((protocolo, index) => (
+              {recentProtocolos.map((protocolo) => (
                 <tr 
                   key={protocolo.id} 
                   className="border-b border-border hover:bg-muted/50 transition-colors"

@@ -1,12 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
-import { X, Plus, Trash2, Send, Search, User, Upload, Camera } from 'lucide-react';
+import { Plus, Trash2, Send, Search, User, Upload, X, CheckCircle, Camera } from 'lucide-react';
 import { format } from 'date-fns';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,12 +20,7 @@ import {
 import { toast } from 'sonner';
 import { Protocolo, Produto, Motorista, FotosProtocolo } from '@/types';
 import { mockMotoristas } from '@/data/mockData';
-
-interface CreateProtocoloModalProps {
-  open: boolean;
-  onClose: () => void;
-  onCreateProtocolo: (protocolo: Protocolo) => void;
-}
+import { useProtocolos } from '@/contexts/ProtocolosContext';
 
 interface ProdutoForm {
   codigo: string;
@@ -61,7 +50,8 @@ const formatWhatsAppFromRaw = (raw: string) => {
   return raw;
 };
 
-const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtocoloModalProps) => {
+export default function AbrirProtocolo() {
+  const { addProtocolo } = useProtocolos();
   const [mapa, setMapa] = useState('');
   const [codigoPdv, setCodigoPdv] = useState('');
   const [notaFiscal, setNotaFiscal] = useState('');
@@ -70,7 +60,9 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [observacao, setObservacao] = useState('');
+  const [protocoloCriado, setProtocoloCriado] = useState<string | null>(null);
   
+  // Driver selection state
   const [selectedMotorista, setSelectedMotorista] = useState<Motorista | null>(null);
   const [motoristaSearch, setMotoristaSearch] = useState('');
   const [showMotoristaDropdown, setShowMotoristaDropdown] = useState(false);
@@ -192,6 +184,8 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
       toast.error('WhatsApp é obrigatório');
       return;
     }
+
+    // Validação de fotos
     if (!fotoMotoristaPdv) {
       toast.error('Foto do Motorista/PDV é obrigatória');
       return;
@@ -243,23 +237,54 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
       observacoesLog: [],
     };
 
-    onCreateProtocolo(novoProtocolo);
+    addProtocolo(novoProtocolo);
+    setProtocoloCriado(protocoloNumero);
     toast.success('Protocolo criado com sucesso!');
-    resetForm();
-    onClose();
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-            <Send size={20} />
-            Envio de Notificação
-          </DialogTitle>
-        </DialogHeader>
+  const handleNovoProtocolo = () => {
+    resetForm();
+    setProtocoloCriado(null);
+  };
 
-        <div className="space-y-6 py-4">
+  // Tela de sucesso
+  if (protocoloCriado) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center p-4">
+        <div className="bg-card rounded-2xl shadow-xl p-8 max-w-md w-full text-center animate-scale-in">
+          <div className="w-20 h-20 mx-auto bg-success/10 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle className="w-10 h-10 text-success" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Protocolo Enviado!</h1>
+          <p className="text-muted-foreground mb-4">Seu protocolo foi registrado com sucesso.</p>
+          <div className="bg-muted/50 rounded-lg p-4 mb-6">
+            <p className="text-sm text-muted-foreground">Número do Protocolo:</p>
+            <p className="text-xl font-bold text-primary">{protocoloCriado}</p>
+          </div>
+          <Button onClick={handleNovoProtocolo} className="w-full">
+            <Plus className="mr-2" size={18} />
+            Abrir Novo Protocolo
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/5 py-8 px-4">
+      <div className="max-w-3xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full mb-4">
+            <span className="text-lg">🚚</span>
+            <span className="font-bold">REVALLE</span>
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">Abertura de Protocolo de Reposição</h1>
+          <p className="text-muted-foreground mt-1">Preencha os dados abaixo para registrar seu protocolo</p>
+        </div>
+
+        {/* Form */}
+        <div className="bg-card rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
           {/* Seleção de Motorista */}
           <div className="space-y-2">
             <Label>
@@ -342,7 +367,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
           </div>
 
           {/* Linha 1: MAPA, Código PDV, Nota Fiscal */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="mapa">
                 MAPA <span className="text-destructive">*</span>
@@ -403,55 +428,130 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
                 Fotos Obrigatórias
               </Label>
               
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Foto Motorista/PDV */}
                 <div className="space-y-2">
-                  <Label className="text-sm">Foto Motorista/PDV <span className="text-destructive">*</span></Label>
-                  <input type="file" accept="image/*" ref={fotoMotoristaPdvRef} onChange={(e) => handleFotoUpload(e, setFotoMotoristaPdv)} className="hidden" />
+                  <Label className="text-sm">
+                    Foto Motorista/PDV <span className="text-destructive">*</span>
+                  </Label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fotoMotoristaPdvRef}
+                    onChange={(e) => handleFotoUpload(e, setFotoMotoristaPdv)}
+                    className="hidden"
+                  />
                   {fotoMotoristaPdv ? (
                     <div className="relative">
-                      <img src={fotoMotoristaPdv} alt="Foto Motorista/PDV" className="w-full h-24 object-cover rounded-lg border" />
-                      <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => setFotoMotoristaPdv(null)}><X size={12} /></Button>
+                      <img 
+                        src={fotoMotoristaPdv} 
+                        alt="Foto Motorista/PDV" 
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={() => setFotoMotoristaPdv(null)}
+                      >
+                        <X size={14} />
+                      </Button>
                     </div>
                   ) : (
-                    <Button type="button" variant="outline" className="w-full h-24 flex flex-col gap-1" onClick={() => fotoMotoristaPdvRef.current?.click()}>
-                      <Upload size={20} className="text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Enviar</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-32 flex flex-col gap-2"
+                      onClick={() => fotoMotoristaPdvRef.current?.click()}
+                    >
+                      <Upload size={24} className="text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Clique para enviar</span>
                     </Button>
                   )}
                 </div>
 
                 {/* Foto Lote Produto */}
                 <div className="space-y-2">
-                  <Label className="text-sm">Foto Lote Produto <span className="text-destructive">*</span></Label>
-                  <input type="file" accept="image/*" ref={fotoLoteProdutoRef} onChange={(e) => handleFotoUpload(e, setFotoLoteProduto)} className="hidden" />
+                  <Label className="text-sm">
+                    Foto Lote Produto <span className="text-destructive">*</span>
+                  </Label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fotoLoteProdutoRef}
+                    onChange={(e) => handleFotoUpload(e, setFotoLoteProduto)}
+                    className="hidden"
+                  />
                   {fotoLoteProduto ? (
                     <div className="relative">
-                      <img src={fotoLoteProduto} alt="Foto Lote Produto" className="w-full h-24 object-cover rounded-lg border" />
-                      <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => setFotoLoteProduto(null)}><X size={12} /></Button>
+                      <img 
+                        src={fotoLoteProduto} 
+                        alt="Foto Lote Produto" 
+                        className="w-full h-32 object-cover rounded-lg border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={() => setFotoLoteProduto(null)}
+                      >
+                        <X size={14} />
+                      </Button>
                     </div>
                   ) : (
-                    <Button type="button" variant="outline" className="w-full h-24 flex flex-col gap-1" onClick={() => fotoLoteProdutoRef.current?.click()}>
-                      <Upload size={20} className="text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Enviar</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-32 flex flex-col gap-2"
+                      onClick={() => fotoLoteProdutoRef.current?.click()}
+                    >
+                      <Upload size={24} className="text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Clique para enviar</span>
                     </Button>
                   )}
                 </div>
 
-                {/* Foto Avaria */}
+                {/* Foto Avaria - Apenas para tipo "avaria" */}
                 {tipoReposicao === 'avaria' && (
                   <div className="space-y-2">
-                    <Label className="text-sm">Foto Avaria <span className="text-destructive">*</span></Label>
-                    <input type="file" accept="image/*" ref={fotoAvariaRef} onChange={(e) => handleFotoUpload(e, setFotoAvaria)} className="hidden" />
+                    <Label className="text-sm">
+                      Foto Avaria <span className="text-destructive">*</span>
+                    </Label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={fotoAvariaRef}
+                      onChange={(e) => handleFotoUpload(e, setFotoAvaria)}
+                      className="hidden"
+                    />
                     {fotoAvaria ? (
                       <div className="relative">
-                        <img src={fotoAvaria} alt="Foto Avaria" className="w-full h-24 object-cover rounded-lg border" />
-                        <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => setFotoAvaria(null)}><X size={12} /></Button>
+                        <img 
+                          src={fotoAvaria} 
+                          alt="Foto Avaria" 
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6"
+                          onClick={() => setFotoAvaria(null)}
+                        >
+                          <X size={14} />
+                        </Button>
                       </div>
                     ) : (
-                      <Button type="button" variant="outline" className="w-full h-24 flex flex-col gap-1" onClick={() => fotoAvariaRef.current?.click()}>
-                        <Upload size={20} className="text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Enviar</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-32 flex flex-col gap-2"
+                        onClick={() => fotoAvariaRef.current?.click()}
+                      >
+                        <Upload size={24} className="text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Clique para enviar</span>
                       </Button>
                     )}
                   </div>
@@ -465,7 +565,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
             <Label>Produtos</Label>
             {produtos.map((produto, index) => (
               <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                <div className="col-span-5 space-y-1">
+                <div className="col-span-12 md:col-span-5 space-y-1">
                   {index === 0 && (
                     <Label className="text-xs text-muted-foreground">
                       Produto <span className="text-destructive">*</span>
@@ -474,10 +574,10 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
                   <Input
                     value={produto.nome}
                     onChange={(e) => updateProduto(index, 'nome', e.target.value)}
-                    placeholder="Digite o código ou nome do produto"
+                    placeholder="Código ou nome do produto"
                   />
                 </div>
-                <div className="col-span-3 space-y-1">
+                <div className="col-span-5 md:col-span-3 space-y-1">
                   {index === 0 && (
                     <Label className="text-xs text-muted-foreground">
                       Quantidade <span className="text-destructive">*</span>
@@ -490,7 +590,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
                     onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
                   />
                 </div>
-                <div className="col-span-3 space-y-1">
+                <div className="col-span-5 md:col-span-3 space-y-1">
                   {index === 0 && (
                     <Label className="text-xs text-muted-foreground">Unidade</Label>
                   )}
@@ -508,7 +608,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="col-span-1">
+                <div className="col-span-2 md:col-span-1">
                   {produtos.length > 1 && (
                     <Button
                       type="button"
@@ -538,8 +638,8 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
             )}
           </div>
 
-          {/* Linha 3: E-mail, WhatsApp */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* E-mail e WhatsApp */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail (opcional)</Label>
               <Input
@@ -578,15 +678,18 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
 
           {/* Botão Enviar */}
           <div className="flex justify-center pt-4">
-            <Button onClick={handleSubmit} className="px-8">
+            <Button onClick={handleSubmit} className="px-8" size="lg">
               <Send size={18} className="mr-2" />
-              Enviar Notificação
+              Enviar Protocolo
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
-export default CreateProtocoloModal;
+        {/* Footer */}
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          © {new Date().getFullYear()} Revalle - Sistema de Reposição
+        </p>
+      </div>
+    </div>
+  );
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { mockProtocolos } from '@/data/mockData';
 import { Protocolo } from '@/types';
+import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +40,7 @@ const getSlaColor = (dias: number): string => {
 
 export default function Protocolos() {
   const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, user } = useAuth();
-  const [protocolos, setProtocolos] = useState<Protocolo[]>(mockProtocolos);
+  const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo } = useProtocolos();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>('todos');
   const [dataInicialFilter, setDataInicialFilter] = useState('');
@@ -111,16 +111,18 @@ export default function Protocolos() {
   }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, pageSize]);
 
   const handleEnviarLancar = (id: string) => {
-    setProtocolos(prev => prev.map(p => 
-      p.id === id ? { ...p, enviadoLancar: true } : p
-    ));
+    const protocolo = protocolos.find(p => p.id === id);
+    if (protocolo) {
+      updateProtocolo({ ...protocolo, enviadoLancar: true });
+    }
     toast.success('Notificação de lançamento enviada!');
   };
 
   const handleEnviarEncerrar = (id: string) => {
-    setProtocolos(prev => prev.map(p => 
-      p.id === id ? { ...p, enviadoEncerrar: true, status: 'encerrado' as const } : p
-    ));
+    const protocolo = protocolos.find(p => p.id === id);
+    if (protocolo) {
+      updateProtocolo({ ...protocolo, enviadoEncerrar: true, status: 'encerrado' });
+    }
     toast.success('Protocolo encerrado com sucesso!');
   };
 
@@ -135,12 +137,15 @@ export default function Protocolos() {
       return;
     }
     
-    setProtocolos(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      const newLancado = !p.lancado;
-      const newStatus = (p.validacao && newLancado) ? 'em_andamento' as const : 'aberto' as const;
-      return { ...p, lancado: newLancado, status: p.status === 'encerrado' ? p.status : newStatus };
-    }));
+    if (protocolo) {
+      const newLancado = !protocolo.lancado;
+      const newStatus = (protocolo.validacao && newLancado) ? 'em_andamento' as const : 'aberto' as const;
+      updateProtocolo({ 
+        ...protocolo, 
+        lancado: newLancado, 
+        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus 
+      });
+    }
     toast.success('Status de lançamento atualizado!');
   };
 
@@ -149,39 +154,41 @@ export default function Protocolos() {
       toast.error('Apenas Conferente ou Admin pode validar protocolos!');
       return;
     }
-    setProtocolos(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      const newValidacao = !p.validacao;
-      const newStatus = (newValidacao && p.lancado) ? 'em_andamento' as const : 'aberto' as const;
-      return { ...p, validacao: newValidacao, status: p.status === 'encerrado' ? p.status : newStatus };
-    }));
+    const protocolo = protocolos.find(p => p.id === id);
+    if (protocolo) {
+      const newValidacao = !protocolo.validacao;
+      const newStatus = (newValidacao && protocolo.lancado) ? 'em_andamento' as const : 'aberto' as const;
+      updateProtocolo({ 
+        ...protocolo, 
+        validacao: newValidacao, 
+        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus 
+      });
+    }
     toast.success('Validação atualizada!');
   };
 
   const handleOcultar = (id: string) => {
-    setProtocolos(prev => prev.map(p => 
-      p.id === id ? { ...p, oculto: true } : p
-    ));
+    const protocolo = protocolos.find(p => p.id === id);
+    if (protocolo) {
+      updateProtocolo({ ...protocolo, oculto: true });
+    }
     toast.success('Protocolo ocultado!');
   };
 
   const handleExcluir = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este protocolo?')) {
-      setProtocolos(prev => prev.filter(p => p.id !== id));
+      deleteProtocolo(id);
       toast.success('Protocolo excluído!');
     }
   };
 
   const handleUpdateProtocolo = (protocoloAtualizado: Protocolo) => {
-    setProtocolos(prev => prev.map(p => 
-      p.id === protocoloAtualizado.id ? protocoloAtualizado : p
-    ));
-    // Atualizar o protocolo selecionado também
+    updateProtocolo(protocoloAtualizado);
     setSelectedProtocolo(protocoloAtualizado);
   };
 
   const handleCreateProtocolo = (novoProtocolo: Protocolo) => {
-    setProtocolos(prev => [novoProtocolo, ...prev]);
+    addProtocolo(novoProtocolo);
   };
 
   const handleNavigateProtocolo = (index: number) => {

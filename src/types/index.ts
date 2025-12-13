@@ -52,6 +52,12 @@ export interface ObservacaoLog {
   texto: string;
 }
 
+export interface FotosProtocolo {
+  fotoMotoristaPdv?: string;
+  fotoLoteProduto?: string;
+  fotoAvaria?: string;
+}
+
 export interface Protocolo {
   id: string;
   numero: string;
@@ -74,6 +80,7 @@ export interface Protocolo {
   observacaoGeral?: string;
   produtos?: Produto[];
   fotos?: string[];
+  fotosProtocolo?: FotosProtocolo;
   historicoObservacoes?: Observacao[];
   habilitarReenvio?: boolean;
   createdAt: string;
