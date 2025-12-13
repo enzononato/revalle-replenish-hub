@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Phone, MapPin, Hash } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, MapPin, Hash, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Motoristas() {
@@ -117,7 +117,10 @@ export default function Motoristas() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground">Motoristas</h1>
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+            <Truck className="text-primary" size={32} />
+            Motoristas
+          </h1>
           <p className="text-muted-foreground mt-1">Gerencie os motoristas cadastrados</p>
         </div>
         

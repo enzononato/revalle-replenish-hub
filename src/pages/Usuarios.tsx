@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Shield, UserCircle, Truck } from 'lucide-react';
+import { Plus, Pencil, Trash2, Shield, UserCircle, Truck, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { unidades } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -154,7 +154,10 @@ export default function Usuarios() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground">Usuários</h1>
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+            <Users className="text-primary" size={32} />
+            Usuários
+          </h1>
           <p className="text-muted-foreground mt-1">Gerencie os usuários do sistema</p>
         </div>
         

@@ -1,11 +1,21 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
-import { topMotoristas, topClientes, topProdutos } from '@/data/mockData';
+import { topMotoristas, topClientes, topProdutos, mockUnidades } from '@/data/mockData';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
-import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, LayoutDashboard, Download } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { format, isToday, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 import { 
   BarChart, 
   Bar, 
@@ -23,28 +33,45 @@ const COLORS = ['hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(160, 84%, 39%)']
 
 export default function Dashboard() {
   const { protocolos } = useProtocolos();
+  const { isAdmin, user } = useAuth();
+  const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
+
+  // Protocolos filtrados por unidade
+  const protocolosFiltrados = useMemo(() => {
+    let filtered = protocolos.filter(p => !p.oculto);
+    
+    if (!isAdmin) {
+      // Revenda: só vê sua unidade
+      filtered = filtered.filter(p => p.unidadeNome === user?.unidade);
+    } else if (unidadeFiltro !== 'todas') {
+      // Admin com filtro ativo
+      filtered = filtered.filter(p => p.unidadeNome === unidadeFiltro);
+    }
+    
+    return filtered;
+  }, [protocolos, isAdmin, user?.unidade, unidadeFiltro]);
 
   // Estatísticas dinâmicas
   const stats = useMemo(() => {
-    const emAberto = protocolos.filter(p => p.status === 'aberto' && !p.oculto).length;
-    const emAndamento = protocolos.filter(p => p.status === 'em_andamento' && !p.oculto).length;
-    const encerrados = protocolos.filter(p => p.status === 'encerrado' && !p.oculto).length;
-    const totalProtocolos = protocolos.filter(p => !p.oculto).length;
+    const emAberto = protocolosFiltrados.filter(p => p.status === 'aberto').length;
+    const emAndamento = protocolosFiltrados.filter(p => p.status === 'em_andamento').length;
+    const encerrados = protocolosFiltrados.filter(p => p.status === 'encerrado').length;
+    const totalProtocolos = protocolosFiltrados.length;
     
     // Contar motoristas únicos
-    const motoristasUnicos = new Set(protocolos.map(p => p.motorista.id)).size;
+    const motoristasUnicos = new Set(protocolosFiltrados.map(p => p.motorista.id)).size;
     
     // Protocolos de hoje
-    const totalHoje = protocolos.filter(p => {
+    const totalHoje = protocolosFiltrados.filter(p => {
       try {
-        return isToday(parseISO(p.createdAt)) && !p.oculto;
+        return isToday(parseISO(p.createdAt));
       } catch {
         return false;
       }
     }).length;
 
     return { emAberto, emAndamento, encerrados, totalProtocolos, motoristasUnicos, totalHoje };
-  }, [protocolos]);
+  }, [protocolosFiltrados]);
 
   // Dados do gráfico de pizza
   const pieData = useMemo(() => [
@@ -65,9 +92,9 @@ export default function Dashboard() {
       const dayName = days[date.getDay()];
       const dateStr = format(date, 'yyyy-MM-dd');
       
-      const dayProtocolos = protocolos.filter(p => {
+      const dayProtocolos = protocolosFiltrados.filter(p => {
         try {
-          return format(parseISO(p.createdAt), 'yyyy-MM-dd') === dateStr && !p.oculto;
+          return format(parseISO(p.createdAt), 'yyyy-MM-dd') === dateStr;
         } catch {
           return false;
         }
@@ -81,18 +108,70 @@ export default function Dashboard() {
     }
     
     return result;
-  }, [protocolos]);
+  }, [protocolosFiltrados]);
 
   // Protocolos recentes
   const recentProtocolos = useMemo(() => 
-    protocolos.filter(p => !p.oculto).slice(0, 5),
-  [protocolos]);
+    protocolosFiltrados.slice(0, 5),
+  [protocolosFiltrados]);
+
+  // Download CSV
+  const handleDownloadCSV = () => {
+    const headers = ['Protocolo', 'Motorista', 'Data', 'Hora', 'Status', 'SLA', 'Unidade'];
+    const csvContent = [
+      headers.join(';'),
+      ...protocolosFiltrados.map(p => [
+        p.numero,
+        p.motorista.nome,
+        p.data,
+        p.hora,
+        p.status,
+        p.sla,
+        p.unidadeNome || ''
+      ].join(';'))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `dashboard_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`${protocolosFiltrados.length} protocolo(s) exportado(s)!`);
+  };
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-heading text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Visão geral do sistema de reposição</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+            <LayoutDashboard className="text-primary" size={32} />
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-1">Visão geral do sistema de reposição</p>
+        </div>
+        <div className="flex gap-2 items-center">
+          {isAdmin && (
+            <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Todas as Unidades" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as Unidades</SelectItem>
+                {mockUnidades.map(u => (
+                  <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button variant="outline" onClick={handleDownloadCSV}>
+            <Download size={18} className="mr-2" />
+            CSV
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -165,7 +244,7 @@ export default function Dashboard() {
             <BarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
+              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, 'dataMax']} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))',
