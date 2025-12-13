@@ -16,6 +16,7 @@ export interface Motorista {
   unidade: string;
   whatsapp: string;
   email?: string;
+  senha?: string;
   createdAt: string;
 }
 

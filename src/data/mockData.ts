@@ -19,6 +19,7 @@ export const mockMotoristas: Motorista[] = [
     unidade: 'Alagoinhas',
     whatsapp: '5571999859841',
     email: 'carlos.silva@revalle.com',
+    senha: '123456',
     createdAt: '2024-01-10'
   },
   {
@@ -29,6 +30,7 @@ export const mockMotoristas: Motorista[] = [
     unidade: 'Juazeiro',
     whatsapp: '5571988887777',
     email: 'jose.santos@revalle.com',
+    senha: '123456',
     createdAt: '2024-01-12'
   },
   {
@@ -39,6 +41,7 @@ export const mockMotoristas: Motorista[] = [
     unidade: 'Petrolina',
     whatsapp: '5571977776666',
     email: 'marcos.oliveira@revalle.com',
+    senha: '123456',
     createdAt: '2024-01-15'
   },
   {
@@ -49,6 +52,7 @@ export const mockMotoristas: Motorista[] = [
     unidade: 'Alagoinhas',
     whatsapp: '5571966665555',
     email: 'roberto.almeida@revalle.com',
+    senha: '123456',
     createdAt: '2024-01-18'
   },
 ];
