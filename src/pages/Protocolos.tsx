@@ -31,9 +31,9 @@ const calcularSlaDias = (createdAt: string): number => {
 };
 
 const getSlaColor = (dias: number): string => {
-  if (dias >= 15) return 'text-red-600 bg-red-100';
-  if (dias > 7) return 'text-yellow-600 bg-yellow-100';
-  return 'text-green-600 bg-green-100';
+  if (dias >= 15) return 'text-white bg-red-500';
+  if (dias > 7) return 'text-white bg-yellow-500';
+  return 'text-white bg-green-500';
 };
 
 export default function Protocolos() {
@@ -233,14 +233,14 @@ export default function Protocolos() {
                     <p className="text-muted-foreground">{protocolo.hora}</p>
                   </div>
                 </td>
-                <td className="p-4 font-medium">{protocolo.numero}</td>
+                <td className="p-4 font-bold">{protocolo.numero}</td>
                 <td className="p-4">{protocolo.motorista.nome}</td>
-                <td className="p-4 text-muted-foreground">{protocolo.motorista.whatsapp}</td>
+                <td className="p-4 font-bold">{protocolo.motorista.whatsapp}</td>
                 <td className="p-4">
                   {(() => {
                     const dias = calcularSlaDias(protocolo.createdAt);
                     return (
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${getSlaColor(dias)}`}>
+                      <span className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-base font-bold min-w-[90px] ${getSlaColor(dias)}`}>
                         {dias} {dias === 1 ? 'dia' : 'dias'}
                       </span>
                     );
