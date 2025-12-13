@@ -33,7 +33,7 @@ const navItems: NavItem[] = [
 ];
 
 export function Sidebar() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -111,21 +111,6 @@ export function Sidebar() {
               );
             })}
           </nav>
-
-          {/* User info */}
-          <div className="p-4 border-t border-sidebar-border">
-            <div className="px-4">
-              <p className="font-medium text-sidebar-foreground">{user?.nome}</p>
-              <span className={cn(
-                "inline-block mt-2 px-2 py-1 rounded text-xs font-medium capitalize",
-                isAdmin 
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground" 
-                  : "bg-sidebar-accent text-sidebar-accent-foreground"
-              )}>
-                {user?.nivel === 'admin' ? 'Administrador' : user?.nivel === 'distribuicao' ? 'Distribuição' : 'Conferente'}
-              </span>
-            </div>
-          </div>
         </div>
       </aside>
     </>
