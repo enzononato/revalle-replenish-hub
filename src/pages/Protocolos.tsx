@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { mockProtocolos, mockMotoristas } from '@/data/mockData';
 import { Protocolo } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProtocoloDetails } from '@/components/ProtocoloDetails';
@@ -20,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Edit, Power } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Edit, Power, ChevronRight, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { differenceInDays, parseISO } from 'date-fns';
 
@@ -31,9 +30,9 @@ const calcularSlaDias = (createdAt: string): number => {
 };
 
 const getSlaColor = (dias: number): string => {
-  if (dias >= 15) return 'text-white bg-red-500';
-  if (dias > 7) return 'text-white bg-yellow-500';
-  return 'text-white bg-green-500';
+  if (dias >= 15) return 'text-[#1F2937] bg-[#FCA5A5]';
+  if (dias > 7) return 'text-[#1F2937] bg-[#FDE68A]';
+  return 'text-[#1F2937] bg-[#86EFAC]';
 };
 
 export default function Protocolos() {
@@ -44,6 +43,7 @@ export default function Protocolos() {
   const [dataFilter, setDataFilter] = useState('');
   const [selectedProtocolo, setSelectedProtocolo] = useState<Protocolo | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const countByStatus = {
     aberto: protocolos.filter(p => p.status === 'aberto').length,
@@ -82,10 +82,15 @@ export default function Protocolos() {
   };
 
   const handleToggleLancado = (id: string) => {
+    const protocolo = protocolos.find(p => p.id === id);
+    if (!protocolo?.validacao) {
+      toast.error('A validação do conferente é obrigatória antes do lançamento!');
+      return;
+    }
+    
     setProtocolos(prev => prev.map(p => {
       if (p.id !== id) return p;
       const newLancado = !p.lancado;
-      // Regra: Validação + Lançado = Em Andamento
       const newStatus = (p.validacao && newLancado) ? 'em_andamento' as const : 'aberto' as const;
       return { ...p, lancado: newLancado, status: p.status === 'encerrado' ? p.status : newStatus };
     }));
@@ -96,11 +101,21 @@ export default function Protocolos() {
     setProtocolos(prev => prev.map(p => {
       if (p.id !== id) return p;
       const newValidacao = !p.validacao;
-      // Regra: Validação + Lançado = Em Andamento
       const newStatus = (newValidacao && p.lancado) ? 'em_andamento' as const : 'aberto' as const;
       return { ...p, validacao: newValidacao, status: p.status === 'encerrado' ? p.status : newStatus };
     }));
     toast.success('Validação atualizada!');
+  };
+
+  const handleNextProtocolo = (currentIndex: number) => {
+    if (currentIndex < filteredProtocolos.length - 1) {
+      const nextProtocolo = filteredProtocolos[currentIndex + 1];
+      setSelectedProtocolo(nextProtocolo);
+      setSelectedIndex(currentIndex + 1);
+      toast.info(`Avançando para protocolo ${nextProtocolo.numero}`);
+    } else {
+      toast.info('Este é o último protocolo da lista.');
+    }
   };
 
   const clearFilters = () => {
@@ -202,77 +217,94 @@ export default function Protocolos() {
         </div>
       )}
 
+      {/* Protocols count */}
+      <p className="text-[13px] font-medium text-[#475569]">
+        {filteredProtocolos.length} protocolo(s) encontrado(s)
+      </p>
 
       {/* Table */}
       <div className="card-stats animate-fade-in overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full border-collapse">
           <thead>
-            <tr className="table-header">
-              <th className="text-left p-4 rounded-tl-lg">Data/Hora</th>
-              <th className="text-left p-4">Protocolo</th>
-              <th className="text-left p-4">Motorista</th>
-              <th className="text-left p-4">WhatsApp</th>
-              <th className="text-left p-4">SLA</th>
-              <th className="text-center p-4">Validação</th>
-              <th className="text-center p-4">Lançado</th>
-              <th className="text-center p-4">Env. Lançar</th>
-              <th className="text-center p-4">Env. Encerrar</th>
-              <th className="text-left p-4">Status</th>
-              <th className="text-right p-4 rounded-tr-lg">Ações</th>
+            <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+              <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Data/Hora</th>
+              <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Protocolo</th>
+              <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Motorista</th>
+              <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">WhatsApp</th>
+              <th className="text-left p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">SLA</th>
+              <th className="text-center p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Validação</th>
+              <th className="text-center p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Lançado</th>
+              <th className="text-center p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Lançar</th>
+              <th className="text-center p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Encerrar</th>
+              <th className="text-right p-4 text-[12px] font-semibold text-[#64748B] uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filteredProtocolos.map((protocolo) => (
+            {filteredProtocolos.map((protocolo, index) => (
               <tr 
                 key={protocolo.id} 
-                className="border-b border-border hover:bg-muted/50 transition-colors"
+                className={`border-b border-[#E5E7EB] hover:bg-muted/50 transition-colors ${selectedIndex === index ? 'bg-blue-50' : ''}`}
               >
-                <td className="p-4">
-                  <div className="text-sm">
-                    <p className="font-medium">{protocolo.data}</p>
-                    <p className="text-muted-foreground">{protocolo.hora}</p>
+                <td className="p-4 border-r border-[#E5E7EB]">
+                  <div className="text-[14px] text-[#1F2937]">
+                    <p className="font-bold">{protocolo.data}</p>
+                    <p className="font-bold">{protocolo.hora}</p>
                   </div>
                 </td>
-                <td className="p-4 font-bold">{protocolo.numero}</td>
-                <td className="p-4">{protocolo.motorista.nome}</td>
-                <td className="p-4 font-bold">{protocolo.motorista.whatsapp}</td>
-                <td className="p-4">
+                <td className="p-4 border-r border-[#E5E7EB]">
+                  <span className="text-[#2563EB] font-medium hover:underline cursor-pointer">
+                    {protocolo.numero}
+                  </span>
+                </td>
+                <td className="p-4 border-r border-[#E5E7EB] text-[14px] text-[#1F2937] font-bold">
+                  {protocolo.motorista.nome}
+                </td>
+                <td className="p-4 border-r border-[#E5E7EB]">
+                  <span className="text-[#16A34A] font-medium flex items-center gap-1">
+                    <Phone size={14} />
+                    {protocolo.motorista.whatsapp}
+                  </span>
+                </td>
+                <td className="p-4 border-r border-[#E5E7EB]">
                   {(() => {
                     const dias = calcularSlaDias(protocolo.createdAt);
                     return (
-                      <span className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-base font-bold min-w-[90px] ${getSlaColor(dias)}`}>
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-[13px] font-medium ${getSlaColor(dias)}`}>
                         {dias} {dias === 1 ? 'dia' : 'dias'}
                       </span>
                     );
                   })()}
                 </td>
-                <td className="p-4 text-center">
+                <td className="p-4 text-center border-r border-[#E5E7EB]">
                   <button
                     onClick={() => handleToggleValidacao(protocolo.id)}
                     className="inline-flex"
+                    title="Apenas Conferente pode validar"
                   >
                     {protocolo.validacao ? (
-                      <CheckCircle className="text-success" size={20} />
+                      <CheckCircle className="text-green-500" size={22} />
                     ) : (
-                      <XCircle className="text-muted-foreground" size={20} />
+                      <XCircle className="text-red-400" size={22} />
                     )}
                   </button>
                 </td>
-                <td className="p-4 text-center">
+                <td className="p-4 text-center border-r border-[#E5E7EB]">
                   <button
                     onClick={() => handleToggleLancado(protocolo.id)}
-                    className="inline-flex"
+                    className={`inline-flex ${!protocolo.validacao ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={!protocolo.validacao}
+                    title={!protocolo.validacao ? 'Aguardando validação do conferente' : 'Apenas Distribuição pode lançar'}
                   >
                     {protocolo.lancado ? (
-                      <CheckCircle className="text-success" size={20} />
+                      <CheckCircle className="text-green-500" size={22} />
                     ) : (
-                      <XCircle className="text-muted-foreground" size={20} />
+                      <XCircle className="text-red-400" size={22} />
                     )}
                   </button>
                 </td>
-                <td className="p-4 text-center">
+                <td className="p-4 text-center border-r border-[#E5E7EB]">
                   {protocolo.enviadoLancar ? (
-                    <CheckCircle className="text-success mx-auto" size={20} />
+                    <CheckCircle className="text-green-500 mx-auto" size={22} />
                   ) : (
                     <Button
                       variant="ghost"
@@ -284,34 +316,44 @@ export default function Protocolos() {
                     </Button>
                   )}
                 </td>
-                <td className="p-4 text-center">
+                <td className="p-4 text-center border-r border-[#E5E7EB]">
                   {protocolo.enviadoEncerrar ? (
-                    <CheckCircle className="text-success mx-auto" size={20} />
+                    <CheckCircle className="text-green-500 mx-auto" size={22} />
                   ) : (
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEnviarEncerrar(protocolo.id)}
                       className="text-success hover:text-success/80"
-                      disabled={!protocolo.lancado}
+                      disabled={!protocolo.lancado || !protocolo.validacao}
+                      title={!protocolo.validacao || !protocolo.lancado ? 'Validação e Lançamento são obrigatórios' : ''}
                     >
                       <Send size={16} />
                     </Button>
                   )}
                 </td>
                 <td className="p-4">
-                  <StatusBadge status={protocolo.status} />
-                </td>
-                <td className="p-4">
-                  <div className="flex justify-end">
+                  <div className="flex justify-end items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleNextProtocolo(index)}
+                      title="Próximo Protocolo"
+                      className="text-[#64748B] hover:text-[#1E3A8A] hover:bg-[#E0E7FF]"
+                    >
+                      <ChevronRight size={18} />
+                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <MoreVertical size={16} />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setSelectedProtocolo(protocolo)}>
+                      <DropdownMenuContent align="end" className="bg-white">
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedProtocolo(protocolo);
+                          setSelectedIndex(index);
+                        }}>
                           <Eye size={16} className="mr-2" />
                           Ver Detalhes
                         </DropdownMenuItem>
@@ -321,7 +363,7 @@ export default function Protocolos() {
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleEnviarEncerrar(protocolo.id)}
-                          disabled={!protocolo.lancado || protocolo.enviadoEncerrar}
+                          disabled={!protocolo.lancado || !protocolo.validacao || protocolo.enviadoEncerrar}
                         >
                           <Power size={16} className="mr-2" />
                           Encerrar
@@ -346,7 +388,10 @@ export default function Protocolos() {
       <ProtocoloDetails
         protocolo={selectedProtocolo}
         open={!!selectedProtocolo}
-        onClose={() => setSelectedProtocolo(null)}
+        onClose={() => {
+          setSelectedProtocolo(null);
+          setSelectedIndex(null);
+        }}
       />
     </div>
   );
