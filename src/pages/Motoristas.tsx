@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Phone, MapPin, Hash, Truck } from 'lucide-react';
+import { Plus, Pencil, Trash2, MapPin, Hash, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Motoristas() {
@@ -34,7 +34,6 @@ export default function Motoristas() {
     dataNascimento: '',
     unidade: '',
     senha: '',
-    whatsapp: '',
   });
 
   // Pagination states
@@ -43,8 +42,7 @@ export default function Motoristas() {
 
   const filteredMotoristas = motoristas.filter(m => 
     m.nome.toLowerCase().includes(search.toLowerCase()) ||
-    m.codigo.toLowerCase().includes(search.toLowerCase()) ||
-    m.whatsapp.includes(search)
+    m.codigo.toLowerCase().includes(search.toLowerCase())
   );
 
   // Pagination calculations
@@ -66,7 +64,6 @@ export default function Motoristas() {
       dataNascimento: '',
       unidade: '',
       senha: '',
-      whatsapp: '',
     });
     setEditingMotorista(null);
   };
@@ -79,7 +76,6 @@ export default function Motoristas() {
       dataNascimento: motorista.dataNascimento,
       unidade: motorista.unidade,
       senha: '',
-      whatsapp: motorista.whatsapp,
     });
     setIsDialogOpen(true);
   };
@@ -173,7 +169,7 @@ export default function Motoristas() {
                   />
                 </div>
                 
-                <div className="space-y-2">
+                <div className="col-span-2 space-y-2">
                   <Label htmlFor="unidade">Unidade</Label>
                   <Select
                     value={formData.unidade}
@@ -188,17 +184,6 @@ export default function Motoristas() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp">WhatsApp</Label>
-                  <Input
-                    id="whatsapp"
-                    value={formData.whatsapp}
-                    onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
-                    placeholder="11999998888"
-                    required
-                  />
                 </div>
                 
                 <div className="col-span-2 space-y-2">
@@ -230,7 +215,7 @@ export default function Motoristas() {
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Buscar por nome, código ou WhatsApp..."
+        placeholder="Buscar por nome ou código..."
         className="max-w-md"
       />
 
@@ -242,7 +227,6 @@ export default function Motoristas() {
               <th className="text-left p-4 rounded-tl-lg">Nome</th>
               <th className="text-left p-4">Código</th>
               <th className="text-left p-4">Unidade</th>
-              <th className="text-left p-4">WhatsApp</th>
               <th className="text-right p-4 rounded-tr-lg">Ações</th>
             </tr>
           </thead>
@@ -263,12 +247,6 @@ export default function Motoristas() {
                   <span className="inline-flex items-center gap-1 text-muted-foreground">
                     <MapPin size={14} />
                     {motorista.unidade}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className="inline-flex items-center gap-1 text-muted-foreground">
-                    <Phone size={14} />
-                    {motorista.whatsapp}
                   </span>
                 </td>
                 <td className="p-4">

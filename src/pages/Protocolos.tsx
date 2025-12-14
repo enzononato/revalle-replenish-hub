@@ -65,7 +65,7 @@ export default function Protocolos() {
       const searchMatch = 
         p.numero.toLowerCase().includes(search.toLowerCase()) ||
         p.motorista.nome.toLowerCase().includes(search.toLowerCase()) ||
-        p.motorista.whatsapp.includes(search) ||
+        (p.motorista.whatsapp || '').includes(search) ||
         p.codigoPdv?.includes(search) ||
         p.mapa?.includes(search);
       
@@ -217,7 +217,7 @@ MOTORISTA
 ---------
 Nome: ${protocolo.motorista.nome}
 Código: ${protocolo.motorista.codigo}
-WhatsApp: ${protocolo.motorista.whatsapp}
+WhatsApp: ${protocolo.motorista.whatsapp || '-'}
 E-mail: ${protocolo.motorista.email || '-'}
 
 CLIENTE
@@ -456,7 +456,7 @@ STATUS: Validado: ${protocolo.validacao ? 'Sim' : 'Não'} | Lançado: ${protocol
                   <td className="p-4 border-r border-[#E5E7EB]">
                     <span className="text-[#16A34A] font-medium flex items-center gap-1">
                       <Phone size={14} />
-                      {protocolo.motorista.whatsapp}
+                      {protocolo.motorista.whatsapp || '-'}
                     </span>
                   </td>
                   <td className="p-4 text-center border-r border-[#E5E7EB]">

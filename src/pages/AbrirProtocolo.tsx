@@ -89,7 +89,7 @@ export default function AbrirProtocolo() {
     setSelectedMotorista(motorista);
     setMotoristaSearch('');
     setShowMotoristaDropdown(false);
-    setWhatsapp(formatWhatsAppFromRaw(motorista.whatsapp));
+    setWhatsapp(formatWhatsAppFromRaw(motorista.whatsapp || ''));
     setEmail(motorista.email || '');
   };
 

@@ -166,7 +166,7 @@ DADOS DO MOTORISTA
 Motorista: ${protocolo.motorista.codigo}
 Nome: ${protocolo.motorista.nome}
 E-mail: ${protocolo.motorista.email || '-'}
-WhatsApp: ${protocolo.motorista.whatsapp}
+WhatsApp: ${protocolo.motorista.whatsapp || '-'}
 
 INFORMAÇÕES DO CLIENTE
 ----------------------
@@ -344,7 +344,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">WhatsApp</p>
-                  <p className="font-medium text-sm">{protocolo.motorista.whatsapp}</p>
+                  <p className="font-medium text-sm">{protocolo.motorista.whatsapp || '-'}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <p className="text-xs text-muted-foreground">Habilitar Reenvio?</p>

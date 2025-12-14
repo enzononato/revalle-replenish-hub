@@ -1,13 +1,13 @@
 import { Motorista, Protocolo, DashboardStats, RankingItem, Unidade } from '@/types';
 
 export const mockUnidades: Unidade[] = [
-  { id: '1', nome: 'Juazeiro', codigo: 'JUA', createdAt: '2024-01-01' },
-  { id: '2', nome: 'Bonfim', codigo: 'BON', createdAt: '2024-01-01' },
-  { id: '3', nome: 'Petrolina', codigo: 'PET', createdAt: '2024-01-01' },
-  { id: '4', nome: 'Ribeira do Pombal', codigo: 'RDP', createdAt: '2024-01-01' },
-  { id: '5', nome: 'Paulo Afonso', codigo: 'PAF', createdAt: '2024-01-01' },
-  { id: '6', nome: 'Alagoinhas', codigo: 'ALA', createdAt: '2024-01-01' },
-  { id: '7', nome: 'Serrinha', codigo: 'SER', createdAt: '2024-01-01' },
+  { id: '1', nome: 'Revalle Juazeiro', codigo: 'JUA', cnpj: '04.690.106/0001-15', createdAt: '2024-01-01' },
+  { id: '2', nome: 'Revalle Bonfim', codigo: 'BON', cnpj: '04.690.106/0003-87', createdAt: '2024-01-01' },
+  { id: '3', nome: 'Revalle Petrolina', codigo: 'PET', cnpj: '07.717.961/0001-60', createdAt: '2024-01-01' },
+  { id: '4', nome: 'Revalle Ribeira do Pombal', codigo: 'RDP', cnpj: '28.098.474/0001-37', createdAt: '2024-01-01' },
+  { id: '5', nome: 'Revalle Paulo Afonso', codigo: 'PAF', cnpj: '28.098.474/0002-18', createdAt: '2024-01-01' },
+  { id: '6', nome: 'Revalle Alagoinhas', codigo: 'ALA', cnpj: '54.677.520/0001-62', createdAt: '2024-01-01' },
+  { id: '7', nome: 'Revalle Serrinha', codigo: 'SER', cnpj: '54.677.520/0002-43', createdAt: '2024-01-01' },
 ];
 
 export const mockMotoristas: Motorista[] = [
@@ -16,8 +16,7 @@ export const mockMotoristas: Motorista[] = [
     nome: 'Carlos Silva',
     codigo: '60121',
     dataNascimento: '1985-03-15',
-    unidade: 'Alagoinhas',
-    whatsapp: '5571999859841',
+    unidade: 'Revalle Alagoinhas',
     email: 'carlos.silva@revalle.com',
     senha: '123456',
     createdAt: '2024-01-10'
@@ -27,8 +26,7 @@ export const mockMotoristas: Motorista[] = [
     nome: 'José Santos',
     codigo: '60122',
     dataNascimento: '1990-07-22',
-    unidade: 'Juazeiro',
-    whatsapp: '5571988887777',
+    unidade: 'Revalle Juazeiro',
     email: 'jose.santos@revalle.com',
     senha: '123456',
     createdAt: '2024-01-12'
@@ -38,8 +36,7 @@ export const mockMotoristas: Motorista[] = [
     nome: 'Marcos Oliveira',
     codigo: '60123',
     dataNascimento: '1988-11-08',
-    unidade: 'Petrolina',
-    whatsapp: '5571977776666',
+    unidade: 'Revalle Petrolina',
     email: 'marcos.oliveira@revalle.com',
     senha: '123456',
     createdAt: '2024-01-15'
@@ -49,8 +46,7 @@ export const mockMotoristas: Motorista[] = [
     nome: 'Roberto Almeida',
     codigo: '60124',
     dataNascimento: '1992-05-30',
-    unidade: 'Alagoinhas',
-    whatsapp: '5571966665555',
+    unidade: 'Revalle Alagoinhas',
     email: 'roberto.almeida@revalle.com',
     senha: '123456',
     createdAt: '2024-01-18'

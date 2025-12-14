@@ -97,7 +97,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
     setSelectedMotorista(motorista);
     setMotoristaSearch('');
     setShowMotoristaDropdown(false);
-    setWhatsapp(formatWhatsAppFromRaw(motorista.whatsapp));
+    setWhatsapp(formatWhatsAppFromRaw(motorista.whatsapp || ''));
     setEmail(motorista.email || '');
   };
 
