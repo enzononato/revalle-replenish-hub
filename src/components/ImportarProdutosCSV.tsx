@@ -12,16 +12,31 @@ interface ImportarProdutosCSVProps {
 }
 
 const HEADER_VARIATIONS: Record<string, string[]> = {
-  cod: ['cod', 'codigo', 'código', 'code', 'sku', 'id'],
-  produto: ['produto', 'nome', 'name', 'descrição', 'descricao', 'description', 'item'],
+  cod: ['cod', 'codigo', 'código', 'code', 'sku', 'id', 'codproduto', 'coditem', 'codigoproduto', 'codigoitem'],
+  produto: ['produto', 'nome', 'name', 'descrição', 'descricao', 'description', 'item', 'nomeproduto', 'descproduto', 'desc'],
 };
 
 const normalizeHeader = (header: string): string | null => {
-  const normalized = header.toLowerCase().trim().replace(/[_\-\s]/g, '');
+  if (!header) return null;
+  
+  // Remove acentos, espaços, underscores, hifens e converte para lowercase
+  const normalized = header
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[_\-\s.]/g, ''); // Remove _, -, espaços e pontos
   
   for (const [key, variations] of Object.entries(HEADER_VARIATIONS)) {
-    if (variations.some(v => normalized.includes(v.replace(/[_\-\s]/g, '')))) {
-      return key;
+    for (const variation of variations) {
+      const normalizedVariation = variation
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[_\-\s.]/g, '');
+      
+      if (normalized === normalizedVariation || normalized.includes(normalizedVariation) || normalizedVariation.includes(normalized)) {
+        return key;
+      }
     }
   }
   return null;
