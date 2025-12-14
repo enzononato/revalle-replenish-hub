@@ -26,10 +26,10 @@ import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 
 interface ProdutoForm {
-  codigo: string;
-  nome: string;
+  produto: string; // Unified field: "CÓD - NOME"
   unidade: string;
   quantidade: number;
   validade: Date | undefined;
@@ -78,7 +78,7 @@ export default function MotoristaPortal() {
   const [tipoReposicao, setTipoReposicao] = useState('');
   const [causa, setCausa] = useState('');
   const [produtos, setProdutos] = useState<ProdutoForm[]>([
-    { codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: undefined }
+    { produto: '', unidade: '', quantidade: 1, validade: undefined }
   ]);
   const [observacao, setObservacao] = useState('');
   const [protocoloCriado, setProtocoloCriado] = useState(false);
@@ -165,7 +165,7 @@ export default function MotoristaPortal() {
   };
 
   const isProdutoValid = (produto: ProdutoForm): boolean => {
-    return produto.codigo.trim().length > 0 && produto.nome.trim().length > 0;
+    return produto.produto.trim().length > 0;
   };
 
   const handleProdutoBlur = (index: number) => {
@@ -211,7 +211,7 @@ export default function MotoristaPortal() {
   };
 
   const addProduto = () => {
-    setProdutos([...produtos, { codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: undefined }]);
+    setProdutos([...produtos, { produto: '', unidade: '', quantidade: 1, validade: undefined }]);
     setTouched(prev => ({ ...prev, produtos: [...prev.produtos, false] }));
   };
 
@@ -234,7 +234,7 @@ export default function MotoristaPortal() {
     setNotaFiscal('');
     setTipoReposicao('');
     setCausa('');
-    setProdutos([{ codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: undefined }]);
+    setProdutos([{ produto: '', unidade: '', quantidade: 1, validade: undefined }]);
     setObservacao('');
     setFotoMotoristaPdv(null);
     setFotoLoteProduto(null);
@@ -289,7 +289,7 @@ export default function MotoristaPortal() {
       return;
     }
 
-    const validProdutos = produtos.filter(p => p.codigo.trim() && p.nome.trim());
+    const validProdutos = produtos.filter(p => p.produto.trim());
     if (validProdutos.length === 0) {
       toast({ title: 'Erro', description: 'Adicione pelo menos um produto', variant: 'destructive' });
       return;
@@ -304,14 +304,19 @@ export default function MotoristaPortal() {
       fotoAvaria: fotoAvaria || undefined
     };
 
-    // Convert produtos to the expected format
-    const produtosFormatados = validProdutos.map(p => ({
-      codigo: p.codigo,
-      nome: p.nome,
-      unidade: p.unidade,
-      quantidade: p.quantidade,
-      validade: p.validade ? format(p.validade, 'dd/MM/yyyy') : ''
-    }));
+    // Convert produtos to the expected format - extract codigo and nome from unified field
+    const produtosFormatados = validProdutos.map(p => {
+      const parts = p.produto.split(' - ');
+      const codigo = parts[0] || '';
+      const nome = parts.slice(1).join(' - ') || p.produto;
+      return {
+        codigo,
+        nome,
+        unidade: p.unidade || 'UND',
+        quantidade: p.quantidade,
+        validade: p.validade ? format(p.validade, 'dd/MM/yyyy') : ''
+      };
+    });
 
     const novoProtocolo: Protocolo = {
       id: crypto.randomUUID(),
@@ -688,47 +693,29 @@ export default function MotoristaPortal() {
                     </div>
                     <div className="space-y-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground">Código *</Label>
-                        <Input
-                          value={produto.codigo}
-                          onChange={(e) => updateProduto(index, 'codigo', e.target.value)}
+                        <Label className="text-xs font-medium text-muted-foreground">Produto *</Label>
+                        <ProdutoAutocomplete
+                          value={produto.produto}
+                          onChange={(value, embalagem) => {
+                            updateProduto(index, 'produto', value);
+                            if (embalagem) {
+                              updateProduto(index, 'unidade', embalagem);
+                            }
+                          }}
                           onBlur={() => handleProdutoBlur(index)}
-                          placeholder="Ex: 7325"
                           className={cn(
-                            "h-11 text-base",
-                            isTouched && produto.codigo.trim() && 'border-green-500',
-                            isTouched && !produto.codigo.trim() && 'border-red-500'
+                            isTouched && produto.produto.trim() && 'border-green-500',
+                            isTouched && !produto.produto.trim() && 'border-red-500'
                           )}
-                          inputMode="numeric"
                         />
-                        {isTouched && !produto.codigo.trim() && (
+                        {isTouched && !produto.produto.trim() && (
                           <p className="text-xs text-red-500 flex items-center gap-1">
                             <AlertCircle size={12} />
-                            Código obrigatório
+                            Produto obrigatório
                           </p>
                         )}
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground">Nome *</Label>
-                        <Input
-                          value={produto.nome}
-                          onChange={(e) => updateProduto(index, 'nome', e.target.value)}
-                          onBlur={() => handleProdutoBlur(index)}
-                          placeholder="Nome do produto"
-                          className={cn(
-                            "h-11 text-base",
-                            isTouched && produto.nome.trim() && 'border-green-500',
-                            isTouched && !produto.nome.trim() && 'border-red-500'
-                          )}
-                        />
-                        {isTouched && !produto.nome.trim() && (
-                          <p className="text-xs text-red-500 flex items-center gap-1">
-                            <AlertCircle size={12} />
-                            Nome obrigatório
-                          </p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-[1fr_70px_1fr] gap-2">
                         <div className="space-y-1.5">
                           <Label className="text-xs font-medium text-muted-foreground">Qtd</Label>
                           <Input
@@ -741,18 +728,21 @@ export default function MotoristaPortal() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-medium text-muted-foreground">Unidade</Label>
+                          <Label className="text-xs font-medium text-muted-foreground">Und</Label>
                           <Select
                             value={produto.unidade}
                             onValueChange={(value) => updateProduto(index, 'unidade', value)}
                           >
-                            <SelectTrigger className="h-11 text-base">
-                              <SelectValue />
+                            <SelectTrigger className="h-11 text-xs px-2">
+                              <SelectValue placeholder="-" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="UND">UND</SelectItem>
                               <SelectItem value="CX">CX</SelectItem>
                               <SelectItem value="PCT">PCT</SelectItem>
+                              <SelectItem value="DZS">DZS</SelectItem>
+                              <SelectItem value="CX12">CX12</SelectItem>
+                              <SelectItem value="CX24">CX24</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
