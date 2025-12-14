@@ -243,7 +243,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0">
           {/* Header com gradiente */}
           <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
             <DialogHeader className="flex flex-row items-center justify-between">
@@ -350,62 +350,62 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 {/* Coluna Esquerda */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">PROTOCOLO:</span>
-                    <span className="text-sm text-foreground">{protocolo.numero}</span>
+                    <span className="text-base font-bold text-foreground uppercase">PROTOCOLO:</span>
+                    <span className="text-base text-foreground">{protocolo.numero}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">DATA:</span>
-                    <span className="text-sm text-foreground">{protocolo.data}</span>
+                    <span className="text-base font-bold text-foreground uppercase">DATA:</span>
+                    <span className="text-base text-foreground">{protocolo.data}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">MOTORISTA:</span>
-                    <span className="text-sm text-foreground">{protocolo.motorista.codigo}</span>
+                    <span className="text-base font-bold text-foreground uppercase">MOTORISTA:</span>
+                    <span className="text-base text-foreground">{protocolo.motorista.codigo}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">E-MAIL:</span>
-                    <span className="text-sm text-foreground">{protocolo.motorista.email || '-'}</span>
+                    <span className="text-base font-bold text-foreground uppercase">E-MAIL:</span>
+                    <span className="text-base text-foreground">{protocolo.motorista.email || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">MAPA:</span>
-                    <span className="text-sm text-foreground">{protocolo.mapa || '-'}</span>
+                    <span className="text-base font-bold text-foreground uppercase">MAPA:</span>
+                    <span className="text-base text-foreground">{protocolo.mapa || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">CÓDIGO PDV:</span>
-                    <span className="text-sm text-foreground">{protocolo.codigoPdv || '-'}</span>
+                    <span className="text-base font-bold text-foreground uppercase">CÓDIGO PDV:</span>
+                    <span className="text-base text-foreground">{protocolo.codigoPdv || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">NOTA FISCAL:</span>
-                    <span className="text-sm text-foreground">{protocolo.notaFiscal || '-'}</span>
+                    <span className="text-base font-bold text-foreground uppercase">NOTA FISCAL:</span>
+                    <span className="text-base text-foreground">{protocolo.notaFiscal || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">CAUSA:</span>
-                    <span className="text-sm text-foreground">{protocolo.causa || '-'}</span>
+                    <span className="text-base font-bold text-foreground uppercase">CAUSA:</span>
+                    <span className="text-base text-foreground">{protocolo.causa || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">TIPO DE REPOSIÇÃO:</span>
-                    <span className="text-sm text-foreground">{protocolo.tipoReposicao || '-'}</span>
+                    <span className="text-base font-bold text-foreground uppercase">TIPO DE REPOSIÇÃO:</span>
+                    <span className="text-base text-foreground">{protocolo.tipoReposicao || '-'}</span>
                   </div>
                 </div>
 
                 {/* Coluna Direita */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">STATUS:</span>
-                    <span className="text-sm text-foreground uppercase">{protocolo.status}</span>
+                    <span className="text-base font-bold text-foreground uppercase">STATUS:</span>
+                    <span className="text-base text-foreground uppercase">{protocolo.status}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">HORA:</span>
-                    <span className="text-sm text-foreground">{protocolo.hora}</span>
+                    <span className="text-base font-bold text-foreground uppercase">HORA:</span>
+                    <span className="text-base text-foreground">{protocolo.hora}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">UNIDADE:</span>
-                    <span className="text-sm text-foreground">{protocolo.unidadeNome || '-'} (ID {protocolo.unidadeId || '-'})</span>
+                    <span className="text-base font-bold text-foreground uppercase">UNIDADE:</span>
+                    <span className="text-base text-foreground">{protocolo.unidadeNome || '-'} (ID {protocolo.unidadeId || '-'})</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">WHATSAPP:</span>
+                    <span className="text-base font-bold text-foreground uppercase">WHATSAPP:</span>
                     {canEditMotorista && !editandoWhatsapp ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-foreground">{protocolo.motorista.whatsapp || '-'}</span>
+                        <span className="text-base text-foreground">{protocolo.motorista.whatsapp || '-'}</span>
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -470,7 +470,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         </Button>
                       </div>
                     ) : (
-                      <span className="text-sm text-foreground">{protocolo.motorista.whatsapp || '-'}</span>
+                      <span className="text-base text-foreground">{protocolo.motorista.whatsapp || '-'}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
@@ -478,51 +478,51 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                       checked={habilitarReenvio} 
                       onCheckedChange={setHabilitarReenvio} 
                     />
-                    <span className="text-sm font-bold text-foreground uppercase">HABILITAR REENVIO?</span>
+                    <span className="text-base font-bold text-foreground uppercase">HABILITAR REENVIO?</span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-sm font-bold text-foreground uppercase">OBSERVAÇÃO:</span>
-                    <span className="text-sm text-foreground">{protocolo.observacaoGeral || '-'}</span>
+                    <span className="text-base font-bold text-foreground uppercase">OBSERVAÇÃO:</span>
+                    <span className="text-base text-foreground">{protocolo.observacaoGeral || '-'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Produtos Recebidos - Card separado */}
-            <div className="bg-violet-50 dark:bg-violet-950/20 rounded-xl p-5 border border-violet-200 dark:border-violet-800 shadow-sm">
-              <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                <Package size={18} className="text-violet-600" />
+            <div className="bg-slate-50 dark:bg-slate-950/20 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h3 className="font-bold text-base text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
+                <Package size={20} className="text-slate-600" />
                 PRODUTOS RECEBIDOS
               </h3>
               {protocolo.produtos && protocolo.produtos.length > 0 ? (
-                <div className="overflow-x-auto rounded-lg border border-violet-200 dark:border-violet-700">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                  <table className="w-full text-base">
                     <thead>
-                      <tr className="bg-violet-100 dark:bg-violet-900/30">
-                        <th className="text-left p-3 font-bold text-foreground uppercase">CÓDIGO</th>
-                        <th className="text-left p-3 font-bold text-foreground uppercase">PRODUTO</th>
-                        <th className="text-left p-3 font-bold text-foreground uppercase">UNIDADE</th>
-                        <th className="text-center p-3 font-bold text-foreground uppercase">QTD</th>
-                        <th className="text-left p-3 font-bold text-foreground uppercase">VALIDADE</th>
-                        <th className="text-left p-3 font-bold text-foreground uppercase">OBSERVAÇÃO</th>
+                      <tr className="bg-slate-100 dark:bg-slate-900/30">
+                        <th className="text-left p-4 font-bold text-foreground uppercase">CÓDIGO</th>
+                        <th className="text-left p-4 font-bold text-foreground uppercase">PRODUTO</th>
+                        <th className="text-left p-4 font-bold text-foreground uppercase">UNIDADE</th>
+                        <th className="text-center p-4 font-bold text-foreground uppercase">QTD</th>
+                        <th className="text-left p-4 font-bold text-foreground uppercase">VALIDADE</th>
+                        <th className="text-left p-4 font-bold text-foreground uppercase">OBSERVAÇÃO</th>
                       </tr>
                     </thead>
                     <tbody>
                       {protocolo.produtos.map((produto, index) => (
-                        <tr key={index} className={`border-b border-violet-200 dark:border-violet-700 transition-colors hover:bg-violet-100/50 dark:hover:bg-violet-900/20 ${index % 2 === 0 ? 'bg-violet-50/50 dark:bg-violet-950/10' : 'bg-white dark:bg-transparent'}`}>
-                          <td className="p-3 font-mono text-violet-700 dark:text-violet-400">{produto.codigo}</td>
-                          <td className="p-3 font-medium">{produto.nome}</td>
-                          <td className="p-3">{produto.unidade}</td>
-                          <td className="p-3 text-center font-bold text-violet-700 dark:text-violet-400">{produto.quantidade}</td>
-                          <td className="p-3">{produto.validade}</td>
-                          <td className="p-3 text-muted-foreground">{produto.observacao || '-'}</td>
+                        <tr key={index} className={`border-b border-slate-200 dark:border-slate-700 transition-colors hover:bg-slate-100/50 dark:hover:bg-slate-900/20 ${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-950/10' : 'bg-white dark:bg-transparent'}`}>
+                          <td className="p-4 font-mono text-slate-700 dark:text-slate-400">{produto.codigo}</td>
+                          <td className="p-4 font-medium">{produto.nome}</td>
+                          <td className="p-4">{produto.unidade}</td>
+                          <td className="p-4 text-center font-bold text-slate-700 dark:text-slate-400">{produto.quantidade}</td>
+                          <td className="p-4">{produto.validade}</td>
+                          <td className="p-4 text-muted-foreground">{produto.observacao || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic">Nenhum produto registrado</p>
+                <p className="text-base text-muted-foreground italic">Nenhum produto registrado</p>
               )}
             </div>
 
@@ -556,8 +556,8 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
 
             {/* Seção de Observações - Todos podem comentar */}
             <div className="bg-card rounded-xl p-5 border shadow-sm">
-              <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                <MessageSquare size={18} className="text-primary" />
+              <h3 className="font-bold text-base text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
+                <MessageSquare size={20} className="text-primary" />
                 Histórico de Observações
               </h3>
               
@@ -566,20 +566,20 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 <div className="space-y-3 mb-4">
                   {[...protocolo.observacoesLog].reverse().map((log, index) => {
                     return (
-                      <div key={log.id} className="flex gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
+                      <div key={log.id} className="flex gap-3 p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
                           {log.usuarioNome.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 text-xs">
+                          <div className="flex items-center gap-2 text-sm">
                             <span className="font-semibold text-foreground">{log.usuarioNome}</span>
                             <span className="text-muted-foreground">•</span>
                             <span className="text-muted-foreground">{log.data} às {log.hora}</span>
-                            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-medium">
+                            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
                               {log.acao}
                             </span>
                           </div>
-                          <p className="text-sm mt-1 text-foreground">{log.texto}</p>
+                          <p className="text-base mt-1 text-foreground">{log.texto}</p>
                         </div>
                       </div>
                     );
