@@ -38,6 +38,7 @@ interface ProtocoloDB {
   enviado_encerrar_status: string | null;
   enviado_encerrar_erro: string | null;
   cliente_telefone: string | null;
+  motorista_unidade: string | null;
 }
 
 // Convert DB record to Protocolo type
@@ -50,7 +51,7 @@ function dbToProtocolo(db: ProtocoloDB): Protocolo {
       nome: db.motorista_nome,
       codigo: db.motorista_codigo || '',
       dataNascimento: '',
-      unidade: '',
+      unidade: db.motorista_unidade || '',
       funcao: 'motorista',
       setor: 'sede',
       whatsapp: db.motorista_whatsapp || '',
@@ -123,7 +124,8 @@ function protocoloToDB(p: Protocolo): Omit<ProtocoloDB, 'id'> {
     enviado_lancar_erro: p.enviadoLancarErro || null,
     enviado_encerrar_status: p.enviadoEncerrarStatus || 'pendente',
     enviado_encerrar_erro: p.enviadoEncerrarErro || null,
-    cliente_telefone: p.clienteTelefone || null
+    cliente_telefone: p.clienteTelefone || null,
+    motorista_unidade: p.motorista.unidade || null
   };
 }
 

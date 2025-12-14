@@ -129,6 +129,7 @@ export type Database = {
           motorista_email: string | null
           motorista_id: string | null
           motorista_nome: string
+          motorista_unidade: string | null
           motorista_whatsapp: string | null
           nota_fiscal: string | null
           numero: string
@@ -164,6 +165,7 @@ export type Database = {
           motorista_email?: string | null
           motorista_id?: string | null
           motorista_nome: string
+          motorista_unidade?: string | null
           motorista_whatsapp?: string | null
           nota_fiscal?: string | null
           numero: string
@@ -199,6 +201,7 @@ export type Database = {
           motorista_email?: string | null
           motorista_id?: string | null
           motorista_nome?: string
+          motorista_unidade?: string | null
           motorista_whatsapp?: string | null
           nota_fiscal?: string | null
           numero?: string

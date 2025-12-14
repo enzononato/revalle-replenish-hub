@@ -258,9 +258,13 @@ export default function MotoristaPortal() {
     }
   };
 
-  const updateProduto = (index: number, field: keyof ProdutoForm, value: string | number | Date | undefined) => {
+  const updateProduto = (index: number, field: keyof ProdutoForm, value: string | number | Date | undefined, embalagem?: string) => {
     const updated = [...produtos];
     updated[index] = { ...updated[index], [field]: value };
+    // Se uma embalagem foi passada, atualizar também o campo unidade
+    if (embalagem) {
+      updated[index].unidade = embalagem;
+    }
     setProdutos(updated);
   };
 
@@ -722,10 +726,7 @@ export default function MotoristaPortal() {
                             <ProdutoAutocomplete
                               value={produto.produto}
                               onChange={(value, embalagem) => {
-                                updateProduto(index, 'produto', value);
-                                if (embalagem) {
-                                  updateProduto(index, 'unidade', embalagem);
-                                }
+                                updateProduto(index, 'produto', value, embalagem);
                               }}
                               onBlur={() => handleProdutoBlur(index)}
                               className={cn(
