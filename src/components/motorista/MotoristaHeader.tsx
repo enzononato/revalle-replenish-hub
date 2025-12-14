@@ -1,7 +1,7 @@
 import { Motorista } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, WifiOff, Cloud, User } from 'lucide-react';
+import { LogOut, WifiOff, Cloud, User, PackageCheck } from 'lucide-react';
 
 interface MotoristaHeaderProps {
   motorista: Motorista;
@@ -73,11 +73,11 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
         </div>
 
         {/* Logo e versão */}
-        <div className="mt-4 flex items-center justify-center gap-2 text-primary-foreground/60">
-          <div className="w-5 h-5 bg-white/20 rounded flex items-center justify-center">
-            <span className="text-xs font-bold">R</span>
+        <div className="mt-4 flex items-center justify-center gap-2 text-primary-foreground/70">
+          <div className="w-6 h-6 bg-white/20 rounded-md flex items-center justify-center">
+            <PackageCheck className="w-4 h-4" />
           </div>
-          <span className="text-xs">Reposição v2.1.2</span>
+          <span className="text-xs font-medium">Reposição v2.1.2</span>
         </div>
       </div>
     </div>
