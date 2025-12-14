@@ -134,26 +134,15 @@ export function useMotoristasDB() {
   };
 
   const importMotoristas = async (newMotoristas: Omit<Motorista, 'id' | 'createdAt'>[]): Promise<boolean> => {
-    // Primeiro, deletar todos os motoristas existentes
-    const { error: deleteError } = await supabase
-      .from('motoristas')
-      .delete()
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-
-    if (deleteError) {
-      toast.error(`Erro ao limpar motoristas: ${deleteError.message}`);
-      return false;
-    }
-
-    // Inserir os novos motoristas
+    // Usar upsert para atualizar existentes e inserir novos (baseado no código único)
     const motoristasDB = newMotoristas.map(m => motoristaToDB(m as Motorista));
     
-    const { error: insertError } = await supabase
+    const { error: upsertError } = await supabase
       .from('motoristas')
-      .insert(motoristasDB);
+      .upsert(motoristasDB, { onConflict: 'codigo' });
 
-    if (insertError) {
-      toast.error(`Erro ao importar motoristas: ${insertError.message}`);
+    if (upsertError) {
+      toast.error(`Erro ao importar motoristas: ${upsertError.message}`);
       return false;
     }
 
