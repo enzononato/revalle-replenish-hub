@@ -14,10 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Truck, LogOut, Plus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Truck, LogOut, Plus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 interface ProdutoForm {
@@ -25,7 +32,7 @@ interface ProdutoForm {
   nome: string;
   unidade: string;
   quantidade: number;
-  validade: string;
+  validade: Date | undefined;
 }
 
 interface TouchedFields {
@@ -33,11 +40,31 @@ interface TouchedFields {
   codigoPdv: boolean;
   notaFiscal: boolean;
   tipoReposicao: boolean;
+  causa: boolean;
   fotoMotoristaPdv: boolean;
   fotoLoteProduto: boolean;
   fotoAvaria: boolean;
   produtos: boolean[];
 }
+
+// Causas por tipo de reposição
+const causasPorTipo: Record<string, string[]> = {
+  inversao: ['ERRO DE CARREGAMENTO', 'ERRO DE ENTREGA'],
+  falta: ['FALTA DE PALLET FECHADO', 'FALTA DE PALLET MONTADO'],
+  avaria: [
+    'AVARIADO NA ROTA',
+    'CAIU NA BAIA',
+    'CARRINHO COM PROBLEMA',
+    'GARRAFEIRA QUEBRADA',
+    'PALLET QUEBRADO',
+    'PREGO NO PALLET',
+    'QUEBRA NO PDV',
+    'QUEBRADA NA CAIXA',
+    'SEM TAMPA',
+    'TAMPA AMASSADA',
+    'VAZADA'
+  ]
+};
 
 export default function MotoristaPortal() {
   const navigate = useNavigate();
@@ -49,8 +76,9 @@ export default function MotoristaPortal() {
   const [codigoPdv, setCodigoPdv] = useState('');
   const [notaFiscal, setNotaFiscal] = useState('');
   const [tipoReposicao, setTipoReposicao] = useState('');
+  const [causa, setCausa] = useState('');
   const [produtos, setProdutos] = useState<ProdutoForm[]>([
-    { codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: '' }
+    { codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: undefined }
   ]);
   const [observacao, setObservacao] = useState('');
   const [protocoloCriado, setProtocoloCriado] = useState(false);
@@ -62,6 +90,7 @@ export default function MotoristaPortal() {
     codigoPdv: false,
     notaFiscal: false,
     tipoReposicao: false,
+    causa: false,
     fotoMotoristaPdv: false,
     fotoLoteProduto: false,
     fotoAvaria: false,
@@ -80,6 +109,7 @@ export default function MotoristaPortal() {
   // Validation functions
   const isFieldValid = (field: keyof TouchedFields, value: string | null): boolean => {
     if (field === 'tipoReposicao') return !!value;
+    if (field === 'causa') return !tipoReposicao || !!value;
     // Photos are only required after tipoReposicao is selected
     if (field === 'fotoMotoristaPdv' || field === 'fotoLoteProduto') {
       return !tipoReposicao || !!value;
@@ -91,17 +121,19 @@ export default function MotoristaPortal() {
   // Control multiple products based on tipoReposicao
   const podeAdicionarMultiplos = tipoReposicao === 'avaria' || tipoReposicao === 'falta';
 
-  // Clear photos when changing tipoReposicao
+  // Clear photos and causa when changing tipoReposicao
   const handleTipoReposicaoChange = (value: string) => {
     if (value !== tipoReposicao) {
       setFotoMotoristaPdv(null);
       setFotoLoteProduto(null);
       setFotoAvaria(null);
+      setCausa('');
       setTouched(prev => ({
         ...prev,
         fotoMotoristaPdv: false,
         fotoLoteProduto: false,
-        fotoAvaria: false
+        fotoAvaria: false,
+        causa: false
       }));
       // Reset to single product if switching to inversao
       if (value === 'inversao' && produtos.length > 1) {
@@ -179,7 +211,7 @@ export default function MotoristaPortal() {
   };
 
   const addProduto = () => {
-    setProdutos([...produtos, { codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: '' }]);
+    setProdutos([...produtos, { codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: undefined }]);
     setTouched(prev => ({ ...prev, produtos: [...prev.produtos, false] }));
   };
 
@@ -190,7 +222,7 @@ export default function MotoristaPortal() {
     }
   };
 
-  const updateProduto = (index: number, field: keyof ProdutoForm, value: string | number) => {
+  const updateProduto = (index: number, field: keyof ProdutoForm, value: string | number | Date | undefined) => {
     const updated = [...produtos];
     updated[index] = { ...updated[index], [field]: value };
     setProdutos(updated);
@@ -201,7 +233,8 @@ export default function MotoristaPortal() {
     setCodigoPdv('');
     setNotaFiscal('');
     setTipoReposicao('');
-    setProdutos([{ codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: '' }]);
+    setCausa('');
+    setProdutos([{ codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: undefined }]);
     setObservacao('');
     setFotoMotoristaPdv(null);
     setFotoLoteProduto(null);
@@ -213,6 +246,7 @@ export default function MotoristaPortal() {
       codigoPdv: false,
       notaFiscal: false,
       tipoReposicao: false,
+      causa: false,
       fotoMotoristaPdv: false,
       fotoLoteProduto: false,
       fotoAvaria: false,
@@ -236,6 +270,10 @@ export default function MotoristaPortal() {
     }
     if (!tipoReposicao) {
       toast({ title: 'Erro', description: 'Selecione o tipo de reposição', variant: 'destructive' });
+      return;
+    }
+    if (!causa) {
+      toast({ title: 'Erro', description: 'Selecione a causa', variant: 'destructive' });
       return;
     }
     if (!fotoMotoristaPdv) {
@@ -266,6 +304,15 @@ export default function MotoristaPortal() {
       fotoAvaria: fotoAvaria || undefined
     };
 
+    // Convert produtos to the expected format
+    const produtosFormatados = validProdutos.map(p => ({
+      codigo: p.codigo,
+      nome: p.nome,
+      unidade: p.unidade,
+      quantidade: p.quantidade,
+      validade: p.validade ? format(p.validade, 'dd/MM/yyyy') : ''
+    }));
+
     const novoProtocolo: Protocolo = {
       id: crypto.randomUUID(),
       numero,
@@ -279,10 +326,11 @@ export default function MotoristaPortal() {
       enviadoLancar: false,
       enviadoEncerrar: false,
       tipoReposicao: tipoReposicao.toUpperCase(),
+      causa,
       mapa,
       codigoPdv,
       notaFiscal,
-      produtos: validProdutos as Produto[],
+      produtos: produtosFormatados as Produto[],
       fotosProtocolo,
       observacaoGeral: observacao || undefined,
       createdAt: now.toISOString()
@@ -522,79 +570,72 @@ export default function MotoristaPortal() {
               </div>
             </div>
 
-            {/* Tipo Reposição */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium">Tipo de Reposição *</Label>
-                {touched.tipoReposicao && tipoReposicao && <Check size={14} className="text-green-500" />}
-              </div>
-              <Select 
-                value={tipoReposicao} 
-                onValueChange={handleTipoReposicaoChange}
-              >
-                <SelectTrigger className={cn(
-                  "h-12 text-base",
-                  touched.tipoReposicao && tipoReposicao && 'border-green-500 focus:ring-green-500',
-                  touched.tipoReposicao && !tipoReposicao && 'border-red-500 focus:ring-red-500'
-                )}>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="falta">Falta</SelectItem>
-                  <SelectItem value="inversao">Inversão</SelectItem>
-                  <SelectItem value="avaria">Avaria</SelectItem>
-                </SelectContent>
-              </Select>
-              {touched.tipoReposicao && !tipoReposicao && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
-                  <AlertCircle size={12} />
-                  Selecione um tipo
-                </p>
-              )}
-            </div>
-
-            {/* Photos Section - Only shown after selecting tipoReposicao */}
-            {tipoReposicao ? (
-              <div className="space-y-3">
-                <Label className="flex items-center gap-2 text-sm font-medium">
-                  <Camera className="h-4 w-4 text-primary" />
-                  Fotos Obrigatórias
-                </Label>
-                
-                <div className="space-y-3">
-                  <PhotoUploadCard
-                    label="Motorista no PDV"
-                    photo={fotoMotoristaPdv}
-                    setPhoto={setFotoMotoristaPdv}
-                    inputRef={fotoMotoristaPdvRef}
-                    field="fotoMotoristaPdv"
-                  />
-                  <PhotoUploadCard
-                    label="Lote do Produto"
-                    photo={fotoLoteProduto}
-                    setPhoto={setFotoLoteProduto}
-                    inputRef={fotoLoteProdutoRef}
-                    field="fotoLoteProduto"
-                  />
-                  {tipoReposicao === 'avaria' && (
-                    <PhotoUploadCard
-                      label="Foto da Avaria"
-                      photo={fotoAvaria}
-                      setPhoto={setFotoAvaria}
-                      inputRef={fotoAvariaRef}
-                      field="fotoAvaria"
-                    />
-                  )}
+            {/* Tipo Reposição e Causa - Grid 2 colunas */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">Tipo *</Label>
+                  {touched.tipoReposicao && tipoReposicao && <Check size={14} className="text-green-500" />}
                 </div>
+                <Select 
+                  value={tipoReposicao} 
+                  onValueChange={handleTipoReposicaoChange}
+                >
+                  <SelectTrigger className={cn(
+                    "h-12 text-base",
+                    touched.tipoReposicao && tipoReposicao && 'border-green-500 focus:ring-green-500',
+                    touched.tipoReposicao && !tipoReposicao && 'border-red-500 focus:ring-red-500'
+                  )}>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="falta">Falta</SelectItem>
+                    <SelectItem value="inversao">Inversão</SelectItem>
+                    <SelectItem value="avaria">Avaria</SelectItem>
+                  </SelectContent>
+                </Select>
+                {touched.tipoReposicao && !tipoReposicao && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    Selecione
+                  </p>
+                )}
               </div>
-            ) : (
-              <div className="p-4 bg-muted/30 rounded-xl border border-dashed border-border text-center">
-                <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  Selecione o tipo de reposição para ver as fotos necessárias
-                </p>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">Causa *</Label>
+                  {touched.causa && causa && <Check size={14} className="text-green-500" />}
+                </div>
+                <Select 
+                  value={causa} 
+                  onValueChange={(value) => {
+                    setCausa(value);
+                    handleBlur('causa');
+                  }}
+                  disabled={!tipoReposicao}
+                >
+                  <SelectTrigger className={cn(
+                    "h-12 text-base",
+                    touched.causa && causa && 'border-green-500 focus:ring-green-500',
+                    touched.causa && !causa && tipoReposicao && 'border-red-500 focus:ring-red-500'
+                  )}>
+                    <SelectValue placeholder={tipoReposicao ? "Selecione" : "Escolha o tipo"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tipoReposicao && causasPorTipo[tipoReposicao]?.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {touched.causa && !causa && tipoReposicao && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    Selecione
+                  </p>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Products Section - Single column for mobile */}
             <div className="space-y-3">
@@ -687,9 +728,9 @@ export default function MotoristaPortal() {
                           </p>
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-2">
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-medium text-muted-foreground">Quantidade</Label>
+                          <Label className="text-xs font-medium text-muted-foreground">Qtd</Label>
                           <Input
                             type="number"
                             min="1"
@@ -700,13 +741,49 @@ export default function MotoristaPortal() {
                           />
                         </div>
                         <div className="space-y-1.5">
+                          <Label className="text-xs font-medium text-muted-foreground">Unidade</Label>
+                          <Select
+                            value={produto.unidade}
+                            onValueChange={(value) => updateProduto(index, 'unidade', value)}
+                          >
+                            <SelectTrigger className="h-11 text-base">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="UND">UND</SelectItem>
+                              <SelectItem value="CX">CX</SelectItem>
+                              <SelectItem value="PCT">PCT</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
                           <Label className="text-xs font-medium text-muted-foreground">Validade</Label>
-                          <Input
-                            value={produto.validade}
-                            onChange={(e) => updateProduto(index, 'validade', e.target.value)}
-                            placeholder="DD/MM/AAAA"
-                            className="h-11 text-base"
-                          />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "h-11 w-full justify-start text-left font-normal",
+                                  !produto.validade && "text-muted-foreground"
+                                )}
+                              >
+                                {produto.validade ? (
+                                  format(produto.validade, "dd/MM/yy")
+                                ) : (
+                                  <CalendarIcon className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={produto.validade}
+                                onSelect={(date) => updateProduto(index, 'validade', date)}
+                                locale={ptBR}
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       </div>
                     </div>
@@ -714,6 +791,49 @@ export default function MotoristaPortal() {
                 );
               })}
             </div>
+
+            {/* Photos Section - After Products */}
+            {tipoReposicao ? (
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <Camera className="h-4 w-4 text-primary" />
+                  Fotos Obrigatórias
+                </Label>
+                
+                <div className="space-y-3">
+                  <PhotoUploadCard
+                    label="Motorista no PDV"
+                    photo={fotoMotoristaPdv}
+                    setPhoto={setFotoMotoristaPdv}
+                    inputRef={fotoMotoristaPdvRef}
+                    field="fotoMotoristaPdv"
+                  />
+                  <PhotoUploadCard
+                    label="Lote do Produto"
+                    photo={fotoLoteProduto}
+                    setPhoto={setFotoLoteProduto}
+                    inputRef={fotoLoteProdutoRef}
+                    field="fotoLoteProduto"
+                  />
+                  {tipoReposicao === 'avaria' && (
+                    <PhotoUploadCard
+                      label="Foto da Avaria"
+                      photo={fotoAvaria}
+                      setPhoto={setFotoAvaria}
+                      inputRef={fotoAvariaRef}
+                      field="fotoAvaria"
+                    />
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-muted/30 rounded-xl border border-dashed border-border text-center">
+                <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Selecione o tipo de reposição para ver as fotos necessárias
+                </p>
+              </div>
+            )}
 
             {/* Observation */}
             <div className="space-y-2">
