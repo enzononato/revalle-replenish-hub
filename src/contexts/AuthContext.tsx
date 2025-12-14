@@ -30,7 +30,7 @@ const mockUsers: (User & { password: string })[] = [
     nome: 'Distribuição Juazeiro',
     email: 'distribuicao@revalle.com',
     nivel: 'distribuicao',
-    unidade: 'Juazeiro',
+    unidade: 'Revalle Juazeiro',
     password: 'dist123'
   },
   {
@@ -38,7 +38,7 @@ const mockUsers: (User & { password: string })[] = [
     nome: 'Conferente Juazeiro',
     email: 'conferente@revalle.com',
     nivel: 'conferente',
-    unidade: 'Juazeiro',
+    unidade: 'Revalle Juazeiro',
     password: 'conf123'
   }
 ];
