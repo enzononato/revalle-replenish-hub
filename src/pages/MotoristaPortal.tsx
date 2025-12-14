@@ -14,10 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Truck, LogOut, Plus, Trash2, CheckCircle, Camera, Package, X } from 'lucide-react';
+import { Truck, LogOut, Plus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface ProdutoForm {
   codigo: string;
@@ -25,6 +26,17 @@ interface ProdutoForm {
   unidade: string;
   quantidade: number;
   validade: string;
+}
+
+interface TouchedFields {
+  mapa: boolean;
+  codigoPdv: boolean;
+  notaFiscal: boolean;
+  tipoReposicao: boolean;
+  fotoMotoristaPdv: boolean;
+  fotoLoteProduto: boolean;
+  fotoAvaria: boolean;
+  produtos: boolean[];
 }
 
 export default function MotoristaPortal() {
@@ -44,6 +56,18 @@ export default function MotoristaPortal() {
   const [protocoloCriado, setProtocoloCriado] = useState(false);
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
 
+  // Touched state for validation
+  const [touched, setTouched] = useState<TouchedFields>({
+    mapa: false,
+    codigoPdv: false,
+    notaFiscal: false,
+    tipoReposicao: false,
+    fotoMotoristaPdv: false,
+    fotoLoteProduto: false,
+    fotoAvaria: false,
+    produtos: [false]
+  });
+
   // Photo state
   const [fotoMotoristaPdv, setFotoMotoristaPdv] = useState<string | null>(null);
   const [fotoLoteProduto, setFotoLoteProduto] = useState<string | null>(null);
@@ -52,6 +76,45 @@ export default function MotoristaPortal() {
   const fotoMotoristaPdvRef = useRef<HTMLInputElement>(null);
   const fotoLoteProdutoRef = useRef<HTMLInputElement>(null);
   const fotoAvariaRef = useRef<HTMLInputElement>(null);
+
+  // Validation functions
+  const isFieldValid = (field: keyof TouchedFields, value: string | null): boolean => {
+    if (field === 'tipoReposicao') return !!value;
+    if (field === 'fotoMotoristaPdv' || field === 'fotoLoteProduto') return !!value;
+    if (field === 'fotoAvaria') return tipoReposicao !== 'avaria' || !!value;
+    return typeof value === 'string' && value.trim().length > 0;
+  };
+
+  const getFieldStatus = (field: keyof TouchedFields, value: string | null): 'valid' | 'invalid' | 'neutral' => {
+    const isTouched = touched[field];
+    if (!isTouched && typeof isTouched === 'boolean') return 'neutral';
+    return isFieldValid(field, value) ? 'valid' : 'invalid';
+  };
+
+  const getInputClassName = (field: keyof TouchedFields, value: string | null, baseClass: string = 'h-12 text-base'): string => {
+    const status = getFieldStatus(field, value);
+    return cn(
+      baseClass,
+      status === 'valid' && 'border-green-500 focus:ring-green-500 focus:border-green-500',
+      status === 'invalid' && 'border-red-500 focus:ring-red-500 focus:border-red-500'
+    );
+  };
+
+  const handleBlur = (field: keyof TouchedFields) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+  };
+
+  const isProdutoValid = (produto: ProdutoForm): boolean => {
+    return produto.codigo.trim().length > 0 && produto.nome.trim().length > 0;
+  };
+
+  const handleProdutoBlur = (index: number) => {
+    setTouched(prev => {
+      const newProdutos = [...prev.produtos];
+      newProdutos[index] = true;
+      return { ...prev, produtos: newProdutos };
+    });
+  };
 
   // Redirect if not authenticated
   if (!isAuthenticated || !motorista) {
@@ -89,11 +152,13 @@ export default function MotoristaPortal() {
 
   const addProduto = () => {
     setProdutos([...produtos, { codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: '' }]);
+    setTouched(prev => ({ ...prev, produtos: [...prev.produtos, false] }));
   };
 
   const removeProduto = (index: number) => {
     if (produtos.length > 1) {
       setProdutos(produtos.filter((_, i) => i !== index));
+      setTouched(prev => ({ ...prev, produtos: prev.produtos.filter((_, i) => i !== index) }));
     }
   };
 
@@ -115,6 +180,16 @@ export default function MotoristaPortal() {
     setFotoAvaria(null);
     setProtocoloCriado(false);
     setNumeroProtocolo('');
+    setTouched({
+      mapa: false,
+      codigoPdv: false,
+      notaFiscal: false,
+      tipoReposicao: false,
+      fotoMotoristaPdv: false,
+      fotoLoteProduto: false,
+      fotoAvaria: false,
+      produtos: [false]
+    });
   };
 
   const handleSubmit = () => {
@@ -194,62 +269,101 @@ export default function MotoristaPortal() {
     });
   };
 
-  // Photo upload card component for mobile
+  // Photo upload card component for mobile with validation
   const PhotoUploadCard = ({
     label,
     photo,
     setPhoto,
     inputRef,
+    field,
     required = true
   }: {
     label: string;
     photo: string | null;
     setPhoto: (value: string | null) => void;
     inputRef: React.RefObject<HTMLInputElement>;
+    field: 'fotoMotoristaPdv' | 'fotoLoteProduto' | 'fotoAvaria';
     required?: boolean;
-  }) => (
-    <div className="bg-muted/30 rounded-xl p-3 border border-border">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-foreground">
-          {label} {required && <span className="text-destructive">*</span>}
-        </span>
-        {photo && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setPhoto(null)}
-            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+  }) => {
+    const status = getFieldStatus(field, photo);
+    const showValidation = touched[field];
+    
+    return (
+      <div className={cn(
+        "bg-muted/30 rounded-xl p-3 border-2 transition-colors",
+        status === 'valid' && 'border-green-500',
+        status === 'invalid' && 'border-red-500',
+        status === 'neutral' && 'border-border'
+      )}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">
+              {label} {required && <span className="text-destructive">*</span>}
+            </span>
+            {showValidation && photo && (
+              <Check size={16} className="text-green-500" />
+            )}
+          </div>
+          {photo && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setPhoto(null)}
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <X size={16} />
+            </Button>
+          )}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            handleFotoUpload(e, setPhoto);
+            handleBlur(field);
+          }}
+        />
+        {photo ? (
+          <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border">
+            <img src={photo} alt={label} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              inputRef.current?.click();
+              handleBlur(field);
+            }}
+            className={cn(
+              "w-full aspect-[4/3] border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-3 transition-colors",
+              status === 'invalid' 
+                ? "border-red-400 bg-red-50 dark:bg-red-900/10" 
+                : "border-primary/40 bg-primary/5 hover:bg-primary/10 active:bg-primary/15"
+            )}
           >
-            <X size={16} />
-          </Button>
+            <div className={cn(
+              "w-14 h-14 rounded-full flex items-center justify-center",
+              status === 'invalid' ? "bg-red-100 dark:bg-red-900/20" : "bg-primary/10"
+            )}>
+              <Camera size={28} className={status === 'invalid' ? "text-red-500" : "text-primary"} />
+            </div>
+            <span className={cn("text-sm font-medium", status === 'invalid' ? "text-red-500" : "text-primary")}>
+              Tirar Foto
+            </span>
+          </button>
+        )}
+        {showValidation && !photo && required && (
+          <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+            <AlertCircle size={12} />
+            Foto obrigatória
+          </p>
         )}
       </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => handleFotoUpload(e, setPhoto)}
-      />
-      {photo ? (
-        <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border">
-          <img src={photo} alt={label} className="w-full h-full object-cover" />
-        </div>
-      ) : (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="w-full aspect-[4/3] border-2 border-dashed border-primary/40 bg-primary/5 rounded-lg flex flex-col items-center justify-center gap-3 hover:bg-primary/10 active:bg-primary/15 transition-colors"
-        >
-          <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
-            <Camera size={28} className="text-primary" />
-          </div>
-          <span className="text-sm font-medium text-primary">Tirar Foto</span>
-        </button>
-      )}
-    </div>
-  );
+    );
+  };
 
   if (protocoloCriado) {
     return (
@@ -317,44 +431,87 @@ export default function MotoristaPortal() {
             {/* General Info - Single column on mobile */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="mapa" className="text-sm font-medium">MAPA *</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="mapa" className="text-sm font-medium">MAPA *</Label>
+                  {touched.mapa && mapa.trim() && <Check size={14} className="text-green-500" />}
+                </div>
                 <Input
                   id="mapa"
                   value={mapa}
                   onChange={(e) => setMapa(e.target.value)}
+                  onBlur={() => handleBlur('mapa')}
                   placeholder="Ex: 16431"
-                  className="h-12 text-base"
+                  className={getInputClassName('mapa', mapa)}
                   inputMode="numeric"
                 />
+                {touched.mapa && !mapa.trim() && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    Campo obrigatório
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="codigoPdv" className="text-sm font-medium">Código PDV *</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="codigoPdv" className="text-sm font-medium">Código PDV *</Label>
+                  {touched.codigoPdv && codigoPdv.trim() && <Check size={14} className="text-green-500" />}
+                </div>
                 <Input
                   id="codigoPdv"
                   value={codigoPdv}
                   onChange={(e) => setCodigoPdv(e.target.value)}
+                  onBlur={() => handleBlur('codigoPdv')}
                   placeholder="Ex: PDV001"
-                  className="h-12 text-base"
+                  className={getInputClassName('codigoPdv', codigoPdv)}
                 />
+                {touched.codigoPdv && !codigoPdv.trim() && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    Campo obrigatório
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notaFiscal" className="text-sm font-medium">Nota Fiscal *</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="notaFiscal" className="text-sm font-medium">Nota Fiscal *</Label>
+                  {touched.notaFiscal && notaFiscal.trim() && <Check size={14} className="text-green-500" />}
+                </div>
                 <Input
                   id="notaFiscal"
                   value={notaFiscal}
                   onChange={(e) => setNotaFiscal(e.target.value)}
+                  onBlur={() => handleBlur('notaFiscal')}
                   placeholder="Ex: 243631"
-                  className="h-12 text-base"
+                  className={getInputClassName('notaFiscal', notaFiscal)}
                   inputMode="numeric"
                 />
+                {touched.notaFiscal && !notaFiscal.trim() && (
+                  <p className="text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    Campo obrigatório
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Tipo Reposição */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Tipo de Reposição *</Label>
-              <Select value={tipoReposicao} onValueChange={setTipoReposicao}>
-                <SelectTrigger className="h-12 text-base">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium">Tipo de Reposição *</Label>
+                {touched.tipoReposicao && tipoReposicao && <Check size={14} className="text-green-500" />}
+              </div>
+              <Select 
+                value={tipoReposicao} 
+                onValueChange={(value) => {
+                  setTipoReposicao(value);
+                  handleBlur('tipoReposicao');
+                }}
+              >
+                <SelectTrigger className={cn(
+                  "h-12 text-base",
+                  touched.tipoReposicao && tipoReposicao && 'border-green-500 focus:ring-green-500',
+                  touched.tipoReposicao && !tipoReposicao && 'border-red-500 focus:ring-red-500'
+                )}>
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -363,6 +520,12 @@ export default function MotoristaPortal() {
                   <SelectItem value="avaria">Avaria</SelectItem>
                 </SelectContent>
               </Select>
+              {touched.tipoReposicao && !tipoReposicao && (
+                <p className="text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle size={12} />
+                  Selecione um tipo
+                </p>
+              )}
             </div>
 
             {/* Photos Section - Stacked cards for mobile */}
@@ -378,12 +541,14 @@ export default function MotoristaPortal() {
                   photo={fotoMotoristaPdv}
                   setPhoto={setFotoMotoristaPdv}
                   inputRef={fotoMotoristaPdvRef}
+                  field="fotoMotoristaPdv"
                 />
                 <PhotoUploadCard
                   label="Lote do Produto"
                   photo={fotoLoteProduto}
                   setPhoto={setFotoLoteProduto}
                   inputRef={fotoLoteProdutoRef}
+                  field="fotoLoteProduto"
                 />
                 {tipoReposicao === 'avaria' && (
                   <PhotoUploadCard
@@ -391,6 +556,7 @@ export default function MotoristaPortal() {
                     photo={fotoAvaria}
                     setPhoto={setFotoAvaria}
                     inputRef={fotoAvariaRef}
+                    field="fotoAvaria"
                   />
                 )}
               </div>
@@ -409,67 +575,105 @@ export default function MotoristaPortal() {
                 </Button>
               </div>
               
-              {produtos.map((produto, index) => (
-                <div key={index} className="p-4 bg-muted/30 border border-border rounded-xl space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-foreground">Produto {index + 1}</span>
-                    {produtos.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeProduto(index)}
-                        className="h-9 w-9 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
+              {produtos.map((produto, index) => {
+                const isTouched = touched.produtos[index];
+                const isValid = isProdutoValid(produto);
+                
+                return (
+                  <div 
+                    key={index} 
+                    className={cn(
+                      "p-4 bg-muted/30 border-2 rounded-xl space-y-3 transition-colors",
+                      isTouched && isValid && 'border-green-500',
+                      isTouched && !isValid && 'border-red-500',
+                      !isTouched && 'border-border'
                     )}
-                  </div>
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">Código *</Label>
-                      <Input
-                        value={produto.codigo}
-                        onChange={(e) => updateProduto(index, 'codigo', e.target.value)}
-                        placeholder="Ex: 7325"
-                        className="h-11 text-base"
-                        inputMode="numeric"
-                      />
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">Produto {index + 1}</span>
+                        {isTouched && isValid && <Check size={14} className="text-green-500" />}
+                      </div>
+                      {produtos.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeProduto(index)}
+                          className="h-9 w-9 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </Button>
+                      )}
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">Nome *</Label>
-                      <Input
-                        value={produto.nome}
-                        onChange={(e) => updateProduto(index, 'nome', e.target.value)}
-                        placeholder="Nome do produto"
-                        className="h-11 text-base"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground">Quantidade</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">Código *</Label>
                         <Input
-                          type="number"
-                          min="1"
-                          value={produto.quantidade}
-                          onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
-                          className="h-11 text-base"
+                          value={produto.codigo}
+                          onChange={(e) => updateProduto(index, 'codigo', e.target.value)}
+                          onBlur={() => handleProdutoBlur(index)}
+                          placeholder="Ex: 7325"
+                          className={cn(
+                            "h-11 text-base",
+                            isTouched && produto.codigo.trim() && 'border-green-500',
+                            isTouched && !produto.codigo.trim() && 'border-red-500'
+                          )}
                           inputMode="numeric"
                         />
+                        {isTouched && !produto.codigo.trim() && (
+                          <p className="text-xs text-red-500 flex items-center gap-1">
+                            <AlertCircle size={12} />
+                            Código obrigatório
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground">Validade</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">Nome *</Label>
                         <Input
-                          value={produto.validade}
-                          onChange={(e) => updateProduto(index, 'validade', e.target.value)}
-                          placeholder="DD/MM/AAAA"
-                          className="h-11 text-base"
+                          value={produto.nome}
+                          onChange={(e) => updateProduto(index, 'nome', e.target.value)}
+                          onBlur={() => handleProdutoBlur(index)}
+                          placeholder="Nome do produto"
+                          className={cn(
+                            "h-11 text-base",
+                            isTouched && produto.nome.trim() && 'border-green-500',
+                            isTouched && !produto.nome.trim() && 'border-red-500'
+                          )}
                         />
+                        {isTouched && !produto.nome.trim() && (
+                          <p className="text-xs text-red-500 flex items-center gap-1">
+                            <AlertCircle size={12} />
+                            Nome obrigatório
+                          </p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-medium text-muted-foreground">Quantidade</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={produto.quantidade}
+                            onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
+                            className="h-11 text-base"
+                            inputMode="numeric"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-medium text-muted-foreground">Validade</Label>
+                          <Input
+                            value={produto.validade}
+                            onChange={(e) => updateProduto(index, 'validade', e.target.value)}
+                            placeholder="DD/MM/AAAA"
+                            className="h-11 text-base"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Observation */}
