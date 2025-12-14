@@ -489,32 +489,32 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
             </div>
 
             {/* Produtos Recebidos - Card separado */}
-            <div className="bg-slate-50 dark:bg-slate-950/20 rounded-xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="bg-muted/30 dark:bg-muted/10 rounded-xl p-6 border border-border shadow-sm">
               <h3 className="font-bold text-base text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                <Package size={20} className="text-slate-600" />
+                <Package size={20} className="text-muted-foreground" />
                 PRODUTOS RECEBIDOS
               </h3>
               {protocolo.produtos && protocolo.produtos.length > 0 ? (
-                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                <div className="overflow-x-auto rounded-lg border border-border bg-background">
                   <table className="w-full text-base">
                     <thead>
-                      <tr className="bg-slate-100 dark:bg-slate-900/30">
-                        <th className="text-left p-4 font-bold text-foreground uppercase">CÓDIGO</th>
-                        <th className="text-left p-4 font-bold text-foreground uppercase">PRODUTO</th>
-                        <th className="text-left p-4 font-bold text-foreground uppercase">UNIDADE</th>
-                        <th className="text-center p-4 font-bold text-foreground uppercase">QTD</th>
-                        <th className="text-left p-4 font-bold text-foreground uppercase">VALIDADE</th>
+                      <tr className="bg-muted/50 dark:bg-muted/20 border-b border-border">
+                        <th className="text-left p-4 font-bold text-foreground uppercase border-r border-border">CÓDIGO</th>
+                        <th className="text-left p-4 font-bold text-foreground uppercase border-r border-border">PRODUTO</th>
+                        <th className="text-left p-4 font-bold text-foreground uppercase border-r border-border">UNIDADE</th>
+                        <th className="text-center p-4 font-bold text-foreground uppercase border-r border-border">QTD</th>
+                        <th className="text-left p-4 font-bold text-foreground uppercase border-r border-border">VALIDADE</th>
                         <th className="text-left p-4 font-bold text-foreground uppercase">OBSERVAÇÃO</th>
                       </tr>
                     </thead>
                     <tbody>
                       {protocolo.produtos.map((produto, index) => (
-                        <tr key={index} className={`border-b border-slate-200 dark:border-slate-700 transition-colors hover:bg-slate-100/50 dark:hover:bg-slate-900/20 ${index % 2 === 0 ? 'bg-slate-50/50 dark:bg-slate-950/10' : 'bg-white dark:bg-transparent'}`}>
-                          <td className="p-4 font-mono text-slate-700 dark:text-slate-400">{produto.codigo}</td>
-                          <td className="p-4 font-medium">{produto.nome}</td>
-                          <td className="p-4">{produto.unidade}</td>
-                          <td className="p-4 text-center font-bold text-slate-700 dark:text-slate-400">{produto.quantidade}</td>
-                          <td className="p-4">{produto.validade}</td>
+                        <tr key={index} className="border-b border-border last:border-b-0 transition-colors hover:bg-muted/30 bg-background">
+                          <td className="p-4 font-mono text-foreground border-r border-border">{produto.codigo}</td>
+                          <td className="p-4 font-medium border-r border-border">{produto.nome}</td>
+                          <td className="p-4 border-r border-border">{produto.unidade}</td>
+                          <td className="p-4 text-center font-bold text-foreground border-r border-border">{produto.quantidade}</td>
+                          <td className="p-4 border-r border-border">{produto.validade}</td>
                           <td className="p-4 text-muted-foreground">{produto.observacao || '-'}</td>
                         </tr>
                       ))}
@@ -526,11 +526,11 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               )}
             </div>
 
-            {/* Fotos Enviadas - Rosa (maior) */}
+            {/* Fotos Enviadas */}
             {todasFotos.length > 0 && (
-              <div className="bg-pink-50 dark:bg-pink-950/20 rounded-xl p-5 border border-pink-200 dark:border-pink-800 shadow-sm">
-                <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                  <Camera size={18} className="text-pink-600" />
+              <div className="bg-card rounded-xl p-5 border shadow-sm">
+                <h3 className="font-bold text-base text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
+                  <Camera size={20} className="text-primary" />
                   FOTOS ENVIADAS
                 </h3>
                 <div className="flex flex-wrap gap-4">
@@ -538,14 +538,14 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     <button
                       key={index}
                       onClick={() => setSelectedImage(foto.url)}
-                      className="group relative w-44 h-44 rounded-lg overflow-hidden border-2 border-pink-200 dark:border-pink-700 hover:border-pink-500 transition-all hover:scale-105 shadow-md"
+                      className="group relative w-44 h-44 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-all hover:scale-105 shadow-md"
                     >
                       <img 
                         src={foto.url} 
                         alt={foto.label} 
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-pink-100/90 dark:bg-pink-900/80 text-xs text-center py-1.5 font-bold text-foreground uppercase">
+                      <div className="absolute bottom-0 left-0 right-0 bg-background/90 dark:bg-background/80 text-xs text-center py-1.5 font-bold text-foreground uppercase">
                         {foto.label}
                       </div>
                     </button>
