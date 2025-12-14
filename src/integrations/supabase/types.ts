@@ -62,6 +62,99 @@ export type Database = {
         }
         Relationships: []
       }
+      protocolos: {
+        Row: {
+          arquivo_encerramento: string | null
+          causa: string | null
+          codigo_pdv: string | null
+          created_at: string | null
+          data: string
+          enviado_encerrar: boolean | null
+          enviado_lancar: boolean | null
+          fotos_protocolo: Json | null
+          habilitar_reenvio: boolean | null
+          hora: string
+          id: string
+          lancado: boolean | null
+          mapa: string | null
+          mensagem_encerramento: string | null
+          motorista_codigo: string | null
+          motorista_email: string | null
+          motorista_id: string | null
+          motorista_nome: string
+          motorista_whatsapp: string | null
+          nota_fiscal: string | null
+          numero: string
+          observacao_geral: string | null
+          observacoes_log: Json | null
+          oculto: boolean | null
+          produtos: Json | null
+          status: string
+          tipo_reposicao: string | null
+          validacao: boolean | null
+        }
+        Insert: {
+          arquivo_encerramento?: string | null
+          causa?: string | null
+          codigo_pdv?: string | null
+          created_at?: string | null
+          data: string
+          enviado_encerrar?: boolean | null
+          enviado_lancar?: boolean | null
+          fotos_protocolo?: Json | null
+          habilitar_reenvio?: boolean | null
+          hora: string
+          id?: string
+          lancado?: boolean | null
+          mapa?: string | null
+          mensagem_encerramento?: string | null
+          motorista_codigo?: string | null
+          motorista_email?: string | null
+          motorista_id?: string | null
+          motorista_nome: string
+          motorista_whatsapp?: string | null
+          nota_fiscal?: string | null
+          numero: string
+          observacao_geral?: string | null
+          observacoes_log?: Json | null
+          oculto?: boolean | null
+          produtos?: Json | null
+          status?: string
+          tipo_reposicao?: string | null
+          validacao?: boolean | null
+        }
+        Update: {
+          arquivo_encerramento?: string | null
+          causa?: string | null
+          codigo_pdv?: string | null
+          created_at?: string | null
+          data?: string
+          enviado_encerrar?: boolean | null
+          enviado_lancar?: boolean | null
+          fotos_protocolo?: Json | null
+          habilitar_reenvio?: boolean | null
+          hora?: string
+          id?: string
+          lancado?: boolean | null
+          mapa?: string | null
+          mensagem_encerramento?: string | null
+          motorista_codigo?: string | null
+          motorista_email?: string | null
+          motorista_id?: string | null
+          motorista_nome?: string
+          motorista_whatsapp?: string | null
+          nota_fiscal?: string | null
+          numero?: string
+          observacao_geral?: string | null
+          observacoes_log?: Json | null
+          oculto?: boolean | null
+          produtos?: Json | null
+          status?: string
+          tipo_reposicao?: string | null
+          validacao?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

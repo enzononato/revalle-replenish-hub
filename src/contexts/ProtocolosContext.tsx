@@ -1,35 +1,40 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { Protocolo } from '@/types';
-import { mockProtocolos } from '@/data/mockData';
+import { useProtocolosDB } from '@/hooks/useProtocolosDB';
 
 interface ProtocolosContextType {
   protocolos: Protocolo[];
-  addProtocolo: (protocolo: Protocolo) => void;
-  updateProtocolo: (protocolo: Protocolo) => void;
-  deleteProtocolo: (id: string) => void;
+  addProtocolo: (protocolo: Protocolo) => Promise<Protocolo>;
+  updateProtocolo: (protocolo: Protocolo) => Promise<Protocolo>;
+  deleteProtocolo: (id: string) => Promise<void>;
+  isLoading: boolean;
+  isAdding: boolean;
+  isUpdating: boolean;
 }
 
 const ProtocolosContext = createContext<ProtocolosContextType | undefined>(undefined);
 
 export function ProtocolosProvider({ children }: { children: ReactNode }) {
-  const [protocolos, setProtocolos] = useState<Protocolo[]>(mockProtocolos);
-
-  const addProtocolo = (protocolo: Protocolo) => {
-    setProtocolos(prev => [protocolo, ...prev]);
-  };
-
-  const updateProtocolo = (protocoloAtualizado: Protocolo) => {
-    setProtocolos(prev => prev.map(p => 
-      p.id === protocoloAtualizado.id ? protocoloAtualizado : p
-    ));
-  };
-
-  const deleteProtocolo = (id: string) => {
-    setProtocolos(prev => prev.filter(p => p.id !== id));
-  };
+  const {
+    protocolos,
+    isLoading,
+    addProtocolo,
+    updateProtocolo,
+    deleteProtocolo,
+    isAdding,
+    isUpdating
+  } = useProtocolosDB();
 
   return (
-    <ProtocolosContext.Provider value={{ protocolos, addProtocolo, updateProtocolo, deleteProtocolo }}>
+    <ProtocolosContext.Provider value={{ 
+      protocolos, 
+      addProtocolo, 
+      updateProtocolo, 
+      deleteProtocolo,
+      isLoading,
+      isAdding,
+      isUpdating
+    }}>
       {children}
     </ProtocolosContext.Provider>
   );

@@ -342,13 +342,23 @@ export default function MotoristaPortal() {
       createdAt: now.toISOString()
     };
 
-    addProtocolo(novoProtocolo);
-    setNumeroProtocolo(numero);
-    setProtocoloCriado(true);
-    toast({
-      title: 'Protocolo criado!',
-      description: `Protocolo ${numero} criado com sucesso`
-    });
+    addProtocolo(novoProtocolo)
+      .then(() => {
+        setNumeroProtocolo(numero);
+        setProtocoloCriado(true);
+        toast({
+          title: 'Protocolo criado!',
+          description: `Protocolo ${numero} criado com sucesso`
+        });
+      })
+      .catch((error) => {
+        console.error('Erro ao criar protocolo:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível salvar o protocolo. Tente novamente.',
+          variant: 'destructive'
+        });
+      });
   };
 
   // Photo upload card component for mobile with validation
