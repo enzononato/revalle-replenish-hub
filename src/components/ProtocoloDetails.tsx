@@ -460,7 +460,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               {/* Log de observações anteriores */}
               {protocolo.observacoesLog && protocolo.observacoesLog.length > 0 && (
                 <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
-                  {protocolo.observacoesLog.map((log) => (
+                  {[...protocolo.observacoesLog].map((log) => (
                     <div key={log.id} className="border-l-2 border-primary pl-3 py-1">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span className="font-medium text-foreground">{log.usuarioNome}</span>
