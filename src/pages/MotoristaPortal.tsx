@@ -23,7 +23,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
@@ -49,6 +49,7 @@ interface TouchedFields {
   fotoMotoristaPdv: boolean;
   fotoLoteProduto: boolean;
   fotoAvaria: boolean;
+  whatsappContato: boolean;
   produtos: boolean[];
 }
 
@@ -87,6 +88,8 @@ export default function MotoristaPortal() {
   const [produtos, setProdutos] = useState<ProdutoForm[]>([
     { produto: '', unidade: '', quantidade: 1, validade: undefined }
   ]);
+  const [whatsappContato, setWhatsappContato] = useState('');
+  const [emailContato, setEmailContato] = useState('');
   const [observacao, setObservacao] = useState('');
   const [protocoloCriado, setProtocoloCriado] = useState(false);
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
@@ -102,6 +105,7 @@ export default function MotoristaPortal() {
     fotoMotoristaPdv: false,
     fotoLoteProduto: false,
     fotoAvaria: false,
+    whatsappContato: false,
     produtos: [false]
   });
 
@@ -275,6 +279,8 @@ export default function MotoristaPortal() {
     setTipoReposicao('');
     setCausa('');
     setProdutos([{ produto: '', unidade: '', quantidade: 1, validade: undefined }]);
+    setWhatsappContato('');
+    setEmailContato('');
     setObservacao('');
     setFotoMotoristaPdv(null);
     setFotoLoteProduto(null);
@@ -290,6 +296,7 @@ export default function MotoristaPortal() {
       fotoMotoristaPdv: false,
       fotoLoteProduto: false,
       fotoAvaria: false,
+      whatsappContato: false,
       produtos: [false]
     });
   };
@@ -314,6 +321,10 @@ export default function MotoristaPortal() {
     }
     if (!causa) {
       toast({ title: 'Erro', description: 'Selecione a causa', variant: 'destructive' });
+      return;
+    }
+    if (!whatsappContato.trim()) {
+      toast({ title: 'Erro', description: 'Preencha o WhatsApp para contato', variant: 'destructive' });
       return;
     }
 
@@ -847,6 +858,55 @@ export default function MotoristaPortal() {
                     </p>
                   </div>
                 )}
+
+                {/* Contato Section */}
+                <div className="space-y-4">
+                  <Label className="flex items-center gap-2 text-sm font-medium">
+                    <Phone className="h-4 w-4 text-primary" />
+                    Contato
+                  </Label>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="whatsappContato" className="text-xs font-medium text-muted-foreground">
+                        WhatsApp *
+                      </Label>
+                      <Input
+                        id="whatsappContato"
+                        value={whatsappContato}
+                        onChange={(e) => setWhatsappContato(e.target.value)}
+                        onBlur={() => handleBlur('whatsappContato')}
+                        placeholder="(00) 00000-0000"
+                        className={cn(
+                          "h-11 text-base",
+                          touched.whatsappContato && whatsappContato.trim() && 'border-green-500',
+                          touched.whatsappContato && !whatsappContato.trim() && 'border-red-500'
+                        )}
+                        inputMode="tel"
+                      />
+                      {touched.whatsappContato && !whatsappContato.trim() && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertCircle size={12} />
+                          WhatsApp obrigatório
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="emailContato" className="text-xs font-medium text-muted-foreground">
+                        E-mail (opcional)
+                      </Label>
+                      <Input
+                        id="emailContato"
+                        type="email"
+                        value={emailContato}
+                        onChange={(e) => setEmailContato(e.target.value)}
+                        placeholder="email@exemplo.com"
+                        className="h-11 text-base"
+                        inputMode="email"
+                      />
+                    </div>
+                  </div>
+                </div>
 
                 {/* Observation */}
                 <div className="space-y-2">
