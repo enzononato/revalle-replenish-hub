@@ -303,7 +303,7 @@ export default function Motoristas() {
                 <td className="p-4">
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                     motorista.funcao === 'ajudante_entrega' 
-                      ? 'bg-accent/20 text-accent-foreground' 
+                      ? 'bg-purple-500/20 text-purple-700 dark:text-purple-400' 
                       : 'bg-primary/20 text-primary'
                   }`}>
                     <Users size={12} />
