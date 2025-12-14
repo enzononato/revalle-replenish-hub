@@ -381,43 +381,71 @@ export default function Protocolos() {
   };
 
   const handleDownloadAll = () => {
-    const content = filteredProtocolos.map(protocolo => `
-================================================================================
-PROTOCOLO: ${protocolo.numero}
-================================================================================
-DATA: ${protocolo.data} | HORA: ${protocolo.hora} | STATUS: ${protocolo.status.toUpperCase()}
+    // Cabeçalho do CSV
+    const headers = [
+      'Protocolo',
+      'Data',
+      'Hora',
+      'Status',
+      'Motorista Código',
+      'Motorista Nome',
+      'Motorista WhatsApp',
+      'Motorista Email',
+      'Código PDV',
+      'MAPA',
+      'Nota Fiscal',
+      'Unidade',
+      'Observação',
+      'Validado',
+      'Lançado',
+      'Produtos'
+    ];
 
-MOTORISTA
----------
-Nome: ${protocolo.motorista.nome}
-Código: ${protocolo.motorista.codigo}
-WhatsApp: ${protocolo.motorista.whatsapp || '-'}
-E-mail: ${protocolo.motorista.email || '-'}
+    // Função para escapar valores CSV
+    const escapeCSV = (value: string | null | undefined) => {
+      if (value === null || value === undefined) return '';
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
 
-CLIENTE
--------
-Código PDV: ${protocolo.codigoPdv || '-'}
-MAPA: ${protocolo.mapa || '-'}
-Nota Fiscal: ${protocolo.notaFiscal || '-'}
+    // Linhas de dados
+    const rows = filteredProtocolos.map(protocolo => {
+      const produtos = protocolo.produtos?.map(p => 
+        `${p.codigo} - ${p.nome} (${p.quantidade} ${p.unidade})`
+      ).join('; ') || '';
 
-OBSERVAÇÃO
-----------
-${protocolo.observacaoGeral || '-'}
+      return [
+        protocolo.numero,
+        protocolo.data,
+        protocolo.hora,
+        protocolo.status,
+        protocolo.motorista.codigo,
+        protocolo.motorista.nome,
+        protocolo.motorista.whatsapp || '',
+        protocolo.motorista.email || '',
+        protocolo.codigoPdv || '',
+        protocolo.mapa || '',
+        protocolo.notaFiscal || '',
+        protocolo.unidadeNome || '',
+        protocolo.observacaoGeral || '',
+        protocolo.validacao ? 'Sim' : 'Não',
+        protocolo.lancado ? 'Sim' : 'Não',
+        produtos
+      ].map(escapeCSV).join(',');
+    });
 
-PRODUTOS
---------
-${protocolo.produtos?.map(p => 
-  `${p.codigo} | ${p.nome} | ${p.unidade} | Qtd: ${p.quantidade} | Val: ${p.validade}`
-).join('\n') || 'Nenhum produto'}
+    // Montar CSV com BOM para suporte a caracteres especiais no Excel
+    const BOM = '\uFEFF';
+    const csvContent = BOM + headers.join(',') + '\n' + rows.join('\n');
 
-STATUS: Validado: ${protocolo.validacao ? 'Sim' : 'Não'} | Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
-`).join('\n');
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `protocolos_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.txt`;
+    link.download = `protocolos_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
