@@ -328,6 +328,20 @@ export default function MotoristaPortal() {
       return;
     }
 
+    // Validação de fotos obrigatórias
+    if (!fotoMotoristaPdv) {
+      toast({ title: 'Erro', description: 'Foto do Motorista/PDV é obrigatória', variant: 'destructive' });
+      return;
+    }
+    if (!fotoLoteProduto) {
+      toast({ title: 'Erro', description: 'Foto do Lote do Produto é obrigatória', variant: 'destructive' });
+      return;
+    }
+    if (tipoReposicao === 'avaria' && !fotoAvaria) {
+      toast({ title: 'Erro', description: 'Foto da Avaria é obrigatória', variant: 'destructive' });
+      return;
+    }
+
     const validProdutos = produtos.filter(p => p.produto.trim());
     if (validProdutos.length === 0) {
       toast({ title: 'Erro', description: 'Adicione pelo menos um produto', variant: 'destructive' });
@@ -845,7 +859,7 @@ export default function MotoristaPortal() {
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <Camera className="h-4 w-4 text-primary" />
                   Fotos
-                  <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
+                  <span className="text-xs text-destructive font-normal">*</span>
                 </h3>
               </div>
               <div className="p-4">
