@@ -66,14 +66,19 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
         }
 
         const headers = jsonData[0].map(h => String(h || ''));
+        console.log('Headers encontrados:', headers);
+        
         const headerMap: Record<number, string> = {};
         
         headers.forEach((header, index) => {
           const normalized = normalizeHeader(header);
+          console.log(`Header "${header}" -> normalizado para: "${normalized}"`);
           if (normalized) {
             headerMap[index] = normalized;
           }
         });
+
+        console.log('Mapa de headers:', headerMap);
 
         const requiredFields = ['cod', 'produto'];
         const foundFields = Object.values(headerMap);
