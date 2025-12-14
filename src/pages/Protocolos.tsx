@@ -628,6 +628,7 @@ STATUS: Validado: ${protocolo.validacao ? 'Sim' : 'Não'} | Lançado: ${protocol
         onUpdateProtocolo={handleUpdateProtocolo}
         user={user}
         canValidate={canValidate}
+        canEditMotorista={isAdmin || isDistribuicao}
       />
 
       {/* Create Protocol Modal */}

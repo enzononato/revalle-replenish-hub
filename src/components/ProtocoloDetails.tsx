@@ -25,7 +25,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
-  Lock
+  Lock,
+  Pencil,
+  X,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -40,6 +43,7 @@ interface ProtocoloDetailsProps {
   onUpdateProtocolo?: (protocolo: Protocolo) => void;
   user?: User | null;
   canValidate?: boolean;
+  canEditMotorista?: boolean;
 }
 
 export function ProtocoloDetails({ 
@@ -51,13 +55,16 @@ export function ProtocoloDetails({
   onNavigate,
   onUpdateProtocolo,
   user,
-  canValidate
+  canValidate,
+  canEditMotorista
 }: ProtocoloDetailsProps) {
   const [habilitarReenvio, setHabilitarReenvio] = useState(protocolo?.habilitarReenvio || false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [novaObservacao, setNovaObservacao] = useState('');
   const [mensagemEncerramento, setMensagemEncerramento] = useState('');
   const [arquivoAnexado, setArquivoAnexado] = useState<File | null>(null);
+  const [editandoWhatsapp, setEditandoWhatsapp] = useState(false);
+  const [whatsappEditado, setWhatsappEditado] = useState(protocolo?.motorista.whatsapp || '');
 
   if (!protocolo) return null;
 
@@ -344,7 +351,74 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">WhatsApp</p>
-                  <p className="font-medium text-sm">{protocolo.motorista.whatsapp || '-'}</p>
+                  {canEditMotorista && !editandoWhatsapp ? (
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{protocolo.motorista.whatsapp || '-'}</p>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          setWhatsappEditado(protocolo.motorista.whatsapp || '');
+                          setEditandoWhatsapp(true);
+                        }}
+                      >
+                        <Pencil size={14} />
+                      </Button>
+                    </div>
+                  ) : canEditMotorista && editandoWhatsapp ? (
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        value={whatsappEditado}
+                        onChange={(e) => setWhatsappEditado(e.target.value)}
+                        placeholder="(XX) XXXXX-XXXX"
+                        className="h-8 w-40"
+                      />
+                      <Button 
+                        size="sm" 
+                        className="h-8 px-2"
+                        onClick={() => {
+                          if (!onUpdateProtocolo || !user) return;
+                          
+                          const protocoloAtualizado = {
+                            ...protocolo,
+                            motorista: {
+                              ...protocolo.motorista,
+                              whatsapp: whatsappEditado
+                            },
+                            observacoesLog: [
+                              ...(protocolo.observacoesLog || []),
+                              {
+                                id: Date.now().toString(),
+                                usuarioNome: user.nome,
+                                usuarioId: user.id,
+                                data: format(new Date(), 'dd/MM/yyyy'),
+                                hora: format(new Date(), 'HH:mm'),
+                                acao: 'Editou WhatsApp',
+                                texto: `WhatsApp alterado para ${whatsappEditado || '(vazio)'}`
+                              }
+                            ]
+                          };
+                          
+                          onUpdateProtocolo(protocoloAtualizado);
+                          setEditandoWhatsapp(false);
+                          toast.success('WhatsApp atualizado!');
+                        }}
+                      >
+                        <Check size={14} />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-2"
+                        onClick={() => setEditandoWhatsapp(false)}
+                      >
+                        <X size={14} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="font-medium text-sm">{protocolo.motorista.whatsapp || '-'}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <p className="text-xs text-muted-foreground">Habilitar Reenvio?</p>
