@@ -26,8 +26,8 @@ import { cn } from '@/lib/utils';
 
 const mockUsuarios: User[] = [
   { id: '1', nome: 'Administrador', email: 'admin@revalle.com', nivel: 'admin', unidade: 'Todas' },
-  { id: '2', nome: 'Distribuição Juazeiro', email: 'distribuicao@revalle.com', nivel: 'distribuicao', unidade: 'Juazeiro' },
-  { id: '3', nome: 'Conferente Juazeiro', email: 'conferente@revalle.com', nivel: 'conferente', unidade: 'Juazeiro' },
+  { id: '2', nome: 'Distribuição Juazeiro', email: 'distribuicao@revalle.com', nivel: 'distribuicao', unidade: 'Revalle Juazeiro' },
+  { id: '3', nome: 'Conferente Juazeiro', email: 'conferente@revalle.com', nivel: 'conferente', unidade: 'Revalle Juazeiro' },
 ];
 
 const nivelLabels: Record<UserRole, string> = {
