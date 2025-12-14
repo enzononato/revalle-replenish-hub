@@ -97,6 +97,7 @@ export default function Protocolos() {
       const searchMatch = 
         p.numero.toLowerCase().includes(search.toLowerCase()) ||
         p.motorista.nome.toLowerCase().includes(search.toLowerCase()) ||
+        (p.contatoWhatsapp || '').includes(search) ||
         (p.motorista.whatsapp || '').includes(search) ||
         p.codigoPdv?.includes(search) ||
         p.mapa?.includes(search);
