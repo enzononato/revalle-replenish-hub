@@ -117,7 +117,8 @@ export default function Motoristas() {
   };
 
   const handleImportCSV = (importedMotoristas: Motorista[]) => {
-    setMotoristas(prev => [...prev, ...importedMotoristas]);
+    // Substitui todos os motoristas pelos importados
+    setMotoristas(importedMotoristas);
   };
 
   const getFuncaoLabel = (funcao: FuncaoMotorista) => {
