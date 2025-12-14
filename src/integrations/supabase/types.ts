@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      motoristas: {
+        Row: {
+          codigo: string
+          created_at: string | null
+          data_nascimento: string | null
+          email: string | null
+          funcao: string
+          id: string
+          nome: string
+          senha: string | null
+          setor: string
+          unidade: string
+          whatsapp: string | null
+        }
+        Insert: {
+          codigo: string
+          created_at?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          funcao?: string
+          id?: string
+          nome: string
+          senha?: string | null
+          setor?: string
+          unidade: string
+          whatsapp?: string | null
+        }
+        Update: {
+          codigo?: string
+          created_at?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          funcao?: string
+          id?: string
+          nome?: string
+          senha?: string | null
+          setor?: string
+          unidade?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       pdvs: {
         Row: {
           codigo: string

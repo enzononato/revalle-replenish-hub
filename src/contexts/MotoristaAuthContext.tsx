@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Motorista } from '@/types';
-import { mockMotoristas } from '@/data/mockData';
+import { Motorista, FuncaoMotorista, SetorMotorista } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MotoristaAuthContextType {
   motorista: Motorista | null;
@@ -12,6 +12,34 @@ interface MotoristaAuthContextType {
 const MotoristaAuthContext = createContext<MotoristaAuthContextType | undefined>(undefined);
 
 const MOTORISTA_STORAGE_KEY = 'motorista_session';
+
+interface MotoristaDB {
+  id: string;
+  nome: string;
+  codigo: string;
+  data_nascimento: string | null;
+  unidade: string;
+  funcao: string;
+  setor: string;
+  whatsapp: string | null;
+  email: string | null;
+  senha: string | null;
+  created_at: string | null;
+}
+
+const dbToMotorista = (db: MotoristaDB): Motorista => ({
+  id: db.id,
+  nome: db.nome,
+  codigo: db.codigo,
+  dataNascimento: db.data_nascimento || '',
+  unidade: db.unidade,
+  funcao: db.funcao as FuncaoMotorista,
+  setor: db.setor as SetorMotorista,
+  whatsapp: db.whatsapp || undefined,
+  email: db.email || undefined,
+  senha: db.senha || undefined,
+  createdAt: db.created_at || new Date().toISOString(),
+});
 
 export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
   const [motorista, setMotorista] = useState<Motorista | null>(null);
@@ -29,11 +57,17 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (codigo: string, senha: string): Promise<{ success: boolean; error?: string }> => {
-    const foundMotorista = mockMotoristas.find(m => m.codigo === codigo);
-    
-    if (!foundMotorista) {
+    const { data, error } = await supabase
+      .from('motoristas')
+      .select('*')
+      .eq('codigo', codigo)
+      .single();
+
+    if (error || !data) {
       return { success: false, error: 'Código de motorista não encontrado' };
     }
+
+    const foundMotorista = dbToMotorista(data as MotoristaDB);
 
     if (foundMotorista.senha !== senha) {
       return { success: false, error: 'Senha incorreta' };

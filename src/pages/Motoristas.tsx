@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { mockMotoristas, unidades } from '@/data/mockData';
+import { unidades } from '@/data/mockData';
 import { Motorista, FuncaoMotorista, SetorMotorista } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -21,11 +21,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, MapPin, Hash, Truck, Users, Building } from 'lucide-react';
-import { toast } from 'sonner';
+import { Plus, Pencil, Trash2, MapPin, Hash, Truck, Users, Building, Loader2 } from 'lucide-react';
+import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 
 export default function Motoristas() {
-  const [motoristas, setMotoristas] = useState<Motorista[]>(mockMotoristas);
+  const { motoristas, isLoading, addMotorista, updateMotorista, deleteMotorista, importMotoristas } = useMotoristasDB();
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMotorista, setEditingMotorista] = useState<Motorista | null>(null);
@@ -87,38 +87,25 @@ export default function Motoristas() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (editingMotorista) {
-      setMotoristas(prev => prev.map(m => 
-        m.id === editingMotorista.id 
-          ? { ...m, ...formData }
-          : m
-      ));
-      toast.success('Motorista atualizado com sucesso!');
+      await updateMotorista(editingMotorista.id, formData);
     } else {
-      const newMotorista: Motorista = {
-        id: String(Date.now()),
-        ...formData,
-        createdAt: new Date().toISOString(),
-      };
-      setMotoristas(prev => [...prev, newMotorista]);
-      toast.success('Motorista cadastrado com sucesso!');
+      await addMotorista(formData);
     }
     
     setIsDialogOpen(false);
     resetForm();
   };
 
-  const handleDelete = (id: string) => {
-    setMotoristas(prev => prev.filter(m => m.id !== id));
-    toast.success('Motorista excluído com sucesso!');
+  const handleDelete = async (id: string) => {
+    await deleteMotorista(id);
   };
 
-  const handleImportCSV = (importedMotoristas: Motorista[]) => {
-    // Substitui todos os motoristas pelos importados
-    setMotoristas(importedMotoristas);
+  const handleImportCSV = async (importedMotoristas: Motorista[]) => {
+    await importMotoristas(importedMotoristas);
   };
 
   const getFuncaoLabel = (funcao: FuncaoMotorista) => {
@@ -276,96 +263,104 @@ export default function Motoristas() {
 
       {/* Table */}
       <div className="bg-card rounded-xl p-6 shadow-md animate-fade-in overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="table-header">
-              <th className="text-left p-4 rounded-tl-lg">Nome</th>
-              <th className="text-left p-4">Código</th>
-              <th className="text-left p-4">Função</th>
-              <th className="text-left p-4">Setor</th>
-              <th className="text-left p-4">Unidade</th>
-              <th className="text-right p-4 rounded-tr-lg">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedMotoristas.map((motorista) => (
-              <tr 
-                key={motorista.id} 
-                className="border-b border-border"
-              >
-                <td className="p-4 font-medium">{motorista.nome}</td>
-                <td className="p-4">
-                  <span className="inline-flex items-center gap-1 text-muted-foreground">
-                    <Hash size={14} />
-                    {motorista.codigo}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                    motorista.funcao === 'ajudante_entrega' 
-                      ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' 
-                      : 'bg-green-500/20 text-green-700 dark:text-green-400'
-                  }`}>
-                    <Users size={12} />
-                    {getFuncaoLabel(motorista.funcao)}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                    motorista.setor === 'interior' 
-                      ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' 
-                      : 'bg-green-500/20 text-green-700 dark:text-green-400'
-                  }`}>
-                    <Building size={12} />
-                    {getSetorLabel(motorista.setor)}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className="inline-flex items-center gap-1 text-muted-foreground">
-                    <MapPin size={14} />
-                    {motorista.unidade}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(motorista)}
-                      className="text-primary hover:text-primary/80"
-                    >
-                      <Pencil size={16} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(motorista.id)}
-                      className="text-destructive hover:text-destructive/80"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        {filteredMotoristas.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            Nenhum motorista encontrado
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        )}
+        ) : (
+          <>
+            <table className="w-full">
+              <thead>
+                <tr className="table-header">
+                  <th className="text-left p-4 rounded-tl-lg">Nome</th>
+                  <th className="text-left p-4">Código</th>
+                  <th className="text-left p-4">Função</th>
+                  <th className="text-left p-4">Setor</th>
+                  <th className="text-left p-4">Unidade</th>
+                  <th className="text-right p-4 rounded-tr-lg">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedMotoristas.map((motorista) => (
+                  <tr 
+                    key={motorista.id} 
+                    className="border-b border-border"
+                  >
+                    <td className="p-4 font-medium">{motorista.nome}</td>
+                    <td className="p-4">
+                      <span className="inline-flex items-center gap-1 text-muted-foreground">
+                        <Hash size={14} />
+                        {motorista.codigo}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        motorista.funcao === 'ajudante_entrega' 
+                          ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' 
+                          : 'bg-green-500/20 text-green-700 dark:text-green-400'
+                      }`}>
+                        <Users size={12} />
+                        {getFuncaoLabel(motorista.funcao)}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        motorista.setor === 'interior' 
+                          ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' 
+                          : 'bg-green-500/20 text-green-700 dark:text-green-400'
+                      }`}>
+                        <Building size={12} />
+                        {getSetorLabel(motorista.setor)}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className="inline-flex items-center gap-1 text-muted-foreground">
+                        <MapPin size={14} />
+                        {motorista.unidade}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(motorista)}
+                          className="text-primary hover:text-primary/80"
+                        >
+                          <Pencil size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(motorista.id)}
+                          className="text-destructive hover:text-destructive/80"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {filteredMotoristas.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                Nenhum motorista encontrado
+              </div>
+            )}
 
-        {/* Pagination */}
-        <TablePagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalItems={filteredMotoristas.length}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={setPageSize}
-        />
+            {/* Pagination */}
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={filteredMotoristas.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
+          </>
+        )}
       </div>
     </div>
   );
