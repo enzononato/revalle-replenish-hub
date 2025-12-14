@@ -14,7 +14,7 @@ export interface Motorista {
   codigo: string;
   dataNascimento: string;
   unidade: string;
-  whatsapp: string;
+  whatsapp?: string;
   email?: string;
   senha?: string;
   createdAt: string;
@@ -24,6 +24,7 @@ export interface Unidade {
   id: string;
   nome: string;
   codigo: string;
+  cnpj: string;
   createdAt: string;
 }
 

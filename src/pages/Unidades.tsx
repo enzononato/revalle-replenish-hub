@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { mockUnidades } from '@/data/mockData';
+import { mockUnidades, mockMotoristas } from '@/data/mockData';
 import { Unidade } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Hash, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Hash, Building2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Unidades() {
@@ -23,17 +23,24 @@ export default function Unidades() {
   const [formData, setFormData] = useState({
     nome: '',
     codigo: '',
+    cnpj: '',
   });
 
   const filteredUnidades = unidades.filter(u => 
     u.nome.toLowerCase().includes(search.toLowerCase()) ||
-    u.codigo.toLowerCase().includes(search.toLowerCase())
+    u.codigo.toLowerCase().includes(search.toLowerCase()) ||
+    u.cnpj.includes(search)
   );
+
+  const getMotoristaCount = (unidadeNome: string) => {
+    return mockMotoristas.filter(m => m.unidade === unidadeNome).length;
+  };
 
   const resetForm = () => {
     setFormData({
       nome: '',
       codigo: '',
+      cnpj: '',
     });
     setEditingUnidade(null);
   };
@@ -43,6 +50,7 @@ export default function Unidades() {
     setFormData({
       nome: unidade.nome,
       codigo: unidade.codigo,
+      cnpj: unidade.cnpj,
     });
     setIsDialogOpen(true);
   };
@@ -115,13 +123,24 @@ export default function Unidades() {
                   />
                 </div>
                 
-                <div className="col-span-2 space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="codigo">Código</Label>
                   <Input
                     id="codigo"
                     value={formData.codigo}
                     onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value.toUpperCase() }))}
                     placeholder="Ex: JUA"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cnpj">CNPJ</Label>
+                  <Input
+                    id="cnpj"
+                    value={formData.cnpj}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))}
+                    placeholder="00.000.000/0000-00"
                     required
                   />
                 </div>
@@ -144,7 +163,7 @@ export default function Unidades() {
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Buscar por nome ou código..."
+        placeholder="Buscar por nome, código ou CNPJ..."
         className="max-w-md"
       />
 
@@ -155,6 +174,8 @@ export default function Unidades() {
             <tr className="table-header">
               <th className="text-left p-4 rounded-tl-lg">Nome</th>
               <th className="text-left p-4">Código</th>
+              <th className="text-left p-4">CNPJ</th>
+              <th className="text-center p-4">Motoristas</th>
               <th className="text-right p-4 rounded-tr-lg">Ações</th>
             </tr>
           </thead>
@@ -174,6 +195,15 @@ export default function Unidades() {
                   <span className="inline-flex items-center gap-1 text-muted-foreground">
                     <Hash size={14} />
                     {unidade.codigo}
+                  </span>
+                </td>
+                <td className="p-4 text-muted-foreground font-mono text-sm">
+                  {unidade.cnpj}
+                </td>
+                <td className="p-4 text-center">
+                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-medium">
+                    <Users size={14} />
+                    {getMotoristaCount(unidade.nome)}
                   </span>
                 </td>
                 <td className="p-4">
