@@ -32,8 +32,23 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
   const [errors, setErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Normaliza nome de coluna para encontrar correspondência
+  const normalizeHeader = (header: string): string => {
+    const h = header.toLowerCase().trim()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Remove acentos
+    
+    if (h.includes('nome') || h === 'name') return 'Nome';
+    if (h.includes('funcao') || h.includes('função') || h.includes('cargo')) return 'Função';
+    if (h.includes('setor') || h.includes('area')) return 'Setor';
+    if (h.includes('codigo') || h.includes('código') || h.includes('promax') || h.includes('cod')) return 'Código promax';
+    if (h.includes('unidade') || h.includes('filial') || h.includes('loja')) return 'UNIDADE';
+    if (h.includes('senha') || h.includes('password')) return 'Senha';
+    
+    return header;
+  };
+
   const parseCSV = (text: string): CSVRow[] => {
-    const lines = text.trim().split(/\r?\n/);
+    const lines = text.trim().split(/\r?\n/).filter(line => line.trim() !== '');
     if (lines.length < 2) return [];
 
     // Detectar separador mais comum na primeira linha
@@ -46,16 +61,31 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
     if (tabCount > commaCount && tabCount > semicolonCount) separator = '\t';
     else if (semicolonCount > commaCount) separator = ';';
 
-    const headers = firstLine.split(separator).map(h => h.trim().replace(/"/g, ''));
+    console.log('CSV Debug - Separator:', separator);
+    console.log('CSV Debug - First line:', firstLine);
+    console.log('CSV Debug - Total lines:', lines.length);
+
+    const rawHeaders = firstLine.split(separator).map(h => h.trim().replace(/"/g, ''));
+    const headers = rawHeaders.map(normalizeHeader);
     
-    return lines.slice(1).map(line => {
+    console.log('CSV Debug - Raw headers:', rawHeaders);
+    console.log('CSV Debug - Normalized headers:', headers);
+    
+    const results = lines.slice(1).map((line, lineIndex) => {
+      if (!line.trim()) return null;
+      
       const values = line.split(separator).map(v => v.trim().replace(/"/g, ''));
       const row: Record<string, string> = {};
       headers.forEach((header, index) => {
         row[header] = values[index] || '';
       });
+      
+      console.log(`CSV Debug - Line ${lineIndex + 2}:`, row);
       return row as unknown as CSVRow;
-    }).filter(row => row.Nome && row.Nome.trim() !== '');
+    }).filter((row): row is CSVRow => row !== null && row.Nome && row.Nome.trim() !== '');
+    
+    console.log('CSV Debug - Parsed rows:', results.length);
+    return results;
   };
 
   const mapFuncao = (funcao: string): FuncaoMotorista => {
@@ -81,9 +111,17 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
+      console.log('CSV Debug - Raw text preview:', text.substring(0, 500));
+      
       const data = parseCSV(text);
       
       const validationErrors: string[] = [];
+      
+      if (data.length === 0) {
+        validationErrors.push('Nenhum registro encontrado. Verifique se o CSV contém a coluna "Nome" (ou similar).');
+        validationErrors.push('Colunas aceitas: Nome, Função/Cargo, Setor, Código/Cod promax, Unidade/Filial, Senha');
+      }
+      
       data.forEach((row, index) => {
         if (!row.Nome) validationErrors.push(`Linha ${index + 2}: Nome é obrigatório`);
         if (!row['Código promax']) validationErrors.push(`Linha ${index + 2}: Código promax é obrigatório`);
