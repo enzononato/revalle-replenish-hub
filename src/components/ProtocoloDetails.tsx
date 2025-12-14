@@ -340,82 +340,76 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               </div>
             </div>
 
-            {/* Card Unificado - Azul */}
-            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm overflow-hidden">
-              {/* Informações Gerais */}
-              <div className="p-5 border-b border-blue-200 dark:border-blue-700">
-                <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                  <Clock size={18} className="text-blue-600" />
-                  Informações Gerais
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Protocolo</p>
-                    <p className="font-semibold text-foreground">{protocolo.numero}</p>
+            {/* Informações Gerais - Card unificado com duas colunas */}
+            <div className="bg-card rounded-xl p-5 border shadow-sm">
+              <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
+                <Clock size={18} className="text-primary" />
+                INFORMAÇÕES GERAIS
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                {/* Coluna Esquerda */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">PROTOCOLO:</span>
+                    <span className="text-sm text-foreground">{protocolo.numero}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Data</p>
-                    <p className="font-semibold text-foreground">{protocolo.data}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">DATA:</span>
+                    <span className="text-sm text-foreground">{protocolo.data}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Hora</p>
-                    <p className="font-semibold text-foreground">{protocolo.hora}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">MOTORISTA:</span>
+                    <span className="text-sm text-foreground">{protocolo.motorista.codigo}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Tipo de Reposição</p>
-                    <p className="font-semibold text-foreground">{protocolo.tipoReposicao || '-'}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">E-MAIL:</span>
+                    <span className="text-sm text-foreground">{protocolo.motorista.email || '-'}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Causa</p>
-                    <p className="font-semibold text-foreground">{protocolo.causa || '-'}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">MAPA:</span>
+                    <span className="text-sm text-foreground">{protocolo.mapa || '-'}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Unidade</p>
-                    <p className="font-semibold text-foreground">{protocolo.unidadeNome || '-'} <span className="text-muted-foreground text-xs">(ID {protocolo.unidadeId || '-'})</span></p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">CÓDIGO PDV:</span>
+                    <span className="text-sm text-foreground">{protocolo.codigoPdv || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">NOTA FISCAL:</span>
+                    <span className="text-sm text-foreground">{protocolo.notaFiscal || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">CAUSA:</span>
+                    <span className="text-sm text-foreground">{protocolo.causa || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">TIPO DE REPOSIÇÃO:</span>
+                    <span className="text-sm text-foreground">{protocolo.tipoReposicao || '-'}</span>
                   </div>
                 </div>
-                {protocolo.observacaoGeral && (
-                  <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
-                    <h4 className="font-semibold text-sm text-foreground mb-2 flex items-center gap-2">
-                      <MessageSquare size={14} className="text-blue-600" />
-                      Observação Geral
-                    </h4>
-                    <p className="text-sm text-foreground leading-relaxed">{protocolo.observacaoGeral}</p>
-                  </div>
-                )}
-              </div>
 
-              {/* Dados do Motorista */}
-              <div className="p-5 border-b border-blue-200 dark:border-blue-700 bg-blue-100/30 dark:bg-blue-900/10">
-                <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                  <Truck size={18} className="text-blue-600" />
-                  Dados do Motorista
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Código</p>
-                    <p className="font-semibold text-foreground font-mono">{protocolo.motorista.codigo}</p>
+                {/* Coluna Direita */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">STATUS:</span>
+                    <span className="text-sm text-foreground uppercase">{protocolo.status}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Nome</p>
-                    <p className="font-semibold text-foreground">{protocolo.motorista.nome}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">HORA:</span>
+                    <span className="text-sm text-foreground">{protocolo.hora}</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">E-mail</p>
-                    <p className="font-semibold text-foreground">{protocolo.motorista.email || '-'}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">UNIDADE:</span>
+                    <span className="text-sm text-foreground">{protocolo.unidadeNome || '-'} (ID {protocolo.unidadeId || '-'})</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1">
-                      <Phone size={12} />
-                      WhatsApp
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">WHATSAPP:</span>
                     {canEditMotorista && !editandoWhatsapp ? (
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-foreground">{protocolo.motorista.whatsapp || '-'}</p>
+                        <span className="text-sm text-foreground">{protocolo.motorista.whatsapp || '-'}</span>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                          className="h-6 w-6 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
                           onClick={() => {
                             setWhatsappEditado(protocolo.motorista.whatsapp || '');
                             setEditandoWhatsapp(true);
@@ -434,7 +428,8 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         />
                         <Button 
                           size="sm" 
-                          className="h-8 px-2"
+                          variant="outline"
+                          className="h-8 px-3"
                           onClick={() => {
                             if (!onUpdateProtocolo || !user) return;
                             
@@ -463,7 +458,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                             toast.success('WhatsApp atualizado!');
                           }}
                         >
-                          <Check size={14} />
+                          Salvar
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -475,78 +470,60 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         </Button>
                       </div>
                     ) : (
-                      <p className="font-semibold text-foreground">{protocolo.motorista.whatsapp || '-'}</p>
+                      <span className="text-sm text-foreground">{protocolo.motorista.whatsapp || '-'}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Habilitar Reenvio?</p>
                     <Switch 
                       checked={habilitarReenvio} 
                       onCheckedChange={setHabilitarReenvio} 
                     />
+                    <span className="text-sm font-bold text-foreground uppercase">HABILITAR REENVIO?</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm font-bold text-foreground uppercase">OBSERVAÇÃO:</span>
+                    <span className="text-sm text-foreground">{protocolo.observacaoGeral || '-'}</span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Informações do Cliente */}
-              <div className="p-5 border-b border-blue-200 dark:border-blue-700">
-                <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                  <Building2 size={18} className="text-blue-600" />
-                  Informações do Cliente
-                </h3>
-                <div className="grid grid-cols-3 gap-5">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Código PDV</p>
-                    <p className="font-semibold text-foreground font-mono">{protocolo.codigoPdv || '-'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">MAPA</p>
-                    <p className="font-semibold text-foreground">{protocolo.mapa || '-'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Nota Fiscal</p>
-                    <p className="font-semibold text-foreground font-mono">{protocolo.notaFiscal || '-'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Produtos Recebidos */}
-              <div className="p-5 bg-blue-100/30 dark:bg-blue-900/10">
-                <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                  <Package size={18} className="text-blue-600" />
-                  Produtos Recebidos
-                </h3>
-                {protocolo.produtos && protocolo.produtos.length > 0 ? (
-                  <div className="overflow-x-auto rounded-lg border border-blue-200 dark:border-blue-700">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-blue-100 dark:bg-blue-900/30">
-                          <th className="text-left p-3 font-semibold text-foreground">Código</th>
-                          <th className="text-left p-3 font-semibold text-foreground">Produto</th>
-                          <th className="text-left p-3 font-semibold text-foreground">Unidade</th>
-                          <th className="text-center p-3 font-semibold text-foreground">Qtd</th>
-                          <th className="text-left p-3 font-semibold text-foreground">Validade</th>
-                          <th className="text-left p-3 font-semibold text-foreground">Observação</th>
+            {/* Produtos Recebidos - Card separado */}
+            <div className="bg-violet-50 dark:bg-violet-950/20 rounded-xl p-5 border border-violet-200 dark:border-violet-800 shadow-sm">
+              <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
+                <Package size={18} className="text-violet-600" />
+                PRODUTOS RECEBIDOS
+              </h3>
+              {protocolo.produtos && protocolo.produtos.length > 0 ? (
+                <div className="overflow-x-auto rounded-lg border border-violet-200 dark:border-violet-700">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-violet-100 dark:bg-violet-900/30">
+                        <th className="text-left p-3 font-bold text-foreground uppercase">CÓDIGO</th>
+                        <th className="text-left p-3 font-bold text-foreground uppercase">PRODUTO</th>
+                        <th className="text-left p-3 font-bold text-foreground uppercase">UNIDADE</th>
+                        <th className="text-center p-3 font-bold text-foreground uppercase">QTD</th>
+                        <th className="text-left p-3 font-bold text-foreground uppercase">VALIDADE</th>
+                        <th className="text-left p-3 font-bold text-foreground uppercase">OBSERVAÇÃO</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {protocolo.produtos.map((produto, index) => (
+                        <tr key={index} className={`border-b border-violet-200 dark:border-violet-700 transition-colors hover:bg-violet-100/50 dark:hover:bg-violet-900/20 ${index % 2 === 0 ? 'bg-violet-50/50 dark:bg-violet-950/10' : 'bg-white dark:bg-transparent'}`}>
+                          <td className="p-3 font-mono text-violet-700 dark:text-violet-400">{produto.codigo}</td>
+                          <td className="p-3 font-medium">{produto.nome}</td>
+                          <td className="p-3">{produto.unidade}</td>
+                          <td className="p-3 text-center font-bold text-violet-700 dark:text-violet-400">{produto.quantidade}</td>
+                          <td className="p-3">{produto.validade}</td>
+                          <td className="p-3 text-muted-foreground">{produto.observacao || '-'}</td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {protocolo.produtos.map((produto, index) => (
-                          <tr key={index} className={`border-b border-blue-200 dark:border-blue-700 transition-colors hover:bg-blue-100/50 dark:hover:bg-blue-900/20 ${index % 2 === 0 ? 'bg-blue-50/50 dark:bg-blue-950/10' : 'bg-white dark:bg-transparent'}`}>
-                            <td className="p-3 font-mono text-blue-700 dark:text-blue-400">{produto.codigo}</td>
-                            <td className="p-3 font-medium">{produto.nome}</td>
-                            <td className="p-3">{produto.unidade}</td>
-                            <td className="p-3 text-center font-bold text-blue-700 dark:text-blue-400">{produto.quantidade}</td>
-                            <td className="p-3">{produto.validade}</td>
-                            <td className="p-3 text-muted-foreground">{produto.observacao || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">Nenhum produto registrado</p>
-                )}
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Nenhum produto registrado</p>
+              )}
             </div>
 
             {/* Fotos Enviadas - Rosa (maior) */}
@@ -554,21 +531,21 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               <div className="bg-pink-50 dark:bg-pink-950/20 rounded-xl p-5 border border-pink-200 dark:border-pink-800 shadow-sm">
                 <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
                   <Camera size={18} className="text-pink-600" />
-                  Fotos Enviadas
+                  FOTOS ENVIADAS
                 </h3>
                 <div className="flex flex-wrap gap-4">
                   {todasFotos.map((foto, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(foto.url)}
-                      className="group relative w-36 h-36 rounded-lg overflow-hidden border-2 border-pink-200 dark:border-pink-700 hover:border-pink-500 transition-all hover:scale-105 shadow-md"
+                      className="group relative w-44 h-44 rounded-lg overflow-hidden border-2 border-pink-200 dark:border-pink-700 hover:border-pink-500 transition-all hover:scale-105 shadow-md"
                     >
                       <img 
                         src={foto.url} 
                         alt={foto.label} 
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-pink-100/90 dark:bg-pink-900/80 text-xs text-center py-1.5 font-medium text-foreground">
+                      <div className="absolute bottom-0 left-0 right-0 bg-pink-100/90 dark:bg-pink-900/80 text-xs text-center py-1.5 font-bold text-foreground uppercase">
                         {foto.label}
                       </div>
                     </button>
