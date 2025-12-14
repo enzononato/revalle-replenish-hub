@@ -361,10 +361,16 @@ export default function Dashboard() {
                 <h1 className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
                   {saudacao}, {user?.nome?.split(' ')[0] || 'Usuário'}!
                 </h1>
-                <p className="text-muted-foreground text-sm capitalize">{dataAtual}</p>
+                <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                  <span className="capitalize">{dataAtual}</span>
+                  <span className="text-muted-foreground/50">•</span>
+                  <span className="flex items-center gap-1">
+                    <Building2 size={14} />
+                    {isAdmin ? 'Todas as Unidades' : user?.unidade || '-'}
+                  </span>
+                </div>
               </div>
             </div>
-            
           </div>
           
           <div className="flex flex-wrap gap-2 items-center">
