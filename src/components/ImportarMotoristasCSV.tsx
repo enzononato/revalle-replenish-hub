@@ -39,7 +39,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
       .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Remove acentos
     
     if (h.includes('nome') || h === 'name') return 'Nome';
-    if (h.includes('funcao') || h.includes('cargo')) return 'Função';
+    if (h.includes('funcao') || h.includes('cargo') || h.includes('status')) return 'Função';
     if (h.includes('setor') || h.includes('area')) return 'Setor';
     if (h.includes('codigo') || h.includes('promax') || h.includes('cod')) return 'Código promax';
     if (h.includes('unidade') || h.includes('filial') || h.includes('loja')) return 'UNIDADE';
@@ -178,7 +178,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
       nome: row.Nome.trim(),
       codigo: String(row['Código promax']).trim(),
       dataNascimento: '',
-      unidade: 'Revalle Juazeiro',
+      unidade: row.UNIDADE?.trim() || 'Revalle Juazeiro',
       funcao: mapFuncao(row.Função || ''),
       setor: mapSetor(row.Setor || ''),
       senha: row.Senha?.trim() || String(row['Código promax']).trim(),
