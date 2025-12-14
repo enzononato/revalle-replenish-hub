@@ -23,6 +23,7 @@ interface CSVRow {
   Setor: string;
   'Código promax': string;
   UNIDADE: string;
+  Senha?: string;
 }
 
 export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) {
@@ -32,13 +33,23 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseCSV = (text: string): CSVRow[] => {
-    const lines = text.trim().split('\n');
+    const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) return [];
 
-    const headers = lines[0].split(/[;\t,]/).map(h => h.trim().replace(/"/g, ''));
+    // Detectar separador mais comum na primeira linha
+    const firstLine = lines[0];
+    let separator = ',';
+    const tabCount = (firstLine.match(/\t/g) || []).length;
+    const semicolonCount = (firstLine.match(/;/g) || []).length;
+    const commaCount = (firstLine.match(/,/g) || []).length;
+    
+    if (tabCount > commaCount && tabCount > semicolonCount) separator = '\t';
+    else if (semicolonCount > commaCount) separator = ';';
+
+    const headers = firstLine.split(separator).map(h => h.trim().replace(/"/g, ''));
     
     return lines.slice(1).map(line => {
-      const values = line.split(/[;\t,]/).map(v => v.trim().replace(/"/g, ''));
+      const values = line.split(separator).map(v => v.trim().replace(/"/g, ''));
       const row: Record<string, string> = {};
       headers.forEach((header, index) => {
         row[header] = values[index] || '';
@@ -98,7 +109,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
       unidade: row.UNIDADE?.trim() || 'Revalle Juazeiro',
       funcao: mapFuncao(row.Função || ''),
       setor: mapSetor(row.Setor || ''),
-      senha: row['Código promax'].trim(), // Senha inicial = código
+      senha: row.Senha?.trim() || row['Código promax'].trim(),
       createdAt: new Date().toISOString(),
     }));
 
@@ -148,7 +159,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
               className="cursor-pointer"
             />
             <p className="text-xs text-muted-foreground">
-              Colunas esperadas: Nome, Função, Setor, Código promax, UNIDADE
+              Colunas esperadas: Nome, Função, Setor, Código promax, UNIDADE, Senha (opcional)
             </p>
           </div>
 
@@ -184,6 +195,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
                       <th className="text-left p-2 font-medium">Setor</th>
                       <th className="text-left p-2 font-medium">Código</th>
                       <th className="text-left p-2 font-medium">Unidade</th>
+                      <th className="text-left p-2 font-medium">Senha</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -210,6 +222,9 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
                         </td>
                         <td className="p-2 font-mono">{row['Código promax']}</td>
                         <td className="p-2">{row.UNIDADE || 'Revalle Juazeiro'}</td>
+                        <td className="p-2 font-mono text-muted-foreground">
+                          {row.Senha ? '••••••' : '(código)'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
