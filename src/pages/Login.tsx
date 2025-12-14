@@ -8,15 +8,15 @@ import { Truck, Lock, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Login() {
-  const { isAuthenticated, login, isConferente } = useAuth();
+  const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   if (isAuthenticated) {
-    // Conferentes vão direto para Protocolos
-    return <Navigate to={isConferente ? "/protocolos" : "/dashboard"} replace />;
+    // Todos vão para Dashboard
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,14 +27,7 @@ export default function Login() {
       const success = await login(email, password);
       if (success) {
         toast.success('Login realizado com sucesso!');
-        // Verificar se é conferente após login - precisa pegar do localStorage pois o state ainda não atualizou
-        const savedUser = localStorage.getItem('revalle_user');
-        const userData = savedUser ? JSON.parse(savedUser) : null;
-        if (userData?.nivel === 'conferente') {
-          navigate('/protocolos');
-        } else {
-          navigate('/dashboard');
-        }
+        navigate('/dashboard');
       } else {
         toast.error('Email ou senha inválidos');
       }

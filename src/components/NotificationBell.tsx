@@ -1,6 +1,7 @@
 import { Bell, AlertTriangle, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow, differenceInDays, parseISO, format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -28,9 +29,15 @@ interface DismissedNotification {
 
 export function NotificationBell() {
   const { protocolos } = useProtocolos();
+  const { user, isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDismissedToday, setIsDismissedToday] = useState(false);
   const [dismissedNotifications, setDismissedNotifications] = useState<DismissedNotification[]>([]);
+
+  // Filter protocols by user's unit (admin sees all)
+  const protocolosFiltrados = isAdmin 
+    ? protocolos 
+    : protocolos.filter(p => p.motorista.unidade === user?.unidade);
 
   // Check if critical notification was dismissed today
   useEffect(() => {
@@ -66,13 +73,13 @@ export function NotificationBell() {
   }, []);
 
   // Get recent open protocols (last 5), excluding dismissed ones
-  const recentProtocolos = protocolos
+  const recentProtocolos = protocolosFiltrados
     .filter(p => p.status === 'aberto' && !p.oculto && !dismissedNotifications.some(d => d.id === p.id))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
   // Count critical SLA protocols (>15 days)
-  const criticalCount = protocolos.filter(p => 
+  const criticalCount = protocolosFiltrados.filter(p => 
     !p.oculto && p.status !== 'encerrado' && calcularSlaDias(p.createdAt) >= 15
   ).length;
 
