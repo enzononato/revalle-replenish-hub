@@ -134,8 +134,13 @@ export function useMotoristasDB() {
   };
 
   const importMotoristas = async (newMotoristas: Omit<Motorista, 'id' | 'createdAt'>[]): Promise<boolean> => {
+    // Deduplicar por código (manter o último registro de cada código)
+    const uniqueMap = new Map<string, Omit<Motorista, 'id' | 'createdAt'>>();
+    newMotoristas.forEach(m => uniqueMap.set(m.codigo, m));
+    const uniqueMotoristas = Array.from(uniqueMap.values());
+    
     // Usar upsert para atualizar existentes e inserir novos (baseado no código único)
-    const motoristasDB = newMotoristas.map(m => motoristaToDB(m as Motorista));
+    const motoristasDB = uniqueMotoristas.map(m => motoristaToDB(m as Motorista));
     
     const { error: upsertError } = await supabase
       .from('motoristas')
@@ -147,7 +152,7 @@ export function useMotoristasDB() {
     }
 
     await fetchMotoristas();
-    toast.success(`${newMotoristas.length} motoristas importados com sucesso!`);
+    toast.success(`${uniqueMotoristas.length} motoristas importados com sucesso!`);
     return true;
   };
 
