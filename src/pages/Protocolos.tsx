@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Protocolo } from '@/types';
+import { Protocolo, ObservacaoLog } from '@/types';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -134,6 +134,16 @@ export default function Protocolos() {
     toast.success('Protocolo encerrado com sucesso!');
   };
 
+  const criarLogEntry = (acao: string, texto: string): ObservacaoLog => ({
+    id: Date.now().toString(),
+    usuarioNome: user?.nome || 'Sistema',
+    usuarioId: user?.id || '',
+    data: format(new Date(), 'dd/MM/yyyy'),
+    hora: format(new Date(), 'HH:mm'),
+    acao,
+    texto
+  });
+
   const handleToggleLancado = (id: string) => {
     if (!canLaunch) {
       toast.error('Apenas Distribuição ou Admin pode lançar protocolos!');
@@ -148,10 +158,15 @@ export default function Protocolos() {
     if (protocolo) {
       const newLancado = !protocolo.lancado;
       const newStatus = (protocolo.validacao && newLancado) ? 'em_andamento' as const : 'aberto' as const;
+      const logEntry = criarLogEntry(
+        newLancado ? 'Marcou como lançado' : 'Removeu lançamento',
+        newLancado ? 'Protocolo marcado como lançado' : 'Lançamento removido do protocolo'
+      );
       updateProtocolo({ 
         ...protocolo, 
         lancado: newLancado, 
-        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus 
+        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
+        observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
       });
     }
     toast.success('Status de lançamento atualizado!');
@@ -166,10 +181,15 @@ export default function Protocolos() {
     if (protocolo) {
       const newValidacao = !protocolo.validacao;
       const newStatus = (newValidacao && protocolo.lancado) ? 'em_andamento' as const : 'aberto' as const;
+      const logEntry = criarLogEntry(
+        newValidacao ? 'Confirmou validação' : 'Removeu validação',
+        newValidacao ? 'Protocolo validado' : 'Validação removida do protocolo'
+      );
       updateProtocolo({ 
         ...protocolo, 
         validacao: newValidacao, 
-        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus 
+        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
+        observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
       });
     }
     toast.success('Validação atualizada!');
@@ -178,7 +198,12 @@ export default function Protocolos() {
   const handleOcultar = (id: string) => {
     const protocolo = protocolos.find(p => p.id === id);
     if (protocolo) {
-      updateProtocolo({ ...protocolo, oculto: true });
+      const logEntry = criarLogEntry('Ocultou protocolo', 'Protocolo foi ocultado');
+      updateProtocolo({ 
+        ...protocolo, 
+        oculto: true,
+        observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
+      });
     }
     toast.success('Protocolo ocultado!');
   };
