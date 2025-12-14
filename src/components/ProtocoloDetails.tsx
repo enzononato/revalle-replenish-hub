@@ -451,10 +451,6 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     <span className="text-base text-foreground">{protocolo.motorista.unidade || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">E-MAIL MOTORISTA:</span>
-                    <span className="text-base text-foreground">{protocolo.motorista.email || '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <span className="text-base font-bold text-foreground uppercase">MAPA:</span>
                     <span className="text-base text-foreground">{protocolo.mapa || '-'}</span>
                   </div>

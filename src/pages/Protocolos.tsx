@@ -648,7 +648,7 @@ export default function Protocolos() {
                     </div>
                   </td>
                   <td className="p-4 border-r border-[#E5E7EB]">
-                    <span className="text-[#2563EB] font-medium hover:underline cursor-pointer">
+                    <span className="text-[#1F2937] font-medium">
                       {protocolo.numero}
                     </span>
                   </td>
