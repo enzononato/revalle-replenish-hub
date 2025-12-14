@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -7,6 +7,8 @@ interface StatCardProps {
   icon: LucideIcon;
   variant?: 'default' | 'success' | 'warning' | 'info' | 'primary';
   delay?: number;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: string;
 }
 
 const variantStyles = {
@@ -33,7 +35,27 @@ const accentBarStyles = {
   primary: 'bg-gradient-to-b from-blue-500 to-indigo-600',
 };
 
-export function StatCard({ title, value, icon: Icon, variant = 'default', delay = 0 }: StatCardProps) {
+const trendStyles = {
+  up: 'text-emerald-600 bg-emerald-500/10',
+  down: 'text-red-500 bg-red-500/10',
+  neutral: 'text-muted-foreground bg-muted',
+};
+
+const TrendIcon = {
+  up: TrendingUp,
+  down: TrendingDown,
+  neutral: Minus,
+};
+
+export function StatCard({ 
+  title, 
+  value, 
+  icon: Icon, 
+  variant = 'default', 
+  delay = 0,
+  trend,
+  trendValue 
+}: StatCardProps) {
   return (
     <div 
       className={cn(
@@ -53,6 +75,20 @@ export function StatCard({ title, value, icon: Icon, variant = 'default', delay 
         <div className="pl-2">
           <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
           <p className="text-3xl font-heading font-bold text-foreground">{value}</p>
+          
+          {/* Trend indicator */}
+          {trend && trendValue && (
+            <div className={cn(
+              "flex items-center gap-1 mt-2 px-2 py-1 rounded-full text-xs font-semibold w-fit",
+              trendStyles[trend]
+            )}>
+              {(() => {
+                const IconComponent = TrendIcon[trend];
+                return <IconComponent size={12} />;
+              })()}
+              <span>{trendValue}</span>
+            </div>
+          )}
         </div>
         <div className={cn(
           "p-3 rounded-xl transition-all duration-300",
