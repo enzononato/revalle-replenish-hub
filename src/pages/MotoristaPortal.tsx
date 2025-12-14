@@ -80,9 +80,37 @@ export default function MotoristaPortal() {
   // Validation functions
   const isFieldValid = (field: keyof TouchedFields, value: string | null): boolean => {
     if (field === 'tipoReposicao') return !!value;
-    if (field === 'fotoMotoristaPdv' || field === 'fotoLoteProduto') return !!value;
+    // Photos are only required after tipoReposicao is selected
+    if (field === 'fotoMotoristaPdv' || field === 'fotoLoteProduto') {
+      return !tipoReposicao || !!value;
+    }
     if (field === 'fotoAvaria') return tipoReposicao !== 'avaria' || !!value;
     return typeof value === 'string' && value.trim().length > 0;
+  };
+
+  // Control multiple products based on tipoReposicao
+  const podeAdicionarMultiplos = tipoReposicao === 'avaria' || tipoReposicao === 'falta';
+
+  // Clear photos when changing tipoReposicao
+  const handleTipoReposicaoChange = (value: string) => {
+    if (value !== tipoReposicao) {
+      setFotoMotoristaPdv(null);
+      setFotoLoteProduto(null);
+      setFotoAvaria(null);
+      setTouched(prev => ({
+        ...prev,
+        fotoMotoristaPdv: false,
+        fotoLoteProduto: false,
+        fotoAvaria: false
+      }));
+      // Reset to single product if switching to inversao
+      if (value === 'inversao' && produtos.length > 1) {
+        setProdutos([produtos[0]]);
+        setTouched(prev => ({ ...prev, produtos: [prev.produtos[0] || false] }));
+      }
+    }
+    setTipoReposicao(value);
+    handleBlur('tipoReposicao');
   };
 
   const getFieldStatus = (field: keyof TouchedFields, value: string | null): 'valid' | 'invalid' | 'neutral' => {
@@ -502,10 +530,7 @@ export default function MotoristaPortal() {
               </div>
               <Select 
                 value={tipoReposicao} 
-                onValueChange={(value) => {
-                  setTipoReposicao(value);
-                  handleBlur('tipoReposicao');
-                }}
+                onValueChange={handleTipoReposicaoChange}
               >
                 <SelectTrigger className={cn(
                   "h-12 text-base",
@@ -528,39 +553,48 @@ export default function MotoristaPortal() {
               )}
             </div>
 
-            {/* Photos Section - Stacked cards for mobile */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2 text-sm font-medium">
-                <Camera className="h-4 w-4 text-primary" />
-                Fotos Obrigatórias
-              </Label>
-              
+            {/* Photos Section - Only shown after selecting tipoReposicao */}
+            {tipoReposicao ? (
               <div className="space-y-3">
-                <PhotoUploadCard
-                  label="Motorista no PDV"
-                  photo={fotoMotoristaPdv}
-                  setPhoto={setFotoMotoristaPdv}
-                  inputRef={fotoMotoristaPdvRef}
-                  field="fotoMotoristaPdv"
-                />
-                <PhotoUploadCard
-                  label="Lote do Produto"
-                  photo={fotoLoteProduto}
-                  setPhoto={setFotoLoteProduto}
-                  inputRef={fotoLoteProdutoRef}
-                  field="fotoLoteProduto"
-                />
-                {tipoReposicao === 'avaria' && (
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <Camera className="h-4 w-4 text-primary" />
+                  Fotos Obrigatórias
+                </Label>
+                
+                <div className="space-y-3">
                   <PhotoUploadCard
-                    label="Foto da Avaria"
-                    photo={fotoAvaria}
-                    setPhoto={setFotoAvaria}
-                    inputRef={fotoAvariaRef}
-                    field="fotoAvaria"
+                    label="Motorista no PDV"
+                    photo={fotoMotoristaPdv}
+                    setPhoto={setFotoMotoristaPdv}
+                    inputRef={fotoMotoristaPdvRef}
+                    field="fotoMotoristaPdv"
                   />
-                )}
+                  <PhotoUploadCard
+                    label="Lote do Produto"
+                    photo={fotoLoteProduto}
+                    setPhoto={setFotoLoteProduto}
+                    inputRef={fotoLoteProdutoRef}
+                    field="fotoLoteProduto"
+                  />
+                  {tipoReposicao === 'avaria' && (
+                    <PhotoUploadCard
+                      label="Foto da Avaria"
+                      photo={fotoAvaria}
+                      setPhoto={setFotoAvaria}
+                      inputRef={fotoAvariaRef}
+                      field="fotoAvaria"
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 bg-muted/30 rounded-xl border border-dashed border-border text-center">
+                <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Selecione o tipo de reposição para ver as fotos necessárias
+                </p>
+              </div>
+            )}
 
             {/* Products Section - Single column for mobile */}
             <div className="space-y-3">
@@ -568,11 +602,16 @@ export default function MotoristaPortal() {
                 <Label className="flex items-center gap-2 text-sm font-medium">
                   <Package className="h-4 w-4 text-primary" />
                   Produtos
+                  {tipoReposicao === 'inversao' && (
+                    <span className="text-xs text-muted-foreground font-normal">(apenas 1)</span>
+                  )}
                 </Label>
-                <Button type="button" variant="outline" size="sm" onClick={addProduto} className="h-9">
-                  <Plus className="mr-1 h-4 w-4" />
-                  Adicionar
-                </Button>
+                {podeAdicionarMultiplos && (
+                  <Button type="button" variant="outline" size="sm" onClick={addProduto} className="h-9">
+                    <Plus className="mr-1 h-4 w-4" />
+                    Adicionar
+                  </Button>
+                )}
               </div>
               
               {produtos.map((produto, index) => {
