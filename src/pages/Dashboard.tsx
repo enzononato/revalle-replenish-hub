@@ -81,10 +81,16 @@ export default function Dashboard() {
     return filtered;
   }, [protocolos, isAdmin, user?.unidade, unidadeFiltro, periodoFiltro]);
 
-  // Total de motoristas do banco de dados
+  // Total de motoristas do banco de dados (filtrado por unidade)
   const totalMotoristasBase = useMemo(() => {
+    if (!isAdmin) {
+      return motoristas.filter(m => m.unidade === user?.unidade).length;
+    }
+    if (unidadeFiltro !== 'todas') {
+      return motoristas.filter(m => m.unidade === unidadeFiltro).length;
+    }
     return motoristas.length;
-  }, [motoristas]);
+  }, [motoristas, isAdmin, user?.unidade, unidadeFiltro]);
 
   // Estatísticas dinâmicas
   const stats = useMemo(() => {
