@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { mockUnidades, mockMotoristas } from '@/data/mockData';
+import { mockUnidades } from '@/data/mockData';
 import { Unidade } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Hash, Building2, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Hash, Building2, Users, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 
 export default function Unidades() {
   const [unidades, setUnidades] = useState<Unidade[]>(mockUnidades);
@@ -26,14 +27,17 @@ export default function Unidades() {
     cnpj: '',
   });
 
+  const { motoristas, isLoading: isLoadingMotoristas } = useMotoristasDB();
+
   const filteredUnidades = unidades.filter(u => 
     u.nome.toLowerCase().includes(search.toLowerCase()) ||
     u.codigo.toLowerCase().includes(search.toLowerCase()) ||
     u.cnpj.includes(search)
   );
 
+  // Conta motoristas + ajudantes por unidade
   const getMotoristaCount = (unidadeNome: string) => {
-    return mockMotoristas.filter(m => m.unidade === unidadeNome).length;
+    return motoristas.filter(m => m.unidade === unidadeNome).length;
   };
 
   const resetForm = () => {
@@ -201,10 +205,14 @@ export default function Unidades() {
                   {unidade.cnpj}
                 </td>
                 <td className="p-4 text-center">
-                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-medium">
-                    <Users size={14} />
-                    {getMotoristaCount(unidade.nome)}
-                  </span>
+                  {isLoadingMotoristas ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground inline" />
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-medium">
+                      <Users size={14} />
+                      {getMotoristaCount(unidade.nome)}
+                    </span>
+                  )}
                 </td>
                 <td className="p-4">
                   <div className="flex justify-end gap-2">

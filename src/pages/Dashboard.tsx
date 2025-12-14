@@ -6,6 +6,7 @@ import { AlertCard } from '@/components/ui/AlertCard';
 import { mockUnidades } from '@/data/mockData';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ type PeriodoFiltro = 'hoje' | 'semana' | 'mes' | 'todos';
 export default function Dashboard() {
   const { protocolos } = useProtocolos();
   const { isAdmin, user } = useAuth();
+  const { motoristas } = useMotoristasDB();
   const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
   const [periodoFiltro, setPeriodoFiltro] = useState<PeriodoFiltro>('todos');
 
@@ -79,10 +81,10 @@ export default function Dashboard() {
     return filtered;
   }, [protocolos, isAdmin, user?.unidade, unidadeFiltro, periodoFiltro]);
 
-  // Total de motoristas únicos da base (todos os protocolos, não filtrados)
+  // Total de motoristas do banco de dados
   const totalMotoristasBase = useMemo(() => {
-    return new Set(protocolos.filter(p => !p.oculto).map(p => p.motorista.id || p.motorista.codigo)).size;
-  }, [protocolos]);
+    return motoristas.length;
+  }, [motoristas]);
 
   // Estatísticas dinâmicas
   const stats = useMemo(() => {
