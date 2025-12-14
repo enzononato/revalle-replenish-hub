@@ -520,6 +520,17 @@ export default function MotoristaPortal() {
                 <Plus className="mr-2 h-5 w-5" />
                 Abrir Novo Protocolo
               </Button>
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  resetForm();
+                  setActiveTab('meus');
+                }} 
+                className="w-full h-12 text-base"
+              >
+                <FileText className="mr-2 h-5 w-5" />
+                Meus Protocolos
+              </Button>
               <Button variant="outline" onClick={handleLogout} className="w-full h-12 text-base">
                 <LogOut className="mr-2 h-5 w-5" />
                 Sair
