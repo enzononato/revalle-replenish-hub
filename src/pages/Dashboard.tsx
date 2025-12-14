@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
 import { AlertCard } from '@/components/ui/AlertCard';
@@ -380,6 +381,7 @@ export default function Dashboard() {
           icon={Clock}
           variant="warning"
           delay={0}
+          href="/protocolos?status=aberto"
         />
         <StatCard
           title="Encerrados"
@@ -387,6 +389,7 @@ export default function Dashboard() {
           icon={CheckCircle}
           variant="success"
           delay={100}
+          href="/protocolos?status=encerrado"
         />
         <StatCard
           title="Total de Protocolos"
@@ -394,6 +397,7 @@ export default function Dashboard() {
           icon={FileText}
           variant="primary"
           delay={200}
+          href="/protocolos"
         />
         <StatCard
           title="Total de Motoristas"
@@ -401,6 +405,7 @@ export default function Dashboard() {
           icon={Truck}
           variant="info"
           delay={300}
+          href="/motoristas"
         />
         <StatCard
           title="Total Hoje"
@@ -410,6 +415,7 @@ export default function Dashboard() {
           delay={400}
           trend={stats.tendenciaHoje > 0 ? 'up' : stats.tendenciaHoje < 0 ? 'down' : 'neutral'}
           trendValue={`${stats.tendenciaHoje > 0 ? '+' : ''}${stats.tendenciaHoje}% vs ontem`}
+          href="/protocolos?periodo=hoje"
         />
       </div>
 
@@ -552,14 +558,16 @@ export default function Dashboard() {
                       <StatusBadge status={protocolo.status} />
                     </td>
                     <td className="p-4 text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Eye size={16} className="mr-1" />
-                        Ver
-                      </Button>
+                      <Link to={`/protocolos?id=${protocolo.id}`}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                        >
+                          <Eye size={16} className="mr-1" />
+                          Ver
+                        </Button>
+                      </Link>
                     </td>
                   </tr>
                 );

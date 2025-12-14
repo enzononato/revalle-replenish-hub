@@ -3,8 +3,11 @@ import { useLocation } from 'react-router-dom';
 
 export function ContentHeader() {
   const location = useLocation();
-  const showNotifications = ['/', '/dashboard', '/protocolos'].includes(location.pathname);
+  const isDashboard = location.pathname === '/dashboard' || location.pathname === '/';
+  const showNotifications = ['/protocolos'].includes(location.pathname);
   
+  // No Dashboard, não mostra sino (alertas estão no card)
+  if (isDashboard) return null;
   if (!showNotifications) return null;
   
   return (

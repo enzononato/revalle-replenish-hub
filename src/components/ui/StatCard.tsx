@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface StatCardProps {
   title: string;
@@ -9,6 +10,7 @@ interface StatCardProps {
   delay?: number;
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
+  href?: string;
 }
 
 const variantStyles = {
@@ -54,13 +56,15 @@ export function StatCard({
   variant = 'default', 
   delay = 0,
   trend,
-  trendValue 
+  trendValue,
+  href
 }: StatCardProps) {
-  return (
+  const content = (
     <div 
       className={cn(
         "group relative overflow-hidden rounded-xl border-2 p-6 transition-all duration-300 animate-slide-up",
         "hover:shadow-xl hover:-translate-y-1",
+        href && "cursor-pointer",
         variantStyles[variant]
       )}
       style={{ animationDelay: `${delay}ms` }}
@@ -100,4 +104,10 @@ export function StatCard({
       </div>
     </div>
   );
+
+  if (href) {
+    return <Link to={href}>{content}</Link>;
+  }
+
+  return content;
 }
