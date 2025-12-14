@@ -482,13 +482,13 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-base font-bold text-foreground uppercase">UNIDADE:</span>
-                    <span className="text-base text-foreground">{protocolo.unidadeNome || '-'} (ID {protocolo.unidadeId || '-'})</span>
+                    <span className="text-base text-foreground">{protocolo.motorista.unidade || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-base font-bold text-foreground uppercase">WHATSAPP:</span>
                     {canEditMotorista && !editandoWhatsapp ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-base text-foreground">{protocolo.motorista.whatsapp || '-'}</span>
+                        <span className="text-base text-foreground">{protocolo.contatoWhatsapp || protocolo.motorista.whatsapp || '-'}</span>
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -553,8 +553,12 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         </Button>
                       </div>
                     ) : (
-                      <span className="text-base text-foreground">{protocolo.motorista.whatsapp || '-'}</span>
+                      <span className="text-base text-foreground">{protocolo.contatoWhatsapp || protocolo.motorista.whatsapp || '-'}</span>
                     )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-bold text-foreground uppercase">E-MAIL:</span>
+                    <span className="text-base text-foreground">{protocolo.contatoEmail || protocolo.motorista.email || '-'}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Switch 

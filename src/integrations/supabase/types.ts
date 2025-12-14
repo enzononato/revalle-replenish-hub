@@ -110,6 +110,8 @@ export type Database = {
           causa: string | null
           cliente_telefone: string | null
           codigo_pdv: string | null
+          contato_email: string | null
+          contato_whatsapp: string | null
           created_at: string | null
           data: string
           enviado_encerrar: boolean | null
@@ -146,6 +148,8 @@ export type Database = {
           causa?: string | null
           cliente_telefone?: string | null
           codigo_pdv?: string | null
+          contato_email?: string | null
+          contato_whatsapp?: string | null
           created_at?: string | null
           data: string
           enviado_encerrar?: boolean | null
@@ -182,6 +186,8 @@ export type Database = {
           causa?: string | null
           cliente_telefone?: string | null
           codigo_pdv?: string | null
+          contato_email?: string | null
+          contato_whatsapp?: string | null
           created_at?: string | null
           data?: string
           enviado_encerrar?: boolean | null

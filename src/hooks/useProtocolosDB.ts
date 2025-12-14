@@ -39,6 +39,8 @@ interface ProtocoloDB {
   enviado_encerrar_erro: string | null;
   cliente_telefone: string | null;
   motorista_unidade: string | null;
+  contato_whatsapp: string | null;
+  contato_email: string | null;
 }
 
 // Convert DB record to Protocolo type
@@ -85,7 +87,9 @@ function dbToProtocolo(db: ProtocoloDB): Protocolo {
     enviadoLancarErro: db.enviado_lancar_erro || undefined,
     enviadoEncerrarStatus: (db.enviado_encerrar_status as 'pendente' | 'enviado' | 'erro') || 'pendente',
     enviadoEncerrarErro: db.enviado_encerrar_erro || undefined,
-    clienteTelefone: db.cliente_telefone || undefined
+    clienteTelefone: db.cliente_telefone || undefined,
+    contatoWhatsapp: db.contato_whatsapp || undefined,
+    contatoEmail: db.contato_email || undefined
   };
 }
 
@@ -125,7 +129,9 @@ function protocoloToDB(p: Protocolo): Omit<ProtocoloDB, 'id'> {
     enviado_encerrar_status: p.enviadoEncerrarStatus || 'pendente',
     enviado_encerrar_erro: p.enviadoEncerrarErro || null,
     cliente_telefone: p.clienteTelefone || null,
-    motorista_unidade: p.motorista.unidade || null
+    motorista_unidade: p.motorista.unidade || null,
+    contato_whatsapp: p.contatoWhatsapp || null,
+    contato_email: p.contatoEmail || null
   };
 }
 

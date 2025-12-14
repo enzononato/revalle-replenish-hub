@@ -101,6 +101,9 @@ export interface Protocolo {
   enviadoEncerrarStatus?: 'pendente' | 'enviado' | 'erro';
   enviadoEncerrarErro?: string;
   clienteTelefone?: string;
+  // Campos de contato preenchidos no formulário
+  contatoWhatsapp?: string;
+  contatoEmail?: string;
 }
 
 export interface DashboardStats {

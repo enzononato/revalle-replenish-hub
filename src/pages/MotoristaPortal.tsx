@@ -376,6 +376,8 @@ export default function MotoristaPortal() {
       produtos: produtosFormatados as Produto[],
       fotosProtocolo,
       observacaoGeral: observacao || undefined,
+      contatoWhatsapp: whatsappContato || undefined,
+      contatoEmail: emailContato || undefined,
       createdAt: now.toISOString()
     };
 
