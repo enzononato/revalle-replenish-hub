@@ -29,6 +29,7 @@ export default function Motoristas() {
   const { motoristas, isLoading, addMotorista, updateMotorista, deleteMotorista, importMotoristas } = useMotoristasDB();
   const { isAdmin, user } = useAuth();
   const [search, setSearch] = useState('');
+  const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMotorista, setEditingMotorista] = useState<Motorista | null>(null);
   const [formData, setFormData] = useState({
@@ -47,7 +48,7 @@ export default function Motoristas() {
 
   // Filtrar motoristas por unidade do usuário (exceto admin)
   const motoristasFiltradosPorUnidade = isAdmin 
-    ? motoristas 
+    ? (unidadeFiltro === 'todas' ? motoristas : motoristas.filter(m => m.unidade === unidadeFiltro))
     : motoristas.filter(m => m.unidade === user?.unidade);
 
   const filteredMotoristas = motoristasFiltradosPorUnidade.filter(m => 
@@ -65,7 +66,7 @@ export default function Motoristas() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, pageSize]);
+  }, [search, pageSize, unidadeFiltro]);
 
   const resetForm = () => {
     setFormData({
@@ -260,13 +261,30 @@ export default function Motoristas() {
         </div>
       </div>
 
-      {/* Search */}
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        placeholder="Buscar por nome ou código..."
-        className="max-w-md"
-      />
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nome ou código..."
+          className="flex-1 max-w-md"
+        />
+        
+        {isAdmin && (
+          <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
+            <SelectTrigger className="w-[200px]">
+              <MapPin size={16} className="mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Todas as Unidades" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as Unidades</SelectItem>
+              {unidades.map(u => (
+                <SelectItem key={u} value={u}>{u}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
 
       {/* Table */}
       <div className="bg-card rounded-xl p-6 shadow-md animate-fade-in overflow-x-auto">
