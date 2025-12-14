@@ -44,6 +44,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, produtos, created_at')
         .eq('motorista_codigo', motorista.codigo)
         .or('oculto.is.null,oculto.eq.false')
+        .neq('status', 'encerrado')
         .order('created_at', { ascending: false })
         .limit(50);
 
