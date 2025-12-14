@@ -495,7 +495,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 Produtos Recebidos
               </h3>
               {protocolo.produtos && protocolo.produtos.length > 0 ? (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto border-2 border-slate-300 dark:border-slate-600 rounded-lg">
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="bg-slate-100 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
