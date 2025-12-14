@@ -276,18 +276,19 @@ export default function MotoristaPortal() {
       toast({ title: 'Erro', description: 'Selecione a causa', variant: 'destructive' });
       return;
     }
-    if (!fotoMotoristaPdv) {
-      toast({ title: 'Erro', description: 'Adicione a foto do motorista no PDV', variant: 'destructive' });
-      return;
-    }
-    if (!fotoLoteProduto) {
-      toast({ title: 'Erro', description: 'Adicione a foto do lote do produto', variant: 'destructive' });
-      return;
-    }
-    if (tipoReposicao === 'avaria' && !fotoAvaria) {
-      toast({ title: 'Erro', description: 'Adicione a foto da avaria', variant: 'destructive' });
-      return;
-    }
+    // Fotos opcionais durante período de teste
+    // if (!fotoMotoristaPdv) {
+    //   toast({ title: 'Erro', description: 'Adicione a foto do motorista no PDV', variant: 'destructive' });
+    //   return;
+    // }
+    // if (!fotoLoteProduto) {
+    //   toast({ title: 'Erro', description: 'Adicione a foto do lote do produto', variant: 'destructive' });
+    //   return;
+    // }
+    // if (tipoReposicao === 'avaria' && !fotoAvaria) {
+    //   toast({ title: 'Erro', description: 'Adicione a foto da avaria', variant: 'destructive' });
+    //   return;
+    // }
 
     const validProdutos = produtos.filter(p => p.produto.trim());
     if (validProdutos.length === 0) {
@@ -740,9 +741,6 @@ export default function MotoristaPortal() {
                               <SelectItem value="UND">UND</SelectItem>
                               <SelectItem value="CX">CX</SelectItem>
                               <SelectItem value="PCT">PCT</SelectItem>
-                              <SelectItem value="DZS">DZS</SelectItem>
-                              <SelectItem value="CX12">CX12</SelectItem>
-                              <SelectItem value="CX24">CX24</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -787,7 +785,7 @@ export default function MotoristaPortal() {
               <div className="space-y-3">
                 <Label className="flex items-center gap-2 text-sm font-medium">
                   <Camera className="h-4 w-4 text-primary" />
-                  Fotos Obrigatórias
+                  Fotos (opcional)
                 </Label>
                 
                 <div className="space-y-3">
