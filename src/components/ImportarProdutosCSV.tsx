@@ -27,6 +27,7 @@ const normalizeHeader = (header: string): string | null => {
     .replace(/[\u0300-\u036f]/g, '') // Remove acentos
     .replace(/[_\-\s.]/g, ''); // Remove _, -, espaços e pontos
   
+  // Primeiro verifica matches exatos
   for (const [key, variations] of Object.entries(HEADER_VARIATIONS)) {
     for (const variation of variations) {
       const normalizedVariation = variation
@@ -34,11 +35,12 @@ const normalizeHeader = (header: string): string | null => {
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[_\-\s.]/g, '');
       
-      if (normalized === normalizedVariation || normalized.includes(normalizedVariation) || normalizedVariation.includes(normalized)) {
+      if (normalized === normalizedVariation) {
         return key;
       }
     }
   }
+  
   return null;
 };
 
