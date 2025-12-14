@@ -61,9 +61,23 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
 
         {/* Nota informativa */}
         <div className="mt-5 bg-white/10 rounded-lg px-4 py-3">
-          <p className="text-sm text-primary-foreground/90 leading-relaxed">
-            <strong>Protocolo de Reposição:</strong> Registre avarias ou faltas. É possível adicionar vários produtos no mesmo protocolo.
+          <p className="text-sm text-primary-foreground font-semibold mb-1">
+            Protocolo de Reposição:
           </p>
+          <p className="text-sm text-primary-foreground/90 leading-relaxed mb-1">
+            Utilize este protocolo para registrar <strong>Falta</strong>, <strong>Inversão</strong> ou <strong>Avaria</strong> de produtos.
+          </p>
+          <p className="text-sm text-primary-foreground/80">
+            É possível adicionar vários produtos no mesmo protocolo.
+          </p>
+        </div>
+
+        {/* Logo e versão */}
+        <div className="mt-4 flex items-center justify-center gap-2 text-primary-foreground/60">
+          <div className="w-5 h-5 bg-white/20 rounded flex items-center justify-center">
+            <span className="text-xs font-bold">R</span>
+          </div>
+          <span className="text-xs">Reposição v2.1.2</span>
         </div>
       </div>
     </div>
