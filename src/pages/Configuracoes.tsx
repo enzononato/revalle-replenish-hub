@@ -1,17 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Key, Clock, Building, Download, Save } from 'lucide-react';
+import { MessageSquare, Key, Clock, Building, Download, Save, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import { ImportarProdutosCSV } from '@/components/ImportarProdutosCSV';
+import { useProdutosDB } from '@/hooks/useProdutosDB';
 
 export default function Configuracoes() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [webhookToken, setWebhookToken] = useState('');
   const [slaDefault, setSlaDefault] = useState('4');
   const [isSaving, setIsSaving] = useState(false);
+  const [totalProdutos, setTotalProdutos] = useState<number>(0);
+  const { getTotalProdutos } = useProdutosDB();
+
+  const fetchTotalProdutos = async () => {
+    const total = await getTotalProdutos();
+    setTotalProdutos(total);
+  };
+
+  useEffect(() => {
+    fetchTotalProdutos();
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -45,6 +58,10 @@ export default function Configuracoes() {
           <TabsTrigger value="unidades" className="gap-2">
             <Building size={16} />
             Unidades
+          </TabsTrigger>
+          <TabsTrigger value="produtos" className="gap-2">
+            <Package size={16} />
+            Produtos
           </TabsTrigger>
           <TabsTrigger value="exportar" className="gap-2">
             <Download size={16} />
@@ -178,6 +195,31 @@ export default function Configuracoes() {
               <Button variant="outline">
                 Adicionar Unidade
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="produtos">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="text-primary" />
+                Catálogo de Produtos
+              </CardTitle>
+              <CardDescription>
+                Importe e atualize o catálogo de produtos via planilha
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <p className="text-sm text-muted-foreground">Total de produtos cadastrados</p>
+                <p className="text-3xl font-bold text-foreground">{totalProdutos}</p>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-3">Importar Planilha de Produtos</h3>
+                <ImportarProdutosCSV onImportComplete={fetchTotalProdutos} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
