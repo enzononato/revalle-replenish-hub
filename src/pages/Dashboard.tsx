@@ -35,12 +35,15 @@ import {
 
 const COLORS = ['hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(160, 84%, 39%)'];
 
+type PeriodoFiltro = 'hoje' | 'semana' | 'mes' | 'todos';
+
 export default function Dashboard() {
   const { protocolos } = useProtocolos();
   const { isAdmin, user } = useAuth();
   const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
+  const [periodoFiltro, setPeriodoFiltro] = useState<PeriodoFiltro>('todos');
 
-  // Protocolos filtrados por unidade
+  // Protocolos filtrados por unidade e período
   const protocolosFiltrados = useMemo(() => {
     let filtered = protocolos.filter(p => !p.oculto);
     
@@ -49,9 +52,31 @@ export default function Dashboard() {
     } else if (unidadeFiltro !== 'todas') {
       filtered = filtered.filter(p => p.unidadeNome === unidadeFiltro);
     }
+
+    // Filtro por período
+    if (periodoFiltro !== 'todos') {
+      const now = new Date();
+      filtered = filtered.filter(p => {
+        try {
+          const dataProtocolo = parseISO(p.createdAt);
+          switch (periodoFiltro) {
+            case 'hoje':
+              return isToday(dataProtocolo);
+            case 'semana':
+              return dataProtocolo >= subDays(now, 7);
+            case 'mes':
+              return dataProtocolo >= subDays(now, 30);
+            default:
+              return true;
+          }
+        } catch {
+          return true;
+        }
+      });
+    }
     
     return filtered;
-  }, [protocolos, isAdmin, user?.unidade, unidadeFiltro]);
+  }, [protocolos, isAdmin, user?.unidade, unidadeFiltro, periodoFiltro]);
 
   // Estatísticas dinâmicas
   const stats = useMemo(() => {
@@ -257,7 +282,21 @@ export default function Dashboard() {
             )}
           </div>
           
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Filtro de Período */}
+            <Select value={periodoFiltro} onValueChange={(v) => setPeriodoFiltro(v as PeriodoFiltro)}>
+              <SelectTrigger className="w-[150px] bg-background/80 backdrop-blur-sm">
+                <Calendar size={16} className="mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hoje">Hoje</SelectItem>
+                <SelectItem value="semana">Última Semana</SelectItem>
+                <SelectItem value="mes">Último Mês</SelectItem>
+                <SelectItem value="todos">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+
             {isAdmin && (
               <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
                 <SelectTrigger className="w-[180px] bg-background/80 backdrop-blur-sm">
