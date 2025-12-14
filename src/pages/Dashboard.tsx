@@ -7,7 +7,7 @@ import { mockUnidades } from '@/data/mockData';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
-import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -91,6 +91,17 @@ export default function Dashboard() {
     }
     return motoristas.length;
   }, [motoristas, isAdmin, user?.unidade, unidadeFiltro]);
+
+  // Contador de motoristas por unidade (apenas para admin)
+  const motoristasPorUnidade = useMemo(() => {
+    const contagem: Record<string, number> = {};
+    motoristas.forEach(m => {
+      contagem[m.unidade] = (contagem[m.unidade] || 0) + 1;
+    });
+    return Object.entries(contagem)
+      .map(([nome, quantidade]) => ({ id: nome, nome, quantidade }))
+      .sort((a, b) => b.quantidade - a.quantidade);
+  }, [motoristas]);
 
   // Estatísticas dinâmicas
   const stats = useMemo(() => {
@@ -466,6 +477,28 @@ export default function Dashboard() {
           delay={800}
         />
       </div>
+
+      {/* Motoristas por Unidade - apenas para admin */}
+      {isAdmin && motoristasPorUnidade.length > 0 && (
+        <div className="card-stats animate-slide-up" style={{ animationDelay: '850ms' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <MapPin className="text-primary" size={20} />
+            <h3 className="font-heading text-lg font-semibold">Motoristas por Unidade</h3>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {motoristasPorUnidade.map((item, index) => (
+              <div 
+                key={item.id}
+                className="flex flex-col items-center p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                style={{ animationDelay: `${850 + index * 50}ms` }}
+              >
+                <span className="text-2xl font-bold text-primary">{item.quantidade}</span>
+                <span className="text-sm text-muted-foreground text-center truncate w-full">{item.nome}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
