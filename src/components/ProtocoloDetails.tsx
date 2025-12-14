@@ -50,6 +50,9 @@ interface ProtocoloDetailsProps {
   user?: User | null;
   canValidate?: boolean;
   canEditMotorista?: boolean;
+  isConferente?: boolean;
+  isAdmin?: boolean;
+  isDistribuicao?: boolean;
 }
 
 export function ProtocoloDetails({ 
@@ -62,7 +65,10 @@ export function ProtocoloDetails({
   onUpdateProtocolo,
   user,
   canValidate,
-  canEditMotorista
+  canEditMotorista,
+  isConferente = false,
+  isAdmin = false,
+  isDistribuicao = false
 }: ProtocoloDetailsProps) {
   const [habilitarReenvio, setHabilitarReenvio] = useState(protocolo?.habilitarReenvio || false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -560,16 +566,19 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     <span className="text-base font-bold text-foreground uppercase">E-MAIL CONTATO:</span>
                     <span className="text-base text-foreground">{protocolo.contatoEmail || '-'}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Switch 
-                      checked={habilitarReenvio} 
-                      onCheckedChange={setHabilitarReenvio} 
-                    />
-                    <span className="text-base font-bold text-foreground uppercase">HABILITAR REENVIO?</span>
-                  </div>
+                  {/* Switch de Habilitar Reenvio - Apenas para Admin e Distribuição */}
+                  {!isConferente && (
+                    <div className="flex items-center gap-3">
+                      <Switch 
+                        checked={habilitarReenvio} 
+                        onCheckedChange={setHabilitarReenvio} 
+                      />
+                      <span className="text-base font-bold text-foreground uppercase">HABILITAR REENVIO?</span>
+                    </div>
+                  )}
                   
-                  {/* Campo de telefone do cliente e botões de reenvio */}
-                  {habilitarReenvio && (
+                  {/* Campo de telefone do cliente e botões de reenvio - Apenas para Admin e Distribuição */}
+                  {!isConferente && habilitarReenvio && (
                     <div className="mt-3 p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
                       <div className="flex items-center gap-2">
                         <Phone size={16} className="text-primary" />
@@ -744,7 +753,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               </h3>
               
               {protocolo.status !== 'encerrado' ? (
-                user && onUpdateProtocolo ? (
+                (isAdmin || isDistribuicao) && user && onUpdateProtocolo ? (
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Mensagem para o usuário</label>
