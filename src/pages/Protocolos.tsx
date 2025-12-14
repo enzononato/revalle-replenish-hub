@@ -627,7 +627,7 @@ STATUS: Validado: ${protocolo.validacao ? 'Sim' : 'Não'} | Lançado: ${protocol
                   <td className="p-4 border-r border-[#E5E7EB]">
                     <span className="text-[#16A34A] font-medium flex items-center gap-1">
                       <Phone size={14} />
-                      {protocolo.motorista.whatsapp || '-'}
+                      {protocolo.contatoWhatsapp || '-'}
                     </span>
                   </td>
                   <td className="p-4 text-center border-r border-[#E5E7EB]">
