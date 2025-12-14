@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Truck, LogOut, Plus, Trash2, Upload, CheckCircle, Camera, Package, X } from 'lucide-react';
+import { Truck, LogOut, Plus, Trash2, CheckCircle, Camera, Package, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
@@ -194,9 +194,66 @@ export default function MotoristaPortal() {
     });
   };
 
+  // Photo upload card component for mobile
+  const PhotoUploadCard = ({
+    label,
+    photo,
+    setPhoto,
+    inputRef,
+    required = true
+  }: {
+    label: string;
+    photo: string | null;
+    setPhoto: (value: string | null) => void;
+    inputRef: React.RefObject<HTMLInputElement>;
+    required?: boolean;
+  }) => (
+    <div className="bg-muted/30 rounded-xl p-3 border border-border">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-foreground">
+          {label} {required && <span className="text-destructive">*</span>}
+        </span>
+        {photo && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setPhoto(null)}
+            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <X size={16} />
+          </Button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFotoUpload(e, setPhoto)}
+      />
+      {photo ? (
+        <div className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border">
+          <img src={photo} alt={label} className="w-full h-full object-cover" />
+        </div>
+      ) : (
+        <button
+          onClick={() => inputRef.current?.click()}
+          className="w-full aspect-[4/3] border-2 border-dashed border-primary/40 bg-primary/5 rounded-lg flex flex-col items-center justify-center gap-3 hover:bg-primary/10 active:bg-primary/15 transition-colors"
+        >
+          <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+            <Camera size={28} className="text-primary" />
+          </div>
+          <span className="text-sm font-medium text-primary">Tirar Foto</span>
+        </button>
+      )}
+    </div>
+  );
+
   if (protocoloCriado) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4 safe-area-inset">
         <Card className="w-full max-w-md text-center shadow-xl">
           <CardContent className="pt-8 pb-6">
             <div className="w-20 h-20 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
@@ -211,12 +268,12 @@ export default function MotoristaPortal() {
               <p className="text-lg font-mono font-bold text-primary">{numeroProtocolo}</p>
             </div>
             <div className="space-y-3">
-              <Button onClick={resetForm} className="w-full">
-                <Plus className="mr-2 h-4 w-4" />
+              <Button onClick={resetForm} className="w-full h-12 text-base">
+                <Plus className="mr-2 h-5 w-5" />
                 Abrir Novo Protocolo
               </Button>
-              <Button variant="outline" onClick={handleLogout} className="w-full">
-                <LogOut className="mr-2 h-4 w-4" />
+              <Button variant="outline" onClick={handleLogout} className="w-full h-12 text-base">
+                <LogOut className="mr-2 h-5 w-5" />
                 Sair
               </Button>
             </div>
@@ -227,70 +284,77 @@ export default function MotoristaPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-              <Truck className="w-6 h-6 text-primary" />
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 safe-area-inset">
+      {/* Header - More compact for mobile */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-3 py-3">
+        <div className="max-w-lg mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+              <Truck className="w-5 h-5 text-primary" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-foreground">{motorista.nome}</h1>
-              <p className="text-sm text-muted-foreground">Código: {motorista.codigo}</p>
+            <div className="min-w-0">
+              <h1 className="text-base font-bold text-foreground truncate">{motorista.nome}</h1>
+              <p className="text-xs text-muted-foreground">Cód: {motorista.codigo}</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sair
+          <Button variant="outline" size="sm" onClick={handleLogout} className="shrink-0 h-9 px-3">
+            <LogOut className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Sair</span>
           </Button>
         </div>
+      </div>
 
-        {/* Form Card */}
-        <Card className="shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
+      {/* Main Content */}
+      <div className="px-3 py-4 pb-24 max-w-lg mx-auto">
+        <Card className="shadow-lg border-border/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Package className="h-5 w-5 text-primary" />
               Abrir Protocolo
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* General Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="space-y-5">
+            {/* General Info - Single column on mobile */}
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="mapa">MAPA *</Label>
+                <Label htmlFor="mapa" className="text-sm font-medium">MAPA *</Label>
                 <Input
                   id="mapa"
                   value={mapa}
                   onChange={(e) => setMapa(e.target.value)}
                   placeholder="Ex: 16431"
+                  className="h-12 text-base"
+                  inputMode="numeric"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="codigoPdv">Código PDV *</Label>
+                <Label htmlFor="codigoPdv" className="text-sm font-medium">Código PDV *</Label>
                 <Input
                   id="codigoPdv"
                   value={codigoPdv}
                   onChange={(e) => setCodigoPdv(e.target.value)}
                   placeholder="Ex: PDV001"
+                  className="h-12 text-base"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notaFiscal">Nota Fiscal *</Label>
+                <Label htmlFor="notaFiscal" className="text-sm font-medium">Nota Fiscal *</Label>
                 <Input
                   id="notaFiscal"
                   value={notaFiscal}
                   onChange={(e) => setNotaFiscal(e.target.value)}
                   placeholder="Ex: 243631"
+                  className="h-12 text-base"
+                  inputMode="numeric"
                 />
               </div>
             </div>
 
             {/* Tipo Reposição */}
             <div className="space-y-2">
-              <Label>Tipo de Reposição *</Label>
+              <Label className="text-sm font-medium">Tipo de Reposição *</Label>
               <Select value={tipoReposicao} onValueChange={setTipoReposicao}>
-                <SelectTrigger>
+                <SelectTrigger className="h-12 text-base">
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -301,175 +365,107 @@ export default function MotoristaPortal() {
               </Select>
             </div>
 
-            {/* Photos Section */}
-            <div className="space-y-4">
-              <Label className="flex items-center gap-2">
-                <Camera className="h-4 w-4" />
+            {/* Photos Section - Stacked cards for mobile */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2 text-sm font-medium">
+                <Camera className="h-4 w-4 text-primary" />
                 Fotos Obrigatórias
               </Label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Foto Motorista no PDV */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Motorista no PDV *</p>
-                  <input
-                    ref={fotoMotoristaPdvRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => handleFotoUpload(e, setFotoMotoristaPdv)}
-                  />
-                  {fotoMotoristaPdv ? (
-                    <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
-                      <img src={fotoMotoristaPdv} alt="Motorista no PDV" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => setFotoMotoristaPdv(null)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => fotoMotoristaPdvRef.current?.click()}
-                      className="w-full aspect-video border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors"
-                    >
-                      <Upload size={24} className="text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Adicionar foto</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Foto Lote Produto */}
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Lote do Produto *</p>
-                  <input
-                    ref={fotoLoteProdutoRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => handleFotoUpload(e, setFotoLoteProduto)}
-                  />
-                  {fotoLoteProduto ? (
-                    <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
-                      <img src={fotoLoteProduto} alt="Lote do Produto" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => setFotoLoteProduto(null)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => fotoLoteProdutoRef.current?.click()}
-                      className="w-full aspect-video border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors"
-                    >
-                      <Upload size={24} className="text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Adicionar foto</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Foto Avaria (conditional) */}
+              
+              <div className="space-y-3">
+                <PhotoUploadCard
+                  label="Motorista no PDV"
+                  photo={fotoMotoristaPdv}
+                  setPhoto={setFotoMotoristaPdv}
+                  inputRef={fotoMotoristaPdvRef}
+                />
+                <PhotoUploadCard
+                  label="Lote do Produto"
+                  photo={fotoLoteProduto}
+                  setPhoto={setFotoLoteProduto}
+                  inputRef={fotoLoteProdutoRef}
+                />
                 {tipoReposicao === 'avaria' && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Foto da Avaria *</p>
-                    <input
-                      ref={fotoAvariaRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={(e) => handleFotoUpload(e, setFotoAvaria)}
-                    />
-                    {fotoAvaria ? (
-                      <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
-                        <img src={fotoAvaria} alt="Avaria" className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => setFotoAvaria(null)}
-                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => fotoAvariaRef.current?.click()}
-                        className="w-full aspect-video border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors"
-                      >
-                        <Upload size={24} className="text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Adicionar foto</span>
-                      </button>
-                    )}
-                  </div>
+                  <PhotoUploadCard
+                    label="Foto da Avaria"
+                    photo={fotoAvaria}
+                    setPhoto={setFotoAvaria}
+                    inputRef={fotoAvariaRef}
+                  />
                 )}
               </div>
             </div>
 
-            {/* Products Section */}
-            <div className="space-y-4">
+            {/* Products Section - Single column for mobile */}
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2">
-                  <Package className="h-4 w-4" />
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <Package className="h-4 w-4 text-primary" />
                   Produtos
                 </Label>
-                <Button type="button" variant="outline" size="sm" onClick={addProduto}>
+                <Button type="button" variant="outline" size="sm" onClick={addProduto} className="h-9">
                   <Plus className="mr-1 h-4 w-4" />
                   Adicionar
                 </Button>
               </div>
               
               {produtos.map((produto, index) => (
-                <div key={index} className="p-4 border border-border rounded-lg space-y-3">
+                <div key={index} className="p-4 bg-muted/30 border border-border rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Produto {index + 1}</span>
+                    <span className="text-sm font-semibold text-foreground">Produto {index + 1}</span>
                     {produtos.length > 1 && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => removeProduto(index)}
-                        className="text-destructive hover:text-destructive"
+                        className="h-9 w-9 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-5 w-5" />
                       </Button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Código *</Label>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Código *</Label>
                       <Input
                         value={produto.codigo}
                         onChange={(e) => updateProduto(index, 'codigo', e.target.value)}
                         placeholder="Ex: 7325"
+                        className="h-11 text-base"
+                        inputMode="numeric"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Nome *</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Nome *</Label>
                       <Input
                         value={produto.nome}
                         onChange={(e) => updateProduto(index, 'nome', e.target.value)}
                         placeholder="Nome do produto"
+                        className="h-11 text-base"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Quantidade</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={produto.quantidade}
-                        onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Validade</Label>
-                      <Input
-                        value={produto.validade}
-                        onChange={(e) => updateProduto(index, 'validade', e.target.value)}
-                        placeholder="Ex: 16/03/2026"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-muted-foreground">Quantidade</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={produto.quantidade}
+                          onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
+                          className="h-11 text-base"
+                          inputMode="numeric"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-medium text-muted-foreground">Validade</Label>
+                        <Input
+                          value={produto.validade}
+                          onChange={(e) => updateProduto(index, 'validade', e.target.value)}
+                          placeholder="DD/MM/AAAA"
+                          className="h-11 text-base"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -478,22 +474,31 @@ export default function MotoristaPortal() {
 
             {/* Observation */}
             <div className="space-y-2">
-              <Label htmlFor="observacao">Observação (opcional)</Label>
+              <Label htmlFor="observacao" className="text-sm font-medium">Observação (opcional)</Label>
               <Textarea
                 id="observacao"
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
                 placeholder="Adicione observações relevantes..."
                 rows={3}
+                className="text-base resize-none"
               />
             </div>
-
-            {/* Submit Button */}
-            <Button onClick={handleSubmit} className="w-full h-12 text-base">
-              Enviar Protocolo
-            </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Sticky Submit Button */}
+      <div className="fixed bottom-0 left-0 right-0 p-3 bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
+        <div className="max-w-lg mx-auto">
+          <Button 
+            onClick={handleSubmit} 
+            className="w-full h-14 text-base font-semibold shadow-lg"
+          >
+            <CheckCircle className="mr-2 h-5 w-5" />
+            Enviar Protocolo
+          </Button>
+        </div>
       </div>
     </div>
   );
