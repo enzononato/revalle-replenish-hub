@@ -43,21 +43,21 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-accent/30" />
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-primary-foreground">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="p-4 bg-accent rounded-2xl">
+          <div className="flex items-center gap-4 mb-8 animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
+            <div className="p-4 bg-accent rounded-2xl hover-scale">
               <Truck size={48} />
             </div>
           </div>
-          <h1 className="font-heading text-5xl font-bold mb-4">Revalle</h1>
-          <p className="text-xl text-primary-foreground/80 text-center max-w-md">
+          <h1 className="font-heading text-5xl font-bold mb-4 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>Revalle</h1>
+          <p className="text-xl text-primary-foreground/80 text-center max-w-md animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
             Sistema de Reposição - Registro Inteligente de Entregas
           </p>
-          <div className="mt-12 grid grid-cols-2 gap-6 text-center">
-            <div className="p-6 bg-primary-foreground/10 rounded-xl backdrop-blur-sm">
+          <div className="mt-12 grid grid-cols-2 gap-6 text-center animate-fade-in" style={{ animationDelay: '0.4s', animationFillMode: 'both' }}>
+            <div className="p-6 bg-primary-foreground/10 rounded-xl backdrop-blur-sm hover-scale">
               <p className="text-3xl font-bold">100+</p>
               <p className="text-sm text-primary-foreground/70">Motoristas Ativos</p>
             </div>
-            <div className="p-6 bg-primary-foreground/10 rounded-xl backdrop-blur-sm">
+            <div className="p-6 bg-primary-foreground/10 rounded-xl backdrop-blur-sm hover-scale">
               <p className="text-3xl font-bold">500+</p>
               <p className="text-sm text-primary-foreground/70">Protocolos/Mês</p>
             </div>
@@ -68,14 +68,14 @@ export default function Login() {
       {/* Right side - Login form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <div className="p-3 bg-primary rounded-xl">
+          <div className="lg:hidden flex items-center gap-3 mb-8 justify-center animate-fade-in">
+            <div className="p-3 bg-primary rounded-xl hover-scale">
               <Truck size={32} className="text-primary-foreground" />
             </div>
             <h1 className="font-heading text-3xl font-bold text-primary">Revalle</h1>
           </div>
 
-          <div className="animate-fade-in">
+          <div className="animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
             <h2 className="font-heading text-3xl font-bold text-foreground mb-2">
               Bem-vindo de volta
             </h2>
@@ -83,7 +83,7 @@ export default function Login() {
               Entre com suas credenciais para acessar o sistema
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -118,7 +118,7 @@ export default function Login() {
 
               <Button 
                 type="submit" 
-                className="w-full btn-primary-gradient h-12 text-base"
+                className="w-full btn-primary-gradient h-12 text-base hover-scale"
                 disabled={isLoading}
               >
                 {isLoading ? 'Entrando...' : 'Entrar'}
