@@ -94,14 +94,14 @@ export default function Unidades() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
-            <Building2 className="text-primary" size={32} />
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+            <Building2 className="text-primary" size={24} />
             Unidades
           </h1>
-          <p className="text-muted-foreground mt-1">Gerencie as unidades cadastradas</p>
+          <p className="text-muted-foreground mt-0.5 text-sm">Gerencie as unidades cadastradas</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -179,15 +179,15 @@ export default function Unidades() {
       />
 
       {/* Table */}
-      <div className="bg-card rounded-xl p-6 shadow-md animate-fade-in overflow-x-auto">
+      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="table-header">
-              <th className="text-left p-4 rounded-tl-lg">Nome</th>
-              <th className="text-left p-4">Código</th>
-              <th className="text-left p-4">CNPJ</th>
-              <th className="text-center p-4">Motoristas</th>
-              <th className="text-right p-4 rounded-tr-lg">Ações</th>
+              <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Nome</th>
+              <th className="text-left p-2.5 text-[11px]">Código</th>
+              <th className="text-left p-2.5 text-[11px]">CNPJ</th>
+              <th className="text-center p-2.5 text-[11px]">Motoristas</th>
+              <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -196,48 +196,48 @@ export default function Unidades() {
                 key={unidade.id} 
                 className="border-b border-border"
               >
-                <td className="p-4 font-medium">
-                  <span className="inline-flex items-center gap-2">
-                    <Building2 size={16} className="text-muted-foreground" />
+                <td className="p-2.5 font-medium text-xs">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Building2 size={14} className="text-muted-foreground" />
                     {unidade.nome}
                   </span>
                 </td>
-                <td className="p-4">
-                  <span className="inline-flex items-center gap-1 text-muted-foreground">
-                    <Hash size={14} />
+                <td className="p-2.5">
+                  <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                    <Hash size={12} />
                     {unidade.codigo}
                   </span>
                 </td>
-                <td className="p-4 text-muted-foreground font-mono text-sm">
+                <td className="p-2.5 text-muted-foreground font-mono text-xs">
                   {unidade.cnpj || '-'}
                 </td>
-                <td className="p-4 text-center">
+                <td className="p-2.5 text-center">
                   {isLoadingMotoristas ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground inline" />
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
                   ) : (
-                    <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-sm font-medium">
-                      <Users size={14} />
+                    <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                      <Users size={12} />
                       {getMotoristaCount(unidade.nome)}
                     </span>
                   )}
                 </td>
-                <td className="p-4">
-                  <div className="flex justify-end gap-2">
+                <td className="p-2.5">
+                  <div className="flex justify-end gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => openEditDialog(unidade)}
-                      className="text-primary hover:text-primary/80"
+                      className="text-primary hover:text-primary/80 h-6 w-6 p-0"
                     >
-                      <Pencil size={16} />
+                      <Pencil size={14} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(unidade.id)}
-                      className="text-destructive hover:text-destructive/80"
+                      className="text-destructive hover:text-destructive/80 h-6 w-6 p-0"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={14} />
                     </Button>
                   </div>
                 </td>

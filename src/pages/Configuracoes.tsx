@@ -39,32 +39,32 @@ export default function Configuracoes() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       <div>
-        <h1 className="font-heading text-3xl font-bold text-foreground">Configurações</h1>
-        <p className="text-muted-foreground mt-1">Gerencie as configurações do sistema</p>
+        <h1 className="font-heading text-2xl font-bold text-foreground">Configurações</h1>
+        <p className="text-muted-foreground mt-0.5 text-sm">Gerencie as configurações do sistema</p>
       </div>
 
-      <Tabs defaultValue="whatsapp" className="space-y-6">
+      <Tabs defaultValue="whatsapp" className="space-y-4">
         <TabsList className="bg-muted">
-          <TabsTrigger value="whatsapp" className="gap-2">
-            <MessageSquare size={16} />
+          <TabsTrigger value="whatsapp" className="gap-1.5 text-xs">
+            <MessageSquare size={14} />
             WhatsApp
           </TabsTrigger>
-          <TabsTrigger value="sla" className="gap-2">
-            <Clock size={16} />
+          <TabsTrigger value="sla" className="gap-1.5 text-xs">
+            <Clock size={14} />
             SLA
           </TabsTrigger>
-          <TabsTrigger value="unidades" className="gap-2">
-            <Building size={16} />
+          <TabsTrigger value="unidades" className="gap-1.5 text-xs">
+            <Building size={14} />
             Unidades
           </TabsTrigger>
-          <TabsTrigger value="produtos" className="gap-2">
-            <Package size={16} />
+          <TabsTrigger value="produtos" className="gap-1.5 text-xs">
+            <Package size={14} />
             Produtos
           </TabsTrigger>
-          <TabsTrigger value="exportar" className="gap-2">
-            <Download size={16} />
+          <TabsTrigger value="exportar" className="gap-1.5 text-xs">
+            <Download size={14} />
             Exportar
           </TabsTrigger>
         </TabsList>

@@ -89,20 +89,20 @@ export function Sidebar() {
         </div>
 
         {/* User Profile Section - Below logo */}
-        <div className="flex-shrink-0 p-3 border-b border-sidebar-border bg-sidebar-accent/20">
-          <div className="flex items-start gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center flex-shrink-0">
-              <User size={16} className="text-primary" />
+        <div className="flex-shrink-0 p-2 border-b border-sidebar-border bg-sidebar-accent/20">
+          <div className="flex items-start gap-2">
+            <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center flex-shrink-0">
+              <User size={12} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white truncate">
+              <p className="text-[11px] font-semibold text-white truncate">
                 {user?.nome || 'Usuário'}
               </p>
-              <div className="flex items-center gap-1 text-[10px] text-sidebar-foreground/80 mt-0.5">
-                <Building2 size={10} />
+              <div className="flex items-center gap-1 text-[9px] text-sidebar-foreground/80 mt-0.5">
+                <Building2 size={9} />
                 <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
               </div>
-              <Badge variant={roleBadge.variant} className="mt-1.5 text-[10px] px-1.5 py-0">
+              <Badge variant={roleBadge.variant} className="mt-1 text-[9px] px-1 py-0">
                 {roleBadge.label}
               </Badge>
             </div>
