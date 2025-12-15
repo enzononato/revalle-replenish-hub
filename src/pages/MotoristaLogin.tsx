@@ -28,7 +28,7 @@ export default function MotoristaLogin() {
   };
 
   const isFieldValid = (field: 'codigo' | 'senha') => {
-    if (field === 'codigo') return codigo.trim().length >= 3;
+    if (field === 'codigo') return codigo.trim().length >= 1;
     if (field === 'senha') return senha.length >= 4;
     return false;
   };
