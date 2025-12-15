@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { mockUnidades } from '@/data/mockData';
 import { Unidade } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -13,21 +12,22 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, Hash, Building2, Users, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
+import { useUnidadesDB } from '@/hooks/useUnidadesDB';
 
 export default function Unidades() {
-  const [unidades, setUnidades] = useState<Unidade[]>(mockUnidades);
+  const { unidades, isLoading, addUnidade, updateUnidade, deleteUnidade } = useUnidadesDB();
+  const { motoristas, isLoading: isLoadingMotoristas } = useMotoristasDB();
+  
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUnidade, setEditingUnidade] = useState<Unidade | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
     codigo: '',
     cnpj: '',
   });
-
-  const { motoristas, isLoading: isLoadingMotoristas } = useMotoristasDB();
 
   const filteredUnidades = unidades.filter(u => 
     u.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -35,7 +35,6 @@ export default function Unidades() {
     u.cnpj.includes(search)
   );
 
-  // Conta motoristas + ajudantes por unidade
   const getMotoristaCount = (unidadeNome: string) => {
     return motoristas.filter(m => m.unidade === unidadeNome).length;
   };
@@ -59,34 +58,40 @@ export default function Unidades() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    if (editingUnidade) {
-      setUnidades(prev => prev.map(u => 
-        u.id === editingUnidade.id 
-          ? { ...u, ...formData }
-          : u
-      ));
-      toast.success('Unidade atualizada com sucesso!');
-    } else {
-      const newUnidade: Unidade = {
-        id: String(Date.now()),
-        ...formData,
-        createdAt: new Date().toISOString(),
-      };
-      setUnidades(prev => [...prev, newUnidade]);
-      toast.success('Unidade cadastrada com sucesso!');
+    try {
+      if (editingUnidade) {
+        await updateUnidade(editingUnidade.id, formData);
+      } else {
+        await addUnidade(formData);
+      }
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      // Error handled in hook
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsDialogOpen(false);
-    resetForm();
   };
 
-  const handleDelete = (id: string) => {
-    setUnidades(prev => prev.filter(u => u.id !== id));
-    toast.success('Unidade excluída com sucesso!');
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteUnidade(id);
+    } catch (error) {
+      // Error handled in hook
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -145,16 +150,18 @@ export default function Unidades() {
                     value={formData.cnpj}
                     onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))}
                     placeholder="00.000.000/0000-00"
-                    required
                   />
                 </div>
               </div>
               
               <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                   Cancelar
                 </Button>
-                <Button type="submit" className="btn-primary-gradient">
+                <Button type="submit" className="btn-primary-gradient" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
                   {editingUnidade ? 'Salvar' : 'Cadastrar'}
                 </Button>
               </div>
@@ -202,7 +209,7 @@ export default function Unidades() {
                   </span>
                 </td>
                 <td className="p-4 text-muted-foreground font-mono text-sm">
-                  {unidade.cnpj}
+                  {unidade.cnpj || '-'}
                 </td>
                 <td className="p-4 text-center">
                   {isLoadingMotoristas ? (

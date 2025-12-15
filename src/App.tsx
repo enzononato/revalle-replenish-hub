@@ -17,6 +17,7 @@ import Configuracoes from "./pages/Configuracoes";
 import AbrirProtocolo from "./pages/AbrirProtocolo";
 import MotoristaLogin from "./pages/MotoristaLogin";
 import MotoristaPortal from "./pages/MotoristaPortal";
+import ImportarDados from "./pages/ImportarDados";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
                   <Route path="/unidades" element={<Unidades />} />
                   <Route path="/usuarios" element={<Usuarios />} />
                   <Route path="/configuracoes" element={<Configuracoes />} />
+                  <Route path="/importar-dados" element={<ImportarDados />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

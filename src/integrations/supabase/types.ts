@@ -221,6 +221,30 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades: {
+        Row: {
+          cnpj: string | null
+          codigo: string
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          cnpj?: string | null
+          codigo: string
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          cnpj?: string | null
+          codigo?: string
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
