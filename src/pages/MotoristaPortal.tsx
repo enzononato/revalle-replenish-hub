@@ -192,8 +192,13 @@ export default function MotoristaPortal() {
   };
 
   // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !motorista) {
+      navigate('/motorista/login', { replace: true });
+    }
+  }, [isAuthenticated, motorista, navigate]);
+
   if (!isAuthenticated || !motorista) {
-    navigate('/motorista/login', { replace: true });
     return null;
   }
 
