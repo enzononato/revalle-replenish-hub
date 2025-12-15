@@ -168,14 +168,14 @@ export default function Motoristas() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
-            <Truck className="text-primary" size={32} />
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+            <Truck className="text-primary" size={24} />
             Motoristas
           </h1>
-          <p className="text-muted-foreground mt-1">Gerencie os motoristas cadastrados</p>
+          <p className="text-muted-foreground mt-0.5 text-sm">Gerencie os motoristas cadastrados</p>
         </div>
         
         <div className="flex gap-2">
@@ -305,7 +305,7 @@ export default function Motoristas() {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -315,8 +315,8 @@ export default function Motoristas() {
         
         {isAdmin && (
           <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
-            <SelectTrigger className="w-[200px]">
-              <MapPin size={16} className="mr-2 text-muted-foreground" />
+            <SelectTrigger className="w-[180px] h-8 text-xs">
+              <MapPin size={14} className="mr-1.5 text-muted-foreground" />
               <SelectValue placeholder="Todas as Unidades" />
             </SelectTrigger>
             <SelectContent>
@@ -356,17 +356,17 @@ export default function Motoristas() {
       )}
 
       {/* Table */}
-      <div className="bg-card rounded-xl p-6 shadow-md animate-fade-in overflow-x-auto">
+      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
           <>
             <table className="w-full">
               <thead>
                 <tr className="table-header">
-                  <th className="text-left p-4 rounded-tl-lg w-12">
+                  <th className="text-left p-2.5 text-[11px] rounded-tl-lg w-10">
                     <Checkbox
                       checked={isAllSelected}
                       onCheckedChange={toggleSelectAll}
@@ -374,12 +374,12 @@ export default function Motoristas() {
                       className={isPartialSelected ? "data-[state=checked]:bg-primary/50" : ""}
                     />
                   </th>
-                  <th className="text-left p-4">Nome</th>
-                  <th className="text-left p-4">Código</th>
-                  <th className="text-left p-4">Função</th>
-                  <th className="text-left p-4">Setor</th>
-                  <th className="text-left p-4">Unidade</th>
-                  <th className="text-right p-4 rounded-tr-lg">Ações</th>
+                  <th className="text-left p-2.5 text-[11px]">Nome</th>
+                  <th className="text-left p-2.5 text-[11px]">Código</th>
+                  <th className="text-left p-2.5 text-[11px]">Função</th>
+                  <th className="text-left p-2.5 text-[11px]">Setor</th>
+                  <th className="text-left p-2.5 text-[11px]">Unidade</th>
+                  <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -388,63 +388,63 @@ export default function Motoristas() {
                     key={motorista.id} 
                     className={`border-b border-border ${selectedIds.has(motorista.id) ? 'bg-primary/5' : ''}`}
                   >
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <Checkbox
                         checked={selectedIds.has(motorista.id)}
                         onCheckedChange={() => toggleSelect(motorista.id)}
                         aria-label={`Selecionar ${motorista.nome}`}
                       />
                     </td>
-                    <td className="p-4 font-medium">{motorista.nome}</td>
-                    <td className="p-4">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground">
-                        <Hash size={14} />
+                    <td className="p-2.5 font-medium text-xs">{motorista.nome}</td>
+                    <td className="p-2.5">
+                      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                        <Hash size={12} />
                         {motorista.codigo}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                    <td className="p-2.5">
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
                         motorista.funcao === 'ajudante_entrega' 
                           ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' 
                           : 'bg-green-500/20 text-green-700 dark:text-green-400'
                       }`}>
-                        <Users size={12} />
+                        <Users size={10} />
                         {getFuncaoLabel(motorista.funcao)}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                    <td className="p-2.5">
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
                         motorista.setor === 'interior' 
                           ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' 
                           : 'bg-green-500/20 text-green-700 dark:text-green-400'
                       }`}>
-                        <Building size={12} />
+                        <Building size={10} />
                         {getSetorLabel(motorista.setor)}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground">
-                        <MapPin size={14} />
+                    <td className="p-2.5">
+                      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                        <MapPin size={12} />
                         {motorista.unidade}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <div className="flex justify-end gap-2">
+                    <td className="p-2.5">
+                      <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => openEditDialog(motorista)}
-                          className="text-primary hover:text-primary/80"
+                          className="text-primary hover:text-primary/80 h-6 w-6 p-0"
                         >
-                          <Pencil size={16} />
+                          <Pencil size={14} />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(motorista.id)}
-                          className="text-destructive hover:text-destructive/80"
+                          className="text-destructive hover:text-destructive/80 h-6 w-6 p-0"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </Button>
                       </div>
                     </td>

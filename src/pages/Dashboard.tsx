@@ -346,26 +346,26 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Header Personalizado */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border border-primary/20">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-3 border border-primary/20">
         <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         
-        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30">
-                <TrendingUp size={20} />
+            <div className="flex items-center gap-2 mb-0.5">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30">
+                <TrendingUp size={16} />
               </div>
               <div>
-                <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+                <h1 className="font-heading text-lg sm:text-xl font-bold text-foreground">
                   {saudacao}, {user?.nome?.split(' ')[0] || 'Usuário'}!
                 </h1>
-                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
                   <span className="capitalize">{dataAtual}</span>
                   <span className="text-muted-foreground/50">•</span>
                   <span className="flex items-center gap-1">
-                    <Building2 size={12} />
+                    <Building2 size={10} />
                     {isAdmin ? 'Todas as Unidades' : user?.unidade || '-'}
                   </span>
                 </div>
@@ -487,19 +487,19 @@ export default function Dashboard() {
       {/* Motoristas por Unidade - apenas para admin */}
       {isAdmin && motoristasPorUnidade.length > 0 && (
         <div className="card-stats animate-slide-up" style={{ animationDelay: '850ms' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin className="text-primary" size={20} />
-            <h3 className="font-heading text-lg font-semibold">Motoristas por Unidade</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <MapPin className="text-primary" size={16} />
+            <h3 className="font-heading text-base font-semibold">Motoristas por Unidade</h3>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {motoristasPorUnidade.map((item, index) => (
               <div 
                 key={item.id}
-                className="flex flex-col items-center p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                className="flex flex-col items-center p-2.5 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                 style={{ animationDelay: `${850 + index * 50}ms` }}
               >
-                <span className="text-2xl font-bold text-primary">{item.quantidade}</span>
-                <span className="text-sm text-muted-foreground text-center truncate w-full">{item.nome}</span>
+                <span className="text-xl font-bold text-primary">{item.quantidade}</span>
+                <span className="text-xs text-muted-foreground text-center truncate w-full">{item.nome}</span>
               </div>
             ))}
           </div>
@@ -507,33 +507,34 @@ export default function Dashboard() {
       )}
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Bar Chart */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '900ms' }}>
-          <h3 className="font-heading text-lg font-semibold mb-4">Protocolos da Semana</h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <h3 className="font-heading text-base font-semibold mb-3">Protocolos da Semana</h3>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, 'dataMax']} />
+              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, 'dataMax']} fontSize={11} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
+                  borderRadius: '8px',
+                  fontSize: '11px'
                 }}
               />
               <Legend 
-                wrapperStyle={{ paddingTop: '20px' }}
+                wrapperStyle={{ paddingTop: '10px' }}
                 formatter={(value) => (
-                  <span className="text-sm text-muted-foreground capitalize">{value}</span>
+                  <span className="text-xs text-muted-foreground capitalize">{value}</span>
                 )}
               />
               <Bar dataKey="abertos" name="Abertos" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]}>
-                <LabelList dataKey="abertos" position="top" className="fill-muted-foreground text-xs" />
+                <LabelList dataKey="abertos" position="top" className="fill-muted-foreground text-[10px]" />
               </Bar>
               <Bar dataKey="encerrados" name="Encerrados" fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]}>
-                <LabelList dataKey="encerrados" position="top" className="fill-muted-foreground text-xs" />
+                <LabelList dataKey="encerrados" position="top" className="fill-muted-foreground text-[10px]" />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -541,18 +542,19 @@ export default function Dashboard() {
 
         {/* Pie Chart */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '1000ms' }}>
-          <h3 className="font-heading text-lg font-semibold mb-4">Status dos Protocolos</h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <h3 className="font-heading text-base font-semibold mb-3">Status dos Protocolos</h3>
+          <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie
                 data={pieData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                innerRadius={50}
+                outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                fontSize={10}
               >
                 {pieData.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -560,9 +562,9 @@ export default function Dashboard() {
               </Pie>
               <Tooltip />
               <Legend 
-                wrapperStyle={{ paddingTop: '10px' }}
+                wrapperStyle={{ paddingTop: '8px' }}
                 formatter={(value) => (
-                  <span className="text-sm text-muted-foreground">{value}</span>
+                  <span className="text-xs text-muted-foreground">{value}</span>
                 )}
               />
             </PieChart>
@@ -572,17 +574,17 @@ export default function Dashboard() {
 
       {/* Recent Protocols */}
       <div className="card-stats animate-slide-up" style={{ animationDelay: '1100ms' }}>
-        <h3 className="font-heading text-lg font-semibold mb-4">Protocolos Recentes</h3>
+        <h3 className="font-heading text-base font-semibold mb-3">Protocolos Recentes</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="table-header">
-                <th className="text-left p-4 rounded-tl-lg">Protocolo</th>
-                <th className="text-left p-4">Motorista</th>
-                <th className="text-left p-4">Data</th>
-                <th className="text-left p-4">SLA</th>
-                <th className="text-left p-4">Status</th>
-                <th className="text-right p-4 rounded-tr-lg">Ações</th>
+                <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Protocolo</th>
+                <th className="text-left p-2.5 text-[11px]">Motorista</th>
+                <th className="text-left p-2.5 text-[11px]">Data</th>
+                <th className="text-left p-2.5 text-[11px]">SLA</th>
+                <th className="text-left p-2.5 text-[11px]">Status</th>
+                <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -594,34 +596,33 @@ export default function Dashboard() {
                     key={protocolo.id} 
                     className="border-b border-border hover:bg-primary/5 transition-all duration-200 group"
                   >
-                    <td className="p-4">
-                      <span className="font-semibold text-primary">{protocolo.numero}</span>
+                    <td className="p-2.5">
+                      <span className="font-semibold text-primary text-xs">{protocolo.numero}</span>
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${getAvatarColor(protocolo.motorista.nome)}`}>
+                    <td className="p-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold ${getAvatarColor(protocolo.motorista.nome)}`}>
                           {getInitials(protocolo.motorista.nome)}
                         </div>
-                        <span className="font-medium">{protocolo.motorista.nome}</span>
+                        <span className="font-medium text-xs">{protocolo.motorista.nome}</span>
                       </div>
                     </td>
-                    <td className="p-4 text-muted-foreground">{protocolo.data}</td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium ${getSlaColor(slaDias)}`}>
+                    <td className="p-2.5 text-muted-foreground text-xs">{protocolo.data}</td>
+                    <td className="p-2.5">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(slaDias)}`}>
                         {slaDias} {slaDias === 1 ? 'dia' : 'dias'}
                       </span>
                     </td>
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <StatusBadge status={protocolo.status} />
                     </td>
-                    <td className="p-4 text-right">
+                    <td className="p-2.5 text-right">
                       <Link to={`/protocolos?id=${protocolo.id}`}>
                         <Button 
                           variant="outline" 
-                          size="sm"
-                          className="border-emerald-500 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                          className="h-6 text-xs border-emerald-500 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                         >
-                          <Eye size={16} className="mr-1" />
+                          <Eye size={12} className="mr-1" />
                           Ver
                         </Button>
                       </Link>
