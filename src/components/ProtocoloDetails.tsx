@@ -431,90 +431,90 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 <Clock size={16} className="text-primary" />
                 INFORMAÇÕES GERAIS
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                 {/* Coluna Esquerda */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">PROTOCOLO:</span>
-                    <span className="text-base text-foreground">{protocolo.numero}</span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">PROTOCOLO:</span>
+                    <span className="text-xs text-foreground">{protocolo.numero}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">DATA:</span>
-                    <span className="text-base text-foreground">{protocolo.data}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">DATA:</span>
+                    <span className="text-xs text-foreground">{protocolo.data}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">MOTORISTA:</span>
-                    <span className="text-base text-foreground">{protocolo.motorista.codigo} - {protocolo.motorista.nome}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">MOTORISTA:</span>
+                    <span className="text-xs text-foreground">{protocolo.motorista.codigo} - {protocolo.motorista.nome}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">UNIDADE:</span>
-                    <span className="text-base text-foreground">{protocolo.motorista.unidade || '-'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">UNIDADE:</span>
+                    <span className="text-xs text-foreground">{protocolo.motorista.unidade || '-'}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">MAPA:</span>
-                    <span className="text-base text-foreground">{protocolo.mapa || '-'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">MAPA:</span>
+                    <span className="text-xs text-foreground">{protocolo.mapa || '-'}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">CÓDIGO PDV:</span>
-                    <span className="text-base text-foreground">{protocolo.codigoPdv || '-'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">CÓDIGO PDV:</span>
+                    <span className="text-xs text-foreground">{protocolo.codigoPdv || '-'}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">NOTA FISCAL:</span>
-                    <span className="text-base text-foreground">{protocolo.notaFiscal || '-'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">NOTA FISCAL:</span>
+                    <span className="text-xs text-foreground">{protocolo.notaFiscal || '-'}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">CAUSA:</span>
-                    <span className="text-base text-foreground">{protocolo.causa || '-'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">CAUSA:</span>
+                    <span className="text-xs text-foreground">{protocolo.causa || '-'}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">TIPO DE REPOSIÇÃO:</span>
-                    <span className="text-base text-foreground">{protocolo.tipoReposicao || '-'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">TIPO DE REPOSIÇÃO:</span>
+                    <span className="text-xs text-foreground">{protocolo.tipoReposicao || '-'}</span>
                   </div>
                 </div>
 
                 {/* Coluna Direita */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">STATUS:</span>
-                    <span className="text-base text-foreground uppercase">{protocolo.status}</span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">STATUS:</span>
+                    <span className="text-xs text-foreground uppercase">{protocolo.status}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">HORA:</span>
-                    <span className="text-base text-foreground">{protocolo.hora}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">HORA:</span>
+                    <span className="text-xs text-foreground">{protocolo.hora}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">UNIDADE:</span>
-                    <span className="text-base text-foreground">{protocolo.motorista.unidade || '-'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">UNIDADE:</span>
+                    <span className="text-xs text-foreground">{protocolo.motorista.unidade || '-'}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">WHATSAPP CONTATO:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">WHATSAPP CONTATO:</span>
                     {canEditMotorista && !editandoWhatsapp ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-base text-foreground font-medium text-primary">{protocolo.contatoWhatsapp || '-'}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-foreground font-medium text-primary">{protocolo.contatoWhatsapp || '-'}</span>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-6 w-6 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
+                          className="h-5 w-5 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
                           onClick={() => {
                             setWhatsappEditado(protocolo.motorista.whatsapp || '');
                             setEditandoWhatsapp(true);
                           }}
                         >
-                          <Pencil size={14} />
+                          <Pencil size={12} />
                         </Button>
                       </div>
                     ) : canEditMotorista && editandoWhatsapp ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <Input 
                           value={whatsappEditado}
                           onChange={(e) => setWhatsappEditado(e.target.value)}
                           placeholder="(XX) XXXXX-XXXX"
-                          className="h-8 w-40"
+                          className="h-6 w-32 text-xs"
                         />
                         <Button 
                           size="sm" 
                           variant="outline"
-                          className="h-8 px-3"
+                          className="h-6 px-2 text-xs"
                           onClick={() => {
                             if (!onUpdateProtocolo || !user) return;
                             
@@ -548,51 +548,52 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-8 px-2"
+                          className="h-6 px-1.5"
                           onClick={() => setEditandoWhatsapp(false)}
                         >
-                          <X size={14} />
+                          <X size={12} />
                         </Button>
                       </div>
                     ) : (
-                      <span className="text-base text-foreground font-medium text-primary">{protocolo.contatoWhatsapp || '-'}</span>
+                      <span className="text-xs text-foreground font-medium text-primary">{protocolo.contatoWhatsapp || '-'}</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">E-MAIL CONTATO:</span>
-                    <span className="text-base text-foreground">{protocolo.contatoEmail || '-'}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">E-MAIL CONTATO:</span>
+                    <span className="text-xs text-foreground">{protocolo.contatoEmail || '-'}</span>
                   </div>
                   {/* Switch de Habilitar Reenvio - Apenas para Admin e Distribuição */}
                   {!isConferente && (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Switch 
                         checked={habilitarReenvio} 
-                        onCheckedChange={setHabilitarReenvio} 
+                        onCheckedChange={setHabilitarReenvio}
+                        className="scale-75"
                       />
-                      <span className="text-base font-bold text-foreground uppercase">HABILITAR REENVIO?</span>
+                      <span className="text-xs font-bold text-foreground uppercase">HABILITAR REENVIO?</span>
                     </div>
                   )}
                   
                   {/* Campo de telefone do cliente e botões de reenvio - Apenas para Admin e Distribuição */}
                   {!isConferente && habilitarReenvio && (
-                    <div className="mt-3 p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Phone size={16} className="text-primary" />
-                        <span className="text-sm font-bold text-foreground uppercase">Telefone do Cliente:</span>
+                    <div className="mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <Phone size={14} className="text-primary" />
+                        <span className="text-xs font-bold text-foreground uppercase">Telefone do Cliente:</span>
                       </div>
                       <Input 
                         value={clienteTelefone}
                         onChange={(e) => setClienteTelefone(e.target.value)}
                         placeholder="(XX) XXXXX-XXXX"
-                        className="max-w-xs"
+                        className="max-w-[200px] h-7 text-xs"
                       />
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex gap-2 pt-1">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleReenviarWhatsapp('lancar')}
                           disabled={enviandoWhatsapp || !clienteTelefone.trim()}
-                          className="gap-2"
+                          className="gap-1.5 h-7 text-xs"
                         >
                           {enviandoWhatsapp ? (
                             <RefreshCw size={14} className="animate-spin" />
@@ -606,84 +607,84 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           variant="default"
                           onClick={() => handleReenviarWhatsapp('encerrar')}
                           disabled={enviandoWhatsapp || !clienteTelefone.trim()}
-                          className="gap-2"
+                          className="gap-1.5 h-7 text-xs"
                         >
                           {enviandoWhatsapp ? (
-                            <RefreshCw size={14} className="animate-spin" />
+                            <RefreshCw size={12} className="animate-spin" />
                           ) : (
-                            <Send size={14} />
+                            <Send size={12} />
                           )}
                           Reenviar Encerramento
                         </Button>
                       </div>
                     </div>
                   )}
-                  <div className="flex items-start gap-2">
-                    <span className="text-base font-bold text-foreground uppercase">OBSERVAÇÃO:</span>
-                    <span className="text-base text-foreground">{protocolo.observacaoGeral || '-'}</span>
+                  <div className="flex items-start gap-1.5">
+                    <span className="text-xs font-bold text-foreground uppercase">OBSERVAÇÃO:</span>
+                    <span className="text-xs text-foreground">{protocolo.observacaoGeral || '-'}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Produtos Recebidos - Estilo limpo como na imagem */}
-            <div className="bg-background rounded-xl p-6 border border-border shadow-sm">
-              <h3 className="font-bold text-base text-foreground mb-4 flex items-center gap-2">
-                <Package size={20} className="text-muted-foreground" />
+            <div className="bg-background rounded-xl p-4 border border-border shadow-sm">
+              <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-1.5 uppercase">
+                <Package size={16} className="text-muted-foreground" />
                 Produtos Recebidos
               </h3>
               {protocolo.produtos && protocolo.produtos.length > 0 ? (
-                <div className="overflow-x-auto border-2 border-slate-300 dark:border-slate-600 rounded-lg shadow-lg">
-                  <table className="w-full text-sm border-collapse">
+                <div className="overflow-x-auto border border-slate-300 dark:border-slate-600 rounded-lg">
+                  <table className="w-full text-xs border-collapse">
                     <thead>
                       <tr className="bg-slate-100 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Código</th>
-                        <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Produto</th>
-                        <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Unidade</th>
-                        <th className="text-center px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Qtd</th>
-                        <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Validade</th>
-                        <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Observação</th>
+                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Código</th>
+                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Produto</th>
+                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Unidade</th>
+                        <th className="text-center px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Qtd</th>
+                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Validade</th>
+                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300">Observação</th>
                       </tr>
                     </thead>
                     <tbody>
                       {protocolo.produtos.map((produto, index) => (
                         <tr key={index} className="border-b border-slate-200 dark:border-slate-700 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                          <td className="px-4 py-3 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.codigo}</td>
-                          <td className="px-4 py-3 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.nome}</td>
-                          <td className="px-4 py-3 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.unidade}</td>
-                          <td className="px-4 py-3 text-center text-foreground border-r border-slate-200 dark:border-slate-700">{produto.quantidade}</td>
-                          <td className="px-4 py-3 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.validade}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{produto.observacao || ''}</td>
+                          <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.codigo}</td>
+                          <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.nome}</td>
+                          <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.unidade}</td>
+                          <td className="px-2.5 py-1.5 text-center text-foreground border-r border-slate-200 dark:border-slate-700">{produto.quantidade}</td>
+                          <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.validade}</td>
+                          <td className="px-2.5 py-1.5 text-muted-foreground">{produto.observacao || ''}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground italic">Nenhum produto registrado</p>
+                <p className="text-xs text-muted-foreground italic">Nenhum produto registrado</p>
               )}
             </div>
 
             {/* Fotos Enviadas */}
             {todasFotos.length > 0 && (
-              <div className="bg-card rounded-xl p-5 border shadow-sm">
-                <h3 className="font-bold text-base text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                  <Camera size={20} className="text-primary" />
+              <div className="bg-card rounded-xl p-4 border shadow-sm">
+                <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                  <Camera size={16} className="text-primary" />
                   FOTOS ENVIADAS
                 </h3>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-3">
                   {todasFotos.map((foto, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(foto.url)}
-                      className="group relative w-44 h-44 rounded-lg overflow-hidden border-2 border-border hover:border-primary transition-all hover:scale-105 shadow-md"
+                      className="group relative w-28 h-28 rounded-lg overflow-hidden border border-border hover:border-primary transition-all hover:scale-105 shadow-sm"
                     >
                       <img 
                         src={foto.url} 
                         alt={foto.label} 
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-background/90 dark:bg-background/80 text-xs text-center py-1.5 font-bold text-foreground uppercase">
+                      <div className="absolute bottom-0 left-0 right-0 bg-background/90 dark:bg-background/80 text-[10px] text-center py-1 font-bold text-foreground uppercase">
                         {foto.label}
                       </div>
                     </button>
@@ -693,31 +694,31 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
             )}
 
             {/* Seção de Observações - Todos podem comentar */}
-            <div className="bg-card rounded-xl p-5 border shadow-sm">
-              <h3 className="font-bold text-base text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                <MessageSquare size={20} className="text-primary" />
+            <div className="bg-card rounded-xl p-4 border shadow-sm">
+              <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                <MessageSquare size={16} className="text-primary" />
                 Histórico de Observações
               </h3>
               
               {/* Log de observações anteriores */}
               {protocolo.observacoesLog && protocolo.observacoesLog.length > 0 && (
-                <div className="space-y-3 mb-4">
+                <div className="space-y-2 mb-3">
                   {[...protocolo.observacoesLog].reverse().map((log, index) => {
                     return (
-                      <div key={log.id} className="flex gap-3 p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0">
+                      <div key={log.id} className="flex gap-2 p-2.5 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
                           {log.usuarioNome.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex items-center gap-1.5 text-xs">
                             <span className="font-semibold text-foreground">{log.usuarioNome}</span>
                             <span className="text-muted-foreground">•</span>
                             <span className="text-muted-foreground">{log.data} às {log.hora}</span>
-                            <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium">
+                            <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-medium">
                               {log.acao}
                             </span>
                           </div>
-                          <p className="text-base mt-1 text-foreground">{log.texto}</p>
+                          <p className="text-xs mt-0.5 text-foreground">{log.texto}</p>
                         </div>
                       </div>
                     );
@@ -727,14 +728,14 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               
               {/* Campo para nova observação */}
               {user && onUpdateProtocolo && (
-                <div className="space-y-3 pt-3 border-t">
+                <div className="space-y-2 pt-2 border-t">
                   <Textarea
                     placeholder="Digite sua observação..."
                     value={novaObservacao}
                     onChange={(e) => setNovaObservacao(e.target.value)}
-                    className="min-h-[80px]"
+                    className="min-h-[60px] text-xs"
                   />
-                  <Button onClick={handleSalvarObservacao} disabled={!novaObservacao.trim()}>
+                  <Button size="sm" onClick={handleSalvarObservacao} disabled={!novaObservacao.trim()} className="h-7 text-xs">
                     Salvar observação
                   </Button>
                 </div>
@@ -742,9 +743,9 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
             </div>
 
             {/* Seção de Encerramento */}
-            <div className="bg-card rounded-xl p-5 border shadow-sm">
-              <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                <Lock size={18} className="text-primary" />
+            <div className="bg-card rounded-xl p-4 border shadow-sm">
+              <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                <Lock size={14} className="text-primary" />
                 Encerramento
               </h3>
               

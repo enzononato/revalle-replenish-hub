@@ -704,33 +704,33 @@ export default function Protocolos() {
                       )}
                     </button>
                   </td>
-                  <td className="p-4 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
                     {/* Conferente só vê status, sem ação */}
                     {isConferente ? (
                       protocolo.enviadoLancarStatus === 'enviado' || protocolo.enviadoLancar ? (
-                        <CheckCircle className="text-green-500 mx-auto" size={22} />
+                        <CheckCircle className="text-green-500 mx-auto" size={16} />
                       ) : protocolo.enviadoLancarStatus === 'erro' ? (
-                        <span title={protocolo.enviadoLancarErro || 'Erro ao enviar'}><AlertCircle className="text-red-500 mx-auto" size={22} /></span>
+                        <span title={protocolo.enviadoLancarErro || 'Erro ao enviar'}><AlertCircle className="text-red-500 mx-auto" size={16} /></span>
                       ) : (
-                        <XCircle className="text-muted-foreground mx-auto" size={22} />
+                        <XCircle className="text-muted-foreground mx-auto" size={16} />
                       )
                     ) : (
                       protocolo.enviadoLancarStatus === 'enviado' || protocolo.enviadoLancar ? (
-                        <span title="Enviado com sucesso"><CheckCircle className="text-green-500 mx-auto" size={22} /></span>
+                        <span title="Enviado com sucesso"><CheckCircle className="text-green-500 mx-auto" size={16} /></span>
                       ) : protocolo.enviadoLancarStatus === 'erro' ? (
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="flex items-center gap-1" title={protocolo.enviadoLancarErro || 'Erro ao enviar'}>
-                            <AlertCircle className="text-red-500" size={18} />
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="flex items-center gap-0.5" title={protocolo.enviadoLancarErro || 'Erro ao enviar'}>
+                            <AlertCircle className="text-red-500" size={14} />
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEnviarLancar(protocolo.id)}
-                            className="text-orange-600 hover:text-orange-700 h-6 px-2"
+                            className="text-orange-600 hover:text-orange-700 h-5 px-1"
                             disabled={enviandoLancar === protocolo.id}
                           >
-                            <RefreshCw size={14} className={enviandoLancar === protocolo.id ? 'animate-spin' : ''} />
-                            <span className="text-xs ml-1">Reenviar</span>
+                            <RefreshCw size={12} className={enviandoLancar === protocolo.id ? 'animate-spin' : ''} />
+                            <span className="text-[10px] ml-0.5">Reenviar</span>
                           </Button>
                         </div>
                       ) : (
@@ -738,45 +738,45 @@ export default function Protocolos() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEnviarLancar(protocolo.id)}
-                          className="text-info hover:text-info/80"
+                          className="text-info hover:text-info/80 h-6 w-6 p-0"
                           disabled={enviandoLancar === protocolo.id}
                         >
                           {enviandoLancar === protocolo.id ? (
-                            <RefreshCw size={16} className="animate-spin" />
+                            <RefreshCw size={14} className="animate-spin" />
                           ) : (
-                            <Send size={16} />
+                            <Send size={14} />
                           )}
                         </Button>
                       )
                     )}
                   </td>
-                  <td className="p-4 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
                     {/* Conferente só vê status, sem ação */}
                     {isConferente ? (
                       protocolo.enviadoEncerrarStatus === 'enviado' || protocolo.enviadoEncerrar ? (
-                        <CheckCircle className="text-green-500 mx-auto" size={22} />
+                        <CheckCircle className="text-green-500 mx-auto" size={16} />
                       ) : protocolo.enviadoEncerrarStatus === 'erro' ? (
-                        <span title={protocolo.enviadoEncerrarErro || 'Erro ao enviar'}><AlertCircle className="text-red-500 mx-auto" size={22} /></span>
+                        <span title={protocolo.enviadoEncerrarErro || 'Erro ao enviar'}><AlertCircle className="text-red-500 mx-auto" size={16} /></span>
                       ) : (
-                        <XCircle className="text-muted-foreground mx-auto" size={22} />
+                        <XCircle className="text-muted-foreground mx-auto" size={16} />
                       )
                     ) : (
                       protocolo.enviadoEncerrarStatus === 'enviado' || protocolo.enviadoEncerrar ? (
-                        <span title="Encerrado com sucesso"><CheckCircle className="text-green-500 mx-auto" size={22} /></span>
+                        <span title="Encerrado com sucesso"><CheckCircle className="text-green-500 mx-auto" size={16} /></span>
                       ) : protocolo.enviadoEncerrarStatus === 'erro' ? (
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="flex items-center gap-1" title={protocolo.enviadoEncerrarErro || 'Erro ao enviar'}>
-                            <AlertCircle className="text-red-500" size={18} />
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="flex items-center gap-0.5" title={protocolo.enviadoEncerrarErro || 'Erro ao enviar'}>
+                            <AlertCircle className="text-red-500" size={14} />
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEnviarEncerrar(protocolo.id)}
-                            className="text-orange-600 hover:text-orange-700 h-6 px-2"
+                            className="text-orange-600 hover:text-orange-700 h-5 px-1"
                             disabled={enviandoEncerrar === protocolo.id || !protocolo.lancado || !protocolo.validacao}
                           >
-                            <RefreshCw size={14} className={enviandoEncerrar === protocolo.id ? 'animate-spin' : ''} />
-                            <span className="text-xs ml-1">Reenviar</span>
+                            <RefreshCw size={12} className={enviandoEncerrar === protocolo.id ? 'animate-spin' : ''} />
+                            <span className="text-[10px] ml-0.5">Reenviar</span>
                           </Button>
                         </div>
                       ) : (
@@ -784,52 +784,52 @@ export default function Protocolos() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleEnviarEncerrar(protocolo.id)}
-                          className="text-green-600 hover:text-green-700"
+                          className="text-green-600 hover:text-green-700 h-6 w-6 p-0"
                           disabled={enviandoEncerrar === protocolo.id || !protocolo.lancado || !protocolo.validacao}
                           title={!protocolo.validacao || !protocolo.lancado ? 'Validação e Lançamento são obrigatórios' : ''}
                         >
                           {enviandoEncerrar === protocolo.id ? (
-                            <RefreshCw size={16} className="animate-spin" />
+                            <RefreshCw size={14} className="animate-spin" />
                           ) : (
-                            <Send size={16} />
+                            <Send size={14} />
                           )}
                         </Button>
                       )
                     )}
                   </td>
-                  <td className="p-4">
-                    <div className="flex justify-center items-center gap-2">
+                  <td className="p-2.5">
+                    <div className="flex justify-center items-center gap-1">
                       {/* Botão olho verde - sempre visível */}
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="border-emerald-500 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                        className="border-emerald-500 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 h-7 w-7 p-0"
                         onClick={() => {
                           setSelectedProtocolo(protocolo);
                           setSelectedIndex(globalIndex);
                         }}
                       >
-                        <Eye size={16} />
+                        <Eye size={14} />
                       </Button>
                       
                       {/* Menu dropdown apenas para admin */}
                       {isAdmin && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical size={16} />
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                              <MoreVertical size={14} />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-white">
-                            <DropdownMenuItem onClick={() => handleOcultar(protocolo.id)}>
-                              <EyeOff size={16} className="mr-2" />
+                            <DropdownMenuItem onClick={() => handleOcultar(protocolo.id)} className="text-xs">
+                              <EyeOff size={14} className="mr-1.5" />
                               Ocultar
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleExcluir(protocolo.id)}
-                              className="text-destructive focus:text-destructive"
+                              className="text-destructive focus:text-destructive text-xs"
                             >
-                              <Trash2 size={16} className="mr-2" />
+                              <Trash2 size={14} className="mr-1.5" />
                               Excluir
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -844,7 +844,7 @@ export default function Protocolos() {
         </table>
         
         {filteredProtocolos.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground text-sm">
             Nenhum protocolo encontrado
           </div>
         )}
