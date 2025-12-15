@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Eye, EyeOff, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Package, Eye, EyeOff, Loader2, Check, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface TouchedFields {
@@ -104,7 +104,7 @@ export default function MotoristaLogin() {
       <Card className="w-full max-w-md shadow-xl border-border/50">
         <CardHeader className="text-center space-y-4 pb-4">
           <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-            <Truck className="w-10 h-10 text-primary" />
+            <Package className="w-10 h-10 text-primary" />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold text-foreground">
