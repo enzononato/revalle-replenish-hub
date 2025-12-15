@@ -10,17 +10,18 @@ import {
   LogOut,
   Menu,
   X,
-  Database
+  Database,
+  User
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 type NavItem = {
   icon: typeof LayoutDashboard;
   label: string;
   path: string;
   roles: ('admin' | 'distribuicao' | 'conferente')[];
-  isLogout?: boolean;
 };
 
 const navItems: NavItem[] = [
@@ -31,8 +32,20 @@ const navItems: NavItem[] = [
   { icon: Users, label: 'Usuários', path: '/usuarios', roles: ['admin'] },
   { icon: Database, label: 'Importar Dados', path: '/importar-dados', roles: ['admin'] },
   { icon: Settings, label: 'Configurações', path: '/configuracoes', roles: ['admin'] },
-  { icon: LogOut, label: 'Sair', path: '/logout', roles: ['admin', 'distribuicao', 'conferente'], isLogout: true },
 ];
+
+const getRoleBadge = (role: string) => {
+  switch (role) {
+    case 'admin':
+      return { label: 'Admin', variant: 'default' as const };
+    case 'distribuicao':
+      return { label: 'Distribuição', variant: 'secondary' as const };
+    case 'conferente':
+      return { label: 'Conferente', variant: 'outline' as const };
+    default:
+      return { label: role, variant: 'outline' as const };
+  }
+};
 
 export function Sidebar() {
   const { user, logout } = useAuth();
@@ -41,6 +54,7 @@ export function Sidebar() {
 
   const userRole = user?.nivel || 'conferente';
   const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
+  const roleBadge = getRoleBadge(userRole);
 
   return (
     <>
@@ -81,22 +95,6 @@ export function Sidebar() {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               
-              if (item.isLogout) {
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => {
-                      setIsOpen(false);
-                      logout();
-                    }}
-                    className="sidebar-item w-full text-destructive hover:bg-destructive/10"
-                  >
-                    <Icon size={20} />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              }
-              
               return (
                 <Link
                   key={item.path}
@@ -113,6 +111,41 @@ export function Sidebar() {
               );
             })}
           </nav>
+
+          {/* User Profile Section */}
+          <div className="p-4 border-t border-sidebar-border">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <User size={20} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {user?.nome || 'Usuário'}
+                </p>
+                <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60">
+                  <Building2 size={12} />
+                  <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
+                </div>
+              </div>
+            </div>
+            <Badge variant={roleBadge.variant} className="w-full justify-center">
+              {roleBadge.label}
+            </Badge>
+          </div>
+
+          {/* Logout Button */}
+          <div className="p-4 border-t border-sidebar-border">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                logout();
+              }}
+              className="sidebar-item w-full text-destructive hover:bg-destructive/10"
+            >
+              <LogOut size={20} />
+              <span>Sair</span>
+            </button>
+          </div>
         </div>
       </aside>
     </>
