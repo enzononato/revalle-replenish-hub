@@ -35,6 +35,7 @@ const App = () => (
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/abrir-protocolo" element={<AbrirProtocolo />} />
+                <Route path="/motorista" element={<Navigate to="/motorista/login" replace />} />
                 <Route path="/motorista/login" element={<MotoristaLogin />} />
                 <Route path="/motorista/portal" element={<MotoristaPortal />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
