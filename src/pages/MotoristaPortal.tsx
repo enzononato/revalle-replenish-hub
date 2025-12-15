@@ -354,7 +354,7 @@ export default function MotoristaPortal() {
     }
 
     const now = new Date();
-    const numero = `PROTOC-${format(now, 'yyyyMMdd')}-${Math.random().toString(36).substr(2, 6)}`;
+    const numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
     const fotosProtocolo: FotosProtocolo = {
       fotoMotoristaPdv: fotoMotoristaPdv || undefined,

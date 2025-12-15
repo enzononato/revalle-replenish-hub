@@ -206,7 +206,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
     }
 
     const now = new Date();
-    const protocoloNumero = `PROTOC-${format(now, 'yyyyMMdd')}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const protocoloNumero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
     const fotosProtocolo: FotosProtocolo = {
       fotoMotoristaPdv: fotoMotoristaPdv || undefined,
