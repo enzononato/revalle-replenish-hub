@@ -4,10 +4,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Key, Clock, Building, Download, Save, Package } from 'lucide-react';
+import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import { ImportarProdutosCSV } from '@/components/ImportarProdutosCSV';
 import { useProdutosDB } from '@/hooks/useProdutosDB';
+import { useMotoristasDB } from '@/hooks/useMotoristasDB';
+import { useUnidadesDB } from '@/hooks/useUnidadesDB';
+import { useProtocolos } from '@/contexts/ProtocolosContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Configuracoes() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
@@ -16,6 +21,17 @@ export default function Configuracoes() {
   const [isSaving, setIsSaving] = useState(false);
   const [totalProdutos, setTotalProdutos] = useState<number>(0);
   const { getTotalProdutos } = useProdutosDB();
+  const { motoristas } = useMotoristasDB();
+  const { unidades } = useUnidadesDB();
+  const { protocolos } = useProtocolos();
+  const { user } = useAuth();
+
+  // Mock users - igual ao AuthContext
+  const mockUsers = [
+    { id: '1', nome: 'Administrador', email: 'admin@sga.com', role: 'admin', unidade: 'Todas' },
+    { id: '2', nome: 'Operador Distribuição', email: 'dist@sga.com', role: 'distribuicao', unidade: 'Matriz' },
+    { id: '3', nome: 'Conferente', email: 'conf@sga.com', role: 'conferente', unidade: 'Filial 01' },
+  ];
 
   const fetchTotalProdutos = async () => {
     const total = await getTotalProdutos();
@@ -28,14 +44,81 @@ export default function Configuracoes() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSaving(false);
     toast.success('Configurações salvas com sucesso!');
   };
 
-  const handleExport = (format: 'csv' | 'pdf') => {
-    toast.success(`Exportação em ${format.toUpperCase()} iniciada!`);
+  const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(row => row.join(';'))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportMotoristas = () => {
+    const headers = ['Código', 'Nome', 'Unidade', 'Função', 'Setor', 'WhatsApp', 'Email'];
+    const rows = motoristas.map(m => [
+      m.codigo,
+      m.nome,
+      m.unidade,
+      m.funcao,
+      m.setor,
+      m.whatsapp || '',
+      m.email || ''
+    ]);
+    downloadCSV('motoristas', headers, rows);
+    toast.success(`${motoristas.length} motorista(s) exportado(s)!`);
+  };
+
+  const handleExportUsuarios = () => {
+    const headers = ['ID', 'Nome', 'Email', 'Role', 'Unidade'];
+    const rows = mockUsers.map(u => [
+      u.id,
+      u.nome,
+      u.email,
+      u.role,
+      u.unidade
+    ]);
+    downloadCSV('usuarios', headers, rows);
+    toast.success(`${mockUsers.length} usuário(s) exportado(s)!`);
+  };
+
+  const handleExportUnidades = () => {
+    const headers = ['Código', 'Nome', 'CNPJ'];
+    const rows = unidades.map(u => [
+      u.codigo,
+      u.nome,
+      u.cnpj || ''
+    ]);
+    downloadCSV('unidades', headers, rows);
+    toast.success(`${unidades.length} unidade(s) exportada(s)!`);
+  };
+
+  const handleExportProtocolos = () => {
+    const headers = ['Protocolo', 'Motorista', 'Data', 'Hora', 'Status', 'Unidade', 'PDV', 'Nota Fiscal'];
+    const rows = protocolos.filter(p => !p.oculto).map(p => [
+      p.numero,
+      p.motorista?.nome || '',
+      p.data,
+      p.hora,
+      p.status,
+      p.unidadeNome || '',
+      p.codigoPdv || '',
+      p.notaFiscal || ''
+    ]);
+    downloadCSV('protocolos', headers, rows);
+    toast.success(`${rows.length} protocolo(s) exportado(s)!`);
   };
 
   return (
@@ -236,35 +319,61 @@ export default function Configuracoes() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6 border rounded-lg hover:border-primary transition-colors">
-                  <h3 className="font-semibold mb-2">Protocolos</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg hover:border-primary transition-colors">
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText size={18} className="text-primary" />
+                    <h3 className="font-semibold text-sm">Protocolos</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
                     Exporte todos os protocolos com detalhes completos
                   </p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => handleExport('csv')}>
-                      CSV
-                    </Button>
-                    <Button variant="outline" onClick={() => handleExport('pdf')}>
-                      PDF
-                    </Button>
-                  </div>
+                  <Button variant="outline" size="sm" onClick={handleExportProtocolos}>
+                    <Download size={14} className="mr-1.5" />
+                    CSV
+                  </Button>
                 </div>
                 
-                <div className="p-6 border rounded-lg hover:border-primary transition-colors">
-                  <h3 className="font-semibold mb-2">Motoristas</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+                <div className="p-4 border rounded-lg hover:border-primary transition-colors">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users size={18} className="text-emerald-500" />
+                    <h3 className="font-semibold text-sm">Motoristas</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
                     Exporte a lista de motoristas cadastrados
                   </p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => handleExport('csv')}>
-                      CSV
-                    </Button>
-                    <Button variant="outline" onClick={() => handleExport('pdf')}>
-                      PDF
-                    </Button>
+                  <Button variant="outline" size="sm" onClick={handleExportMotoristas}>
+                    <Download size={14} className="mr-1.5" />
+                    CSV
+                  </Button>
+                </div>
+
+                <div className="p-4 border rounded-lg hover:border-primary transition-colors">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users size={18} className="text-sky-500" />
+                    <h3 className="font-semibold text-sm">Usuários</h3>
                   </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Exporte a lista de usuários do sistema
+                  </p>
+                  <Button variant="outline" size="sm" onClick={handleExportUsuarios}>
+                    <Download size={14} className="mr-1.5" />
+                    CSV
+                  </Button>
+                </div>
+
+                <div className="p-4 border rounded-lg hover:border-primary transition-colors">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin size={18} className="text-amber-500" />
+                    <h3 className="font-semibold text-sm">Unidades</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Exporte a lista de unidades cadastradas
+                  </p>
+                  <Button variant="outline" size="sm" onClick={handleExportUnidades}>
+                    <Download size={14} className="mr-1.5" />
+                    CSV
+                  </Button>
                 </div>
               </div>
             </CardContent>
