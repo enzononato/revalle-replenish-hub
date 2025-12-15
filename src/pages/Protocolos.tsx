@@ -464,17 +464,17 @@ export default function Protocolos() {
   const hasActiveFilters = dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
-          <FileText className="text-primary" size={32} />
+        <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
+          <FileText className="text-primary" size={24} />
           Protocolos
         </h1>
-        <p className="text-muted-foreground mt-1">Gerencie os protocolos de reposição</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Gerencie os protocolos de reposição</p>
       </div>
 
       {/* Smart Search */}
-      <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row gap-3">
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -486,30 +486,33 @@ export default function Protocolos() {
           {isAdmin && (
             <Button 
               onClick={() => setShowCreateModal(true)}
+              size="sm"
               className="lg:w-auto"
             >
-              <Plus size={18} className="mr-2" />
+              <Plus size={16} className="mr-1.5" />
               Criar Protocolo
             </Button>
           )}
           <Button 
             variant="outline" 
+            size="sm"
             onClick={handleDownloadAll}
             disabled={filteredProtocolos.length === 0}
             className="lg:w-auto"
           >
-            <Download size={18} className="mr-2" />
+            <Download size={16} className="mr-1.5" />
             Download
           </Button>
           <Button 
             variant="outline" 
+            size="sm"
             onClick={() => setShowFilters(!showFilters)}
             className="lg:w-auto"
           >
-            <Filter size={18} className="mr-2" />
+            <Filter size={16} className="mr-1.5" />
             Filtros
             {hasActiveFilters && (
-              <span className="ml-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+              <span className="ml-1.5 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">
                 !
               </span>
             )}
@@ -519,28 +522,28 @@ export default function Protocolos() {
 
       {/* Status Tabs - SEM contagem */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-transparent gap-2 h-auto p-0">
+        <TabsList className="bg-transparent gap-1.5 h-auto p-0">
           <TabsTrigger 
             value="todos" 
-            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-2xl px-3 py-1.5 text-sm transition-colors"
+            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-xl px-2.5 py-1 text-xs transition-colors"
           >
             Todos
           </TabsTrigger>
           <TabsTrigger 
             value="aberto" 
-            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-2xl px-3 py-1.5 text-sm transition-colors"
+            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-xl px-2.5 py-1 text-xs transition-colors"
           >
             Abertos
           </TabsTrigger>
           <TabsTrigger 
             value="em_andamento" 
-            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-2xl px-3 py-1.5 text-sm transition-colors"
+            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-xl px-2.5 py-1 text-xs transition-colors"
           >
             Em andamento
           </TabsTrigger>
           <TabsTrigger 
             value="encerrado" 
-            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-2xl px-3 py-1.5 text-sm transition-colors"
+            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-xl px-2.5 py-1 text-xs transition-colors"
           >
             Encerrados
           </TabsTrigger>
@@ -549,30 +552,32 @@ export default function Protocolos() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-card rounded-xl p-6 shadow-md animate-scale-in">
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="space-y-2 min-w-[150px]">
-              <label className="text-sm font-medium text-muted-foreground">Data Inicial</label>
+        <div className="bg-card rounded-xl p-4 shadow-md animate-scale-in">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-1 min-w-[130px]">
+              <label className="text-xs font-medium text-muted-foreground">Data Inicial</label>
               <Input
                 type="date"
                 value={dataInicialFilter}
                 onChange={(e) => setDataInicialFilter(e.target.value)}
+                className="h-8 text-xs"
               />
             </div>
             
-            <div className="space-y-2 min-w-[150px]">
-              <label className="text-sm font-medium text-muted-foreground">Data Final</label>
+            <div className="space-y-1 min-w-[130px]">
+              <label className="text-xs font-medium text-muted-foreground">Data Final</label>
               <Input
                 type="date"
                 value={dataFinalFilter}
                 onChange={(e) => setDataFinalFilter(e.target.value)}
+                className="h-8 text-xs"
               />
             </div>
             
-            <div className="space-y-2 min-w-[130px]">
-              <label className="text-sm font-medium text-muted-foreground">Lançado</label>
+            <div className="space-y-1 min-w-[110px]">
+              <label className="text-xs font-medium text-muted-foreground">Lançado</label>
               <Select value={lancadoFilter} onValueChange={setLancadoFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -583,10 +588,10 @@ export default function Protocolos() {
               </Select>
             </div>
             
-            <div className="space-y-2 min-w-[130px]">
-              <label className="text-sm font-medium text-muted-foreground">Validado</label>
+            <div className="space-y-1 min-w-[110px]">
+              <label className="text-xs font-medium text-muted-foreground">Validado</label>
               <Select value={validadoFilter} onValueChange={setValidadoFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -598,8 +603,8 @@ export default function Protocolos() {
             </div>
             
             {hasActiveFilters && (
-              <Button variant="ghost" onClick={clearFilters} className="text-destructive">
-                <X size={16} className="mr-1" />
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-destructive h-8">
+                <X size={14} className="mr-1" />
                 Limpar
               </Button>
             )}
@@ -608,25 +613,25 @@ export default function Protocolos() {
       )}
 
       {/* Protocols count */}
-      <p className="text-[13px] font-medium text-[#475569]">
+      <p className="text-[12px] font-medium text-[#475569]">
         {filteredProtocolos.length} protocolo(s) encontrado(s)
       </p>
 
       {/* Table */}
-      <div className="bg-card rounded-xl p-6 shadow-md animate-fade-in overflow-x-auto">
+      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-              <th className="text-left p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Data/Hora</th>
-              <th className="text-left p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Protocolo</th>
-              <th className="text-left p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Motorista</th>
-              <th className="text-left p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">WhatsApp</th>
-              <th className="text-center p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">SLA</th>
-              <th className="text-center p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Validação</th>
-              <th className="text-center p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Lançado</th>
-              <th className="text-center p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Lançar</th>
-              <th className="text-center p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Encerrar</th>
-              <th className="text-center p-4 text-[12px] font-bold text-[#64748B] uppercase tracking-wider">Ações</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Data/Hora</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Protocolo</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Motorista</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">WhatsApp</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">SLA</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Validação</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Lançado</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Lançar</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Encerrar</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -642,50 +647,50 @@ export default function Protocolos() {
                     "hover:bg-primary/5 hover:shadow-sm"
                   )}
                 >
-                  <td className="p-4 border-r border-[#E5E7EB]">
-                    <div className="text-[14px] text-[#1F2937]">
+                  <td className="p-2.5 border-r border-[#E5E7EB]">
+                    <div className="text-[12px] text-[#1F2937]">
                       <p className="font-bold">{protocolo.data}</p>
                       <p className="font-bold">{protocolo.hora}</p>
                     </div>
                   </td>
-                  <td className="p-4 border-r border-[#E5E7EB]">
-                    <span className="text-[#1F2937] font-medium">
+                  <td className="p-2.5 border-r border-[#E5E7EB]">
+                    <span className="text-[#1F2937] font-medium text-[12px]">
                       {protocolo.numero}
                     </span>
                   </td>
-                  <td className="p-4 border-r border-[#E5E7EB] text-[14px] text-[#1F2937] font-bold">
+                  <td className="p-2.5 border-r border-[#E5E7EB] text-[12px] text-[#1F2937] font-bold">
                     {protocolo.motorista.nome}
                   </td>
-                  <td className="p-4 border-r border-[#E5E7EB]">
-                    <span className="text-[#16A34A] font-medium flex items-center gap-1">
-                      <Phone size={14} />
+                  <td className="p-2.5 border-r border-[#E5E7EB]">
+                    <span className="text-[#16A34A] font-medium text-[12px] flex items-center gap-1">
+                      <Phone size={12} />
                       {protocolo.contatoWhatsapp || '-'}
                     </span>
                   </td>
-                  <td className="p-4 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
                     {(() => {
                       const dias = calcularSlaDias(protocolo.createdAt);
                       return (
-                        <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium ${getSlaColor(dias)}`}>
+                        <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(dias)}`}>
                           {dias} {dias === 1 ? 'dia' : 'dias'}
                         </span>
                       );
                     })()}
                   </td>
-                  <td className="p-4 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
                     <button
                       onClick={() => handleToggleValidacao(protocolo.id)}
                       className="inline-flex"
                       title="Apenas Conferente pode validar"
                     >
                       {protocolo.validacao ? (
-                        <CheckCircle className="text-green-500" size={22} />
+                        <CheckCircle className="text-green-500" size={18} />
                       ) : (
-                        <XCircle className="text-red-400" size={22} />
+                        <XCircle className="text-red-400" size={18} />
                       )}
                     </button>
                   </td>
-                  <td className="p-4 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
                     <button
                       onClick={() => handleToggleLancado(protocolo.id)}
                       className={`inline-flex ${!protocolo.validacao ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -693,9 +698,9 @@ export default function Protocolos() {
                       title={!protocolo.validacao ? 'Aguardando validação do conferente' : 'Apenas Distribuição pode lançar'}
                     >
                       {protocolo.lancado ? (
-                        <CheckCircle className="text-green-500" size={22} />
+                        <CheckCircle className="text-green-500" size={18} />
                       ) : (
-                        <XCircle className="text-red-400" size={22} />
+                        <XCircle className="text-red-400" size={18} />
                       )}
                     </button>
                   </td>

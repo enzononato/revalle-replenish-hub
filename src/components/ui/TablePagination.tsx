@@ -67,19 +67,19 @@ export function TablePagination({
   if (totalItems === 0) return null;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-      <p className="text-sm text-muted-foreground">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+      <p className="text-xs text-muted-foreground">
         Mostrando {startIndex}-{endIndex} de {totalItems} registro(s)
       </p>
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Por página:</span>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Por página:</span>
           <Select
             value={String(pageSize)}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className="w-[70px] h-8">
+            <SelectTrigger className="w-[60px] h-7 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -90,15 +90,15 @@ export function TablePagination({
           </Select>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <Button
             variant="outline"
             size="sm"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
+            className="h-7 w-7 p-0"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={14} />
           </Button>
 
           {getPageNumbers().map((page, idx) => (
@@ -108,12 +108,12 @@ export function TablePagination({
                 variant={currentPage === page ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onPageChange(page)}
-                className="h-8 w-8 p-0"
+                className="h-7 w-7 p-0 text-xs"
               >
                 {page}
               </Button>
             ) : (
-              <span key={idx} className="px-2 text-muted-foreground">
+              <span key={idx} className="px-1.5 text-muted-foreground text-xs">
                 {page}
               </span>
             )
@@ -124,9 +124,9 @@ export function TablePagination({
             size="sm"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
+            className="h-7 w-7 p-0"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={14} />
           </Button>
         </div>
       </div>
