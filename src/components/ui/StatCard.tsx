@@ -62,7 +62,7 @@ export function StatCard({
   const content = (
     <div 
       className={cn(
-        "group relative overflow-hidden rounded-xl border-2 p-6 transition-all duration-300 animate-slide-up",
+        "group relative overflow-hidden rounded-xl border-2 p-4 transition-all duration-300 animate-slide-up",
         "hover:shadow-xl hover:-translate-y-1",
         href && "cursor-pointer",
         variantStyles[variant]
@@ -77,29 +77,29 @@ export function StatCard({
       
       <div className="flex items-start justify-between">
         <div className="pl-2">
-          <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
-          <p className="text-3xl font-heading font-bold text-foreground">{value}</p>
+          <p className="text-xs font-medium text-muted-foreground mb-0.5">{title}</p>
+          <p className="text-2xl font-heading font-bold text-foreground">{value}</p>
           
           {/* Trend indicator */}
           {trend && trendValue && (
             <div className={cn(
-              "flex items-center gap-1 mt-2 px-2 py-1 rounded-full text-xs font-semibold w-fit",
+              "flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-xs font-semibold w-fit",
               trendStyles[trend]
             )}>
               {(() => {
                 const IconComponent = TrendIcon[trend];
-                return <IconComponent size={12} />;
+                return <IconComponent size={11} />;
               })()}
               <span>{trendValue}</span>
             </div>
           )}
         </div>
         <div className={cn(
-          "p-3 rounded-xl transition-all duration-300",
+          "p-2.5 rounded-xl transition-all duration-300",
           "group-hover:scale-110 group-hover:rotate-3",
           iconStyles[variant]
         )}>
-          <Icon size={28} className="drop-shadow-sm" />
+          <Icon size={22} className="drop-shadow-sm" />
         </div>
       </div>
     </div>

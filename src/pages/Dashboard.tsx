@@ -346,26 +346,26 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {/* Header Personalizado */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border border-primary/20">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border border-primary/20">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         
-        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30">
-                <TrendingUp size={24} />
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30">
+                <TrendingUp size={20} />
               </div>
               <div>
-                <h1 className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
+                <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
                   {saudacao}, {user?.nome?.split(' ')[0] || 'Usuário'}!
                 </h1>
-                <div className="flex items-center gap-3 text-muted-foreground text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs">
                   <span className="capitalize">{dataAtual}</span>
                   <span className="text-muted-foreground/50">•</span>
                   <span className="flex items-center gap-1">
-                    <Building2 size={14} />
+                    <Building2 size={12} />
                     {isAdmin ? 'Todas as Unidades' : user?.unidade || '-'}
                   </span>
                 </div>
@@ -376,8 +376,8 @@ export default function Dashboard() {
           <div className="flex flex-wrap gap-2 items-center">
             {/* Filtro de Período */}
             <Select value={periodoFiltro} onValueChange={(v) => setPeriodoFiltro(v as PeriodoFiltro)}>
-              <SelectTrigger className="w-[150px] bg-background/80 backdrop-blur-sm">
-                <Calendar size={16} className="mr-2 text-muted-foreground" />
+              <SelectTrigger className="w-[130px] h-8 text-xs bg-background/80 backdrop-blur-sm">
+                <Calendar size={14} className="mr-1.5 text-muted-foreground" />
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
@@ -390,7 +390,7 @@ export default function Dashboard() {
 
             {isAdmin && (
               <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
-                <SelectTrigger className="w-[180px] bg-background/80 backdrop-blur-sm">
+                <SelectTrigger className="w-[160px] h-8 text-xs bg-background/80 backdrop-blur-sm">
                   <SelectValue placeholder="Todas as Unidades" />
                 </SelectTrigger>
                 <SelectContent>
@@ -401,8 +401,8 @@ export default function Dashboard() {
                 </SelectContent>
               </Select>
             )}
-            <Button variant="outline" onClick={handleDownloadCSV} className="bg-background/80 backdrop-blur-sm">
-              <Download size={18} className="mr-2" />
+            <Button variant="outline" size="sm" onClick={handleDownloadCSV} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
+              <Download size={14} className="mr-1.5" />
               CSV
             </Button>
           </div>
@@ -410,7 +410,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title="Em Aberto"
           value={stats.emAberto}
@@ -456,24 +456,24 @@ export default function Dashboard() {
       </div>
 
       {/* Rankings + Alertas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <RankingCard
           title="Top 5 Motoristas"
-          icon={<Users className="text-primary" size={20} />}
+          icon={<Users className="text-primary" size={18} />}
           items={topMotoristasReal}
           delay={500}
           variant="primary"
         />
         <RankingCard
           title="Top 5 Clientes (PDVs)"
-          icon={<Building2 className="text-sky-500" size={20} />}
+          icon={<Building2 className="text-sky-500" size={18} />}
           items={topClientesReal}
           delay={600}
           variant="info"
         />
         <RankingCard
           title="Top 5 Produtos"
-          icon={<Package className="text-emerald-500" size={20} />}
+          icon={<Package className="text-emerald-500" size={18} />}
           items={topProdutosReal}
           delay={700}
           variant="success"

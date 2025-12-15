@@ -76,33 +76,33 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-40 w-64 bg-sidebar transform transition-transform duration-300 ease-in-out flex flex-col",
+        "fixed lg:static inset-y-0 left-0 z-40 w-56 bg-sidebar transform transition-transform duration-300 ease-in-out flex flex-col",
         "lg:transform-none",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         {/* Logo */}
-        <div className="flex-shrink-0 p-6 border-b border-sidebar-border">
-          <h1 className="font-heading text-2xl font-bold text-white">
+        <div className="flex-shrink-0 p-4 border-b border-sidebar-border">
+          <h1 className="font-heading text-xl font-bold text-white">
             Revalle
           </h1>
-          <p className="text-sm text-sidebar-foreground/60 mt-1">Sistema de Reposição</p>
+          <p className="text-xs text-sidebar-foreground/60 mt-0.5">Sistema de Reposição</p>
         </div>
 
         {/* User Profile Section - Below logo */}
-        <div className="flex-shrink-0 p-4 border-b border-sidebar-border bg-sidebar-accent/20">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/30 flex items-center justify-center flex-shrink-0">
-              <User size={20} className="text-primary" />
+        <div className="flex-shrink-0 p-3 border-b border-sidebar-border bg-sidebar-accent/20">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center flex-shrink-0">
+              <User size={16} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
+              <p className="text-xs font-semibold text-white truncate">
                 {user?.nome || 'Usuário'}
               </p>
-              <div className="flex items-center gap-1.5 text-xs text-sidebar-foreground/80 mt-0.5">
-                <Building2 size={12} />
+              <div className="flex items-center gap-1 text-[10px] text-sidebar-foreground/80 mt-0.5">
+                <Building2 size={10} />
                 <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
               </div>
-              <Badge variant={roleBadge.variant} className="mt-2 text-xs px-2 py-0.5">
+              <Badge variant={roleBadge.variant} className="mt-1.5 text-[10px] px-1.5 py-0">
                 {roleBadge.label}
               </Badge>
             </div>
@@ -110,7 +110,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation with Logout at the end */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -125,7 +125,7 @@ export function Sidebar() {
                   isActive && "active"
                 )}
               >
-                <Icon size={20} />
+                <Icon size={18} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -137,9 +137,9 @@ export function Sidebar() {
               setIsOpen(false);
               logout();
             }}
-            className="sidebar-item w-full text-destructive hover:bg-destructive/10 mt-2"
+            className="sidebar-item w-full text-destructive hover:bg-destructive/10 mt-1"
           >
-            <LogOut size={20} />
+            <LogOut size={18} />
             <span>Sair</span>
           </button>
         </nav>

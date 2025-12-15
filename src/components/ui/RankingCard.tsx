@@ -64,11 +64,11 @@ export function RankingCard({
       className={cn('card-stats animate-slide-up', className)}
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-3">
         {icon}
-        <h3 className="font-heading text-lg font-semibold">{title}</h3>
+        <h3 className="font-heading text-base font-semibold">{title}</h3>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {items.map((item, index) => {
           const percentage = (item.quantidade / maxValue) * 100;
           
@@ -76,29 +76,29 @@ export function RankingCard({
             <div 
               key={item.id} 
               className={cn(
-                "relative py-3 px-3 rounded-lg transition-all duration-200 hover:bg-muted/30",
+                "relative py-2 px-2 rounded-lg transition-all duration-200 hover:bg-muted/30",
                 index === 0 && "animate-pulse-subtle"
               )}
             >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2">
                   <span className={cn(
-                    'flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm',
+                    'flex items-center justify-center w-7 h-7 rounded-lg font-bold text-xs',
                     getMedalBg(index),
                     getMedalColor(index)
                   )}>
                     {index < 3 ? (
-                      <Trophy size={16} className={getMedalColor(index)} />
+                      <Trophy size={14} className={getMedalColor(index)} />
                     ) : (
                       `${index + 1}º`
                     )}
                   </span>
-                  <span className="text-sm font-medium truncate max-w-[140px]" title={item.nome}>
+                  <span className="text-xs font-medium truncate max-w-[120px]" title={item.nome}>
                     {item.nome}
                   </span>
                 </div>
                 <span className={cn(
-                  "text-sm font-bold px-2.5 py-1 rounded-full",
+                  "text-xs font-bold px-2 py-0.5 rounded-full",
                   badgeColors[variant]
                 )}>
                   {item.quantidade}

@@ -328,33 +328,33 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto p-0">
+        <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-0">
           {/* Header com gradiente */}
-          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+          <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b">
             <DialogHeader className="flex flex-row items-center justify-between">
               <div>
-                <DialogTitle className="font-heading text-2xl flex items-center gap-3 text-primary">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <FileText className="text-primary" size={24} />
+                <DialogTitle className="font-heading text-xl flex items-center gap-2 text-primary">
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <FileText className="text-primary" size={20} />
                   </div>
                   Protocolo {protocolo.numero}
                 </DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1 ml-12">
+                <p className="text-xs text-muted-foreground mt-0.5 ml-9">
                   {protocolo.data} às {protocolo.hora}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 bg-background border rounded-lg px-2 py-1 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-0.5 bg-background border rounded-lg px-1.5 py-0.5 shadow-sm">
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={() => onNavigate(currentIndex - 1)}
                     disabled={!canGoPrevious}
-                    className="h-7 w-7 p-0"
+                    className="h-6 w-6 p-0"
                   >
-                    <ChevronLeft size={18} />
+                    <ChevronLeft size={16} />
                   </Button>
-                  <span className="text-sm text-muted-foreground px-2 font-medium">
+                  <span className="text-xs text-muted-foreground px-1.5 font-medium">
                     {currentIndex + 1} de {protocolos.length}
                   </span>
                   <Button 
@@ -362,24 +362,24 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     size="sm" 
                     onClick={() => onNavigate(currentIndex + 1)}
                     disabled={!canGoNext}
-                    className="h-7 w-7 p-0"
+                    className="h-6 w-6 p-0"
                   >
-                    <ChevronRight size={18} />
+                    <ChevronRight size={16} />
                   </Button>
                 </div>
-                <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2 shadow-sm">
-                  <Download size={16} />
+                <Button onClick={handleDownload} variant="outline" size="sm" className="h-7 gap-1.5 text-xs shadow-sm">
+                  <Download size={14} />
                   Download
                 </Button>
               </div>
             </DialogHeader>
           </div>
 
-          <div className="space-y-5 p-6">
+          <div className="space-y-4 p-4">
             {/* Status do Protocolo */}
-            <div className="bg-card rounded-xl p-5 border shadow-sm">
-              <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                <CheckCircle size={18} className="text-primary" />
+            <div className="bg-card rounded-xl p-4 border shadow-sm">
+              <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-2 uppercase tracking-wide">
+                <CheckCircle size={16} className="text-primary" />
                 Status do Protocolo
               </h3>
               <div className="flex flex-wrap items-center gap-4">
@@ -426,9 +426,9 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
             </div>
 
             {/* Informações Gerais - Card unificado com duas colunas */}
-            <div className="bg-card rounded-xl p-5 border shadow-sm">
-              <h3 className="font-bold text-sm text-foreground mb-4 flex items-center gap-2 uppercase tracking-wide">
-                <Clock size={18} className="text-primary" />
+            <div className="bg-card rounded-xl p-4 border shadow-sm">
+              <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-2 uppercase tracking-wide">
+                <Clock size={16} className="text-primary" />
                 INFORMAÇÕES GERAIS
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
