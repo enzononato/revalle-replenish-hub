@@ -178,7 +178,7 @@ const getInputClassName = (field: 'codigo' | 'senha') => {
 
           <div className="mt-4 p-3 bg-muted/50 rounded-lg">
             <p className="text-xs text-muted-foreground text-center">
-              <strong>Teste:</strong> código <code className="bg-background px-1 rounded">60121</code> senha <code className="bg-background px-1 rounded">123456</code>
+              <strong>Exemplo:</strong> código <code className="bg-background px-1 rounded">197</code> senha <code className="bg-background px-1 rounded">197123</code>
             </p>
           </div>
         </CardContent>
