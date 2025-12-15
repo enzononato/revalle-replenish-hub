@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { generateUUID } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useMotoristaAuth } from '@/contexts/MotoristaAuthContext';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
@@ -376,7 +377,7 @@ export default function MotoristaPortal() {
     });
 
     const novoProtocolo: Protocolo = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       numero,
       motorista: motorista,
       data: format(now, 'dd/MM/yyyy'),
