@@ -80,7 +80,7 @@ export function Sidebar() {
         "lg:transform-none",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        {/* Logo - Fixed height */}
+        {/* Logo */}
         <div className="flex-shrink-0 p-6 border-b border-sidebar-border">
           <h1 className="font-heading text-2xl font-bold text-white">
             Revalle
@@ -88,7 +88,28 @@ export function Sidebar() {
           <p className="text-sm text-sidebar-foreground/60 mt-1">Sistema de Reposição</p>
         </div>
 
-        {/* Navigation - Scrollable */}
+        {/* User Profile Section - Below logo */}
+        <div className="flex-shrink-0 p-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <User size={18} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                {user?.nome || 'Usuário'}
+              </p>
+              <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60">
+                <Building2 size={11} />
+                <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
+              </div>
+            </div>
+            <Badge variant={roleBadge.variant} className="flex-shrink-0 text-xs px-2 py-0.5">
+              {roleBadge.label}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Navigation with Logout at the end */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-1">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
@@ -109,42 +130,19 @@ export function Sidebar() {
               </Link>
             );
           })}
-        </nav>
 
-        {/* User Profile Section - Fixed at bottom */}
-        <div className="flex-shrink-0 p-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <User size={18} className="text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {user?.nome || 'Usuário'}
-              </p>
-              <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60">
-                <Building2 size={11} />
-                <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
-              </div>
-            </div>
-            <Badge variant={roleBadge.variant} className="flex-shrink-0 text-xs px-2 py-0.5">
-              {roleBadge.label}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Logout Button - Fixed at bottom */}
-        <div className="flex-shrink-0 p-4 pt-0">
+          {/* Logout Button */}
           <button
             onClick={() => {
               setIsOpen(false);
               logout();
             }}
-            className="sidebar-item w-full text-destructive hover:bg-destructive/10"
+            className="sidebar-item w-full text-destructive hover:bg-destructive/10 mt-2"
           >
             <LogOut size={20} />
             <span>Sair</span>
           </button>
-        </div>
+        </nav>
       </aside>
     </>
   );
