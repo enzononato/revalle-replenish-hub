@@ -67,27 +67,27 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
     switch (status) {
       case 'aberto':
         return (
-          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-            <Clock className="w-3 h-3 mr-1" />
+          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-[10px] px-1.5 py-0.5">
+            <Clock className="w-2.5 h-2.5 mr-0.5" />
             Aberto
           </Badge>
         );
       case 'em_andamento':
         return (
-          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
-            <AlertCircle className="w-3 h-3 mr-1" />
+          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] px-1.5 py-0.5">
+            <AlertCircle className="w-2.5 h-2.5 mr-0.5" />
             Em Andamento
           </Badge>
         );
       case 'encerrado':
         return (
-          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-            <CheckCircle className="w-3 h-3 mr-1" />
+          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0.5">
+            <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
             Encerrado
           </Badge>
         );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">{status}</Badge>;
     }
   };
 
@@ -107,13 +107,13 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="p-4">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-5 w-16" />
+          <Card key={i} className="p-3">
+            <div className="space-y-1.5">
+              <Skeleton className="h-3.5 w-28" />
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-4 w-14" />
             </div>
           </Card>
         ))}
@@ -123,11 +123,11 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
 
   if (error) {
     return (
-      <Card className="p-6 text-center">
-        <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
-        <p className="text-muted-foreground mb-4">{error}</p>
-        <Button variant="outline" onClick={fetchProtocolos}>
-          <RefreshCw className="w-4 h-4 mr-2" />
+      <Card className="p-4 text-center">
+        <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground mb-3">{error}</p>
+        <Button variant="outline" size="sm" onClick={fetchProtocolos}>
+          <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
           Tentar novamente
         </Button>
       </Card>
@@ -136,21 +136,21 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
 
   if (protocolos.length === 0) {
     return (
-      <Card className="p-6 text-center">
-        <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-        <p className="text-muted-foreground">Você ainda não tem protocolos registrados</p>
+      <Card className="p-4 text-center">
+        <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">Você ainda não tem protocolos registrados</p>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm text-muted-foreground">
+    <div className="space-y-2">
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-xs text-muted-foreground">
           {protocolos.length} protocolo{protocolos.length !== 1 ? 's' : ''} encontrado{protocolos.length !== 1 ? 's' : ''}
         </p>
-        <Button variant="ghost" size="sm" onClick={fetchProtocolos}>
-          <RefreshCw className="w-4 h-4" />
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={fetchProtocolos}>
+          <RefreshCw className="w-3.5 h-3.5" />
         </Button>
       </div>
 
@@ -167,62 +167,62 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
             )}
             onClick={() => setExpandedId(isExpanded ? null : protocolo.id)}
           >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FileText className="w-4 h-4 text-primary shrink-0" />
-                    <span className="font-mono text-sm font-medium truncate">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="font-mono text-xs font-medium truncate">
                       {protocolo.numero}
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground space-y-0.5">
+                  <div className="text-[11px] text-muted-foreground space-y-0.5">
                     <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>
                     {protocolo.tipo_reposicao && (
                       <p className="capitalize">{protocolo.tipo_reposicao.toLowerCase()}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-col items-end gap-1.5">
                   {getStatusBadge(protocolo.status)}
                   {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
                   )}
                 </div>
               </div>
 
               {isExpanded && (
-                <div className="mt-4 pt-4 border-t border-border space-y-3">
+                <div className="mt-3 pt-3 border-t border-border space-y-2">
                   {protocolo.codigo_pdv && (
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">PDV:</span>
                       <span className="font-medium">{protocolo.codigo_pdv}</span>
                     </div>
                   )}
                   {protocolo.nota_fiscal && (
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Nota Fiscal:</span>
                       <span className="font-medium">{protocolo.nota_fiscal}</span>
                     </div>
                   )}
                   {protocolo.causa && (
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Causa:</span>
                       <span className="font-medium">{protocolo.causa}</span>
                     </div>
                   )}
                   
                   {produtos && produtos.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Package className="w-4 h-4" />
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Package className="w-3.5 h-3.5" />
                         <span>Produtos ({produtos.length})</span>
                       </div>
-                      <div className="bg-muted/50 rounded-lg p-2 space-y-1">
+                      <div className="bg-muted/50 rounded-md p-2 space-y-0.5">
                         {produtos.map((prod, idx) => (
-                          <div key={idx} className="text-xs flex justify-between">
+                          <div key={idx} className="text-[11px] flex justify-between">
                             <span className="truncate">{prod.codigo} - {prod.nome}</span>
                             <span className="text-muted-foreground shrink-0 ml-2">
                               {prod.quantidade} {prod.unidade}
