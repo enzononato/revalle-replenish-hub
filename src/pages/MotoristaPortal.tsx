@@ -166,7 +166,7 @@ export default function MotoristaPortal() {
     return isFieldValid(field, value) ? 'valid' : 'invalid';
   };
 
-  const getInputClassName = (field: keyof TouchedFields, value: string | null, baseClass: string = 'h-10 text-sm'): string => {
+  const getInputClassName = (field: keyof TouchedFields, value: string | null, baseClass: string = 'h-12 text-base'): string => {
     const status = getFieldStatus(field, value);
     return cn(
       baseClass,
@@ -438,16 +438,16 @@ export default function MotoristaPortal() {
     
     return (
       <div className={cn(
-        "bg-muted/30 rounded-lg p-2.5 border-2 transition-colors",
+        "bg-muted/30 rounded-lg p-3 border-2 transition-colors",
         hasPhoto ? 'border-green-500' : 'border-border'
       )}>
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium text-foreground">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground">
               {label}
             </span>
             {hasPhoto && (
-              <Check size={12} className="text-green-500" />
+              <Check size={14} className="text-green-500" />
             )}
           </div>
           {photo && (
@@ -456,9 +456,9 @@ export default function MotoristaPortal() {
               variant="ghost"
               size="sm"
               onClick={() => setPhoto(null)}
-              className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <X size={14} />
+              <X size={16} />
             </Button>
           )}
         </div>
@@ -466,6 +466,7 @@ export default function MotoristaPortal() {
           ref={inputRef}
           type="file"
           accept="image/*"
+          capture="environment"
           className="hidden"
           onChange={(e) => {
             handleFotoUpload(e, setPhoto);
@@ -481,12 +482,12 @@ export default function MotoristaPortal() {
               inputRef.current?.click();
             }}
             disabled={isCompressing}
-            className="w-full aspect-[4/3] border-2 border-dashed rounded-md flex flex-col items-center justify-center gap-2 transition-colors border-primary/40 bg-primary/5 hover:bg-primary/10 active:bg-primary/15 disabled:opacity-50"
+            className="w-full aspect-[4/3] border-2 border-dashed rounded-md flex flex-col items-center justify-center gap-3 transition-colors border-primary/40 bg-primary/5 hover:bg-primary/10 active:bg-primary/15 disabled:opacity-50"
           >
-            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
-              <Camera size={20} className="text-primary" />
+            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-primary/10">
+              <Camera size={24} className="text-primary" />
             </div>
-            <span className="text-xs font-medium text-primary">
+            <span className="text-sm font-medium text-primary">
               {isCompressing ? 'Processando...' : 'Tirar Foto'}
             </span>
           </button>
@@ -498,26 +499,26 @@ export default function MotoristaPortal() {
   if (protocoloCriado) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4 safe-area-inset">
-        <Card className="w-full max-w-sm text-center shadow-lg">
-          <CardContent className="pt-6 pb-5">
-            <div className="w-14 h-14 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-3">
-              <CheckCircle className="w-7 h-7 text-green-600 dark:text-green-400" />
+        <Card className="w-full max-w-md text-center shadow-lg">
+          <CardContent className="pt-8 pb-6">
+            <div className="w-16 h-16 mx-auto bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-xl font-bold text-foreground mb-1.5">
+            <h2 className="text-2xl font-bold text-foreground mb-2">
               {isOnline ? 'Protocolo Criado!' : 'Salvo Localmente!'}
             </h2>
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="text-base text-muted-foreground mb-4">
               {isOnline 
                 ? 'Seu protocolo foi enviado com sucesso' 
                 : 'O protocolo será enviado quando você tiver conexão'}
             </p>
-            <div className="bg-muted/50 rounded-lg p-3 mb-4">
-              <p className="text-xs text-muted-foreground">Número do protocolo</p>
-              <p className="text-sm font-mono font-bold text-primary">{numeroProtocolo}</p>
+            <div className="bg-muted/50 rounded-lg p-4 mb-6">
+              <p className="text-sm text-muted-foreground">Número do protocolo</p>
+              <p className="text-lg font-mono font-bold text-primary">{numeroProtocolo}</p>
             </div>
-            <div className="space-y-2">
-              <Button onClick={resetForm} className="w-full h-10 text-sm">
-                <Plus className="mr-1.5 h-4 w-4" />
+            <div className="space-y-3">
+              <Button onClick={resetForm} className="w-full h-12 text-base">
+                <Plus className="mr-2 h-5 w-5" />
                 Abrir Novo Protocolo
               </Button>
               <Button 
@@ -526,13 +527,13 @@ export default function MotoristaPortal() {
                   resetForm();
                   setActiveTab('meus');
                 }} 
-                className="w-full h-10 text-sm"
+                className="w-full h-12 text-base"
               >
-                <FileText className="mr-1.5 h-4 w-4" />
+                <FileText className="mr-2 h-5 w-5" />
                 Meus Protocolos
               </Button>
-              <Button variant="outline" onClick={handleLogout} className="w-full h-10 text-sm">
-                <LogOut className="mr-1.5 h-4 w-4" />
+              <Button variant="outline" onClick={handleLogout} className="w-full h-12 text-base">
+                <LogOut className="mr-2 h-5 w-5" />
                 Sair
               </Button>
             </div>
@@ -555,40 +556,40 @@ export default function MotoristaPortal() {
       {/* Tabs */}
       <div className="px-4 pt-4 pb-2 max-w-lg mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-10 bg-muted/60 p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60 p-1 rounded-lg">
             <TabsTrigger 
               value="novo" 
-              className="text-xs gap-1.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
+              className="text-sm gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
             >
-              <PlusCircle className="w-3.5 h-3.5" />
+              <PlusCircle className="w-4 h-4" />
               Novo Protocolo
             </TabsTrigger>
             <TabsTrigger 
               value="meus" 
-              className="text-xs gap-1.5 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
+              className="text-sm gap-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-4 h-4" />
               Meus Protocolos
             </TabsTrigger>
           </TabsList>
 
           {/* Tab: Novo Protocolo */}
-          <TabsContent value="novo" className="mt-4 pb-20 space-y-3">
+          <TabsContent value="novo" className="mt-4 pb-24 space-y-4">
             {/* Seção: Dados Gerais */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <Package className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
+                <h3 className="text-base font-medium text-foreground flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
                   Dados Gerais
                 </h3>
               </div>
-              <div className="p-3 space-y-3">
+              <div className="p-4 space-y-4">
                 {/* General Info */}
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <Label htmlFor="mapa" className="text-xs font-medium">MAPA *</Label>
-                      {touched.mapa && mapa.trim() && <Check size={12} className="text-green-500" />}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="mapa" className="text-sm font-medium">MAPA *</Label>
+                      {touched.mapa && mapa.trim() && <Check size={14} className="text-green-500" />}
                     </div>
                     <Input
                       id="mapa"

@@ -38,9 +38,9 @@ export default function MotoristaLogin() {
     return isFieldValid(field) ? 'valid' : 'invalid';
   };
 
-  const getInputClassName = (field: 'codigo' | 'senha') => {
+const getInputClassName = (field: 'codigo' | 'senha') => {
     const status = getFieldStatus(field);
-    const base = "h-10 text-sm pr-10 transition-all";
+    const base = "h-12 text-base pr-10 transition-all";
     if (status === 'valid') return `${base} border-green-500 focus-visible:ring-green-500`;
     if (status === 'invalid') return `${base} border-destructive focus-visible:ring-destructive`;
     return base;
@@ -91,20 +91,20 @@ export default function MotoristaLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
-      <Card className="w-full max-w-sm shadow-lg">
-        <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-3 w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
-            <Package className="w-8 h-8 text-primary" />
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center pb-6">
+          <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+            <Package className="w-10 h-10 text-primary" />
           </div>
-          <CardTitle className="text-xl">Portal do Motorista</CardTitle>
-          <CardDescription className="mt-1">
+          <CardTitle className="text-2xl">Portal do Motorista</CardTitle>
+          <CardDescription className="mt-2">
             Faça login para registrar protocolos de reposição
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="codigo" className="text-sm">Código do Motorista</Label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="codigo">Código do Motorista</Label>
               <div className="relative">
                 <Input
                   id="codigo"
@@ -128,8 +128,8 @@ export default function MotoristaLogin() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="senha" className="text-sm">Senha</Label>
+            <div className="space-y-2">
+              <Label htmlFor="senha">Senha</Label>
               <div className="relative">
                 <Input
                   id="senha"
@@ -162,7 +162,7 @@ export default function MotoristaLogin() {
 
             <Button 
               type="submit" 
-              className="w-full h-11 text-sm"
+              className="w-full h-14 text-base"
               disabled={isLoading}
             >
               {isLoading ? (
