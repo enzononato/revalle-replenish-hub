@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtocolosProvider } from "@/contexts/ProtocolosContext";
 import { MotoristaAuthProvider } from "@/contexts/MotoristaAuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Protocolos from "./pages/Protocolos";
@@ -40,11 +41,46 @@ const App = () => (
                 <Route element={<MainLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/protocolos" element={<Protocolos />} />
-                  <Route path="/motoristas" element={<Motoristas />} />
-                  <Route path="/unidades" element={<Unidades />} />
-                  <Route path="/usuarios" element={<Usuarios />} />
-                  <Route path="/configuracoes" element={<Configuracoes />} />
-                  <Route path="/importar-dados" element={<ImportarDados />} />
+                  <Route 
+                    path="/motoristas" 
+                    element={
+                      <ProtectedRoute allowedRoles={['admin', 'distribuicao']}>
+                        <Motoristas />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/unidades" 
+                    element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <Unidades />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/usuarios" 
+                    element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <Usuarios />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/configuracoes" 
+                    element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <Configuracoes />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/importar-dados" 
+                    element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <ImportarDados />
+                      </ProtectedRoute>
+                    } 
+                  />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
