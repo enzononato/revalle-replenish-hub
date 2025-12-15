@@ -5,6 +5,7 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { ImportarMotoristasCSV } from '@/components/ImportarMotoristasCSV';
 import { 
@@ -24,6 +25,7 @@ import {
 import { Plus, Pencil, Trash2, MapPin, Hash, Truck, Users, Building, Loader2 } from 'lucide-react';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function Motoristas() {
   const { motoristas, isLoading, addMotorista, updateMotorista, deleteMotorista, importMotoristas } = useMotoristasDB();
@@ -45,6 +47,9 @@ export default function Motoristas() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  
+  // Selection states
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Filtrar motoristas por unidade do usuário (exceto admin)
   const motoristasFiltradosPorUnidade = isAdmin 
@@ -66,7 +71,45 @@ export default function Motoristas() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedIds(new Set());
   }, [search, pageSize, unidadeFiltro]);
+
+  // Selection handlers
+  const isAllSelected = paginatedMotoristas.length > 0 && paginatedMotoristas.every(m => selectedIds.has(m.id));
+  const isPartialSelected = paginatedMotoristas.some(m => selectedIds.has(m.id)) && !isAllSelected;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      // Deselect all on current page
+      const newSelected = new Set(selectedIds);
+      paginatedMotoristas.forEach(m => newSelected.delete(m.id));
+      setSelectedIds(newSelected);
+    } else {
+      // Select all on current page
+      const newSelected = new Set(selectedIds);
+      paginatedMotoristas.forEach(m => newSelected.add(m.id));
+      setSelectedIds(newSelected);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    
+    const promises = Array.from(selectedIds).map(id => deleteMotorista(id));
+    await Promise.all(promises);
+    setSelectedIds(new Set());
+    toast.success(`${selectedIds.size} motoristas excluídos com sucesso!`);
+  };
 
   const resetForm = () => {
     setFormData({
@@ -286,6 +329,32 @@ export default function Motoristas() {
         )}
       </div>
 
+      {/* Selection Actions */}
+      {selectedIds.size > 0 && (
+        <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex items-center justify-between">
+          <span className="text-sm font-medium">
+            {selectedIds.size} motorista(s) selecionado(s)
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Limpar seleção
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteSelected}
+            >
+              <Trash2 size={16} className="mr-2" />
+              Excluir selecionados
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-card rounded-xl p-6 shadow-md animate-fade-in overflow-x-auto">
         {isLoading ? (
@@ -297,7 +366,15 @@ export default function Motoristas() {
             <table className="w-full">
               <thead>
                 <tr className="table-header">
-                  <th className="text-left p-4 rounded-tl-lg">Nome</th>
+                  <th className="text-left p-4 rounded-tl-lg w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Selecionar todos"
+                      className={isPartialSelected ? "data-[state=checked]:bg-primary/50" : ""}
+                    />
+                  </th>
+                  <th className="text-left p-4">Nome</th>
                   <th className="text-left p-4">Código</th>
                   <th className="text-left p-4">Função</th>
                   <th className="text-left p-4">Setor</th>
@@ -309,8 +386,15 @@ export default function Motoristas() {
                 {paginatedMotoristas.map((motorista) => (
                   <tr 
                     key={motorista.id} 
-                    className="border-b border-border"
+                    className={`border-b border-border ${selectedIds.has(motorista.id) ? 'bg-primary/5' : ''}`}
                   >
+                    <td className="p-4">
+                      <Checkbox
+                        checked={selectedIds.has(motorista.id)}
+                        onCheckedChange={() => toggleSelect(motorista.id)}
+                        aria-label={`Selecionar ${motorista.nome}`}
+                      />
+                    </td>
                     <td className="p-4 font-medium">{motorista.nome}</td>
                     <td className="p-4">
                       <span className="inline-flex items-center gap-1 text-muted-foreground">
