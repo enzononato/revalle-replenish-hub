@@ -348,24 +348,24 @@ export default function Dashboard() {
   return (
     <div className="space-y-4">
       {/* Header Personalizado */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-3 border border-primary/20">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-2.5 border border-primary/20">
         <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         
         <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
-            <div className="flex items-center gap-2 mb-0.5">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30">
-                <TrendingUp size={16} />
+            <div className="flex items-center gap-1.5">
+              <div className="p-1 rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/30">
+                <TrendingUp size={14} />
               </div>
               <div>
-                <h1 className="font-heading text-lg sm:text-xl font-bold text-foreground">
+                <h1 className="font-heading text-base sm:text-lg font-bold text-foreground">
                   {saudacao}, {user?.nome?.split(' ')[0] || 'Usuário'}!
                 </h1>
-                <div className="flex items-center gap-2 text-muted-foreground text-[11px]">
+                <div className="flex items-center gap-2 text-muted-foreground text-[10px]">
                   <span className="capitalize">{dataAtual}</span>
                   <span className="text-muted-foreground/50">•</span>
                   <span className="flex items-center gap-1">
-                    <Building2 size={10} />
+                    <Building2 size={9} />
                     {isAdmin ? 'Todas as Unidades' : user?.unidade || '-'}
                   </span>
                 </div>
@@ -574,17 +574,17 @@ export default function Dashboard() {
 
       {/* Recent Protocols */}
       <div className="card-stats animate-slide-up" style={{ animationDelay: '1100ms' }}>
-        <h3 className="font-heading text-base font-semibold mb-3">Protocolos Recentes</h3>
+        <h3 className="font-heading text-sm font-semibold mb-2">Protocolos Recentes</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="table-header">
-                <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Protocolo</th>
-                <th className="text-left p-2.5 text-[11px]">Motorista</th>
-                <th className="text-left p-2.5 text-[11px]">Data</th>
-                <th className="text-left p-2.5 text-[11px]">SLA</th>
-                <th className="text-left p-2.5 text-[11px]">Status</th>
-                <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
+                <th className="text-left p-2 text-[10px] rounded-tl-lg">Protocolo</th>
+                <th className="text-left p-2 text-[10px]">Motorista</th>
+                <th className="text-left p-2 text-[10px]">Data</th>
+                <th className="text-left p-2 text-[10px]">SLA</th>
+                <th className="text-left p-2 text-[10px]">Status</th>
+                <th className="text-right p-2 text-[10px] rounded-tr-lg">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -596,33 +596,33 @@ export default function Dashboard() {
                     key={protocolo.id} 
                     className="border-b border-border hover:bg-primary/5 transition-all duration-200 group"
                   >
-                    <td className="p-2.5">
-                      <span className="font-semibold text-primary text-xs">{protocolo.numero}</span>
+                    <td className="p-2">
+                      <span className="font-semibold text-primary text-[11px]">{protocolo.numero}</span>
                     </td>
-                    <td className="p-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold ${getAvatarColor(protocolo.motorista.nome)}`}>
+                    <td className="p-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold ${getAvatarColor(protocolo.motorista.nome)}`}>
                           {getInitials(protocolo.motorista.nome)}
                         </div>
-                        <span className="font-medium text-xs">{protocolo.motorista.nome}</span>
+                        <span className="font-medium text-[11px]">{protocolo.motorista.nome}</span>
                       </div>
                     </td>
-                    <td className="p-2.5 text-muted-foreground text-xs">{protocolo.data}</td>
-                    <td className="p-2.5">
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(slaDias)}`}>
+                    <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
+                    <td className="p-2">
+                      <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getSlaColor(slaDias)}`}>
                         {slaDias} {slaDias === 1 ? 'dia' : 'dias'}
                       </span>
                     </td>
-                    <td className="p-2.5">
+                    <td className="p-2">
                       <StatusBadge status={protocolo.status} />
                     </td>
-                    <td className="p-2.5 text-right">
+                    <td className="p-2 text-right">
                       <Link to={`/protocolos?id=${protocolo.id}`}>
                         <Button 
                           variant="outline" 
-                          className="h-6 text-xs border-emerald-500 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                          className="h-5 text-[11px] border-emerald-500 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                         >
-                          <Eye size={12} className="mr-1" />
+                          <Eye size={11} className="mr-1" />
                           Ver
                         </Button>
                       </Link>
