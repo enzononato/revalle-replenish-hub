@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const ELASTIC_EMAIL_API_KEY = Deno.env.get("ELASTIC_EMAIL_API_KEY");
+const MAILJET_API_KEY = Deno.env.get("MAILJET_API_KEY");
+const MAILJET_SECRET_KEY = Deno.env.get("MAILJET_SECRET_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -345,30 +346,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Enviando e-mail para:", data.clienteEmail);
 
-    // Enviar usando Elastic Email API
-    const emailResponse = await fetch("https://api.elasticemail.com/v4/emails", {
+    // Enviar usando Mailjet API
+    const emailResponse = await fetch("https://api.mailjet.com/v3.1/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-ElasticEmail-ApiKey": ELASTIC_EMAIL_API_KEY!,
+        "Authorization": `Basic ${btoa(`${MAILJET_API_KEY}:${MAILJET_SECRET_KEY}`)}`,
       },
       body: JSON.stringify({
-        Recipients: [{ Email: data.clienteEmail }],
-        Content: {
-          From: "Revalle Protocolos <reposicao@revalle.com.br>",
+        Messages: [{
+          From: { Email: "reposicao@revalle.com.br", Name: "Revalle Protocolos" },
+          To: [{ Email: data.clienteEmail }],
           Subject: assunto,
-          Body: [{ ContentType: "HTML", Content: htmlContent }],
-        },
+          HTMLPart: htmlContent,
+        }]
       }),
     });
 
     const result = await emailResponse.json();
-    console.log("Resposta do Elastic Email:", result);
+    console.log("Resposta do Mailjet:", result);
 
-    if (!emailResponse.ok) {
+    if (!emailResponse.ok || (result.Messages && result.Messages[0]?.Status === "error")) {
+      const errorMsg = result.Messages?.[0]?.Errors?.[0]?.ErrorMessage || result.ErrorMessage || "Erro ao enviar e-mail";
       console.error("Erro ao enviar e-mail:", result);
       return new Response(
-        JSON.stringify({ success: false, error: result.Error || "Erro ao enviar e-mail" }),
+        JSON.stringify({ success: false, error: errorMsg }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
