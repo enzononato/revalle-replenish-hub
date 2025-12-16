@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { generateUUID } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useMotoristaAuth } from '@/contexts/MotoristaAuthContext';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
@@ -417,6 +418,41 @@ export default function MotoristaPortal() {
         title: 'Protocolo criado!',
         description: `Protocolo ${numero} criado com sucesso`
       });
+
+      // Enviar e-mail se preenchido
+      if (emailContato) {
+        try {
+          const emailPayload = {
+            tipo: 'lancar' as const,
+            numero,
+            data: format(now, 'dd/MM/yyyy'),
+            hora: format(now, 'HH:mm:ss'),
+            mapa: mapa || undefined,
+            codigoPdv: codigoPdv || undefined,
+            notaFiscal: notaFiscal || undefined,
+            motoristaNome: motorista.nome,
+            unidadeNome: motorista.unidade || undefined,
+            tipoReposicao: tipoReposicao.toUpperCase(),
+            causa,
+            produtos: produtosFormatados,
+            fotosProtocolo,
+            clienteEmail: emailContato,
+            observacaoGeral: observacao || undefined
+          };
+
+          const response = await supabase.functions.invoke('enviar-email', {
+            body: emailPayload
+          });
+
+          if (response.error) {
+            console.error('Erro ao enviar e-mail:', response.error);
+          } else {
+            console.log('E-mail enviado com sucesso');
+          }
+        } catch (emailError) {
+          console.error('Erro ao enviar e-mail:', emailError);
+        }
+      }
     } catch (error) {
       console.error('Erro ao criar protocolo:', error);
       // Salvar offline se falhar
