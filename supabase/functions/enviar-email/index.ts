@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const ELASTIC_EMAIL_API_KEY = Deno.env.get("ELASTIC_EMAIL_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -346,25 +345,36 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Enviando e-mail para:", data.clienteEmail);
 
-    const emailResponse = await resend.emails.send({
-      from: "Revalle Protocolos <onboarding@resend.dev>",
-      to: [data.clienteEmail],
-      subject: assunto,
-      html: htmlContent,
+    // Enviar usando Elastic Email API
+    const emailResponse = await fetch("https://api.elasticemail.com/v4/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-ElasticEmail-ApiKey": ELASTIC_EMAIL_API_KEY!,
+      },
+      body: JSON.stringify({
+        Recipients: [{ Email: data.clienteEmail }],
+        Content: {
+          From: "Revalle Protocolos <reposicao@revalle.com.br>",
+          Subject: assunto,
+          Body: [{ ContentType: "HTML", Content: htmlContent }],
+        },
+      }),
     });
 
-    console.log("Resposta do Resend:", emailResponse);
+    const result = await emailResponse.json();
+    console.log("Resposta do Elastic Email:", result);
 
-    if (emailResponse.error) {
-      console.error("Erro ao enviar e-mail:", emailResponse.error);
+    if (!emailResponse.ok) {
+      console.error("Erro ao enviar e-mail:", result);
       return new Response(
-        JSON.stringify({ success: false, error: emailResponse.error.message }),
+        JSON.stringify({ success: false, error: result.Error || "Erro ao enviar e-mail" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
-      JSON.stringify({ success: true, data: emailResponse }),
+      JSON.stringify({ success: true, data: result }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
