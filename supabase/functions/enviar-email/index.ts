@@ -370,7 +370,7 @@ const handler = async (req: Request): Promise<Response> => {
       connection: {
         hostname: SMTP_HOST,
         port: SMTP_PORT,
-        tls: false, // false para STARTTLS na porta 587
+        tls: true, // TLS/STARTTLS na porta 587
         auth: {
           username: SMTP_USER,
           password: SMTP_PASS,
