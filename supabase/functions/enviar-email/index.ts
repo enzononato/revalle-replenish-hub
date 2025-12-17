@@ -3,7 +3,7 @@ import { SmtpClient } from "https://deno.land/x/smtp/mod.ts";
 
 // Configuração SMTP
 const SMTP_HOST = Deno.env.get("SMTP_HOST") || "mail.revalle.com.br";
-const SMTP_PORT = Number(Deno.env.get("SMTP_PORT")) || 587;
+const SMTP_PORT = 465; // SSL implícito
 const SMTP_USER = Deno.env.get("SMTP_USER") || "";
 const SMTP_PASS = Deno.env.get("SMTP_PASS") || "";
 
@@ -369,7 +369,7 @@ const handler = async (req: Request): Promise<Response> => {
     const client = new SmtpClient();
 
     try {
-      // Conectar usando STARTTLS na porta 587
+      // Conectar usando SSL implícito na porta 465
       console.log("Conectando ao servidor SMTP...");
       await client.connectTLS({
         hostname: SMTP_HOST,
