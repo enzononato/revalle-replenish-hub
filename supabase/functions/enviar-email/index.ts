@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { SmtpClient } from "https://deno.land/x/smtp/mod.ts";
 
 // Configuração SMTP
-const SMTP_HOST = Deno.env.get("SMTP_HOST");
+const SMTP_HOST = Deno.env.get("SMTP_HOST") || "mail.revalle.com.br";
 const SMTP_PORT = Number(Deno.env.get("SMTP_PORT")) || 587;
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
+const SMTP_USER = Deno.env.get("SMTP_USER") || "";
+const SMTP_PASS = Deno.env.get("SMTP_PASS") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -365,38 +365,51 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Criando cliente SMTP...");
 
-    // Criar cliente SMTP com denomailer
-    const client = new SMTPClient({
-      connection: {
+    // Criar cliente SMTP usando deno.land/x/smtp
+    const client = new SmtpClient();
+
+    try {
+      // Conectar usando STARTTLS na porta 587
+      console.log("Conectando ao servidor SMTP...");
+      await client.connectTLS({
         hostname: SMTP_HOST,
         port: SMTP_PORT,
-        tls: true, // TLS/STARTTLS na porta 587
-        auth: {
-          username: SMTP_USER,
-          password: SMTP_PASS,
-        },
-      },
-    });
+        username: SMTP_USER,
+        password: SMTP_PASS,
+      });
 
-    console.log("Enviando e-mail para:", data.clienteEmail);
+      console.log("Enviando e-mail para:", data.clienteEmail);
 
-    // Enviar e-mail
-    await client.send({
-      from: SMTP_USER,
-      to: data.clienteEmail,
-      subject: assunto,
-      content: "Visualize este e-mail em um cliente que suporte HTML",
-      html: htmlContent,
-    });
+      // Enviar e-mail
+      await client.send({
+        from: SMTP_USER,
+        to: data.clienteEmail,
+        subject: assunto,
+        content: htmlContent,
+        html: htmlContent,
+      });
 
-    await client.close();
+      await client.close();
 
-    console.log("E-mail enviado com sucesso via SMTP");
+      console.log("E-mail enviado com sucesso via SMTP");
 
-    return new Response(
-      JSON.stringify({ success: true, message: "E-mail enviado com sucesso" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+      return new Response(
+        JSON.stringify({ success: true, message: "E-mail enviado com sucesso" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+
+    } catch (smtpError: any) {
+      console.error("Erro SMTP:", smtpError);
+      
+      // Tentar fechar o cliente em caso de erro
+      try {
+        await client.close();
+      } catch (closeError) {
+        console.error("Erro ao fechar cliente:", closeError);
+      }
+      
+      throw smtpError;
+    }
 
   } catch (error: any) {
     console.error("Erro na função enviar-email:", error);
