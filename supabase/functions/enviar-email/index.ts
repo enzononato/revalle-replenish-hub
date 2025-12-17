@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SmtpClient } from "https://deno.land/x/smtp/mod.ts";
+import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 // Configuração SMTP
 const SMTP_HOST = Deno.env.get("SMTP_HOST") || "mail.revalle.com.br";
@@ -371,7 +371,7 @@ const handler = async (req: Request): Promise<Response> => {
     try {
       // Conectar usando SSL implícito na porta 465
       console.log("Conectando ao servidor SMTP...");
-      await client.connectTLS({
+      await client.connect({
         hostname: SMTP_HOST,
         port: SMTP_PORT,
         username: SMTP_USER,
