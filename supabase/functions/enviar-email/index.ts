@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-// Configuração SMTP
-const SMTP_HOST = Deno.env.get("SMTP_HOST");
-const SMTP_PORT = Deno.env.get("SMTP_PORT");
-const SMTP_USER = Deno.env.get("SMTP_USER");
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_EMAIL = Deno.env.get("SMTP_USER") || "reposicao@revalle.com.br";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -350,34 +346,36 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Enviando e-mail para:", data.clienteEmail);
 
-    // Configurar cliente SMTP
-    const client = new SMTPClient({
-      connection: {
-        hostname: SMTP_HOST!,
-        port: Number(SMTP_PORT) || 587,
-        tls: false,
-        auth: {
-          username: SMTP_USER!,
-          password: SMTP_PASS!,
-        },
+    // Enviar usando Resend API
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
+      body: JSON.stringify({
+        from: `Revalle Protocolos <${FROM_EMAIL}>`,
+        to: [data.clienteEmail],
+        subject: assunto,
+        html: htmlContent,
+      }),
     });
 
-    // Enviar e-mail via SMTP
-    await client.send({
-      from: `Revalle Protocolos <${SMTP_USER}>`,
-      to: data.clienteEmail,
-      subject: assunto,
-      content: "Visualize este e-mail em um cliente que suporte HTML",
-      html: htmlContent,
-    });
+    const result = await emailResponse.json();
+    console.log("Resposta do Resend:", result);
 
-    await client.close();
-    
-    console.log("E-mail enviado com sucesso via SMTP");
+    if (!emailResponse.ok) {
+      console.error("Erro ao enviar e-mail:", result);
+      return new Response(
+        JSON.stringify({ success: false, error: result.message || "Erro ao enviar e-mail" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("E-mail enviado com sucesso via Resend");
 
     return new Response(
-      JSON.stringify({ success: true, message: "E-mail enviado com sucesso" }),
+      JSON.stringify({ success: true, data: emailResponse }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
