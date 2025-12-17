@@ -1,11 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
-// Configuração SMTP
-const SMTP_HOST = Deno.env.get("SMTP_HOST") || "mail.revalle.com.br";
-const SMTP_PORT = Number(Deno.env.get("SMTP_PORT")) || 465;
-const SMTP_USER = Deno.env.get("SMTP_USER") || "reposicao@revalle.com.br";
-const SMTP_PASS = Deno.env.get("SMTP_PASS");
+// Configuração Mailjet
+const MAILJET_API_KEY = Deno.env.get("MAILJET_API_KEY");
+const MAILJET_SECRET_KEY = Deno.env.get("MAILJET_SECRET_KEY");
+const FROM_EMAIL = Deno.env.get("SMTP_USER") || "reposicao@revalle.com.br";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -332,13 +330,6 @@ const handler = async (req: Request): Promise<Response> => {
       clienteEmail: data.clienteEmail
     });
 
-    console.log("Configuração SMTP:", {
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      user: SMTP_USER,
-      hasPassword: !!SMTP_PASS
-    });
-
     if (!data.clienteEmail) {
       console.error("E-mail do cliente não fornecido");
       return new Response(
@@ -347,10 +338,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!SMTP_PASS) {
-      console.error("Senha SMTP não configurada");
+    if (!MAILJET_API_KEY || !MAILJET_SECRET_KEY) {
+      console.error("Credenciais Mailjet não configuradas");
       return new Response(
-        JSON.stringify({ success: false, error: "Configuração SMTP incompleta" }),
+        JSON.stringify({ success: false, error: "Configuração de e-mail incompleta" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -365,37 +356,39 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Enviando e-mail para:", data.clienteEmail);
 
-    // Configurar cliente SMTP
-    const client = new SmtpClient();
-
-    console.log("Conectando ao servidor SMTP...");
-
-    // Conectar com TLS (porta 465)
-    await client.connectTLS({
-      hostname: SMTP_HOST,
-      port: SMTP_PORT,
-      username: SMTP_USER,
-      password: SMTP_PASS,
+    // Enviar usando Mailjet API
+    const emailResponse = await fetch("https://api.mailjet.com/v3.1/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Basic ${btoa(`${MAILJET_API_KEY}:${MAILJET_SECRET_KEY}`)}`,
+      },
+      body: JSON.stringify({
+        Messages: [{
+          From: { Email: FROM_EMAIL, Name: "Revalle Protocolos" },
+          To: [{ Email: data.clienteEmail }],
+          Subject: assunto,
+          HTMLPart: htmlContent,
+        }]
+      }),
     });
 
-    console.log("Cliente SMTP conectado, iniciando envio...");
+    const result = await emailResponse.json();
+    console.log("Resposta do Mailjet:", result);
 
-    // Enviar e-mail via SMTP
-    await client.send({
-      from: SMTP_USER,
-      to: data.clienteEmail,
-      subject: assunto,
-      content: "Visualize este e-mail em um cliente que suporte HTML",
-      html: htmlContent,
-    });
+    if (!emailResponse.ok || (result.Messages && result.Messages[0]?.Status === "error")) {
+      const errorMsg = result.Messages?.[0]?.Errors?.[0]?.ErrorMessage || result.ErrorMessage || "Erro ao enviar e-mail";
+      console.error("Erro ao enviar e-mail:", result);
+      return new Response(
+        JSON.stringify({ success: false, error: errorMsg }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    console.log("E-mail enviado, fechando conexão...");
-    await client.close();
-    
-    console.log("E-mail enviado com sucesso via SMTP");
+    console.log("E-mail enviado com sucesso via Mailjet");
 
     return new Response(
-      JSON.stringify({ success: true, message: "E-mail enviado com sucesso" }),
+      JSON.stringify({ success: true, data: result }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
