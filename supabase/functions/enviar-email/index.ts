@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 // Configuração SMTP
 const SMTP_HOST = Deno.env.get("SMTP_HOST") || "mail.revalle.com.br";
-const SMTP_PORT = Number(Deno.env.get("SMTP_PORT")) || 587;
+const SMTP_PORT = Number(Deno.env.get("SMTP_PORT")) || 465;
 const SMTP_USER = Deno.env.get("SMTP_USER") || "reposicao@revalle.com.br";
 const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
@@ -365,24 +365,24 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Enviando e-mail para:", data.clienteEmail);
 
-    // Configurar cliente SMTP com STARTTLS
-    const client = new SMTPClient({
-      connection: {
-        hostname: SMTP_HOST,
-        port: SMTP_PORT,
-        tls: true, // Usar TLS/STARTTLS
-        auth: {
-          username: SMTP_USER,
-          password: SMTP_PASS,
-        },
-      },
+    // Configurar cliente SMTP
+    const client = new SmtpClient();
+
+    console.log("Conectando ao servidor SMTP...");
+
+    // Conectar com TLS (porta 465)
+    await client.connectTLS({
+      hostname: SMTP_HOST,
+      port: SMTP_PORT,
+      username: SMTP_USER,
+      password: SMTP_PASS,
     });
 
-    console.log("Cliente SMTP criado, iniciando envio...");
+    console.log("Cliente SMTP conectado, iniciando envio...");
 
     // Enviar e-mail via SMTP
     await client.send({
-      from: `Revalle Protocolos <${SMTP_USER}>`,
+      from: SMTP_USER,
       to: data.clienteEmail,
       subject: assunto,
       content: "Visualize este e-mail em um cliente que suporte HTML",
