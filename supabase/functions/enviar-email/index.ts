@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM_EMAIL = Deno.env.get("SMTP_USER") || "reposicao@revalle.com.br";
+// Configuração SMTP
+const SMTP_HOST = Deno.env.get("SMTP_HOST") || "mail.revalle.com.br";
+const SMTP_PORT = Number(Deno.env.get("SMTP_PORT")) || 587;
+const SMTP_USER = Deno.env.get("SMTP_USER") || "reposicao@revalle.com.br";
+const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -328,11 +332,26 @@ const handler = async (req: Request): Promise<Response> => {
       clienteEmail: data.clienteEmail
     });
 
+    console.log("Configuração SMTP:", {
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      user: SMTP_USER,
+      hasPassword: !!SMTP_PASS
+    });
+
     if (!data.clienteEmail) {
       console.error("E-mail do cliente não fornecido");
       return new Response(
         JSON.stringify({ success: false, error: "E-mail do cliente não fornecido" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!SMTP_PASS) {
+      console.error("Senha SMTP não configurada");
+      return new Response(
+        JSON.stringify({ success: false, error: "Configuração SMTP incompleta" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -346,36 +365,37 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Enviando e-mail para:", data.clienteEmail);
 
-    // Enviar usando Resend API
-    const emailResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
+    // Configurar cliente SMTP com STARTTLS
+    const client = new SMTPClient({
+      connection: {
+        hostname: SMTP_HOST,
+        port: SMTP_PORT,
+        tls: true, // Usar TLS/STARTTLS
+        auth: {
+          username: SMTP_USER,
+          password: SMTP_PASS,
+        },
       },
-      body: JSON.stringify({
-        from: `Revalle Protocolos <${FROM_EMAIL}>`,
-        to: [data.clienteEmail],
-        subject: assunto,
-        html: htmlContent,
-      }),
     });
 
-    const result = await emailResponse.json();
-    console.log("Resposta do Resend:", result);
+    console.log("Cliente SMTP criado, iniciando envio...");
 
-    if (!emailResponse.ok) {
-      console.error("Erro ao enviar e-mail:", result);
-      return new Response(
-        JSON.stringify({ success: false, error: result.message || "Erro ao enviar e-mail" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Enviar e-mail via SMTP
+    await client.send({
+      from: `Revalle Protocolos <${SMTP_USER}>`,
+      to: data.clienteEmail,
+      subject: assunto,
+      content: "Visualize este e-mail em um cliente que suporte HTML",
+      html: htmlContent,
+    });
 
-    console.log("E-mail enviado com sucesso via Resend");
+    console.log("E-mail enviado, fechando conexão...");
+    await client.close();
+    
+    console.log("E-mail enviado com sucesso via SMTP");
 
     return new Response(
-      JSON.stringify({ success: true, data: emailResponse }),
+      JSON.stringify({ success: true, message: "E-mail enviado com sucesso" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
