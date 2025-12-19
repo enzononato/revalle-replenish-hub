@@ -419,6 +419,48 @@ export default function MotoristaPortal() {
         description: `Protocolo ${numero} criado com sucesso`
       });
 
+      // Enviar webhook para n8n
+      try {
+        const webhookPayload = {
+          numero,
+          data: format(now, 'dd/MM/yyyy'),
+          hora: format(now, 'HH:mm:ss'),
+          mapa: mapa || '',
+          codigoPdv: codigoPdv || '',
+          notaFiscal: notaFiscal || '',
+          motoristaNome: motorista.nome,
+          motoristaCodigo: motorista.codigo,
+          motoristaWhatsapp: motorista.whatsapp || '',
+          motoristaEmail: motorista.email || '',
+          unidade: motorista.unidade || '',
+          tipoReposicao: tipoReposicao.toUpperCase(),
+          causa,
+          produtos: produtosFormatados,
+          fotosProtocolo,
+          whatsappContato: whatsappContato || '',
+          emailContato: emailContato || '',
+          observacaoGeral: observacao || ''
+        };
+
+        fetch('https://n8n.revalle.com.br/webhook-test/reposicaowpp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookPayload),
+        }).then(response => {
+          if (response.ok) {
+            console.log('Webhook n8n enviado com sucesso');
+          } else {
+            console.error('Erro ao enviar webhook n8n:', response.status);
+          }
+        }).catch(error => {
+          console.error('Erro ao enviar webhook n8n:', error);
+        });
+      } catch (webhookError) {
+        console.error('Erro ao enviar webhook:', webhookError);
+      }
+
       // Enviar e-mail se preenchido
       if (emailContato) {
         try {
