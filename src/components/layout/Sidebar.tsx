@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChatDB } from '@/hooks/useChatDB';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -13,7 +14,8 @@ import {
   Database,
   User,
   Store,
-  ClipboardList
+  ClipboardList,
+  MessageSquare
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -29,6 +31,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'distribuicao', 'conferente'] },
   { icon: FileText, label: 'Protocolos', path: '/protocolos', roles: ['admin', 'distribuicao', 'conferente'] },
+  { icon: MessageSquare, label: 'Chat', path: '/chat', roles: ['admin', 'distribuicao', 'conferente'] },
   { icon: Truck, label: 'Motoristas', path: '/motoristas', roles: ['admin', 'distribuicao'] },
   { icon: Store, label: 'Clientes', path: '/clientes', roles: ['admin', 'distribuicao'] },
   { icon: Building2, label: 'Unidades', path: '/unidades', roles: ['admin'] },
@@ -55,6 +58,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { totalUnread } = useChatDB();
 
   const userRole = user?.nivel || 'conferente';
   const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
@@ -118,6 +122,7 @@ export function Sidebar() {
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
+            const isChatItem = item.path === '/chat';
             
             return (
               <Link
@@ -130,7 +135,12 @@ export function Sidebar() {
                 )}
               >
                 <Icon size={18} />
-                <span>{item.label}</span>
+                <span className="flex-1">{item.label}</span>
+                {isChatItem && totalUnread > 0 && (
+                  <Badge className="h-5 min-w-5 flex items-center justify-center p-0 text-xs bg-destructive text-destructive-foreground">
+                    {totalUnread > 99 ? '99+' : totalUnread}
+                  </Badge>
+                )}
               </Link>
             );
           })}

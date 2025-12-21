@@ -50,6 +50,116 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          protocolo_id: string | null
+          protocolo_numero: string | null
+          sender_id: string
+          sender_nivel: string
+          sender_nome: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          protocolo_id?: string | null
+          protocolo_numero?: string | null
+          sender_id: string
+          sender_nivel: string
+          sender_nome: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          protocolo_id?: string | null
+          protocolo_numero?: string | null
+          sender_id?: string
+          sender_nivel?: string
+          sender_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_protocolo_id_fkey"
+            columns: ["protocolo_id"]
+            isOneToOne: false
+            referencedRelation: "protocolos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_participants: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          last_read_at: string | null
+          user_id: string
+          user_nivel: string
+          user_nome: string
+          user_unidade: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          last_read_at?: string | null
+          user_id: string
+          user_nivel: string
+          user_nome: string
+          user_unidade?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          last_read_at?: string | null
+          user_id?: string
+          user_nivel?: string
+          user_nome?: string
+          user_unidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       motoristas: {
         Row: {
           codigo: string

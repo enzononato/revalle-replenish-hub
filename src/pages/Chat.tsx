@@ -1,0 +1,150 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useChatDB } from '@/hooks/useChatDB';
+import { ChatSidebar } from '@/components/chat/ChatSidebar';
+import { ChatWindow } from '@/components/chat/ChatWindow';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { NewConversationModal } from '@/components/chat/NewConversationModal';
+import { toast } from 'sonner';
+import { Menu, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+export default function Chat() {
+  const { user } = useAuth();
+  const {
+    conversations,
+    isLoadingConversations,
+    useConversationMessages,
+    getOrCreateConversation,
+    sendMessage,
+    isSending,
+    markAsRead,
+  } = useChatDB();
+
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(true);
+
+  const { data: messages = [], isLoading: isLoadingMessages } = useConversationMessages(selectedConversationId);
+
+  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
+  const otherParticipant = selectedConversation?.participants.find(p => p.user_id !== user?.id);
+
+  // Mark conversation as read when selected
+  useEffect(() => {
+    if (selectedConversationId && selectedConversation?.unreadCount > 0) {
+      markAsRead(selectedConversationId);
+    }
+  }, [selectedConversationId, selectedConversation?.unreadCount, markAsRead]);
+
+  const handleSelectConversation = (id: string) => {
+    setSelectedConversationId(id);
+    setIsMobileSidebarOpen(false);
+  };
+
+  const handleNewConversation = async (selectedUser: { id: string; nome: string; nivel: string; unidade: string }) => {
+    try {
+      const conversationId = await getOrCreateConversation(selectedUser);
+      setSelectedConversationId(conversationId);
+      setIsMobileSidebarOpen(false);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      toast.error('Erro ao criar conversa');
+    }
+  };
+
+  const handleSendMessage = async (content: string, protocoloId?: string, protocoloNumero?: string) => {
+    if (!selectedConversationId) return;
+
+    try {
+      await sendMessage({
+        conversationId: selectedConversationId,
+        content,
+        protocoloId,
+        protocoloNumero,
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Erro ao enviar mensagem');
+    }
+  };
+
+  return (
+    <div className="h-[calc(100vh-64px)] flex bg-background">
+      {/* Mobile toggle */}
+      <div className="lg:hidden absolute top-4 right-4 z-10">
+        {!isMobileSidebarOpen && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsMobileSidebarOpen(true)}
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "w-full lg:w-80 flex-shrink-0 transition-all duration-300",
+          "lg:block",
+          isMobileSidebarOpen ? "block" : "hidden"
+        )}
+      >
+        <ChatSidebar
+          conversations={conversations}
+          selectedConversationId={selectedConversationId}
+          onSelectConversation={handleSelectConversation}
+          onNewConversation={() => setIsNewConversationOpen(true)}
+          isLoading={isLoadingConversations}
+        />
+      </div>
+
+      {/* Chat Area */}
+      <div
+        className={cn(
+          "flex-1 flex flex-col min-w-0",
+          "lg:flex",
+          isMobileSidebarOpen ? "hidden lg:flex" : "flex"
+        )}
+      >
+        {/* Mobile back button */}
+        {!isMobileSidebarOpen && selectedConversationId && (
+          <div className="lg:hidden p-2 border-b border-border">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileSidebarOpen(true)}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+          </div>
+        )}
+
+        <ChatWindow
+          messages={messages}
+          otherParticipant={otherParticipant}
+          isLoading={isLoadingMessages}
+        />
+
+        {selectedConversationId && (
+          <ChatInput
+            onSend={handleSendMessage}
+            isSending={isSending}
+            disabled={!selectedConversationId}
+          />
+        )}
+      </div>
+
+      {/* New Conversation Modal */}
+      <NewConversationModal
+        open={isNewConversationOpen}
+        onOpenChange={setIsNewConversationOpen}
+        onSelectUser={handleNewConversation}
+      />
+    </div>
+  );
+}
