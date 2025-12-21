@@ -33,7 +33,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'abertos' | 'encerrados'>('abertos');
+  const [filtroStatus, setFiltroStatus] = useState<'abertos' | 'em_andamento' | 'encerrados'>('abertos');
 
   const fetchProtocolos = async () => {
     setIsLoading(true);
@@ -48,7 +48,9 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
       
       // Aplicar filtro de status
       if (filtroStatus === 'abertos') {
-        query = query.neq('status', 'encerrado');
+        query = query.eq('status', 'aberto');
+      } else if (filtroStatus === 'em_andamento') {
+        query = query.eq('status', 'em_andamento');
       } else if (filtroStatus === 'encerrados') {
         query = query.eq('status', 'encerrado');
       }
@@ -157,14 +159,6 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
       {/* Filtros de Status */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         <Button
-          variant={filtroStatus === 'todos' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setFiltroStatus('todos')}
-          className="shrink-0 h-8 text-xs"
-        >
-          Todos
-        </Button>
-        <Button
           variant={filtroStatus === 'abertos' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('abertos')}
@@ -172,6 +166,15 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         >
           <Clock className="w-3 h-3 mr-1" />
           Abertos
+        </Button>
+        <Button
+          variant={filtroStatus === 'em_andamento' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFiltroStatus('em_andamento')}
+          className="shrink-0 h-8 text-xs"
+        >
+          <AlertCircle className="w-3 h-3 mr-1" />
+          Em Atendimento
         </Button>
         <Button
           variant={filtroStatus === 'encerrados' ? 'default' : 'outline'}
