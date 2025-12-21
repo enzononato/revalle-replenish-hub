@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Unidade } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -11,13 +11,54 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Hash, Building2, Users, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Hash, Building2, Users, Loader2, Store, FileText } from 'lucide-react';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Unidades() {
   const { unidades, isLoading, addUnidade, updateUnidade, deleteUnidade } = useUnidadesDB();
   const { motoristas, isLoading: isLoadingMotoristas } = useMotoristasDB();
+  const [clientesPorUnidade, setClientesPorUnidade] = useState<Record<string, number>>({});
+  const [protocolosPorUnidade, setProtocolosPorUnidade] = useState<Record<string, number>>({});
+  const [isLoadingCounts, setIsLoadingCounts] = useState(true);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      setIsLoadingCounts(true);
+      try {
+        // Buscar contagem de PDVs (clientes) por unidade
+        const { data: pdvsData } = await supabase
+          .from('pdvs')
+          .select('unidade');
+        
+        const pdvCounts: Record<string, number> = {};
+        pdvsData?.forEach(pdv => {
+          pdvCounts[pdv.unidade] = (pdvCounts[pdv.unidade] || 0) + 1;
+        });
+        setClientesPorUnidade(pdvCounts);
+
+        // Buscar contagem de protocolos por unidade
+        const { data: protocolosData } = await supabase
+          .from('protocolos')
+          .select('motorista_unidade');
+        
+        const protocoloCounts: Record<string, number> = {};
+        protocolosData?.forEach(p => {
+          if (p.motorista_unidade) {
+            protocoloCounts[p.motorista_unidade] = (protocoloCounts[p.motorista_unidade] || 0) + 1;
+          }
+        });
+        setProtocolosPorUnidade(protocoloCounts);
+      } catch (error) {
+        console.error('Erro ao buscar contagens:', error);
+      } finally {
+        setIsLoadingCounts(false);
+      }
+    };
+
+    fetchCounts();
+  }, []);
   
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -187,6 +228,8 @@ export default function Unidades() {
               <th className="text-left p-2.5 text-[11px]">Código</th>
               <th className="text-left p-2.5 text-[11px]">CNPJ</th>
               <th className="text-center p-2.5 text-[11px]">Motoristas</th>
+              <th className="text-center p-2.5 text-[11px]">Clientes</th>
+              <th className="text-center p-2.5 text-[11px]">Solicitações</th>
               <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
             </tr>
           </thead>
@@ -218,6 +261,26 @@ export default function Unidades() {
                     <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[10px] font-medium">
                       <Users size={12} />
                       {getMotoristaCount(unidade.nome)}
+                    </span>
+                  )}
+                </td>
+                <td className="p-2.5 text-center">
+                  {isLoadingCounts ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                      <Store size={12} />
+                      {clientesPorUnidade[unidade.nome] || 0}
+                    </span>
+                  )}
+                </td>
+                <td className="p-2.5 text-center">
+                  {isLoadingCounts ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                      <FileText size={12} />
+                      {protocolosPorUnidade[unidade.nome] || 0}
                     </span>
                   )}
                 </td>
