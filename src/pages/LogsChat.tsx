@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { 
   Table, 
   TableBody, 
@@ -29,11 +31,13 @@ import {
   User,
   Calendar,
   Filter,
-  Download
+  Download,
+  X
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface ChatMessageLog {
   id: string;
@@ -58,6 +62,10 @@ export default function LogsChat() {
   const [searchTerm, setSearchTerm] = useState('');
   const [nivelFilter, setNivelFilter] = useState<string>('todos');
   const [tipoFilter, setTipoFilter] = useState<string>('todos');
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  });
 
   // Fetch all chat messages with conversation info
   const { data: messages = [], isLoading } = useQuery({
@@ -102,8 +110,28 @@ export default function LogsChat() {
     const matchesNivel = nivelFilter === 'todos' || msg.sender_nivel === nivelFilter;
     const matchesTipo = tipoFilter === 'todos' || msg.conversation?.tipo === tipoFilter;
     
-    return matchesSearch && matchesNivel && matchesTipo;
+    // Date filter
+    let matchesDate = true;
+    if (dateRange.from || dateRange.to) {
+      const msgDate = new Date(msg.created_at);
+      if (dateRange.from && dateRange.to) {
+        matchesDate = isWithinInterval(msgDate, {
+          start: startOfDay(dateRange.from),
+          end: endOfDay(dateRange.to),
+        });
+      } else if (dateRange.from) {
+        matchesDate = msgDate >= startOfDay(dateRange.from);
+      } else if (dateRange.to) {
+        matchesDate = msgDate <= endOfDay(dateRange.to);
+      }
+    }
+    
+    return matchesSearch && matchesNivel && matchesTipo && matchesDate;
   });
+
+  const clearDateFilter = () => {
+    setDateRange({ from: undefined, to: undefined });
+  };
 
   const getRoleBadgeVariant = (nivel: string) => {
     switch (nivel) {
@@ -213,6 +241,52 @@ export default function LogsChat() {
                 <SelectItem value="grupo">Grupo</SelectItem>
               </SelectContent>
             </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full sm:w-[240px] justify-start text-left font-normal",
+                    !dateRange.from && "text-muted-foreground"
+                  )}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {dateRange.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd/MM/yy")} - {format(dateRange.to, "dd/MM/yy")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "dd/MM/yyyy")
+                    )
+                  ) : (
+                    <span>Filtrar por data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange.from}
+                  selected={dateRange}
+                  onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                  numberOfMonths={2}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
+            {(dateRange.from || dateRange.to) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={clearDateFilter}
+                className="h-10 w-10"
+                title="Limpar filtro de data"
+              >
+                <X size={16} />
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

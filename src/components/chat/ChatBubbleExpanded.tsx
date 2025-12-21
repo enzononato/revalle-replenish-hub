@@ -13,6 +13,16 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { NewConversationModal } from './NewConversationModal';
 import { NewGroupModal } from './NewGroupModal';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ChatBubbleExpandedProps {
   onClose: () => void;
@@ -46,6 +56,7 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [hasAutoOpenedConversation, setHasAutoOpenedConversation] = useState(false);
   const [othersTyping, setOthersTyping] = useState<string[]>([]);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
 
@@ -190,6 +201,19 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
   const handleCloseConversation = () => {
     setSelectedConversation(null);
     setOthersTyping([]);
+  };
+
+  const handleCloseChat = () => {
+    if (messageInput.trim()) {
+      setShowCloseConfirm(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const confirmCloseChat = () => {
+    setShowCloseConfirm(false);
+    onClose();
   };
 
   const handleNewConversation = async (otherUser: { id: string; nome: string; nivel: string; unidade: string }) => {
@@ -351,12 +375,31 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
           variant="ghost" 
           size="icon" 
           className="h-8 w-8 text-muted-foreground hover:text-destructive" 
-          onClick={onClose}
+          onClick={handleCloseChat}
           title="Fechar chat"
         >
           <X className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Close Confirmation Dialog */}
+      <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Fechar chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem uma mensagem não enviada. Tem certeza que deseja fechar o chat? 
+              A mensagem será perdida, mas o histórico da conversa ficará salvo nos logs.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCloseChat}>
+              Fechar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-3">
