@@ -21,6 +21,7 @@ import MotoristaLogin from "./pages/MotoristaLogin";
 import MotoristaPortal from "./pages/MotoristaPortal";
 import ImportarDados from "./pages/ImportarDados";
 import LogsAuditoria from "./pages/LogsAuditoria";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -97,6 +98,14 @@ const App = () => (
                     element={
                       <ProtectedRoute allowedRoles={['admin']}>
                         <LogsAuditoria />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/chat" 
+                    element={
+                      <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'conferente']}>
+                        <Chat />
                       </ProtectedRoute>
                     } 
                   />
