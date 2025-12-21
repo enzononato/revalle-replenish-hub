@@ -145,14 +145,103 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
     );
   }
 
-  if (protocolos.length === 0) {
-    return (
-      <Card className="p-6 text-center">
-        <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-        <p className="text-base text-muted-foreground">Você ainda não tem protocolos registrados</p>
-      </Card>
-    );
-  }
+  const renderContent = () => {
+    if (protocolos.length === 0) {
+      return (
+        <Card className="p-6 text-center">
+          <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-base text-muted-foreground">
+            Nenhum protocolo {filtroStatus === 'abertos' ? 'aberto' : filtroStatus === 'em_andamento' ? 'em atendimento' : 'encerrado'} encontrado
+          </p>
+        </Card>
+      );
+    }
+
+    return protocolos.map((protocolo) => {
+      const isExpanded = expandedId === protocolo.id;
+      const produtos = Array.isArray(protocolo.produtos) ? protocolo.produtos as Produto[] : null;
+
+      return (
+        <Card 
+          key={protocolo.id} 
+          className={cn(
+            "transition-all cursor-pointer hover:shadow-md",
+            isExpanded && "ring-2 ring-primary/20"
+          )}
+          onClick={() => setExpandedId(isExpanded ? null : protocolo.id)}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-mono text-sm font-medium truncate">
+                    {protocolo.numero}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>
+                  {protocolo.tipo_reposicao && (
+                    <p className="capitalize">{protocolo.tipo_reposicao.toLowerCase()}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                {getStatusBadge(protocolo.status)}
+                {isExpanded ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {isExpanded && (
+              <div className="mt-3 pt-3 border-t border-border space-y-2">
+                {protocolo.codigo_pdv && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">PDV:</span>
+                    <span className="font-medium">{protocolo.codigo_pdv}</span>
+                  </div>
+                )}
+                {protocolo.nota_fiscal && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Nota Fiscal:</span>
+                    <span className="font-medium">{protocolo.nota_fiscal}</span>
+                  </div>
+                )}
+                {protocolo.causa && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Causa:</span>
+                    <span className="font-medium">{protocolo.causa}</span>
+                  </div>
+                )}
+                
+                {produtos && produtos.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Package className="w-3.5 h-3.5" />
+                      <span>Produtos ({produtos.length})</span>
+                    </div>
+                    <div className="bg-muted/50 rounded-md p-2 space-y-0.5">
+                      {produtos.map((prod, idx) => (
+                        <div key={idx} className="text-[11px] flex justify-between">
+                          <span className="truncate">{prod.codigo} - {prod.nome}</span>
+                          <span className="text-muted-foreground shrink-0 ml-2">
+                            {prod.quantidade} {prod.unidade}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      );
+    });
+  };
 
   return (
     <div className="space-y-3">
@@ -196,90 +285,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         </Button>
       </div>
 
-      {protocolos.map((protocolo) => {
-        const isExpanded = expandedId === protocolo.id;
-        const produtos = Array.isArray(protocolo.produtos) ? protocolo.produtos as Produto[] : null;
-
-        return (
-          <Card 
-            key={protocolo.id} 
-            className={cn(
-              "transition-all cursor-pointer hover:shadow-md",
-              isExpanded && "ring-2 ring-primary/20"
-            )}
-            onClick={() => setExpandedId(isExpanded ? null : protocolo.id)}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <FileText className="w-4 h-4 text-primary shrink-0" />
-                    <span className="font-mono text-sm font-medium truncate">
-                      {protocolo.numero}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground space-y-0.5">
-                    <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>
-                    {protocolo.tipo_reposicao && (
-                      <p className="capitalize">{protocolo.tipo_reposicao.toLowerCase()}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  {getStatusBadge(protocolo.status)}
-                  {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  )}
-                </div>
-              </div>
-
-              {isExpanded && (
-                <div className="mt-3 pt-3 border-t border-border space-y-2">
-                  {protocolo.codigo_pdv && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">PDV:</span>
-                      <span className="font-medium">{protocolo.codigo_pdv}</span>
-                    </div>
-                  )}
-                  {protocolo.nota_fiscal && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Nota Fiscal:</span>
-                      <span className="font-medium">{protocolo.nota_fiscal}</span>
-                    </div>
-                  )}
-                  {protocolo.causa && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Causa:</span>
-                      <span className="font-medium">{protocolo.causa}</span>
-                    </div>
-                  )}
-                  
-                  {produtos && produtos.length > 0 && (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Package className="w-3.5 h-3.5" />
-                        <span>Produtos ({produtos.length})</span>
-                      </div>
-                      <div className="bg-muted/50 rounded-md p-2 space-y-0.5">
-                        {produtos.map((prod, idx) => (
-                          <div key={idx} className="text-[11px] flex justify-between">
-                            <span className="truncate">{prod.codigo} - {prod.nome}</span>
-                            <span className="text-muted-foreground shrink-0 ml-2">
-                              {prod.quantidade} {prod.unidade}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
+      {renderContent()}
     </div>
   );
 }
