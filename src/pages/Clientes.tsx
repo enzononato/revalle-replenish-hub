@@ -50,6 +50,22 @@ const getUnidadeNome = (codigo: string | null): string => {
   return unidade ? unidade.nome : codigo;
 };
 
+// Função para formatar CNPJ (XX.XXX.XXX/XXXX-XX)
+const formatCNPJ = (value: string): string => {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, '');
+  
+  // Limita a 14 dígitos
+  const limited = numbers.slice(0, 14);
+  
+  // Aplica a máscara
+  return limited
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2');
+};
+
 interface Pdv {
   id: string;
   codigo: string;
@@ -568,7 +584,9 @@ export default function Clientes() {
                 <Input
                   id="cnpj"
                   value={formData.cnpj}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cnpj: formatCNPJ(e.target.value) }))}
+                  placeholder="00.000.000/0000-00"
+                  maxLength={18}
                 />
               </div>
               
@@ -728,8 +746,9 @@ export default function Clientes() {
                 <Input
                   id="create-cnpj"
                   value={createFormData.cnpj}
-                  onChange={(e) => setCreateFormData(prev => ({ ...prev, cnpj: e.target.value }))}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, cnpj: formatCNPJ(e.target.value) }))}
                   placeholder="00.000.000/0000-00"
+                  maxLength={18}
                 />
               </div>
               
