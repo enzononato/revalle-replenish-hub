@@ -33,11 +33,13 @@ import {
   Phone,
   Camera,
   Send,
-  RefreshCw
+  RefreshCw,
+  MessageCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { ChatBubbleExpanded } from '@/components/chat/ChatBubbleExpanded';
 
 interface ProtocoloDetailsProps {
   protocolo: Protocolo | null;
@@ -79,6 +81,7 @@ export function ProtocoloDetails({
   const [whatsappEditado, setWhatsappEditado] = useState(protocolo?.motorista.whatsapp || '');
   const [clienteTelefone, setClienteTelefone] = useState(protocolo?.clienteTelefone || '');
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   if (!protocolo) return null;
 
@@ -370,6 +373,15 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 <Button onClick={handleDownload} variant="outline" size="sm" className="h-7 gap-1.5 text-xs shadow-sm">
                   <Download size={14} />
                   Download
+                </Button>
+                <Button 
+                  onClick={() => setShowChat(true)} 
+                  variant="default" 
+                  size="sm" 
+                  className="h-7 gap-1.5 text-xs shadow-sm bg-primary hover:bg-primary/90"
+                >
+                  <MessageCircle size={14} />
+                  Discutir Protocolo
                 </Button>
               </div>
             </DialogHeader>
@@ -826,6 +838,15 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Chat Bubble Expanded */}
+      {showChat && (
+        <ChatBubbleExpanded 
+          onClose={() => setShowChat(false)} 
+          protocoloId={protocolo.id}
+          protocoloNumero={protocolo.numero}
+        />
+      )}
     </>
   );
 }
