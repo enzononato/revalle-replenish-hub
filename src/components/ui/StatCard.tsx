@@ -23,10 +23,10 @@ const variantStyles = {
 
 const iconStyles = {
   default: 'bg-muted text-muted-foreground',
-  success: 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/40',
-  warning: 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/40',
-  info: 'bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-lg shadow-sky-500/40',
-  primary: 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/40',
+  success: 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/40 dark:shadow-none',
+  warning: 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/40 dark:shadow-none',
+  info: 'bg-gradient-to-br from-sky-400 to-blue-500 text-white shadow-lg shadow-sky-500/40 dark:shadow-none',
+  primary: 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/40 dark:shadow-none',
 };
 
 const accentBarStyles = {
@@ -63,7 +63,7 @@ export function StatCard({
     <div 
       className={cn(
         "group relative overflow-hidden rounded-xl border-2 p-4 transition-all duration-300 animate-slide-up",
-        "hover:shadow-xl hover:-translate-y-1",
+        "hover:shadow-xl dark:hover:shadow-md hover:-translate-y-1",
         href && "cursor-pointer",
         variantStyles[variant]
       )}

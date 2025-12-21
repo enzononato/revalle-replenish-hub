@@ -18,9 +18,9 @@ const progressBarColors = {
 };
 
 const badgeColors = {
-  primary: 'text-blue-600 bg-blue-500/10',
-  info: 'text-sky-600 bg-sky-500/10',
-  success: 'text-emerald-600 bg-emerald-500/10',
+  primary: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
+  info: 'text-sky-600 dark:text-sky-400 bg-sky-500/10',
+  success: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
 };
 
 export function RankingCard({ 
@@ -36,11 +36,11 @@ export function RankingCard({
   const getMedalColor = (index: number) => {
     switch (index) {
       case 0:
-        return 'text-yellow-500';
+        return 'text-yellow-500 dark:text-yellow-400';
       case 1:
-        return 'text-gray-400';
+        return 'text-gray-400 dark:text-gray-300';
       case 2:
-        return 'text-amber-600';
+        return 'text-amber-600 dark:text-amber-500';
       default:
         return 'text-muted-foreground';
     }
