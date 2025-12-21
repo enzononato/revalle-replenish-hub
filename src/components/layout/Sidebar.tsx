@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChatDB } from '@/hooks/useChatDB';
+import { useTheme } from 'next-themes';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -13,11 +14,14 @@ import {
   X,
   User,
   ClipboardList,
-  MessageSquare
+  MessageSquare,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 type NavItem = {
   icon: typeof LayoutDashboard;
@@ -56,10 +60,15 @@ export function Sidebar() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const { totalUnread } = useChatDB();
+  const { theme, setTheme } = useTheme();
 
   const userRole = user?.nivel || 'conferente';
   const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
   const roleBadge = getRoleBadge(userRole);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   return (
     <>
@@ -93,28 +102,7 @@ export function Sidebar() {
           <p className="text-xs text-sidebar-foreground/60 mt-0.5">Sistema de Reposição</p>
         </div>
 
-        {/* User Profile Section - Below logo */}
-        <div className="flex-shrink-0 p-2 border-b border-sidebar-border bg-sidebar-accent/20">
-          <div className="flex items-start gap-2">
-            <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center flex-shrink-0">
-              <User size={12} className="text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-white truncate">
-                {user?.nome || 'Usuário'}
-              </p>
-              <div className="flex items-center gap-1 text-[9px] text-sidebar-foreground/80 mt-0.5">
-                <Building2 size={9} />
-                <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
-              </div>
-              <Badge variant={roleBadge.variant} className="mt-1 text-[9px] px-1 py-0">
-                {roleBadge.label}
-              </Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation with Logout at the end */}
+        {/* Navigation */}
         <nav className="flex-1 sidebar-scroll p-3 space-y-0.5">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
@@ -141,19 +129,53 @@ export function Sidebar() {
               </Link>
             );
           })}
-
-          {/* Logout Button */}
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              logout();
-            }}
-            className="sidebar-item w-full text-destructive hover:bg-destructive/10 mt-1"
-          >
-            <LogOut size={18} />
-            <span>Sair</span>
-          </button>
         </nav>
+
+        {/* User Profile Section - at bottom */}
+        <div className="flex-shrink-0 p-2 border-t border-sidebar-border bg-sidebar-accent/20">
+          <div className="flex items-start gap-2">
+            <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center flex-shrink-0">
+              <User size={12} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-white truncate">
+                {user?.nome || 'Usuário'}
+              </p>
+              <div className="flex items-center gap-1 text-[9px] text-sidebar-foreground/80 mt-0.5">
+                <Building2 size={9} />
+                <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
+              </div>
+              <Badge variant={roleBadge.variant} className="mt-1 text-[9px] px-1 py-0">
+                {roleBadge.label}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Theme toggle and Logout */}
+        <div className="flex-shrink-0 p-3 border-t border-sidebar-border">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent"
+              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </Button>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                logout();
+              }}
+              className="sidebar-item flex-1 text-destructive hover:bg-destructive/10"
+            >
+              <LogOut size={18} />
+              <span>Sair</span>
+            </button>
+          </div>
+        </div>
       </aside>
     </>
   );
