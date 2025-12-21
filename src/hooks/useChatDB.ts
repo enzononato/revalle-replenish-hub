@@ -30,6 +30,9 @@ export interface ChatConversation {
   id: string;
   created_at: string;
   updated_at: string;
+  tipo: 'individual' | 'grupo';
+  nome: string | null;
+  unidade: string | null;
   participants: ChatParticipant[];
   lastMessage?: ChatMessage;
   unreadCount: number;
@@ -99,6 +102,7 @@ export function useChatDB() {
 
         return {
           ...conv,
+          tipo: conv.tipo as 'individual' | 'grupo',
           participants,
           lastMessage,
           unreadCount,
@@ -108,7 +112,7 @@ export function useChatDB() {
       return conversationsWithDetails;
     },
     enabled: !!user,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
   // Calculate total unread
@@ -137,7 +141,7 @@ export function useChatDB() {
     });
   };
 
-  // Get or create conversation with another user
+  // Get or create individual conversation with another user
   const getOrCreateConversation = async (otherUser: { id: string; nome: string; nivel: string; unidade: string }) => {
     if (!user) throw new Error('User not authenticated');
 
@@ -152,18 +156,29 @@ export function useChatDB() {
       .select('conversation_id')
       .eq('user_id', otherUser.id);
 
-    // Find common conversation
+    // Find common conversation that is individual type
     const myConvIds = new Set(myParticipations?.map(p => p.conversation_id) || []);
-    const existingConvId = theirParticipations?.find(p => myConvIds.has(p.conversation_id))?.conversation_id;
+    const commonConvIds = theirParticipations?.filter(p => myConvIds.has(p.conversation_id)).map(p => p.conversation_id) || [];
 
-    if (existingConvId) {
-      return existingConvId;
+    if (commonConvIds.length > 0) {
+      // Check if any of these is an individual conversation
+      const { data: individualConv } = await supabase
+        .from('chat_conversations')
+        .select('id')
+        .in('id', commonConvIds)
+        .eq('tipo', 'individual')
+        .limit(1)
+        .maybeSingle();
+
+      if (individualConv) {
+        return individualConv.id;
+      }
     }
 
-    // Create new conversation
+    // Create new individual conversation
     const { data: newConv, error: convError } = await supabase
       .from('chat_conversations')
-      .insert({})
+      .insert({ tipo: 'individual' })
       .select()
       .single();
 
@@ -188,6 +203,74 @@ export function useChatDB() {
           user_unidade: otherUser.unidade,
         },
       ]);
+
+    if (partError) throw partError;
+
+    queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+    return newConv.id;
+  };
+
+  // Get or create unit group conversation
+  const getOrCreateUnitGroup = async (unidade: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    // Check if unit group already exists
+    const { data: existingGroup } = await supabase
+      .from('chat_conversations')
+      .select('id')
+      .eq('tipo', 'grupo')
+      .eq('unidade', unidade)
+      .maybeSingle();
+
+    if (existingGroup) {
+      // Check if user is already a participant
+      const { data: existingParticipation } = await supabase
+        .from('chat_participants')
+        .select('id')
+        .eq('conversation_id', existingGroup.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!existingParticipation) {
+        // Add user to the group
+        await supabase
+          .from('chat_participants')
+          .insert({
+            conversation_id: existingGroup.id,
+            user_id: user.id,
+            user_nome: user.nome,
+            user_nivel: user.nivel,
+            user_unidade: user.unidade,
+          });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
+      return existingGroup.id;
+    }
+
+    // Create new group conversation
+    const { data: newConv, error: convError } = await supabase
+      .from('chat_conversations')
+      .insert({ 
+        tipo: 'grupo', 
+        nome: `Grupo ${unidade}`,
+        unidade: unidade,
+      })
+      .select()
+      .single();
+
+    if (convError) throw convError;
+
+    // Add current user as first participant
+    const { error: partError } = await supabase
+      .from('chat_participants')
+      .insert({
+        conversation_id: newConv.id,
+        user_id: user.id,
+        user_nome: user.nome,
+        user_nivel: user.nivel,
+        user_unidade: user.unidade,
+      });
 
     if (partError) throw partError;
 
@@ -277,6 +360,7 @@ export function useChatDB() {
     totalUnread,
     useConversationMessages,
     getOrCreateConversation,
+    getOrCreateUnitGroup,
     sendMessage: sendMessageMutation.mutateAsync,
     isSending: sendMessageMutation.isPending,
     markAsRead,

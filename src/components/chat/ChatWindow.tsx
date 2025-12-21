@@ -2,20 +2,20 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { ChatMessage, ChatParticipant } from '@/hooks/useChatDB';
+import { ChatMessage, ChatParticipant, ChatConversation } from '@/hooks/useChatDB';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { MessageSquare, FileText } from 'lucide-react';
+import { MessageSquare, FileText, Users } from 'lucide-react';
 
 interface ChatWindowProps {
   messages: ChatMessage[];
-  otherParticipant: ChatParticipant | undefined;
+  conversation: ChatConversation | undefined;
   isLoading: boolean;
 }
 
-export function ChatWindow({ messages, otherParticipant, isLoading }: ChatWindowProps) {
+export function ChatWindow({ messages, conversation, isLoading }: ChatWindowProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -27,7 +27,7 @@ export function ChatWindow({ messages, otherParticipant, isLoading }: ChatWindow
     }
   }, [messages]);
 
-  if (!otherParticipant) {
+  if (!conversation) {
     return (
       <div className="flex-1 flex items-center justify-center bg-muted/30">
         <div className="text-center text-muted-foreground">
@@ -51,32 +51,56 @@ export function ChatWindow({ messages, otherParticipant, isLoading }: ChatWindow
     }
   };
 
+  const isGroup = conversation.tipo === 'grupo';
+  const otherParticipant = !isGroup ? conversation.participants.find(p => p.user_id !== user?.id) : undefined;
+
   return (
     <div className="flex-1 flex flex-col bg-background">
       {/* Header */}
       <div className="p-4 border-b border-border bg-card">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="text-primary font-semibold">
-              {otherParticipant.user_nome.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">{otherParticipant.user_nome}</span>
-              <Badge 
-                variant="secondary" 
-                className={cn("text-xs", getRoleBadgeColor(otherParticipant.user_nivel))}
-              >
-                {otherParticipant.user_nivel === 'admin' ? 'Admin' : 
-                 otherParticipant.user_nivel === 'distribuicao' ? 'Distribuição' : 
-                 'Conferente'}
-              </Badge>
-            </div>
-            {otherParticipant.user_unidade && (
-              <p className="text-sm text-muted-foreground">{otherParticipant.user_unidade}</p>
-            )}
-          </div>
+          {isGroup ? (
+            <>
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{conversation.nome || conversation.unidade}</span>
+                  <Badge variant="outline" className="text-xs">
+                    Grupo
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {conversation.participants.length} membros
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <span className="text-primary font-semibold">
+                  {otherParticipant?.user_nome.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{otherParticipant?.user_nome}</span>
+                  <Badge 
+                    variant="secondary" 
+                    className={cn("text-xs", getRoleBadgeColor(otherParticipant?.user_nivel || ''))}
+                  >
+                    {otherParticipant?.user_nivel === 'admin' ? 'Admin' : 
+                     otherParticipant?.user_nivel === 'distribuicao' ? 'Distribuição' : 
+                     'Conferente'}
+                  </Badge>
+                </div>
+                {otherParticipant?.user_unidade && (
+                  <p className="text-sm text-muted-foreground">{otherParticipant.user_unidade}</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -97,6 +121,9 @@ export function ChatWindow({ messages, otherParticipant, isLoading }: ChatWindow
               const showDate = index === 0 || 
                 format(new Date(messages[index - 1].created_at), 'dd/MM/yyyy') !== 
                 format(new Date(message.created_at), 'dd/MM/yyyy');
+              
+              // Show sender name in groups for messages from others
+              const showSenderName = isGroup && !isOwn;
 
               return (
                 <div key={message.id}>
@@ -116,6 +143,14 @@ export function ChatWindow({ messages, otherParticipant, isLoading }: ChatWindow
                           : "bg-card border border-border rounded-bl-md"
                       )}
                     >
+                      {showSenderName && (
+                        <p className={cn(
+                          "text-xs font-medium mb-1",
+                          isOwn ? "text-primary-foreground/80" : "text-primary"
+                        )}>
+                          {message.sender_nome}
+                        </p>
+                      )}
                       {message.protocolo_numero && (
                         <button
                           onClick={() => navigate(`/protocolos?numero=${message.protocolo_numero}`)}

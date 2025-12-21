@@ -5,6 +5,7 @@ import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { ChatWindow } from '@/components/chat/ChatWindow';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { NewConversationModal } from '@/components/chat/NewConversationModal';
+import { NewGroupModal } from '@/components/chat/NewGroupModal';
 import { toast } from 'sonner';
 import { Menu, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ export default function Chat() {
     isLoadingConversations,
     useConversationMessages,
     getOrCreateConversation,
+    getOrCreateUnitGroup,
     sendMessage,
     isSending,
     markAsRead,
@@ -24,12 +26,12 @@ export default function Chat() {
 
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(true);
 
   const { data: messages = [], isLoading: isLoadingMessages } = useConversationMessages(selectedConversationId);
 
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
-  const otherParticipant = selectedConversation?.participants.find(p => p.user_id !== user?.id);
 
   // Mark conversation as read when selected
   useEffect(() => {
@@ -51,6 +53,18 @@ export default function Chat() {
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast.error('Erro ao criar conversa');
+    }
+  };
+
+  const handleNewGroup = async (unidade: string) => {
+    try {
+      const conversationId = await getOrCreateUnitGroup(unidade);
+      setSelectedConversationId(conversationId);
+      setIsMobileSidebarOpen(false);
+      toast.success(`Você entrou no grupo ${unidade}`);
+    } catch (error) {
+      console.error('Error joining group:', error);
+      toast.error('Erro ao entrar no grupo');
     }
   };
 
@@ -98,6 +112,7 @@ export default function Chat() {
           selectedConversationId={selectedConversationId}
           onSelectConversation={handleSelectConversation}
           onNewConversation={() => setIsNewConversationOpen(true)}
+          onNewGroup={() => setIsNewGroupOpen(true)}
           isLoading={isLoadingConversations}
         />
       </div>
@@ -126,7 +141,7 @@ export default function Chat() {
 
         <ChatWindow
           messages={messages}
-          otherParticipant={otherParticipant}
+          conversation={selectedConversation}
           isLoading={isLoadingMessages}
         />
 
@@ -144,6 +159,13 @@ export default function Chat() {
         open={isNewConversationOpen}
         onOpenChange={setIsNewConversationOpen}
         onSelectUser={handleNewConversation}
+      />
+
+      {/* New Group Modal */}
+      <NewGroupModal
+        open={isNewGroupOpen}
+        onOpenChange={setIsNewGroupOpen}
+        onSelectUnidade={handleNewGroup}
       />
     </div>
   );
