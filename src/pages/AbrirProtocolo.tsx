@@ -51,6 +51,11 @@ const formatWhatsAppFromRaw = (raw: string) => {
   return raw;
 };
 
+// Função para permitir apenas números
+const formatOnlyNumbers = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
+
 export default function AbrirProtocolo() {
   const { addProtocolo } = useProtocolos();
   const [mapa, setMapa] = useState('');
@@ -376,8 +381,10 @@ export default function AbrirProtocolo() {
               <Input
                 id="mapa"
                 value={mapa}
-                onChange={(e) => setMapa(e.target.value)}
+                onChange={(e) => setMapa(formatOnlyNumbers(e.target.value))}
                 placeholder="Digite o MAPA"
+                inputMode="numeric"
+                pattern="[0-9]*"
               />
             </div>
             <div className="space-y-2">
@@ -398,8 +405,10 @@ export default function AbrirProtocolo() {
               <Input
                 id="notaFiscal"
                 value={notaFiscal}
-                onChange={(e) => setNotaFiscal(e.target.value)}
+                onChange={(e) => setNotaFiscal(formatOnlyNumbers(e.target.value))}
                 placeholder="Digite a NF"
+                inputMode="numeric"
+                pattern="[0-9]*"
               />
             </div>
           </div>

@@ -79,6 +79,11 @@ const validateWhatsApp = (whatsapp: string): boolean => {
   return numbers.length >= 10 && numbers.length <= 11;
 };
 
+// Função para permitir apenas números
+const formatOnlyNumbers = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
+
 const causasPorTipo: Record<string, string[]> = {
   inversao: ['ERRO DE CARREGAMENTO', 'ERRO DE ENTREGA'],
   falta: ['FALTA DE PALLET FECHADO', 'FALTA DE PALLET MONTADO'],
@@ -150,6 +155,39 @@ export default function MotoristaPortal() {
       syncPending(addProtocolo);
     }
   }, [isOnline, pendingCount, syncPending, addProtocolo]);
+
+  // Notificações em tempo real quando status do protocolo mudar
+  useEffect(() => {
+    if (!motorista?.codigo) return;
+
+    const channel = supabase
+      .channel('protocolo-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'protocolos',
+          filter: `motorista_codigo=eq.${motorista.codigo}`
+        },
+        (payload) => {
+          const oldData = payload.old as { status?: string; numero?: string };
+          const newData = payload.new as { status?: string; numero?: string };
+          
+          if (oldData.status !== newData.status) {
+            toast({
+              title: '📢 Status atualizado!',
+              description: `Protocolo #${newData.numero} mudou de "${oldData.status}" para "${newData.status}"`,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [motorista?.codigo]);
 
   // Validation functions
   const isFieldValid = (field: keyof TouchedFields, value: string | null): boolean => {
@@ -769,11 +807,12 @@ export default function MotoristaPortal() {
                     <Input
                       id="mapa"
                       value={mapa}
-                      onChange={(e) => setMapa(e.target.value)}
+                      onChange={(e) => setMapa(formatOnlyNumbers(e.target.value))}
                       onBlur={() => handleBlur('mapa')}
                       placeholder="Ex: 16431"
                       className={getInputClassName('mapa', mapa)}
                       inputMode="numeric"
+                      pattern="[0-9]*"
                     />
                     {touched.mapa && !mapa.trim() && (
                       <p className="text-[10px] text-red-500 flex items-center gap-0.5">
@@ -810,11 +849,12 @@ export default function MotoristaPortal() {
                     <Input
                       id="notaFiscal"
                       value={notaFiscal}
-                      onChange={(e) => setNotaFiscal(e.target.value)}
+                      onChange={(e) => setNotaFiscal(formatOnlyNumbers(e.target.value))}
                       onBlur={() => handleBlur('notaFiscal')}
                       placeholder="Ex: 243631"
                       className={getInputClassName('notaFiscal', notaFiscal)}
                       inputMode="numeric"
+                      pattern="[0-9]*"
                     />
                     {touched.notaFiscal && !notaFiscal.trim() && (
                       <p className="text-[10px] text-red-500 flex items-center gap-0.5">
