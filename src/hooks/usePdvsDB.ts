@@ -24,39 +24,56 @@ export function usePdvsDB() {
     try {
       // Limpar código (remover pontos e espaços)
       const pdvsFormatados = pdvs.map(p => ({
-        codigo: p.codigo.replace(/\./g, '').trim(),
-        nome: p.nome.trim(),
+        codigo: String(p.codigo || '').replace(/\./g, '').trim(),
+        nome: String(p.nome || '').trim() || 'SEM NOME',
         bairro: p.bairro?.trim() || null,
         cnpj: p.cnpj?.replace(/[^\d]/g, '').trim() || null,
         endereco: p.endereco?.trim() || null,
         cidade: p.cidade?.trim() || null,
         unidade: unidade.toUpperCase()
-      }));
+      })).filter(p => p.codigo); // Filtrar registros sem código
+
+      if (pdvsFormatados.length === 0) {
+        return { success: false, total: 0, error: 'Nenhum PDV válido encontrado' };
+      }
 
       // Deletar PDVs existentes dessa unidade antes de inserir
-      await supabase
+      const { error: deleteError } = await supabase
         .from('pdvs')
         .delete()
         .eq('unidade', unidade.toUpperCase());
 
-      // Inserir em lotes de 500
-      const batchSize = 500;
+      if (deleteError) {
+        console.error('Erro ao deletar PDVs existentes:', deleteError);
+        throw new Error(`Erro ao limpar dados antigos: ${deleteError.message}`);
+      }
+
+      // Inserir em lotes menores de 100 para evitar timeout
+      const batchSize = 100;
+      let inserted = 0;
+      
       for (let i = 0; i < pdvsFormatados.length; i += batchSize) {
         const batch = pdvsFormatados.slice(i, i + batchSize);
         const { error } = await supabase
           .from('pdvs')
           .insert(batch);
 
-        if (error) throw error;
+        if (error) {
+          console.error(`Erro no lote ${i / batchSize + 1}:`, error);
+          throw new Error(`Erro ao inserir lote ${i / batchSize + 1}: ${error.message}`);
+        }
+        
+        inserted += batch.length;
       }
 
-      return { success: true, total: pdvs.length };
+      return { success: true, total: inserted };
     } catch (error) {
       console.error('Erro ao importar PDVs:', error);
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
       return { 
         success: false, 
         total: 0, 
-        error: error instanceof Error ? error.message : 'Erro desconhecido' 
+        error: message
       };
     } finally {
       setIsImporting(false);
