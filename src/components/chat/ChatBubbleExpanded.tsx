@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText, Plus, ChevronDown, X } from 'lucide-react';
+import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -46,7 +46,6 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
   const [selectedProtocoloId, setSelectedProtocoloId] = useState<string | undefined>(protocoloId);
   const [selectedProtocoloNumero, setSelectedProtocoloNumero] = useState<string | undefined>(protocoloNumero);
   const [protocoloPopoverOpen, setProtocoloPopoverOpen] = useState(false);
-  const [novoProtocoloPopoverOpen, setNovoProtocoloPopoverOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [hasAutoOpenedConversation, setHasAutoOpenedConversation] = useState(false);
   const [othersTyping, setOthersTyping] = useState<string[]>([]);
@@ -190,13 +189,6 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
     }
-  };
-
-  const handleEndConversation = () => {
-    setSelectedConversation(null);
-    setMessageInput('');
-    setAttachProtocolo(false);
-    setOthersTyping([]);
   };
 
   const handleCloseConversation = () => {
@@ -343,53 +335,6 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
             <p className="text-xs text-muted-foreground">{selectedConversation.participants.length} participantes</p>
           ) : null}
         </div>
-        <Popover open={novoProtocoloPopoverOpen} onOpenChange={setNovoProtocoloPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 text-xs gap-1" 
-              title="Selecionar outro protocolo"
-            >
-              <Plus className="h-3 w-3" />
-              Novo
-              <ChevronDown className="h-3 w-3" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-0" align="end">
-            <Command>
-              <CommandInput placeholder="Buscar protocolo..." />
-              <CommandList>
-                <CommandEmpty>Nenhum protocolo encontrado</CommandEmpty>
-                <CommandGroup heading="Protocolos Abertos/Em Andamento">
-                  {protocolos
-                    .filter(p => p.status === 'aberto' || p.status === 'em_andamento')
-                    .slice(0, 30)
-                    .map(p => (
-                      <CommandItem
-                        key={p.id}
-                        onSelect={() => {
-                          setSelectedProtocoloId(p.id);
-                          setSelectedProtocoloNumero(p.numero);
-                          setAttachProtocolo(true);
-                          setNovoProtocoloPopoverOpen(false);
-                          handleEndConversation();
-                        }}
-                      >
-                        <FileText className="h-3 w-3 mr-2" />
-                        <div className="flex flex-col">
-                          <span className="font-mono">#{p.numero}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {p.motorista.nome} - {p.status === 'aberto' ? 'Aberto' : 'Em andamento'}
-                          </span>
-                        </div>
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
       </div>
 
       {/* Messages */}
@@ -489,11 +434,23 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
                             setProtocoloPopoverOpen(false);
                           }}
                         >
-                          <FileText className="h-3 w-3 mr-2" />
+                          <div className={cn(
+                            "h-2 w-2 rounded-full mr-2",
+                            p.status === 'aberto' ? "bg-yellow-500" : "bg-blue-500"
+                          )} />
                           <span className="font-mono">#{p.numero}</span>
                           <span className="text-muted-foreground ml-2 truncate text-xs">
                             {p.motorista.nome}
                           </span>
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "ml-auto text-[10px] px-1",
+                              p.status === 'aberto' ? "border-yellow-500 text-yellow-600" : "border-blue-500 text-blue-600"
+                            )}
+                          >
+                            {p.status === 'aberto' ? 'Aberto' : 'Em andamento'}
+                          </Badge>
                         </CommandItem>
                       ))}
                   </CommandGroup>

@@ -63,6 +63,8 @@ export default function LogsChat() {
   const [nivelFilter, setNivelFilter] = useState<string>('todos');
   const [tipoFilter, setTipoFilter] = useState<string>('todos');
   const [usuarioFilter, setUsuarioFilter] = useState<string>('todos');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
     to: undefined,
@@ -77,7 +79,7 @@ export default function LogsChat() {
         .from('chat_messages')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(500);
+        .limit(2000);
 
       if (msgError) throw msgError;
 
@@ -134,8 +136,21 @@ export default function LogsChat() {
     return matchesSearch && matchesNivel && matchesTipo && matchesDate && matchesUsuario;
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredMessages.length / itemsPerPage);
+  const paginatedMessages = filteredMessages.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Reset page when filters change
+  const handleFilterChange = () => {
+    setCurrentPage(1);
+  };
+
   const clearDateFilter = () => {
     setDateRange({ from: undefined, to: undefined });
+    setCurrentPage(1);
   };
 
   const getRoleBadgeVariant = (nivel: string) => {
@@ -221,11 +236,11 @@ export default function LogsChat() {
               <Input
                 placeholder="Buscar por mensagem, remetente, protocolo..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); handleFilterChange(); }}
                 className="pl-9"
               />
             </div>
-            <Select value={nivelFilter} onValueChange={setNivelFilter}>
+            <Select value={nivelFilter} onValueChange={(v) => { setNivelFilter(v); handleFilterChange(); }}>
               <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Nível" />
               </SelectTrigger>
@@ -236,7 +251,7 @@ export default function LogsChat() {
                 <SelectItem value="conferente">Conferente</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={tipoFilter} onValueChange={setTipoFilter}>
+            <Select value={tipoFilter} onValueChange={(v) => { setTipoFilter(v); handleFilterChange(); }}>
               <SelectTrigger className="w-full sm:w-[150px]">
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
@@ -246,7 +261,7 @@ export default function LogsChat() {
                 <SelectItem value="grupo">Grupo</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={usuarioFilter} onValueChange={setUsuarioFilter}>
+            <Select value={usuarioFilter} onValueChange={(v) => { setUsuarioFilter(v); handleFilterChange(); }}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Usuário" />
               </SelectTrigger>
@@ -339,7 +354,7 @@ export default function LogsChat() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredMessages.map((msg) => (
+                  {paginatedMessages.map((msg) => (
                     <TableRow key={msg.id}>
                       <TableCell className="text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -389,6 +404,36 @@ export default function LogsChat() {
                   ))}
                 </TableBody>
               </Table>
+              
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredMessages.length)} de {filteredMessages.length} mensagens
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-2">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Próxima
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
