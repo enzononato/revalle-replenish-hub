@@ -24,13 +24,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Unidades() {
+  const { isAdmin, isDistribuicao, user } = useAuth();
   const { unidades, isLoading, addUnidade, updateUnidade, deleteUnidade } = useUnidadesDB();
   const { motoristas, isLoading: isLoadingMotoristas } = useMotoristasDB();
   const [clientesPorUnidade, setClientesPorUnidade] = useState<Record<string, number>>({});
   const [protocolosPorUnidade, setProtocolosPorUnidade] = useState<Record<string, number>>({});
   const [isLoadingCounts, setIsLoadingCounts] = useState(true);
+  
+  // Só admin e distribuição podem ver clientes
+  const canViewClientes = isAdmin || isDistribuicao;
   
   // Filtro de período
   const [dataInicio, setDataInicio] = useState<Date | undefined>(undefined);
@@ -359,7 +364,8 @@ export default function Unidades() {
               <th className="text-left p-2.5 text-[11px]">Código</th>
               <th className="text-left p-2.5 text-[11px]">CNPJ</th>
               <th className="text-center p-2.5 text-[11px]">Motoristas</th>
-              <th className="text-center p-2.5 text-[11px]">Clientes</th>
+              {canViewClientes && <th className="text-center p-2.5 text-[11px]">Clientes</th>}
+              <th className="text-center p-2.5 text-[11px]">Solicitações</th>
               <th className="text-center p-2.5 text-[11px]">Solicitações</th>
               <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
             </tr>
@@ -395,16 +401,23 @@ export default function Unidades() {
                     </span>
                   )}
                 </td>
-                <td className="p-2.5 text-center">
-                  {isLoadingCounts ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
-                  ) : (
-                    <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                      <Store size={12} />
-                      {clientesPorUnidade[unidade.nome] || 0}
-                    </span>
-                  )}
-                </td>
+                {canViewClientes && (
+                  <td className="p-2.5 text-center">
+                    {isLoadingCounts ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
+                    ) : (
+                      // Para distribuição, só mostra clientes da sua unidade
+                      (isAdmin || unidade.nome === user?.unidade) ? (
+                        <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                          <Store size={12} />
+                          {clientesPorUnidade[unidade.nome] || 0}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-[10px]">-</span>
+                      )
+                    )}
+                  </td>
+                )}
                 <td className="p-2.5 text-center">
                   {isLoadingCounts ? (
                     <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
@@ -453,16 +466,21 @@ export default function Unidades() {
                   </span>
                 )}
               </td>
-              <td className="p-2.5 text-center">
-                {isLoadingCounts ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
-                ) : (
-                  <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                    <Store size={12} />
-                    {Object.values(clientesPorUnidade).reduce((acc, val) => acc + val, 0)}
-                  </span>
-                )}
-              </td>
+              {canViewClientes && (
+                <td className="p-2.5 text-center">
+                  {isLoadingCounts ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                      <Store size={12} />
+                      {isAdmin 
+                        ? Object.values(clientesPorUnidade).reduce((acc, val) => acc + val, 0)
+                        : clientesPorUnidade[user?.unidade || ''] || 0
+                      }
+                    </span>
+                  )}
+                </td>
+              )}
               <td className="p-2.5 text-center">
                 {isLoadingCounts ? (
                   <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
