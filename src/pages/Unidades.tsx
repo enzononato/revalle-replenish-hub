@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Unidade } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Hash, Building2, Users, Loader2, Store, FileText } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Plus, Pencil, Trash2, Hash, Building2, Users, Loader2, Store, FileText, CalendarIcon, X } from 'lucide-react';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function Unidades() {
   const { unidades, isLoading, addUnidade, updateUnidade, deleteUnidade } = useUnidadesDB();
@@ -22,43 +31,68 @@ export default function Unidades() {
   const [clientesPorUnidade, setClientesPorUnidade] = useState<Record<string, number>>({});
   const [protocolosPorUnidade, setProtocolosPorUnidade] = useState<Record<string, number>>({});
   const [isLoadingCounts, setIsLoadingCounts] = useState(true);
+  
+  // Filtro de período
+  const [dataInicio, setDataInicio] = useState<Date | undefined>(undefined);
+  const [dataFim, setDataFim] = useState<Date | undefined>(undefined);
 
-  useEffect(() => {
-    const fetchCounts = async () => {
-      setIsLoadingCounts(true);
-      try {
-        // Buscar contagem de PDVs (clientes) por unidade
-        const { data: pdvsData } = await supabase
-          .from('pdvs')
-          .select('unidade');
-        
-        const pdvCounts: Record<string, number> = {};
-        pdvsData?.forEach(pdv => {
-          pdvCounts[pdv.unidade] = (pdvCounts[pdv.unidade] || 0) + 1;
-        });
-        setClientesPorUnidade(pdvCounts);
+  const fetchCounts = useCallback(async () => {
+    setIsLoadingCounts(true);
+    try {
+      // Buscar contagem de PDVs (clientes) por unidade
+      const { data: pdvsData } = await supabase
+        .from('pdvs')
+        .select('unidade');
+      
+      const pdvCounts: Record<string, number> = {};
+      pdvsData?.forEach(pdv => {
+        pdvCounts[pdv.unidade] = (pdvCounts[pdv.unidade] || 0) + 1;
+      });
+      setClientesPorUnidade(pdvCounts);
 
-        // Buscar contagem de protocolos por unidade
-        const { data: protocolosData } = await supabase
-          .from('protocolos')
-          .select('motorista_unidade');
-        
-        const protocoloCounts: Record<string, number> = {};
-        protocolosData?.forEach(p => {
-          if (p.motorista_unidade) {
+      // Buscar contagem de protocolos por unidade com filtro de data
+      let query = supabase
+        .from('protocolos')
+        .select('motorista_unidade, data');
+      
+      const { data: protocolosData } = await query;
+      
+      const protocoloCounts: Record<string, number> = {};
+      protocolosData?.forEach(p => {
+        if (p.motorista_unidade) {
+          // Aplicar filtro de data se definido
+          if (dataInicio || dataFim) {
+            const protocoloData = p.data ? new Date(p.data.split('/').reverse().join('-')) : null;
+            
+            if (protocoloData) {
+              const inicioValido = !dataInicio || protocoloData >= dataInicio;
+              const fimValido = !dataFim || protocoloData <= dataFim;
+              
+              if (inicioValido && fimValido) {
+                protocoloCounts[p.motorista_unidade] = (protocoloCounts[p.motorista_unidade] || 0) + 1;
+              }
+            }
+          } else {
             protocoloCounts[p.motorista_unidade] = (protocoloCounts[p.motorista_unidade] || 0) + 1;
           }
-        });
-        setProtocolosPorUnidade(protocoloCounts);
-      } catch (error) {
-        console.error('Erro ao buscar contagens:', error);
-      } finally {
-        setIsLoadingCounts(false);
-      }
-    };
+        }
+      });
+      setProtocolosPorUnidade(protocoloCounts);
+    } catch (error) {
+      console.error('Erro ao buscar contagens:', error);
+    } finally {
+      setIsLoadingCounts(false);
+    }
+  }, [dataInicio, dataFim]);
 
+  useEffect(() => {
     fetchCounts();
-  }, []);
+  }, [fetchCounts]);
+
+  const limparFiltro = () => {
+    setDataInicio(undefined);
+    setDataFim(undefined);
+  };
   
   const [search, setSearch] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -211,13 +245,83 @@ export default function Unidades() {
         </Dialog>
       </div>
 
-      {/* Search */}
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        placeholder="Buscar por nome, código ou CNPJ..."
-        className="max-w-md"
-      />
+      {/* Search and Date Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nome, código ou CNPJ..."
+          className="max-w-md"
+        />
+        
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Solicitações:</span>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-8 text-xs justify-start text-left font-normal",
+                  !dataInicio && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {dataInicio ? format(dataInicio, "dd/MM/yyyy", { locale: ptBR }) : "Data início"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dataInicio}
+                onSelect={setDataInicio}
+                initialFocus
+                locale={ptBR}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-8 text-xs justify-start text-left font-normal",
+                  !dataFim && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                {dataFim ? format(dataFim, "dd/MM/yyyy", { locale: ptBR }) : "Data fim"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dataFim}
+                onSelect={setDataFim}
+                initialFocus
+                locale={ptBR}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+
+          {(dataInicio || dataFim) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={limparFiltro}
+              className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
+            >
+              <X size={14} className="mr-1" />
+              Limpar
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Table */}
       <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
