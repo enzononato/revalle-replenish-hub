@@ -347,9 +347,9 @@ export default function Dashboard() {
   };
 
   const getSlaColor = (dias: number): string => {
-    if (dias >= 15) return 'text-[#1F2937] bg-[#FCA5A5]';
-    if (dias > 7) return 'text-[#1F2937] bg-[#FDE68A]';
-    return 'text-[#1F2937] bg-[#86EFAC]';
+    if (dias >= 15) return 'text-foreground bg-red-300 dark:bg-red-500/30 dark:text-red-300';
+    if (dias > 7) return 'text-foreground bg-amber-200 dark:bg-amber-500/30 dark:text-amber-300';
+    return 'text-foreground bg-emerald-300 dark:bg-emerald-500/30 dark:text-emerald-300';
   };
 
   // Cor para avatar baseado no nome
@@ -627,7 +627,7 @@ export default function Dashboard() {
                     <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
                     <td className="p-2">
                       {protocolo.status === 'encerrado' ? (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 text-gray-600">
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
                           ✓ {slaDias} {slaDias === 1 ? 'dia' : 'dias'}
                         </span>
                       ) : (

@@ -132,20 +132,20 @@ export function Sidebar() {
         </nav>
 
         {/* User Profile Section - at bottom */}
-        <div className="flex-shrink-0 p-2 border-t border-sidebar-border bg-sidebar-accent/20">
-          <div className="flex items-start gap-2">
-            <div className="w-6 h-6 rounded-full bg-primary/30 flex items-center justify-center flex-shrink-0">
-              <User size={12} className="text-primary" />
+        <div className="flex-shrink-0 p-3 border-t border-sidebar-border">
+          <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
+              <User size={16} className="text-primary-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-white truncate">
+              <p className="text-sm font-semibold text-sidebar-foreground truncate">
                 {user?.nome || 'Usuário'}
               </p>
-              <div className="flex items-center gap-1 text-[9px] text-sidebar-foreground/80 mt-0.5">
-                <Building2 size={9} />
+              <div className="flex items-center gap-1.5 text-xs text-sidebar-foreground/70 mt-0.5">
+                <Building2 size={10} />
                 <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
               </div>
-              <Badge variant={roleBadge.variant} className="mt-1 text-[9px] px-1 py-0">
+              <Badge variant={roleBadge.variant} className="mt-1.5 text-[10px] px-1.5 py-0.5">
                 {roleBadge.label}
               </Badge>
             </div>
@@ -153,28 +153,27 @@ export function Sidebar() {
         </div>
 
         {/* Theme toggle and Logout */}
-        <div className="flex-shrink-0 p-3 border-t border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-9 w-9 text-sidebar-foreground hover:bg-sidebar-accent"
-              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                logout();
-              }}
-              className="sidebar-item flex-1 text-destructive hover:bg-destructive/10"
-            >
-              <LogOut size={18} />
-              <span>Sair</span>
-            </button>
-          </div>
+        <div className="flex-shrink-0 p-3 pt-0 space-y-2">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground text-sm"
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            <span className="flex-1 text-left">{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
+          </button>
+          
+          {/* Logout */}
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              logout();
+            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 text-red-400 hover:bg-red-500/10 hover:text-red-300 text-sm"
+          >
+            <LogOut size={16} />
+            <span className="flex-1 text-left">Sair</span>
+          </button>
         </div>
       </aside>
     </>
