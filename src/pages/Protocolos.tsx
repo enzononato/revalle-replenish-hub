@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Protocolo, ObservacaoLog } from '@/types';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -60,7 +60,8 @@ const getSlaColor = (dias: number): string => {
 };
 
 export default function Protocolos() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, user } = useAuth();
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo } = useProtocolos();
   const { totalUnread } = useChatDB();
@@ -94,7 +95,7 @@ export default function Protocolos() {
     }
   }, [searchParams]);
 
-  // Abrir protocolo por ID quando protocolos estiverem carregados
+  // Abrir protocolo por ID quando protocolos estiverem carregados (apenas uma vez)
   useEffect(() => {
     const idParam = searchParams.get('id');
     
@@ -104,9 +105,13 @@ export default function Protocolos() {
         const index = protocolos.findIndex(p => p.id === idParam);
         setSelectedProtocolo(protocolo);
         setSelectedIndex(index);
+        // Limpar o parâmetro id da URL após abrir, para evitar reabertura ao fechar
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('id');
+        setSearchParams(newParams, { replace: true });
       }
     }
-  }, [searchParams, protocolos, selectedProtocolo]);
+  }, [searchParams, protocolos, selectedProtocolo, setSearchParams]);
 
   const filteredProtocolos = protocolos
     .filter(p => {
