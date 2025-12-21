@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { Protocolo, Produto, Motorista, FotosProtocolo } from '@/types';
 import { mockMotoristas } from '@/data/mockData';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
+import { PdvAutocomplete } from '@/components/PdvAutocomplete';
 
 interface ProdutoForm {
   codigo: string;
@@ -383,11 +384,11 @@ export default function AbrirProtocolo() {
               <Label htmlFor="codigoPdv">
                 Código PDV <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="codigoPdv"
+              <PdvAutocomplete
                 value={codigoPdv}
-                onChange={(e) => setCodigoPdv(e.target.value)}
-                placeholder="Digite o código"
+                onChange={(value) => setCodigoPdv(value)}
+                unidade={selectedMotorista?.unidade || ''}
+                placeholder="Digite código ou nome do PDV"
               />
             </div>
             <div className="space-y-2">
