@@ -22,6 +22,7 @@ import MotoristaPortal from "./pages/MotoristaPortal";
 import ImportarDados from "./pages/ImportarDados";
 import LogsAuditoria from "./pages/LogsAuditoria";
 import Chat from "./pages/Chat";
+import LogsChat from "./pages/LogsChat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -106,6 +107,14 @@ const App = () => (
                     element={
                       <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'conferente']}>
                         <Chat />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/logs-chat" 
+                    element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <LogsChat />
                       </ProtectedRoute>
                     } 
                   />

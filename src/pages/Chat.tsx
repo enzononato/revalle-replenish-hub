@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChatDB } from '@/hooks/useChatDB';
 import { ChatSidebar } from '@/components/chat/ChatSidebar';
@@ -13,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 export default function Chat() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     conversations,
     isLoadingConversations,
@@ -28,10 +30,39 @@ export default function Chat() {
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
   const [isNewGroupOpen, setIsNewGroupOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(true);
+  const [pendingProtocolo, setPendingProtocolo] = useState<{ id: string; numero: string } | null>(null);
 
   const { data: messages = [], isLoading: isLoadingMessages } = useConversationMessages(selectedConversationId);
 
   const selectedConversation = conversations.find(c => c.id === selectedConversationId);
+
+  // Handle URL parameters for direct protocol discussion
+  useEffect(() => {
+    const protocoloId = searchParams.get('protocolo_id');
+    const protocoloNumero = searchParams.get('protocolo_numero');
+    const targetUserId = searchParams.get('target_user_id');
+    const targetUserNome = searchParams.get('target_user_nome');
+
+    if (protocoloId && protocoloNumero) {
+      setPendingProtocolo({ id: protocoloId, numero: protocoloNumero });
+      
+      // If we have a target user, create/get conversation with them
+      if (targetUserId && targetUserNome) {
+        getOrCreateConversation({
+          id: targetUserId,
+          nome: targetUserNome,
+          nivel: 'conferente', // Default, will be matched
+          unidade: user?.unidade || '',
+        }).then(convId => {
+          setSelectedConversationId(convId);
+          setIsMobileSidebarOpen(false);
+        }).catch(console.error);
+      }
+      
+      // Clear URL params
+      setSearchParams({});
+    }
+  }, [searchParams, user, getOrCreateConversation, setSearchParams]);
 
   // Mark conversation as read when selected
   useEffect(() => {
@@ -71,13 +102,22 @@ export default function Chat() {
   const handleSendMessage = async (content: string, protocoloId?: string, protocoloNumero?: string) => {
     if (!selectedConversationId) return;
 
+    // Use pending protocolo if available
+    const finalProtocoloId = protocoloId || pendingProtocolo?.id;
+    const finalProtocoloNumero = protocoloNumero || pendingProtocolo?.numero;
+
     try {
       await sendMessage({
         conversationId: selectedConversationId,
         content,
-        protocoloId,
-        protocoloNumero,
+        protocoloId: finalProtocoloId,
+        protocoloNumero: finalProtocoloNumero,
       });
+      
+      // Clear pending protocolo after first message
+      if (pendingProtocolo) {
+        setPendingProtocolo(null);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Erro ao enviar mensagem');

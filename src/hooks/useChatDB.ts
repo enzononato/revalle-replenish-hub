@@ -139,7 +139,10 @@ export function useChatDB() {
       });
 
       // Filter out individual conversations where all protocols are closed
+      // ADMIN sees ALL conversations including archived ones
       return conversationsWithDetails.filter(conv => {
+        // Admin sees everything
+        if (user.nivel === 'admin') return true;
         // Keep group conversations
         if (conv.tipo === 'grupo') return true;
         // Keep conversations without protocol messages

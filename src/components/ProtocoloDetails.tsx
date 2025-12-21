@@ -100,38 +100,25 @@ export function ProtocoloDetails({
     return null;
   };
 
-  // Função para abrir chat de discussão do protocolo
+  // Função para abrir chat de discussão do protocolo - fecha o dialog e navega para o chat
   const handleDiscutirProtocolo = async () => {
+    // Fecha o dialog primeiro
+    onClose();
+    
+    // Navega para a página de chat com parâmetros do protocolo
     const validador = getValidadorFromLog();
+    const params = new URLSearchParams({
+      protocolo_id: protocolo.id,
+      protocolo_numero: protocolo.numero,
+    });
     
     if (validador) {
-      // Tentar encontrar o usuário validador no banco para obter dados completos
-      const { data: usuarios } = await supabase
-        .from('chat_participants')
-        .select('user_id, user_nome, user_nivel, user_unidade')
-        .eq('user_id', validador.id)
-        .limit(1);
-      
-      if (usuarios && usuarios.length > 0) {
-        const targetUser = {
-          id: usuarios[0].user_id,
-          nome: usuarios[0].user_nome,
-          nivel: usuarios[0].user_nivel,
-          unidade: usuarios[0].user_unidade || ''
-        };
-        setChatTargetUser(targetUser);
-        setChatInitialMessage(`📋 Protocolo ${protocolo.numero} - Discussão`);
-        setShowChat(true);
-      } else {
-        // Fallback: abrir chat genérico
-        setChatInitialMessage(`📋 Protocolo ${protocolo.numero} - Discussão`);
-        setShowChat(true);
-      }
-    } else {
-      // Sem validador, abrir chat genérico
-      setChatInitialMessage(`📋 Protocolo ${protocolo.numero} - Discussão`);
-      setShowChat(true);
+      params.set('target_user_id', validador.id);
+      params.set('target_user_nome', validador.nome);
     }
+    
+    // Usar window.location para garantir navegação (o navigate do react-router não está no escopo)
+    window.location.href = `/chat?${params.toString()}`;
   };
 
   // Função para alertar distribuição (apenas conferentes)
