@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { 
   Select,
@@ -9,7 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MapPin, Hash, Store, Loader2, Download } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { MapPin, Hash, Store, Loader2, Download, Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -54,6 +63,22 @@ export default function Clientes() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Selection states
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Edit dialog states
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingPdv, setEditingPdv] = useState<Pdv | null>(null);
+  const [formData, setFormData] = useState({
+    codigo: '',
+    nome: '',
+    bairro: '',
+    cidade: '',
+    endereco: '',
+    cnpj: '',
+    unidade: '',
+  });
 
   // Fetch PDVs
   const fetchPdvs = useCallback(async () => {
@@ -109,7 +134,109 @@ export default function Clientes() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedIds(new Set());
   }, [search, pageSize, unidadeFiltro]);
+
+  // Selection handlers
+  const isAllSelected = paginatedPdvs.length > 0 && paginatedPdvs.every(p => selectedIds.has(p.id));
+  const isPartialSelected = paginatedPdvs.some(p => selectedIds.has(p.id)) && !isAllSelected;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      const newSelected = new Set(selectedIds);
+      paginatedPdvs.forEach(p => newSelected.delete(p.id));
+      setSelectedIds(newSelected);
+    } else {
+      const newSelected = new Set(selectedIds);
+      paginatedPdvs.forEach(p => newSelected.add(p.id));
+      setSelectedIds(newSelected);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  // Delete handlers
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from('pdvs').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Cliente excluído com sucesso!');
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      toast.error('Erro ao excluir cliente');
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    
+    try {
+      const promises = Array.from(selectedIds).map(id => 
+        supabase.from('pdvs').delete().eq('id', id)
+      );
+      await Promise.all(promises);
+      setSelectedIds(new Set());
+      toast.success(`${selectedIds.size} clientes excluídos com sucesso!`);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      toast.error('Erro ao excluir clientes');
+    }
+  };
+
+  // Edit handlers
+  const openEditDialog = (pdv: Pdv) => {
+    setEditingPdv(pdv);
+    setFormData({
+      codigo: pdv.codigo,
+      nome: pdv.nome,
+      bairro: pdv.bairro || '',
+      cidade: pdv.cidade || '',
+      endereco: pdv.endereco || '',
+      cnpj: pdv.cnpj || '',
+      unidade: pdv.unidade || '',
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPdv) return;
+
+    try {
+      const { error } = await supabase
+        .from('pdvs')
+        .update({
+          codigo: formData.codigo,
+          nome: formData.nome,
+          bairro: formData.bairro || null,
+          cidade: formData.cidade || null,
+          endereco: formData.endereco || null,
+          cnpj: formData.cnpj || null,
+          unidade: formData.unidade || null,
+        })
+        .eq('id', editingPdv.id);
+
+      if (error) throw error;
+      
+      toast.success('Cliente atualizado com sucesso!');
+      setIsEditDialogOpen(false);
+      setEditingPdv(null);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Erro ao atualizar:', error);
+      toast.error('Erro ao atualizar cliente');
+    }
+  };
 
   // Export functions
   const exportToCSV = () => {
@@ -187,6 +314,32 @@ export default function Clientes() {
         )}
       </div>
 
+      {/* Selection Actions */}
+      {selectedIds.size > 0 && (
+        <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex items-center justify-between">
+          <span className="text-sm font-medium">
+            {selectedIds.size} cliente(s) selecionado(s)
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Limpar seleção
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteSelected}
+            >
+              <Trash2 size={16} className="mr-2" />
+              Excluir selecionados
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
         {isLoading ? (
@@ -198,24 +351,42 @@ export default function Clientes() {
             <table className="w-full">
               <thead>
                 <tr className="table-header">
-                  <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Código</th>
+                  <th className="text-left p-2.5 text-[11px] rounded-tl-lg w-10">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Selecionar todos"
+                      className={isPartialSelected ? "data-[state=checked]:bg-primary/50" : ""}
+                    />
+                  </th>
+                  <th className="text-left p-2.5 text-[11px]">Código</th>
                   <th className="text-left p-2.5 text-[11px]">Nome</th>
                   <th className="text-left p-2.5 text-[11px]">Bairro</th>
                   <th className="text-left p-2.5 text-[11px]">Cidade</th>
-                  <th className="text-left p-2.5 text-[11px]">Endereço</th>
-                  <th className="text-left p-2.5 text-[11px] rounded-tr-lg">Unidade</th>
+                  <th className="text-left p-2.5 text-[11px]">Unidade</th>
+                  <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedPdvs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       Nenhum cliente encontrado
                     </td>
                   </tr>
                 ) : (
                   paginatedPdvs.map((pdv) => (
-                    <tr key={pdv.id} className="border-b border-border hover:bg-muted/30">
+                    <tr 
+                      key={pdv.id} 
+                      className={`border-b border-border hover:bg-muted/30 ${selectedIds.has(pdv.id) ? 'bg-primary/5' : ''}`}
+                    >
+                      <td className="p-2.5">
+                        <Checkbox
+                          checked={selectedIds.has(pdv.id)}
+                          onCheckedChange={() => toggleSelect(pdv.id)}
+                          aria-label={`Selecionar ${pdv.nome}`}
+                        />
+                      </td>
                       <td className="p-2.5">
                         <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
                           <Hash size={12} />
@@ -225,12 +396,31 @@ export default function Clientes() {
                       <td className="p-2.5 font-medium text-xs">{pdv.nome}</td>
                       <td className="p-2.5 text-xs text-muted-foreground">{pdv.bairro || '-'}</td>
                       <td className="p-2.5 text-xs text-muted-foreground">{pdv.cidade || '-'}</td>
-                      <td className="p-2.5 text-xs text-muted-foreground max-w-[200px] truncate">{pdv.endereco || '-'}</td>
                       <td className="p-2.5">
                         <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
                           <MapPin size={12} />
                           {getUnidadeNome(pdv.unidade)}
                         </span>
+                      </td>
+                      <td className="p-2.5">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog(pdv)}
+                            className="text-primary hover:text-primary/80 h-6 w-6 p-0"
+                          >
+                            <Pencil size={14} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(pdv.id)}
+                            className="text-destructive hover:text-destructive/80 h-6 w-6 p-0"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -249,6 +439,100 @@ export default function Clientes() {
           </>
         )}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl">Editar Cliente</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmitEdit} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="codigo">Código</Label>
+                <Input
+                  id="codigo"
+                  value={formData.codigo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input
+                  id="cnpj"
+                  value={formData.cnpj}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cnpj: e.target.value }))}
+                />
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="nome">Nome</Label>
+                <Input
+                  id="nome"
+                  value={formData.nome}
+                  onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                  required
+                />
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="endereco">Endereço</Label>
+                <Input
+                  id="endereco"
+                  value={formData.endereco}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="bairro">Bairro</Label>
+                <Input
+                  id="bairro"
+                  value={formData.bairro}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bairro: e.target.value }))}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="cidade">Cidade</Label>
+                <Input
+                  id="cidade"
+                  value={formData.cidade}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
+                />
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="unidade">Unidade</Label>
+                <Select
+                  value={formData.unidade}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, unidade: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNIDADES_MAP.map(u => (
+                      <SelectItem key={u.codigo} value={u.codigo}>{u.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="btn-primary-gradient">
+                Salvar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
