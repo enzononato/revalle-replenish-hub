@@ -413,6 +413,7 @@ export default function Protocolos() {
       'Data',
       'Hora',
       'Status',
+      'SLA (dias)',
       'Motorista Código',
       'Motorista Nome',
       'Motorista WhatsApp',
@@ -443,11 +444,14 @@ export default function Protocolos() {
         `${p.codigo} - ${p.nome} (${p.quantidade} ${p.unidade})`
       ).join('; ') || '';
 
+      const slaDias = calcularSlaDias(protocolo.createdAt, protocolo.status, protocolo.observacoesLog);
+
       return [
         protocolo.numero,
         protocolo.data,
         protocolo.hora,
         protocolo.status,
+        slaDias.toString(),
         protocolo.motorista.codigo,
         protocolo.motorista.nome,
         protocolo.motorista.whatsapp || '',
