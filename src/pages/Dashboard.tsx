@@ -609,9 +609,15 @@ export default function Dashboard() {
                     </td>
                     <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
                     <td className="p-2">
-                      <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getSlaColor(slaDias)}`}>
-                        {slaDias} {slaDias === 1 ? 'dia' : 'dias'}
-                      </span>
+                      {protocolo.status === 'encerrado' ? (
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 text-gray-600">
+                          ✓ Finalizado
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getSlaColor(slaDias)}`}>
+                          {slaDias} {slaDias === 1 ? 'dia' : 'dias'}
+                        </span>
+                      )}
                     </td>
                     <td className="p-2">
                       <StatusBadge status={protocolo.status} />

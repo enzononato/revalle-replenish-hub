@@ -671,14 +671,20 @@ export default function Protocolos() {
                     </span>
                   </td>
                   <td className="p-2.5 text-center border-r border-[#E5E7EB]">
-                    {(() => {
-                      const dias = calcularSlaDias(protocolo.createdAt);
-                      return (
-                        <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(dias)}`}>
-                          {dias} {dias === 1 ? 'dia' : 'dias'}
-                        </span>
-                      );
-                    })()}
+                    {protocolo.status === 'encerrado' ? (
+                      <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-200 text-gray-600">
+                        ✓ Finalizado
+                      </span>
+                    ) : (
+                      (() => {
+                        const dias = calcularSlaDias(protocolo.createdAt);
+                        return (
+                          <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(dias)}`}>
+                            {dias} {dias === 1 ? 'dia' : 'dias'}
+                          </span>
+                        );
+                      })()
+                    )}
                   </td>
                   <td className="p-2.5 text-center border-r border-[#E5E7EB]">
                     <button

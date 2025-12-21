@@ -32,14 +32,17 @@ export function NewConversationModal({ open, onOpenChange, onSelectUser }: NewCo
   const [motoristas, setMotoristas] = useState<{ id: string; nome: string; nivel: string; unidade: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Buscar motoristas da mesma unidade
+  // Buscar usuários (distribuição, conferente, administrador) da mesma unidade
   useEffect(() => {
-    const fetchMotoristas = async () => {
+    const fetchUsuarios = async () => {
       if (!user || !open) return;
       setIsLoading(true);
       
       try {
-        let query = supabase.from('motoristas').select('id, nome, unidade');
+        let query = supabase
+          .from('motoristas')
+          .select('id, nome, unidade, funcao')
+          .in('funcao', ['distribuicao', 'conferente', 'administrador']);
         
         // Se não for admin (unidade "Todas"), filtrar pela unidade do usuário
         if (user.unidade !== 'Todas') {
@@ -52,17 +55,17 @@ export function NewConversationModal({ open, onOpenChange, onSelectUser }: NewCo
         setMotoristas((data || []).map(m => ({
           id: m.id,
           nome: m.nome,
-          nivel: 'motorista',
+          nivel: m.funcao || 'distribuicao',
           unidade: m.unidade,
         })));
       } catch (error) {
-        console.error('Erro ao buscar motoristas:', error);
+        console.error('Erro ao buscar usuários:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchMotoristas();
+    fetchUsuarios();
   }, [user, open]);
 
   // Combinar usuários do sistema + motoristas, filtrados por unidade

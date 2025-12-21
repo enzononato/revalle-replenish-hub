@@ -104,7 +104,7 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero }: Ch
   // Conversation List View
   if (!selectedConversation) {
     return (
-      <div className="fixed bottom-24 right-6 z-50 w-80 h-[450px] bg-background border rounded-lg shadow-xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
+      <div className="fixed bottom-24 right-6 z-50 w-96 h-[450px] bg-background border rounded-lg shadow-xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
         {/* Header */}
         <div className="p-3 border-b bg-muted/30 flex items-center justify-between">
           <h3 className="font-semibold">Chat</h3>
@@ -151,10 +151,10 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero }: Ch
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium truncate">{getConversationName(conv)}</span>
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="font-medium truncate flex-1">{getConversationName(conv)}</span>
                       {conv.lastMessage && (
-                        <span className="text-xs text-muted-foreground">{formatTime(conv.lastMessage.created_at)}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0 whitespace-nowrap">{formatTime(conv.lastMessage.created_at)}</span>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
@@ -189,7 +189,7 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero }: Ch
 
   // Messages View
   return (
-    <div className="fixed bottom-24 right-6 z-50 w-80 h-[450px] bg-background border rounded-lg shadow-xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
+    <div className="fixed bottom-24 right-6 z-50 w-96 h-[450px] bg-background border rounded-lg shadow-xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
       {/* Header */}
       <div className="p-3 border-b bg-muted/30 flex items-center gap-2">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedConversation(null)}>
