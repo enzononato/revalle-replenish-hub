@@ -37,6 +37,16 @@ export function usePdvsDB() {
         return { success: false, total: 0, error: 'Nenhum PDV válido encontrado' };
       }
 
+      // Remover duplicatas mantendo o primeiro registro de cada código
+      const uniquePdvs = pdvsFormatados.reduce((acc, pdv) => {
+        if (!acc.find(p => p.codigo === pdv.codigo)) {
+          acc.push(pdv);
+        }
+        return acc;
+      }, [] as typeof pdvsFormatados);
+
+      console.log(`PDVs originais: ${pdvsFormatados.length}, únicos: ${uniquePdvs.length}`);
+
       // Deletar PDVs existentes dessa unidade antes de inserir
       const { error: deleteError } = await supabase
         .from('pdvs')
@@ -52,15 +62,15 @@ export function usePdvsDB() {
       const batchSize = 100;
       let inserted = 0;
       
-      for (let i = 0; i < pdvsFormatados.length; i += batchSize) {
-        const batch = pdvsFormatados.slice(i, i + batchSize);
+      for (let i = 0; i < uniquePdvs.length; i += batchSize) {
+        const batch = uniquePdvs.slice(i, i + batchSize);
         const { error } = await supabase
           .from('pdvs')
           .insert(batch);
 
         if (error) {
-          console.error(`Erro no lote ${i / batchSize + 1}:`, error);
-          throw new Error(`Erro ao inserir lote ${i / batchSize + 1}: ${error.message}`);
+          console.error(`Erro no lote ${Math.floor(i / batchSize) + 1}:`, error);
+          throw new Error(`Erro ao inserir lote ${Math.floor(i / batchSize) + 1}: ${error.message}`);
         }
         
         inserted += batch.length;
