@@ -12,7 +12,8 @@ import {
   X,
   Database,
   User,
-  Store
+  Store,
+  ClipboardList
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { icon: Building2, label: 'Unidades', path: '/unidades', roles: ['admin'] },
   { icon: Users, label: 'Usuários', path: '/usuarios', roles: ['admin'] },
   { icon: Database, label: 'Importar Dados', path: '/importar-dados', roles: ['admin'] },
+  { icon: ClipboardList, label: 'Logs de Auditoria', path: '/logs-auditoria', roles: ['admin'] },
   { icon: Settings, label: 'Configurações', path: '/configuracoes', roles: ['admin'] },
 ];
 
