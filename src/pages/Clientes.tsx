@@ -9,11 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MapPin, Hash, Store, Loader2, Download, FileSpreadsheet } from 'lucide-react';
+import { MapPin, Hash, Store, Loader2, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
 import { ImportarPdvsDialog } from '@/components/ImportarPdvsDialog';
 
 // Mapeamento de códigos para nomes de unidades
@@ -141,29 +140,6 @@ export default function Clientes() {
     toast.success(`${filteredPdvs.length} clientes exportados para CSV`);
   };
 
-  const exportToXLSX = () => {
-    if (filteredPdvs.length === 0) {
-      toast.error('Nenhum cliente para exportar');
-      return;
-    }
-
-    const data = filteredPdvs.map(p => ({
-      'Código': p.codigo,
-      'Nome': p.nome,
-      'CNPJ': p.cnpj || '',
-      'Endereço': p.endereco || '',
-      'Bairro': p.bairro || '',
-      'Cidade': p.cidade || '',
-      'Unidade': getUnidadeNome(p.unidade)
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
-    XLSX.writeFile(wb, `clientes_${unidadeFiltro === 'todas' ? 'todos' : unidadeFiltro}_${new Date().toISOString().split('T')[0]}.xlsx`);
-    toast.success(`${filteredPdvs.length} clientes exportados para Excel`);
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -181,11 +157,7 @@ export default function Clientes() {
           <ImportarPdvsDialog onSuccess={handleImportSuccess} />
           <Button variant="outline" size="sm" onClick={exportToCSV}>
             <Download size={16} className="mr-2" />
-            CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportToXLSX}>
-            <FileSpreadsheet size={16} className="mr-2" />
-            Excel
+            Exportar CSV
           </Button>
         </div>
       </div>
