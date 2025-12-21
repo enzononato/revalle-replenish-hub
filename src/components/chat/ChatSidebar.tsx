@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { ChatConversation } from '@/hooks/useChatDB';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserPresence } from '@/hooks/useUserPresence';
 import { format, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -53,6 +54,7 @@ export function ChatSidebar({
   isLoading,
 }: ChatSidebarProps) {
   const { user } = useAuth();
+  const { isUserOnline, onlineCount } = useUserPresence();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'individual' | 'grupo'>('individual');
 
@@ -81,6 +83,7 @@ export function ChatSidebar({
 
     if (conv.tipo === 'individual') {
       const otherParticipant = conv.participants.find(p => p.user_id !== user?.id);
+      const isOnline = otherParticipant ? isUserOnline(otherParticipant.user_id) : false;
       
       return (
         <button
@@ -95,6 +98,14 @@ export function ChatSidebar({
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
+                {/* Online indicator */}
+                <span 
+                  className={cn(
+                    "w-2 h-2 rounded-full flex-shrink-0",
+                    isOnline ? "bg-green-500" : "bg-muted-foreground/30"
+                  )}
+                  title={isOnline ? "Online" : "Offline"}
+                />
                 <span className="font-medium truncate">
                   {otherParticipant?.user_nome || 'Usuário'}
                 </span>
@@ -184,6 +195,11 @@ export function ChatSidebar({
           <h2 className="font-semibold text-lg flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             Conversas
+            {onlineCount > 0 && (
+              <span className="text-xs text-muted-foreground font-normal">
+                ({onlineCount} online)
+              </span>
+            )}
           </h2>
           <div className="flex gap-1">
             <Button size="sm" variant="outline" onClick={onNewGroup} title="Novo grupo">
