@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText, RefreshCw, X } from 'lucide-react';
+import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText, RefreshCw, X, Plus, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +13,9 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { NewConversationModal } from './NewConversationModal';
 import { NewGroupModal } from './NewGroupModal';
 import { supabase } from '@/integrations/supabase/client';
+import { useProtocolosDB } from '@/hooks/useProtocolosDB';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +56,9 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
   const [showNewConversation, setShowNewConversation] = useState(false);
   const [showNewGroup, setShowNewGroup] = useState(false);
   const [attachProtocolo, setAttachProtocolo] = useState(false);
+  const [selectedProtocoloId, setSelectedProtocoloId] = useState<string | undefined>(protocoloId);
+  const [selectedProtocoloNumero, setSelectedProtocoloNumero] = useState<string | undefined>(protocoloNumero);
+  const [protocoloPopoverOpen, setProtocoloPopoverOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [hasAutoOpenedConversation, setHasAutoOpenedConversation] = useState(false);
   const [othersTyping, setOthersTyping] = useState<string[]>([]);
@@ -60,6 +66,7 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
 
+  const { protocolos } = useProtocolosDB();
   const { data: messages = [] } = useConversationMessages(selectedConversation?.id || null);
 
   // Realtime presence for typing indicator
@@ -188,14 +195,21 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
       await sendMessage({
         conversationId: selectedConversation.id,
         content: messageInput,
-        protocoloId: attachProtocolo ? protocoloId : undefined,
-        protocoloNumero: attachProtocolo ? protocoloNumero : undefined,
+        protocoloId: attachProtocolo ? selectedProtocoloId : undefined,
+        protocoloNumero: attachProtocolo ? selectedProtocoloNumero : undefined,
       });
       setMessageInput('');
       setAttachProtocolo(false);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
     }
+  };
+
+  const handleEndConversation = () => {
+    setSelectedConversation(null);
+    setMessageInput('');
+    setAttachProtocolo(false);
+    setOthersTyping([]);
   };
 
   const handleCloseConversation = () => {
@@ -364,6 +378,16 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
         </div>
         <Button 
           variant="ghost" 
+          size="sm" 
+          className="h-8 text-xs gap-1" 
+          onClick={handleEndConversation}
+          title="Encerrar esta conversa e iniciar nova"
+        >
+          <Plus className="h-3 w-3" />
+          Nova
+        </Button>
+        <Button 
+          variant="ghost" 
           size="icon" 
           className="h-8 w-8" 
           onClick={handleRefresh}
@@ -448,18 +472,69 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
 
       {/* Input */}
       <div className="p-2 border-t space-y-2">
-        {protocoloId && protocoloNumero && (
-          <button
-            onClick={() => setAttachProtocolo(!attachProtocolo)}
-            className={cn(
-              "flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors",
-              attachProtocolo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            <Paperclip className="h-3 w-3" />
-            Anexar #{protocoloNumero}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Protocol selector */}
+          <Popover open={protocoloPopoverOpen} onOpenChange={setProtocoloPopoverOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  "flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors shrink-0",
+                  attachProtocolo && selectedProtocoloNumero 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+              >
+                <Paperclip className="h-3 w-3" />
+                {attachProtocolo && selectedProtocoloNumero ? `#${selectedProtocoloNumero}` : 'Protocolo'}
+                <ChevronDown className="h-3 w-3" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Buscar protocolo..." />
+                <CommandList>
+                  <CommandEmpty>Nenhum protocolo encontrado</CommandEmpty>
+                  <CommandGroup>
+                    {attachProtocolo && (
+                      <CommandItem
+                        onSelect={() => {
+                          setAttachProtocolo(false);
+                          setSelectedProtocoloId(undefined);
+                          setSelectedProtocoloNumero(undefined);
+                          setProtocoloPopoverOpen(false);
+                        }}
+                        className="text-muted-foreground"
+                      >
+                        <X className="h-3 w-3 mr-2" />
+                        Remover anexo
+                      </CommandItem>
+                    )}
+                    {protocolos
+                      .filter(p => p.status !== 'encerrado')
+                      .slice(0, 20)
+                      .map(p => (
+                        <CommandItem
+                          key={p.id}
+                          onSelect={() => {
+                            setSelectedProtocoloId(p.id);
+                            setSelectedProtocoloNumero(p.numero);
+                            setAttachProtocolo(true);
+                            setProtocoloPopoverOpen(false);
+                          }}
+                        >
+                          <FileText className="h-3 w-3 mr-2" />
+                          <span className="font-mono">#{p.numero}</span>
+                          <span className="text-muted-foreground ml-2 truncate text-xs">
+                            {p.motorista.nome}
+                          </span>
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
         <div className="flex gap-2">
           <Input
             value={messageInput}
