@@ -8,6 +8,7 @@ import { parseSqlFile, mapParsedToMotorista, ParseResult } from '@/utils/parseSq
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 import { useProdutosDB } from '@/hooks/useProdutosDB';
+import { ImportarPdvsCSV } from '@/components/ImportarPdvsCSV';
 
 export default function ImportarDados() {
   const [file, setFile] = useState<File | null>(null);
@@ -336,6 +337,11 @@ export default function ImportarDados() {
           </Button>
         </div>
       )}
+
+      {/* Importar PDVs */}
+      <div className="pt-4 border-t">
+        <ImportarPdvsCSV />
+      </div>
     </div>
   );
 }

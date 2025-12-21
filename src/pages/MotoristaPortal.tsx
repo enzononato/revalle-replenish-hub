@@ -33,6 +33,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
+import { PdvAutocomplete } from '@/components/PdvAutocomplete';
 import { MeusProtocolos } from '@/components/motorista/MeusProtocolos';
 import { MotoristaHeader } from '@/components/motorista/MotoristaHeader';
 
@@ -711,13 +712,13 @@ export default function MotoristaPortal() {
                       <Label htmlFor="codigoPdv" className="text-xs font-medium">Código PDV *</Label>
                       {touched.codigoPdv && codigoPdv.trim() && <Check size={12} className="text-green-500" />}
                     </div>
-                    <Input
-                      id="codigoPdv"
+                    <PdvAutocomplete
                       value={codigoPdv}
-                      onChange={(e) => setCodigoPdv(e.target.value)}
-                      onBlur={() => handleBlur('codigoPdv')}
-                      placeholder="Ex: PDV001"
+                      onChange={(value) => setCodigoPdv(value)}
+                      unidade={motorista.unidade}
+                      placeholder="Digite código ou nome do PDV..."
                       className={getInputClassName('codigoPdv', codigoPdv)}
+                      onBlur={() => handleBlur('codigoPdv')}
                     />
                     {touched.codigoPdv && !codigoPdv.trim() && (
                       <p className="text-[10px] text-red-500 flex items-center gap-0.5">
