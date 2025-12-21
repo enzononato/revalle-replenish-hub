@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          acao: string
+          created_at: string
+          id: string
+          registro_dados: Json | null
+          registro_id: string
+          tabela: string
+          usuario_nome: string
+          usuario_role: string | null
+          usuario_unidade: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          id?: string
+          registro_dados?: Json | null
+          registro_id: string
+          tabela: string
+          usuario_nome: string
+          usuario_role?: string | null
+          usuario_unidade?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          id?: string
+          registro_dados?: Json | null
+          registro_id?: string
+          tabela?: string
+          usuario_nome?: string
+          usuario_role?: string | null
+          usuario_unidade?: string | null
+        }
+        Relationships: []
+      }
       motoristas: {
         Row: {
           codigo: string

@@ -35,11 +35,13 @@ import {
 import { Plus, Pencil, Trash2, MapPin, Hash, Truck, Users, Building, Loader2 } from 'lucide-react';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
 
 export default function Motoristas() {
   const { motoristas, isLoading, addMotorista, updateMotorista, deleteMotorista, importMotoristas } = useMotoristasDB();
   const { isAdmin, user } = useAuth();
+  const { registrarLog } = useAuditLog();
   const [search, setSearch] = useState('');
   const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -126,7 +128,29 @@ export default function Motoristas() {
   // Confirm single delete
   const handleConfirmDelete = async () => {
     if (!deletingMotoristaId) return;
+    
+    // Buscar dados do motorista antes de excluir
+    const motoristaExcluido = motoristas.find(m => m.id === deletingMotoristaId);
+    
     await deleteMotorista(deletingMotoristaId);
+    
+    // Registrar log de auditoria
+    if (motoristaExcluido) {
+      await registrarLog({
+        acao: 'exclusao',
+        tabela: 'motoristas',
+        registro_id: deletingMotoristaId,
+        registro_dados: {
+          nome: motoristaExcluido.nome,
+          codigo: motoristaExcluido.codigo,
+          unidade: motoristaExcluido.unidade,
+        },
+        usuario_nome: user?.nome || 'Desconhecido',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+    }
+    
     toast.success('Motorista excluído com sucesso!');
     setIsDeleteDialogOpen(false);
     setDeletingMotoristaId(null);
@@ -141,8 +165,30 @@ export default function Motoristas() {
   // Confirm multiple delete
   const handleConfirmDeleteMultiple = async () => {
     const count = selectedIds.size;
+    
+    // Buscar dados dos motoristas antes de excluir
+    const motoristasExcluidos = motoristas.filter(m => selectedIds.has(m.id));
+    
     const promises = Array.from(selectedIds).map(id => deleteMotorista(id));
     await Promise.all(promises);
+    
+    // Registrar logs de auditoria para cada motorista
+    for (const motorista of motoristasExcluidos) {
+      await registrarLog({
+        acao: 'exclusao',
+        tabela: 'motoristas',
+        registro_id: motorista.id,
+        registro_dados: {
+          nome: motorista.nome,
+          codigo: motorista.codigo,
+          unidade: motorista.unidade,
+        },
+        usuario_nome: user?.nome || 'Desconhecido',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+    }
+    
     setSelectedIds(new Set());
     toast.success(`${count} motorista(s) excluído(s) com sucesso!`);
     setIsDeleteMultipleDialogOpen(false);

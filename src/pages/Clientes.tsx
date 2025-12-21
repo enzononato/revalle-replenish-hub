@@ -31,6 +31,7 @@ import {
 import { MapPin, Hash, Store, Loader2, Download, Pencil, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
 import { ImportarPdvsDialog } from '@/components/ImportarPdvsDialog';
 // Mapeamento de códigos para nomes de unidades
@@ -121,6 +122,7 @@ interface Pdv {
 
 export default function Clientes() {
   const { isAdmin, user } = useAuth();
+  const { registrarLog } = useAuditLog();
   const [pdvs, setPdvs] = useState<Pdv[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -262,8 +264,30 @@ export default function Clientes() {
     if (!deletingPdvId) return;
     
     try {
+      // Buscar dados do PDV antes de excluir
+      const pdvExcluido = pdvs.find(p => p.id === deletingPdvId);
+      
       const { error } = await supabase.from('pdvs').delete().eq('id', deletingPdvId);
       if (error) throw error;
+      
+      // Registrar log de auditoria
+      if (pdvExcluido) {
+        await registrarLog({
+          acao: 'exclusao',
+          tabela: 'pdvs',
+          registro_id: deletingPdvId,
+          registro_dados: {
+            nome: pdvExcluido.nome,
+            codigo: pdvExcluido.codigo,
+            unidade: pdvExcluido.unidade,
+            cnpj: pdvExcluido.cnpj,
+          },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
+      }
+      
       toast.success('Cliente excluído com sucesso!');
       setRefreshKey(prev => prev + 1);
     } catch (error) {
@@ -282,10 +306,32 @@ export default function Clientes() {
 
   const handleConfirmDeleteMultiple = async () => {
     try {
+      // Buscar dados dos PDVs antes de excluir
+      const pdvsExcluidos = pdvs.filter(p => selectedIds.has(p.id));
+      
       const promises = Array.from(selectedIds).map(id => 
         supabase.from('pdvs').delete().eq('id', id)
       );
       await Promise.all(promises);
+      
+      // Registrar logs de auditoria para cada PDV
+      for (const pdv of pdvsExcluidos) {
+        await registrarLog({
+          acao: 'exclusao',
+          tabela: 'pdvs',
+          registro_id: pdv.id,
+          registro_dados: {
+            nome: pdv.nome,
+            codigo: pdv.codigo,
+            unidade: pdv.unidade,
+            cnpj: pdv.cnpj,
+          },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
+      }
+      
       const count = selectedIds.size;
       setSelectedIds(new Set());
       toast.success(`${count} clientes excluídos com sucesso!`);
