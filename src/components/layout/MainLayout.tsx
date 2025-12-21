@@ -56,9 +56,9 @@ export function MainLayout() {
                          !location.pathname.startsWith('/configuracoes');
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
-      <main className="flex-1 lg:ml-0 p-4 lg:p-6 pt-14 lg:pt-6">
+      <main className="flex-1 lg:ml-0 p-4 lg:p-6 pt-14 lg:pt-6 overflow-y-auto sidebar-scroll">
         <ContentHeader />
         <Outlet />
       </main>

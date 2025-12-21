@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Search, Plus, MessageSquare, Users } from 'lucide-react';
+import { Search, Plus, MessageSquare, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { ChatConversation } from '@/hooks/useChatDB';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +17,7 @@ interface ChatSidebarProps {
   conversations: ChatConversation[];
   selectedConversationId: string | null;
   onSelectConversation: (id: string) => void;
-  onNewConversation: () => void;
+  onNewConversation: (user?: { id: string; nome: string; nivel: string; unidade: string }) => void;
   onNewGroup: () => void;
   isLoading: boolean;
 }
@@ -31,6 +32,19 @@ const getRoleBadgeColor = (nivel: string) => {
       return 'bg-muted text-muted-foreground';
     default:
       return 'bg-muted text-muted-foreground';
+  }
+};
+
+const getRoleLabel = (nivel: string) => {
+  switch (nivel) {
+    case 'admin':
+      return 'Admin';
+    case 'distribuicao':
+      return 'Dist.';
+    case 'conferente':
+      return 'Conf.';
+    default:
+      return nivel;
   }
 };
 
@@ -54,9 +68,10 @@ export function ChatSidebar({
   isLoading,
 }: ChatSidebarProps) {
   const { user } = useAuth();
-  const { isUserOnline, onlineCount } = useUserPresence();
+  const { onlineUsers, isUserOnline, onlineCount } = useUserPresence();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<'individual' | 'grupo'>('individual');
+  const [isOnlineUsersOpen, setIsOnlineUsersOpen] = useState(true);
 
   const filteredConversations = conversations.filter((conv) => {
     const matchesTab = conv.tipo === activeTab;
@@ -77,6 +92,18 @@ export function ChatSidebar({
   const groupUnread = conversations
     .filter(c => c.tipo === 'grupo')
     .reduce((acc, c) => acc + c.unreadCount, 0);
+
+  // Filter out current user from online users list
+  const otherOnlineUsers = onlineUsers.filter(u => u.id !== user?.id);
+
+  const handleStartConversationWithUser = (onlineUser: typeof onlineUsers[0]) => {
+    onNewConversation({
+      id: onlineUser.id,
+      nome: onlineUser.nome,
+      nivel: onlineUser.nivel,
+      unidade: onlineUser.unidade || ''
+    });
+  };
 
   const renderConversationItem = (conv: ChatConversation) => {
     const isSelected = conv.id === selectedConversationId;
@@ -113,9 +140,7 @@ export function ChatSidebar({
                   variant="secondary" 
                   className={cn("text-[10px] px-1.5 py-0", getRoleBadgeColor(otherParticipant?.user_nivel || ''))}
                 >
-                  {otherParticipant?.user_nivel === 'admin' ? 'Admin' : 
-                   otherParticipant?.user_nivel === 'distribuicao' ? 'Dist.' : 
-                   'Conf.'}
+                  {getRoleLabel(otherParticipant?.user_nivel || '')}
                 </Badge>
               </div>
               {conv.lastMessage && (
@@ -195,17 +220,12 @@ export function ChatSidebar({
           <h2 className="font-semibold text-lg flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             Conversas
-            {onlineCount > 0 && (
-              <span className="text-xs text-muted-foreground font-normal">
-                ({onlineCount} online)
-              </span>
-            )}
           </h2>
           <div className="flex gap-1">
             <Button size="sm" variant="outline" onClick={onNewGroup} title="Novo grupo">
               <Users className="h-4 w-4" />
             </Button>
-            <Button size="sm" onClick={onNewConversation} title="Nova conversa">
+            <Button size="sm" onClick={() => onNewConversation()} title="Nova conversa">
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -220,6 +240,57 @@ export function ChatSidebar({
           />
         </div>
       </div>
+
+      {/* Online Users Panel */}
+      <Collapsible 
+        open={isOnlineUsersOpen} 
+        onOpenChange={setIsOnlineUsersOpen}
+        className="border-b border-border"
+      >
+        <CollapsibleTrigger className="flex items-center justify-between w-full p-3 hover:bg-accent/50 transition-colors">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-sm font-medium">Usuários Online</span>
+            <Badge variant="secondary" className="text-xs">
+              {otherOnlineUsers.length}
+            </Badge>
+          </div>
+          {isOnlineUsersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <ScrollArea className="max-h-40">
+            <div className="p-2 pt-0 space-y-1">
+              {otherOnlineUsers.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-2">
+                  Nenhum outro usuário online
+                </p>
+              ) : (
+                otherOnlineUsers.map((onlineUser) => (
+                  <button
+                    key={onlineUser.id}
+                    onClick={() => handleStartConversationWithUser(onlineUser)}
+                    className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-accent/50 transition-colors text-left"
+                  >
+                    <span className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{onlineUser.nome}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {onlineUser.unidade || 'Sem unidade'}
+                      </p>
+                    </div>
+                    <Badge 
+                      variant="secondary" 
+                      className={cn("text-[10px] px-1.5 py-0 flex-shrink-0", getRoleBadgeColor(onlineUser.nivel))}
+                    >
+                      {getRoleLabel(onlineUser.nivel)}
+                    </Badge>
+                  </button>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'individual' | 'grupo')} className="flex-1 flex flex-col">
