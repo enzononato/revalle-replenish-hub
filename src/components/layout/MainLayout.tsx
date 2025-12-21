@@ -51,8 +51,8 @@ export function MainLayout() {
     return <Navigate to="/login" replace />;
   }
 
-  // Não mostrar o chat bubble na página de protocolos e configurações
-  const showChatBubble = !location.pathname.startsWith('/protocolos') && 
+  // Não mostrar o chat bubble na página de chat e configurações
+  const showChatBubble = !location.pathname.startsWith('/chat') && 
                          !location.pathname.startsWith('/configuracoes');
 
   return (
