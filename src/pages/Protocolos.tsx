@@ -28,8 +28,6 @@ import { toast } from 'sonner';
 import { differenceInDays, parseISO, format, isAfter, isBefore, parse, isToday } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateProtocoloModal from '@/components/CreateProtocoloModal';
-import { ChatBubble } from '@/components/chat/ChatBubble';
-import { useChatDB } from '@/hooks/useChatDB';
 
 // Função para extrair data de encerramento do log
 const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | null => {
@@ -64,7 +62,7 @@ export default function Protocolos() {
   const navigate = useNavigate();
   const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, user } = useAuth();
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo } = useProtocolos();
-  const { totalUnread } = useChatDB();
+  
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>('todos');
   const [dataInicialFilter, setDataInicialFilter] = useState('');
@@ -919,13 +917,6 @@ export default function Protocolos() {
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreateProtocolo={handleCreateProtocolo}
-      />
-
-      {/* Floating Chat Bubble */}
-      <ChatBubble 
-        unreadCount={totalUnread}
-        protocoloId={selectedProtocolo?.id}
-        protocoloNumero={selectedProtocolo?.numero}
       />
     </div>
   );

@@ -1,15 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Unidade } from '@/types';
 import { toast } from 'sonner';
 
 export function useUnidadesDB() {
-  const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const fetchUnidades = useCallback(async () => {
-    setIsLoading(true);
-    try {
+  const { data: unidades = [], isLoading } = useQuery({
+    queryKey: ['unidades'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('unidades')
         .select('*')
@@ -17,29 +16,19 @@ export function useUnidadesDB() {
 
       if (error) throw error;
 
-      const mapped: Unidade[] = (data || []).map((u) => ({
+      return (data || []).map((u): Unidade => ({
         id: u.id,
         nome: u.nome,
         codigo: u.codigo,
         cnpj: u.cnpj || '',
         createdAt: u.created_at || new Date().toISOString(),
       }));
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
 
-      setUnidades(mapped);
-    } catch (error) {
-      console.error('Erro ao buscar unidades:', error);
-      toast.error('Erro ao carregar unidades');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUnidades();
-  }, [fetchUnidades]);
-
-  const addUnidade = async (unidade: Omit<Unidade, 'id' | 'createdAt'>) => {
-    try {
+  const addMutation = useMutation({
+    mutationFn: async (unidade: Omit<Unidade, 'id' | 'createdAt'>) => {
       const { data, error } = await supabase
         .from('unidades')
         .insert({
@@ -52,30 +41,29 @@ export function useUnidadesDB() {
 
       if (error) throw error;
 
-      const newUnidade: Unidade = {
+      return {
         id: data.id,
         nome: data.nome,
         codigo: data.codigo,
         cnpj: data.cnpj || '',
         createdAt: data.created_at || new Date().toISOString(),
-      };
-
-      setUnidades((prev) => [...prev, newUnidade]);
+      } as Unidade;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unidades'] });
       toast.success('Unidade cadastrada com sucesso!');
-      return newUnidade;
-    } catch (error: any) {
-      console.error('Erro ao adicionar unidade:', error);
+    },
+    onError: (error: any) => {
       if (error.code === '23505') {
         toast.error('Já existe uma unidade com este código');
       } else {
         toast.error('Erro ao cadastrar unidade');
       }
-      throw error;
-    }
-  };
+    },
+  });
 
-  const updateUnidade = async (id: string, updates: Partial<Omit<Unidade, 'id' | 'createdAt'>>) => {
-    try {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Omit<Unidade, 'id' | 'createdAt'>> }) => {
       const { error } = await supabase
         .from('unidades')
         .update({
@@ -86,39 +74,36 @@ export function useUnidadesDB() {
         .eq('id', id);
 
       if (error) throw error;
-
-      setUnidades((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, ...updates } : u))
-      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unidades'] });
       toast.success('Unidade atualizada com sucesso!');
-    } catch (error: any) {
-      console.error('Erro ao atualizar unidade:', error);
+    },
+    onError: (error: any) => {
       if (error.code === '23505') {
         toast.error('Já existe uma unidade com este código');
       } else {
         toast.error('Erro ao atualizar unidade');
       }
-      throw error;
-    }
-  };
+    },
+  });
 
-  const deleteUnidade = async (id: string) => {
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase.from('unidades').delete().eq('id', id);
-
       if (error) throw error;
-
-      setUnidades((prev) => prev.filter((u) => u.id !== id));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['unidades'] });
       toast.success('Unidade excluída com sucesso!');
-    } catch (error) {
-      console.error('Erro ao excluir unidade:', error);
+    },
+    onError: () => {
       toast.error('Erro ao excluir unidade');
-      throw error;
-    }
-  };
+    },
+  });
 
-  const importUnidades = async (unidadesData: Omit<Unidade, 'id' | 'createdAt'>[]) => {
-    try {
+  const importMutation = useMutation({
+    mutationFn: async (unidadesData: Omit<Unidade, 'id' | 'createdAt'>[]) => {
       const toInsert = unidadesData.map((u) => ({
         nome: u.nome,
         codigo: u.codigo,
@@ -131,14 +116,31 @@ export function useUnidadesDB() {
       });
 
       if (error) throw error;
-
-      await fetchUnidades();
-      toast.success(`${unidadesData.length} unidades importadas com sucesso!`);
-    } catch (error) {
-      console.error('Erro ao importar unidades:', error);
+      return unidadesData.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['unidades'] });
+      toast.success(`${count} unidades importadas com sucesso!`);
+    },
+    onError: () => {
       toast.error('Erro ao importar unidades');
-      throw error;
-    }
+    },
+  });
+
+  const addUnidade = async (unidade: Omit<Unidade, 'id' | 'createdAt'>) => {
+    return addMutation.mutateAsync(unidade);
+  };
+
+  const updateUnidade = async (id: string, updates: Partial<Omit<Unidade, 'id' | 'createdAt'>>) => {
+    await updateMutation.mutateAsync({ id, updates });
+  };
+
+  const deleteUnidade = async (id: string) => {
+    await deleteMutation.mutateAsync(id);
+  };
+
+  const importUnidades = async (unidadesData: Omit<Unidade, 'id' | 'createdAt'>[]) => {
+    await importMutation.mutateAsync(unidadesData);
   };
 
   return {
@@ -148,6 +150,6 @@ export function useUnidadesDB() {
     updateUnidade,
     deleteUnidade,
     importUnidades,
-    refetch: fetchUnidades,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['unidades'] }),
   };
 }

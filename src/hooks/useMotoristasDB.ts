@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Motorista, FuncaoMotorista, SetorMotorista } from '@/types';
 import { toast } from 'sonner';
@@ -46,114 +46,146 @@ const motoristaToDB = (m: Motorista): Omit<MotoristaDB, 'id' | 'created_at'> => 
 });
 
 export function useMotoristasDB() {
-  const [motoristas, setMotoristas] = useState<Motorista[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchMotoristas = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    const { data, error: fetchError } = await supabase
-      .from('motoristas')
-      .select('*')
-      .order('nome', { ascending: true });
+  const { data: motoristas = [], isLoading, error } = useQuery({
+    queryKey: ['motoristas'],
+    queryFn: async () => {
+      const { data, error: fetchError } = await supabase
+        .from('motoristas')
+        .select('*')
+        .order('nome', { ascending: true });
 
-    if (fetchError) {
-      setError(fetchError.message);
-      toast.error('Erro ao carregar motoristas');
-      setIsLoading(false);
-      return;
-    }
+      if (fetchError) throw fetchError;
+      return (data as MotoristaDB[]).map(dbToMotorista);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
 
-    setMotoristas((data as MotoristaDB[]).map(dbToMotorista));
-    setIsLoading(false);
-  }, []);
+  const addMutation = useMutation({
+    mutationFn: async (motorista: Omit<Motorista, 'id' | 'createdAt'>) => {
+      const { error: insertError } = await supabase
+        .from('motoristas')
+        .insert([motoristaToDB(motorista as Motorista)]);
 
-  useEffect(() => {
-    fetchMotoristas();
-  }, [fetchMotoristas]);
+      if (insertError) throw insertError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['motoristas'] });
+      toast.success('Motorista cadastrado com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao cadastrar motorista: ${error.message}`);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, motorista }: { id: string; motorista: Partial<Motorista> }) => {
+      const updateData: Record<string, unknown> = {};
+      
+      if (motorista.nome !== undefined) updateData.nome = motorista.nome;
+      if (motorista.codigo !== undefined) updateData.codigo = motorista.codigo;
+      if (motorista.dataNascimento !== undefined) updateData.data_nascimento = motorista.dataNascimento;
+      if (motorista.unidade !== undefined) updateData.unidade = motorista.unidade;
+      if (motorista.funcao !== undefined) updateData.funcao = motorista.funcao;
+      if (motorista.setor !== undefined) updateData.setor = motorista.setor;
+      if (motorista.whatsapp !== undefined) updateData.whatsapp = motorista.whatsapp;
+      if (motorista.email !== undefined) updateData.email = motorista.email;
+      if (motorista.senha !== undefined && motorista.senha !== '') updateData.senha = motorista.senha;
+
+      const { error: updateError } = await supabase
+        .from('motoristas')
+        .update(updateData)
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['motoristas'] });
+      toast.success('Motorista atualizado com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao atualizar motorista: ${error.message}`);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error: deleteError } = await supabase
+        .from('motoristas')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['motoristas'] });
+      toast.success('Motorista excluído com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao excluir motorista: ${error.message}`);
+    },
+  });
+
+  const importMutation = useMutation({
+    mutationFn: async (newMotoristas: Omit<Motorista, 'id' | 'createdAt'>[]) => {
+      // Deduplicar por código (manter o último registro de cada código)
+      const uniqueMap = new Map<string, Omit<Motorista, 'id' | 'createdAt'>>();
+      newMotoristas.forEach(m => uniqueMap.set(m.codigo, m));
+      const uniqueMotoristas = Array.from(uniqueMap.values());
+      
+      const motoristasDB = uniqueMotoristas.map(m => motoristaToDB(m as Motorista));
+      
+      const { error: upsertError } = await supabase
+        .from('motoristas')
+        .upsert(motoristasDB, { onConflict: 'codigo' });
+
+      if (upsertError) throw upsertError;
+      return uniqueMotoristas.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['motoristas'] });
+      toast.success(`${count} motoristas importados com sucesso!`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao importar motoristas: ${error.message}`);
+    },
+  });
 
   const addMotorista = async (motorista: Omit<Motorista, 'id' | 'createdAt'>): Promise<boolean> => {
-    const { error: insertError } = await supabase
-      .from('motoristas')
-      .insert([motoristaToDB(motorista as Motorista)]);
-
-    if (insertError) {
-      toast.error(`Erro ao cadastrar motorista: ${insertError.message}`);
+    try {
+      await addMutation.mutateAsync(motorista);
+      return true;
+    } catch {
       return false;
     }
-
-    await fetchMotoristas();
-    toast.success('Motorista cadastrado com sucesso!');
-    return true;
   };
 
   const updateMotorista = async (id: string, motorista: Partial<Motorista>): Promise<boolean> => {
-    const updateData: Record<string, unknown> = {};
-    
-    if (motorista.nome !== undefined) updateData.nome = motorista.nome;
-    if (motorista.codigo !== undefined) updateData.codigo = motorista.codigo;
-    if (motorista.dataNascimento !== undefined) updateData.data_nascimento = motorista.dataNascimento;
-    if (motorista.unidade !== undefined) updateData.unidade = motorista.unidade;
-    if (motorista.funcao !== undefined) updateData.funcao = motorista.funcao;
-    if (motorista.setor !== undefined) updateData.setor = motorista.setor;
-    if (motorista.whatsapp !== undefined) updateData.whatsapp = motorista.whatsapp;
-    if (motorista.email !== undefined) updateData.email = motorista.email;
-    if (motorista.senha !== undefined && motorista.senha !== '') updateData.senha = motorista.senha;
-
-    const { error: updateError } = await supabase
-      .from('motoristas')
-      .update(updateData)
-      .eq('id', id);
-
-    if (updateError) {
-      toast.error(`Erro ao atualizar motorista: ${updateError.message}`);
+    try {
+      await updateMutation.mutateAsync({ id, motorista });
+      return true;
+    } catch {
       return false;
     }
-
-    await fetchMotoristas();
-    toast.success('Motorista atualizado com sucesso!');
-    return true;
   };
 
   const deleteMotorista = async (id: string): Promise<boolean> => {
-    const { error: deleteError } = await supabase
-      .from('motoristas')
-      .delete()
-      .eq('id', id);
-
-    if (deleteError) {
-      toast.error(`Erro ao excluir motorista: ${deleteError.message}`);
+    try {
+      await deleteMutation.mutateAsync(id);
+      return true;
+    } catch {
       return false;
     }
-
-    await fetchMotoristas();
-    toast.success('Motorista excluído com sucesso!');
-    return true;
   };
 
   const importMotoristas = async (newMotoristas: Omit<Motorista, 'id' | 'createdAt'>[]): Promise<boolean> => {
-    // Deduplicar por código (manter o último registro de cada código)
-    const uniqueMap = new Map<string, Omit<Motorista, 'id' | 'createdAt'>>();
-    newMotoristas.forEach(m => uniqueMap.set(m.codigo, m));
-    const uniqueMotoristas = Array.from(uniqueMap.values());
-    
-    // Usar upsert para atualizar existentes e inserir novos (baseado no código único)
-    const motoristasDB = uniqueMotoristas.map(m => motoristaToDB(m as Motorista));
-    
-    const { error: upsertError } = await supabase
-      .from('motoristas')
-      .upsert(motoristasDB, { onConflict: 'codigo' });
-
-    if (upsertError) {
-      toast.error(`Erro ao importar motoristas: ${upsertError.message}`);
+    try {
+      await importMutation.mutateAsync(newMotoristas);
+      return true;
+    } catch {
       return false;
     }
-
-    await fetchMotoristas();
-    toast.success(`${uniqueMotoristas.length} motoristas importados com sucesso!`);
-    return true;
   };
 
   const getMotoristaByCode = async (codigo: string): Promise<Motorista | null> => {
@@ -173,8 +205,8 @@ export function useMotoristasDB() {
   return {
     motoristas,
     isLoading,
-    error,
-    fetchMotoristas,
+    error: error?.message || null,
+    fetchMotoristas: () => queryClient.invalidateQueries({ queryKey: ['motoristas'] }),
     addMotorista,
     updateMotorista,
     deleteMotorista,
