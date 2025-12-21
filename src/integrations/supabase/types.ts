@@ -262,7 +262,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      count_pdvs_por_unidade: {
+        Args: never
+        Returns: {
+          total: number
+          unidade: string
+        }[]
+      }
+      count_protocolos_por_unidade: {
+        Args: { data_fim?: string; data_inicio?: string }
+        Returns: {
+          total: number
+          unidade: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
