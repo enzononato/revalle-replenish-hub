@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText, RefreshCw, X, Plus, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText, Plus, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useChatDB, ChatConversation } from '@/hooks/useChatDB';
-import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -16,16 +15,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProtocolosDB } from '@/hooks/useProtocolosDB';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 interface ChatBubbleExpandedProps {
   onClose: () => void;
@@ -38,8 +27,6 @@ interface ChatBubbleExpandedProps {
 export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, initialMessage, targetUser }: ChatBubbleExpandedProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const {
     conversations, 
     isLoadingConversations, 
@@ -59,10 +46,10 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
   const [selectedProtocoloId, setSelectedProtocoloId] = useState<string | undefined>(protocoloId);
   const [selectedProtocoloNumero, setSelectedProtocoloNumero] = useState<string | undefined>(protocoloNumero);
   const [protocoloPopoverOpen, setProtocoloPopoverOpen] = useState(false);
+  const [novoProtocoloPopoverOpen, setNovoProtocoloPopoverOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [hasAutoOpenedConversation, setHasAutoOpenedConversation] = useState(false);
   const [othersTyping, setOthersTyping] = useState<string[]>([]);
-  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingBroadcastRef = useRef<number>(0);
 
@@ -217,18 +204,6 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
     setOthersTyping([]);
   };
 
-  const handleCloseChat = () => {
-    if (messageInput.trim()) {
-      setShowCloseConfirm(true);
-    } else {
-      onClose();
-    }
-  };
-
-  const confirmCloseChat = () => {
-    setShowCloseConfirm(false);
-    onClose();
-  };
 
   const handleNewConversation = async (otherUser: { id: string; nome: string; nivel: string; unidade: string }) => {
     try {
@@ -248,14 +223,6 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
     } catch (error) {
       console.error('Erro ao entrar no grupo:', error);
     }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await queryClient.invalidateQueries({ queryKey: ['protocolos'] });
-    await queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
-    await queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
-    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   // Conversation List View
@@ -376,54 +343,54 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
             <p className="text-xs text-muted-foreground">{selectedConversation.participants.length} participantes</p>
           ) : null}
         </div>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 text-xs gap-1" 
-          onClick={handleEndConversation}
-          title="Encerrar esta conversa e iniciar nova"
-        >
-          <Plus className="h-3 w-3" />
-          Nova
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8" 
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 text-muted-foreground hover:text-destructive" 
-          onClick={handleCloseChat}
-          title="Fechar chat"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <Popover open={novoProtocoloPopoverOpen} onOpenChange={setNovoProtocoloPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 text-xs gap-1" 
+              title="Selecionar outro protocolo"
+            >
+              <Plus className="h-3 w-3" />
+              Novo
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-0" align="end">
+            <Command>
+              <CommandInput placeholder="Buscar protocolo..." />
+              <CommandList>
+                <CommandEmpty>Nenhum protocolo encontrado</CommandEmpty>
+                <CommandGroup heading="Protocolos Abertos/Em Andamento">
+                  {protocolos
+                    .filter(p => p.status === 'aberto' || p.status === 'em_andamento')
+                    .slice(0, 30)
+                    .map(p => (
+                      <CommandItem
+                        key={p.id}
+                        onSelect={() => {
+                          setSelectedProtocoloId(p.id);
+                          setSelectedProtocoloNumero(p.numero);
+                          setAttachProtocolo(true);
+                          setNovoProtocoloPopoverOpen(false);
+                          handleEndConversation();
+                        }}
+                      >
+                        <FileText className="h-3 w-3 mr-2" />
+                        <div className="flex flex-col">
+                          <span className="font-mono">#{p.numero}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {p.motorista.nome} - {p.status === 'aberto' ? 'Aberto' : 'Em andamento'}
+                          </span>
+                        </div>
+                      </CommandItem>
+                    ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
-
-      {/* Close Confirmation Dialog */}
-      <AlertDialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Fechar chat?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você tem uma mensagem não enviada. Tem certeza que deseja fechar o chat? 
-              A mensagem será perdida, mas o histórico da conversa ficará salvo nos logs.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCloseChat}>
-              Fechar mesmo assim
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-3">
