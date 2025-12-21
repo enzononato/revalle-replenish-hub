@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { format, isToday, parseISO, differenceInHours, differenceInDays, subDays } from 'date-fns';
+import { format, isToday, parseISO, differenceInHours, differenceInDays, subDays, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { 
@@ -34,6 +34,7 @@ import {
   Legend,
   LabelList
 } from 'recharts';
+import { ObservacaoLog } from '@/types';
 
 const COLORS = ['hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(160, 84%, 39%)'];
 
@@ -319,10 +320,26 @@ export default function Dashboard() {
     return nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
   };
 
+  // Função para extrair data de encerramento do log
+  const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | null => {
+    const logEncerramento = observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+    return logEncerramento?.data || null;
+  };
+
   // Função para cor do SLA - padronizada com página Protocolos (dias)
-  const calcularSlaDias = (createdAt: string): number => {
+  const calcularSlaDias = (createdAt: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
     try {
       const dataProtocolo = parseISO(createdAt);
+      
+      // Se encerrado, calcular até a data de encerramento
+      if (status === 'encerrado') {
+        const dataEncerramentoStr = getDataEncerramentoFromLog(observacoesLog);
+        if (dataEncerramentoStr) {
+          const dataEncerramento = parse(dataEncerramentoStr, 'dd/MM/yyyy', new Date());
+          return differenceInDays(dataEncerramento, dataProtocolo);
+        }
+      }
+      
       return differenceInDays(new Date(), dataProtocolo);
     } catch {
       return 0;
@@ -589,7 +606,7 @@ export default function Dashboard() {
             </thead>
             <tbody>
               {recentProtocolos.map((protocolo) => {
-                const slaDias = calcularSlaDias(protocolo.createdAt);
+                const slaDias = calcularSlaDias(protocolo.createdAt, protocolo.status, protocolo.observacoesLog);
                 
                 return (
                   <tr 
@@ -611,7 +628,7 @@ export default function Dashboard() {
                     <td className="p-2">
                       {protocolo.status === 'encerrado' ? (
                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 text-gray-600">
-                          ✓ Finalizado
+                          ✓ {slaDias} {slaDias === 1 ? 'dia' : 'dias'}
                         </span>
                       ) : (
                         <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getSlaColor(slaDias)}`}>

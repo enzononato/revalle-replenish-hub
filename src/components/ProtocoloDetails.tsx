@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Protocolo, ObservacaoLog, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -34,12 +34,14 @@ import {
   Camera,
   Send,
   RefreshCw,
-  MessageCircle
+  MessageCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { ChatBubbleExpanded } from '@/components/chat/ChatBubbleExpanded';
+import { useChatDB } from '@/hooks/useChatDB';
 
 interface ProtocoloDetailsProps {
   protocolo: Protocolo | null;
@@ -82,8 +84,79 @@ export function ProtocoloDetails({
   const [clienteTelefone, setClienteTelefone] = useState(protocolo?.clienteTelefone || '');
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>();
+  const [chatTargetUser, setChatTargetUser] = useState<{ id: string; nome: string; nivel: string; unidade: string } | null>(null);
+
+  const { getOrCreateConversation, getOrCreateUnitGroup, sendMessage } = useChatDB();
 
   if (!protocolo) return null;
+
+  // Extrair validador do log de observações
+  const getValidadorFromLog = (): { nome: string; id: string } | null => {
+    const logValidacao = protocolo.observacoesLog?.find(l => l.acao === 'Confirmou validação');
+    if (logValidacao) {
+      return { nome: logValidacao.usuarioNome, id: logValidacao.usuarioId };
+    }
+    return null;
+  };
+
+  // Função para abrir chat de discussão do protocolo
+  const handleDiscutirProtocolo = async () => {
+    const validador = getValidadorFromLog();
+    
+    if (validador) {
+      // Tentar encontrar o usuário validador no banco para obter dados completos
+      const { data: usuarios } = await supabase
+        .from('chat_participants')
+        .select('user_id, user_nome, user_nivel, user_unidade')
+        .eq('user_id', validador.id)
+        .limit(1);
+      
+      if (usuarios && usuarios.length > 0) {
+        const targetUser = {
+          id: usuarios[0].user_id,
+          nome: usuarios[0].user_nome,
+          nivel: usuarios[0].user_nivel,
+          unidade: usuarios[0].user_unidade || ''
+        };
+        setChatTargetUser(targetUser);
+        setChatInitialMessage(`📋 Protocolo ${protocolo.numero} - Discussão`);
+        setShowChat(true);
+      } else {
+        // Fallback: abrir chat genérico
+        setChatInitialMessage(`📋 Protocolo ${protocolo.numero} - Discussão`);
+        setShowChat(true);
+      }
+    } else {
+      // Sem validador, abrir chat genérico
+      setChatInitialMessage(`📋 Protocolo ${protocolo.numero} - Discussão`);
+      setShowChat(true);
+    }
+  };
+
+  // Função para alertar distribuição (apenas conferentes)
+  const handleAlertarDistribuicao = async () => {
+    if (!user) return;
+    
+    try {
+      // Buscar ou criar grupo da unidade
+      const unidade = protocolo.unidadeNome || protocolo.motorista.unidade || user.unidade;
+      const conversationId = await getOrCreateUnitGroup(unidade);
+      
+      // Enviar mensagem de alerta
+      await sendMessage({
+        conversationId,
+        content: `⚠️ ATENÇÃO! Protocolo ${protocolo.numero} precisa de revisão urgente.\n\nMotorista: ${protocolo.motorista.nome}\nData: ${protocolo.data}\n\nPor favor verificar!`,
+        protocoloId: protocolo.id,
+        protocoloNumero: protocolo.numero
+      });
+      
+      toast.success('Alerta enviado para o grupo da distribuição!');
+    } catch (error) {
+      console.error('Erro ao alertar distribuição:', error);
+      toast.error('Erro ao enviar alerta');
+    }
+  };
 
   const canGoPrevious = currentIndex > 0;
   const canGoNext = currentIndex < protocolos.length - 1;
@@ -375,7 +448,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                   Download
                 </Button>
                 <Button 
-                  onClick={() => setShowChat(true)} 
+                  onClick={handleDiscutirProtocolo} 
                   variant="default" 
                   size="sm" 
                   className="h-7 gap-1.5 text-xs shadow-sm bg-primary hover:bg-primary/90"
@@ -383,6 +456,18 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                   <MessageCircle size={14} />
                   Discutir Protocolo
                 </Button>
+                {/* Botão Alertar Distribuição - apenas para conferentes */}
+                {isConferente && protocolo.status !== 'encerrado' && (
+                  <Button 
+                    onClick={handleAlertarDistribuicao} 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 gap-1.5 text-xs shadow-sm border-orange-300 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                  >
+                    <AlertTriangle size={14} />
+                    Alertar Distribuição
+                  </Button>
+                )}
               </div>
             </DialogHeader>
           </div>
@@ -842,9 +927,15 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
       {/* Chat Bubble Expanded */}
       {showChat && (
         <ChatBubbleExpanded 
-          onClose={() => setShowChat(false)} 
+          onClose={() => {
+            setShowChat(false);
+            setChatTargetUser(null);
+            setChatInitialMessage(undefined);
+          }} 
           protocoloId={protocolo.id}
           protocoloNumero={protocolo.numero}
+          initialMessage={chatInitialMessage}
+          targetUser={chatTargetUser}
         />
       )}
     </>

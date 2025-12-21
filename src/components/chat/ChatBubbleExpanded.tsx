@@ -15,9 +15,11 @@ interface ChatBubbleExpandedProps {
   onClose: () => void;
   protocoloId?: string;
   protocoloNumero?: string;
+  initialMessage?: string;
+  targetUser?: { id: string; nome: string; nivel: string; unidade: string } | null;
 }
 
-export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero }: ChatBubbleExpandedProps) {
+export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, initialMessage, targetUser }: ChatBubbleExpandedProps) {
   const { user } = useAuth();
   const { 
     conversations, 
@@ -36,8 +38,35 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero }: Ch
   const [showNewGroup, setShowNewGroup] = useState(false);
   const [attachProtocolo, setAttachProtocolo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [hasAutoOpenedConversation, setHasAutoOpenedConversation] = useState(false);
 
   const { data: messages = [] } = useConversationMessages(selectedConversation?.id || null);
+
+  // Auto abrir conversa com usuário alvo se fornecido
+  useEffect(() => {
+    const openTargetConversation = async () => {
+      if (targetUser && !hasAutoOpenedConversation) {
+        try {
+          const conversationId = await getOrCreateConversation(targetUser);
+          const conv = conversations.find(c => c.id === conversationId);
+          if (conv) {
+            setSelectedConversation(conv);
+            if (initialMessage) {
+              setMessageInput(initialMessage);
+              setAttachProtocolo(true);
+            }
+          }
+          setHasAutoOpenedConversation(true);
+        } catch (error) {
+          console.error('Erro ao abrir conversa:', error);
+        }
+      }
+    };
+    
+    if (conversations.length > 0 || targetUser) {
+      openTargetConversation();
+    }
+  }, [targetUser, conversations, getOrCreateConversation, initialMessage, hasAutoOpenedConversation]);
 
   // Auto-scroll to bottom
   useEffect(() => {

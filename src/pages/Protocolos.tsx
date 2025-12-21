@@ -31,8 +31,24 @@ import CreateProtocoloModal from '@/components/CreateProtocoloModal';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { useChatDB } from '@/hooks/useChatDB';
 
-const calcularSlaDias = (createdAt: string): number => {
+// Função para extrair data de encerramento do log
+const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | null => {
+  const logEncerramento = observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+  return logEncerramento?.data || null;
+};
+
+const calcularSlaDias = (createdAt: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
   const dataProtocolo = parseISO(createdAt);
+  
+  // Se encerrado, calcular até a data de encerramento
+  if (status === 'encerrado') {
+    const dataEncerramentoStr = getDataEncerramentoFromLog(observacoesLog);
+    if (dataEncerramentoStr) {
+      const dataEncerramento = parse(dataEncerramentoStr, 'dd/MM/yyyy', new Date());
+      return differenceInDays(dataEncerramento, dataProtocolo);
+    }
+  }
+  
   const hoje = new Date();
   return differenceInDays(hoje, dataProtocolo);
 };
@@ -147,8 +163,8 @@ export default function Protocolos() {
     })
     // Ordenar por SLA: mais antigos primeiro (maior SLA = topo)
     .sort((a, b) => {
-      const slaA = calcularSlaDias(a.createdAt);
-      const slaB = calcularSlaDias(b.createdAt);
+      const slaA = calcularSlaDias(a.createdAt, a.status, a.observacoesLog);
+      const slaB = calcularSlaDias(b.createdAt, b.status, b.observacoesLog);
       return slaB - slaA;
     });
 
@@ -671,20 +687,21 @@ export default function Protocolos() {
                     </span>
                   </td>
                   <td className="p-2.5 text-center border-r border-[#E5E7EB]">
-                    {protocolo.status === 'encerrado' ? (
-                      <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-200 text-gray-600">
-                        ✓ Finalizado
-                      </span>
-                    ) : (
-                      (() => {
-                        const dias = calcularSlaDias(protocolo.createdAt);
+                    {(() => {
+                      const dias = calcularSlaDias(protocolo.createdAt, protocolo.status, protocolo.observacoesLog);
+                      if (protocolo.status === 'encerrado') {
                         return (
-                          <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(dias)}`}>
-                            {dias} {dias === 1 ? 'dia' : 'dias'}
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-200 text-gray-600">
+                            ✓ {dias} {dias === 1 ? 'dia' : 'dias'}
                           </span>
                         );
-                      })()
-                    )}
+                      }
+                      return (
+                        <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(dias)}`}>
+                          {dias} {dias === 1 ? 'dia' : 'dias'}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="p-2.5 text-center border-r border-[#E5E7EB]">
                     <button
