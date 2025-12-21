@@ -84,7 +84,6 @@ export default function Protocolos() {
   useEffect(() => {
     const statusParam = searchParams.get('status');
     const periodoParam = searchParams.get('periodo');
-    const idParam = searchParams.get('id');
     
     if (statusParam) {
       setActiveTab(statusParam);
@@ -93,9 +92,13 @@ export default function Protocolos() {
     if (periodoParam) {
       setPeriodoFilter(periodoParam);
     }
+  }, [searchParams]);
+
+  // Abrir protocolo por ID quando protocolos estiverem carregados
+  useEffect(() => {
+    const idParam = searchParams.get('id');
     
-    // Se tiver ID, abrir o protocolo correspondente
-    if (idParam) {
+    if (idParam && protocolos.length > 0 && !selectedProtocolo) {
       const protocolo = protocolos.find(p => p.id === idParam);
       if (protocolo) {
         const index = protocolos.findIndex(p => p.id === idParam);
@@ -103,7 +106,7 @@ export default function Protocolos() {
         setSelectedIndex(index);
       }
     }
-  }, [searchParams, protocolos]);
+  }, [searchParams, protocolos, selectedProtocolo]);
 
   const filteredProtocolos = protocolos
     .filter(p => {

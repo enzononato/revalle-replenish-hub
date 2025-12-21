@@ -44,7 +44,7 @@ export function useChatDB() {
   const queryClient = useQueryClient();
   const [totalUnread, setTotalUnread] = useState(0);
 
-  // Fetch all conversations for the current user
+  // Fetch all conversations for the current user (filtering out archived/closed protocol conversations)
   const { data: conversations = [], isLoading: isLoadingConversations } = useQuery({
     queryKey: ['chat-conversations', user?.id],
     queryFn: async () => {
@@ -79,8 +79,8 @@ export function useChatDB() {
 
       if (allPartError) throw allPartError;
 
-      // Get last message for each conversation
-      const { data: lastMessages, error: msgError } = await supabase
+      // Get all messages for these conversations
+      const { data: allMessages, error: msgError } = await supabase
         .from('chat_messages')
         .select('*')
         .in('conversation_id', conversationIds)
@@ -88,10 +88,32 @@ export function useChatDB() {
 
       if (msgError) throw msgError;
 
-      // Get unread count for each conversation
+      // Get all protocol IDs mentioned in messages
+      const protocolIds = [...new Set(
+        (allMessages || [])
+          .filter(m => m.protocolo_id)
+          .map(m => m.protocolo_id as string)
+      )];
+
+      // Get status of these protocols
+      let closedProtocolIds = new Set<string>();
+      if (protocolIds.length > 0) {
+        const { data: protocolos } = await supabase
+          .from('protocolos')
+          .select('id, status')
+          .in('id', protocolIds);
+        
+        closedProtocolIds = new Set(
+          (protocolos || [])
+            .filter(p => p.status === 'encerrado')
+            .map(p => p.id)
+        );
+      }
+
+      // Build conversations with details
       const conversationsWithDetails: ChatConversation[] = (convs || []).map(conv => {
         const participants = (allParticipants || []).filter(p => p.conversation_id === conv.id);
-        const messages = (lastMessages || []).filter(m => m.conversation_id === conv.id);
+        const messages = (allMessages || []).filter(m => m.conversation_id === conv.id);
         const lastMessage = messages[0];
         const lastReadAt = lastReadMap.get(conv.id);
         
@@ -101,16 +123,32 @@ export function useChatDB() {
           (!lastReadAt || new Date(m.created_at) > new Date(lastReadAt))
         ).length;
 
+        // Check if all protocol messages in this conversation are from closed protocols
+        const protocolMessages = messages.filter(m => m.protocolo_id);
+        const allProtocolsClosed = protocolMessages.length > 0 && 
+          protocolMessages.every(m => closedProtocolIds.has(m.protocolo_id as string));
+
         return {
           ...conv,
           tipo: conv.tipo as 'individual' | 'grupo',
           participants,
           lastMessage,
           unreadCount,
+          _allProtocolsClosed: allProtocolsClosed, // Internal flag
         };
       });
 
-      return conversationsWithDetails;
+      // Filter out individual conversations where all protocols are closed
+      return conversationsWithDetails.filter(conv => {
+        // Keep group conversations
+        if (conv.tipo === 'grupo') return true;
+        // Keep conversations without protocol messages
+        const messages = (allMessages || []).filter(m => m.conversation_id === conv.id);
+        const hasProtocolMessages = messages.some(m => m.protocolo_id);
+        if (!hasProtocolMessages) return true;
+        // Hide if all protocols in this conversation are closed
+        return !(conv as any)._allProtocolsClosed;
+      });
     },
     enabled: !!user,
     refetchInterval: 30000,

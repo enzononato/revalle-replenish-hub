@@ -151,9 +151,9 @@ export function ChatWindow({ messages, conversation, isLoading }: ChatWindowProp
                           {message.sender_nome}
                         </p>
                       )}
-                      {message.protocolo_numero && (
+                      {message.protocolo_numero && message.protocolo_id && (
                         <button
-                          onClick={() => navigate(`/protocolos?numero=${message.protocolo_numero}`)}
+                          onClick={() => navigate(`/protocolos?id=${message.protocolo_id}`)}
                           className={cn(
                             "flex items-center gap-1 text-xs mb-2 px-2 py-1 rounded-md transition-colors",
                             isOwn 

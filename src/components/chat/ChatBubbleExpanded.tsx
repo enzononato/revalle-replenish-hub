@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, Users, MessageSquare, Paperclip } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,6 +22,7 @@ interface ChatBubbleExpandedProps {
 
 export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, initialMessage, targetUser }: ChatBubbleExpandedProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { 
     conversations, 
     isLoadingConversations, 
@@ -264,10 +266,19 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
                   ? "bg-primary text-primary-foreground" 
                   : "bg-muted"
               )}>
-                {msg.protocolo_numero && (
-                  <Badge variant="outline" className="mb-1 text-xs">
-                    Protocolo #{msg.protocolo_numero}
-                  </Badge>
+                {msg.protocolo_numero && msg.protocolo_id && (
+                  <button
+                    onClick={() => navigate(`/protocolos?id=${msg.protocolo_id}`)}
+                    className={cn(
+                      "flex items-center gap-1 text-xs mb-1 px-2 py-0.5 rounded transition-colors",
+                      msg.sender_id === user?.id 
+                        ? "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground" 
+                        : "bg-primary/10 hover:bg-primary/20 text-primary"
+                    )}
+                  >
+                    <FileText className="h-3 w-3" />
+                    #{msg.protocolo_numero}
+                  </button>
                 )}
                 <p className="break-words">{msg.content}</p>
               </div>
