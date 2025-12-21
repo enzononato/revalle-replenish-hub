@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
+import { playNotificationSound, isMuted } from '@/utils/notificationSound';
 
 export interface ChatMessage {
   id: string;
@@ -342,7 +343,13 @@ export function useChatDB() {
           schema: 'public',
           table: 'chat_messages',
         },
-        () => {
+        (payload) => {
+          // Play notification sound if message is from another user
+          const newMessage = payload.new as { sender_id: string };
+          if (newMessage.sender_id !== user.id && !isMuted()) {
+            playNotificationSound();
+          }
+          
           queryClient.invalidateQueries({ queryKey: ['chat-messages'] });
           queryClient.invalidateQueries({ queryKey: ['chat-conversations'] });
         }
