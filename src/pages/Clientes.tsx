@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MapPin, Hash, Store, Loader2, Download, Pencil, Trash2 } from 'lucide-react';
+import { MapPin, Hash, Store, Loader2, Download, Pencil, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -93,6 +93,19 @@ export default function Clientes() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingPdvId, setDeletingPdvId] = useState<string | null>(null);
   const [isDeleteMultipleDialogOpen, setIsDeleteMultipleDialogOpen] = useState(false);
+
+  // Create dialog states
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createFormData, setCreateFormData] = useState({
+    codigo: '',
+    nome: '',
+    bairro: '',
+    cidade: '',
+    endereco: '',
+    cnpj: '',
+    unidade: '',
+  });
 
   // Fetch PDVs
   const fetchPdvs = useCallback(async () => {
@@ -297,6 +310,64 @@ export default function Clientes() {
     toast.success(`${filteredPdvs.length} clientes exportados para CSV`);
   };
 
+  // Create handler
+  const openCreateDialog = () => {
+    setCreateFormData({
+      codigo: '',
+      nome: '',
+      bairro: '',
+      cidade: '',
+      endereco: '',
+      cnpj: '',
+      unidade: !isAdmin && user?.unidade ? user.unidade : '',
+    });
+    setIsCreateDialogOpen(true);
+  };
+
+  const handleSubmitCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!createFormData.codigo.trim() || !createFormData.nome.trim()) {
+      toast.error('Código e nome são obrigatórios');
+      return;
+    }
+
+    if (!createFormData.unidade) {
+      toast.error('Selecione uma unidade');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const { error } = await supabase
+        .from('pdvs')
+        .insert({
+          codigo: createFormData.codigo.trim(),
+          nome: createFormData.nome.trim(),
+          bairro: createFormData.bairro.trim() || null,
+          cidade: createFormData.cidade.trim() || null,
+          endereco: createFormData.endereco.trim() || null,
+          cnpj: createFormData.cnpj.trim() || null,
+          unidade: createFormData.unidade,
+        });
+
+      if (error) throw error;
+      
+      toast.success('Cliente criado com sucesso!');
+      setIsCreateDialogOpen(false);
+      setRefreshKey(prev => prev + 1);
+    } catch (error: any) {
+      console.error('Erro ao criar:', error);
+      if (error.code === '23505') {
+        toast.error('Já existe um cliente com este código nesta unidade');
+      } else {
+        toast.error('Erro ao criar cliente');
+      }
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -311,6 +382,10 @@ export default function Clientes() {
         </div>
         
         <div className="flex gap-2 flex-wrap">
+          <Button size="sm" onClick={openCreateDialog}>
+            <Plus size={16} className="mr-2" />
+            Novo Cliente
+          </Button>
           <ImportarPdvsDialog onSuccess={handleImportSuccess} />
           <Button variant="outline" size="sm" onClick={exportToCSV}>
             <Download size={16} className="mr-2" />
@@ -599,6 +674,114 @@ export default function Clientes() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl">Novo Cliente</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmitCreate} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="create-codigo">Código *</Label>
+                <Input
+                  id="create-codigo"
+                  value={createFormData.codigo}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, codigo: e.target.value }))}
+                  required
+                  placeholder="Ex: 12345"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="create-unidade">Unidade *</Label>
+                <Select 
+                  value={createFormData.unidade} 
+                  onValueChange={(value) => setCreateFormData(prev => ({ ...prev, unidade: value }))}
+                  disabled={!isAdmin && !!user?.unidade}
+                >
+                  <SelectTrigger id="create-unidade">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNIDADES_MAP.map(u => (
+                      <SelectItem key={u.codigo} value={u.codigo}>{u.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="create-nome">Nome *</Label>
+                <Input
+                  id="create-nome"
+                  value={createFormData.nome}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, nome: e.target.value }))}
+                  required
+                  placeholder="Nome do cliente/PDV"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="create-cnpj">CNPJ</Label>
+                <Input
+                  id="create-cnpj"
+                  value={createFormData.cnpj}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, cnpj: e.target.value }))}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="create-cidade">Cidade</Label>
+                <Input
+                  id="create-cidade"
+                  value={createFormData.cidade}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, cidade: e.target.value }))}
+                  placeholder="Cidade"
+                />
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="create-endereco">Endereço</Label>
+                <Input
+                  id="create-endereco"
+                  value={createFormData.endereco}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, endereco: e.target.value }))}
+                  placeholder="Rua, número, complemento"
+                />
+              </div>
+              
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="create-bairro">Bairro</Label>
+                <Input
+                  id="create-bairro"
+                  value={createFormData.bairro}
+                  onChange={(e) => setCreateFormData(prev => ({ ...prev, bairro: e.target.value }))}
+                  placeholder="Bairro"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  'Criar Cliente'
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
