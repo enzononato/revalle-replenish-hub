@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Send, Users, MessageSquare, Paperclip, FileText, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday } from 'date-fns';
 import { NewConversationModal } from './NewConversationModal';
 import { NewGroupModal } from './NewGroupModal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChatBubbleExpandedProps {
   onClose: () => void;
@@ -44,8 +45,73 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
   const [attachProtocolo, setAttachProtocolo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [hasAutoOpenedConversation, setHasAutoOpenedConversation] = useState(false);
+  const [othersTyping, setOthersTyping] = useState<string[]>([]);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingBroadcastRef = useRef<number>(0);
 
   const { data: messages = [] } = useConversationMessages(selectedConversation?.id || null);
+
+  // Realtime presence for typing indicator
+  useEffect(() => {
+    if (!selectedConversation || !user) return;
+
+    const channel = supabase.channel(`typing:${selectedConversation.id}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const typingUsers = Object.values(state)
+          .flat()
+          .filter((presence: any) => presence.user_id !== user.id && presence.is_typing)
+          .map((presence: any) => presence.user_nome);
+        setOthersTyping(typingUsers);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: user.id,
+            user_nome: user.nome,
+            is_typing: false,
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedConversation?.id, user]);
+
+  // Broadcast typing status
+  const broadcastTyping = useCallback(async (isTyping: boolean) => {
+    if (!selectedConversation || !user) return;
+    
+    const now = Date.now();
+    // Throttle broadcasts to max once every 500ms
+    if (isTyping && now - lastTypingBroadcastRef.current < 500) return;
+    lastTypingBroadcastRef.current = now;
+
+    const channel = supabase.channel(`typing:${selectedConversation.id}`);
+    await channel.track({
+      user_id: user.id,
+      user_nome: user.nome,
+      is_typing: isTyping,
+    });
+  }, [selectedConversation, user]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessageInput(e.target.value);
+    
+    // Broadcast typing
+    broadcastTyping(true);
+    
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Set timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      broadcastTyping(false);
+    }, 2000);
+  };
 
   // Auto abrir conversa com usuário alvo se fornecido
   useEffect(() => {
@@ -101,6 +167,12 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedConversation) return;
 
+    // Stop typing indicator
+    broadcastTyping(false);
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
     try {
       await sendMessage({
         conversationId: selectedConversation.id,
@@ -113,6 +185,11 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
     }
+  };
+
+  const handleCloseConversation = () => {
+    setSelectedConversation(null);
+    setOthersTyping([]);
   };
 
   const handleNewConversation = async (otherUser: { id: string; nome: string; nivel: string; unidade: string }) => {
@@ -234,7 +311,7 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
     <div className="fixed bottom-24 right-6 z-50 w-96 h-[450px] bg-background border rounded-lg shadow-xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200">
       {/* Header */}
       <div className="p-3 border-b bg-muted/30 flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedConversation(null)}>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCloseConversation}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className={cn(
@@ -251,9 +328,15 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm truncate">{getConversationName(selectedConversation)}</h3>
-          {selectedConversation.tipo === 'grupo' && (
+          {othersTyping.length > 0 ? (
+            <p className="text-xs text-primary animate-pulse">
+              {othersTyping.length === 1 
+                ? `${othersTyping[0]} está digitando...` 
+                : `${othersTyping.length} pessoas digitando...`}
+            </p>
+          ) : selectedConversation.tipo === 'grupo' ? (
             <p className="text-xs text-muted-foreground">{selectedConversation.participants.length} participantes</p>
-          )}
+          ) : null}
         </div>
         <Button 
           variant="ghost" 
@@ -263,6 +346,15 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
           disabled={isRefreshing}
         >
           <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-muted-foreground hover:text-destructive" 
+          onClick={onClose}
+          title="Fechar chat"
+        >
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
@@ -328,7 +420,7 @@ export function ChatBubbleExpanded({ onClose, protocoloId, protocoloNumero, init
         <div className="flex gap-2">
           <Input
             value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Digite sua mensagem..."
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
             className="text-sm"
