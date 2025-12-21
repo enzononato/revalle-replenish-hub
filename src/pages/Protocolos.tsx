@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ProtocoloDetails } from '@/components/ProtocoloDetails';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TablePagination } from '@/components/ui/TablePagination';
@@ -61,7 +62,7 @@ export default function Protocolos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, user } = useAuth();
-  const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo } = useProtocolos();
+  const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo, isLoading } = useProtocolos();
   
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>('aberto');
@@ -653,7 +654,7 @@ export default function Protocolos() {
 
       {/* Protocols count */}
       <p className="text-[12px] font-medium text-muted-foreground">
-        {filteredProtocolos.length} protocolo(s) encontrado(s)
+        {isLoading ? <Skeleton className="h-4 w-40 inline-block" /> : `${filteredProtocolos.length} protocolo(s) encontrado(s)`}
       </p>
 
       {/* Table */}
@@ -674,7 +675,46 @@ export default function Protocolos() {
             </tr>
           </thead>
           <tbody>
-            {paginatedProtocolos.map((protocolo, index) => {
+            {isLoading ? (
+              // Skeleton rows while loading
+              Array.from({ length: 8 }).map((_, index) => (
+                <tr key={index} className={cn("border-b-2 border-border", index % 2 === 0 ? 'bg-card' : 'bg-muted/30')}>
+                  <td className="p-2.5 border-r border-border">
+                    <div className="space-y-1">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-14" />
+                    </div>
+                  </td>
+                  <td className="p-2.5 border-r border-border">
+                    <Skeleton className="h-4 w-32" />
+                  </td>
+                  <td className="p-2.5 border-r border-border">
+                    <Skeleton className="h-4 w-28" />
+                  </td>
+                  <td className="p-2.5 border-r border-border">
+                    <Skeleton className="h-4 w-28" />
+                  </td>
+                  <td className="p-2.5 text-center border-r border-border">
+                    <Skeleton className="h-5 w-16 mx-auto rounded-full" />
+                  </td>
+                  <td className="p-2.5 text-center border-r border-border">
+                    <Skeleton className="h-5 w-5 mx-auto rounded-full" />
+                  </td>
+                  <td className="p-2.5 text-center border-r border-border">
+                    <Skeleton className="h-5 w-5 mx-auto rounded-full" />
+                  </td>
+                  <td className="p-2.5 text-center border-r border-border">
+                    <Skeleton className="h-5 w-5 mx-auto rounded-full" />
+                  </td>
+                  <td className="p-2.5 text-center border-r border-border">
+                    <Skeleton className="h-5 w-5 mx-auto rounded-full" />
+                  </td>
+                  <td className="p-2.5 text-center">
+                    <Skeleton className="h-7 w-7 mx-auto rounded-md" />
+                  </td>
+                </tr>
+              ))
+            ) : paginatedProtocolos.map((protocolo, index) => {
               const globalIndex = (currentPage - 1) * pageSize + index;
               return (
                 <tr 
@@ -889,7 +929,7 @@ export default function Protocolos() {
           </tbody>
         </table>
         
-        {filteredProtocolos.length === 0 && (
+        {!isLoading && filteredProtocolos.length === 0 && (
           <div className="text-center py-8 text-muted-foreground text-sm">
             Nenhum protocolo encontrado
           </div>
