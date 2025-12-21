@@ -44,27 +44,44 @@ export default function Unidades() {
         .from('pdvs')
         .select('unidade');
       
+      // Mapeamento de siglas PDV -> código da unidade
+      // PDVs usam siglas diferentes do código das unidades
+      const pdvToUnidadeMap: Record<string, string[]> = {
+        'AL': ['RAL', 'REVALLE ALAGOINHAS'],
+        'PE': ['RPE', 'REVALLE PETROLINA'],
+        'SE': ['RSE', 'REVALLE SERRINHA'],
+        'PA': ['RPA', 'REVALLE PAULO AFONSO'],
+        'JZ': ['RJU', 'REVALLE JUAZEIRO'],  // JZ = Juazeiro
+        'BF': ['RBO', 'REVALLE BONFIM'],     // BF = Bonfim
+        'RP': ['RNE', 'REVALLE RIBEIRA DO POMBAL'], // RP = Ribeira do Pombal
+      };
+
       const pdvCountsRaw: Record<string, number> = {};
       pdvsData?.forEach((pdv) => {
-        const key = (pdv.unidade || '').trim().toUpperCase();
-        if (!key) return;
-        pdvCountsRaw[key] = (pdvCountsRaw[key] || 0) + 1;
+        const siglaPdv = (pdv.unidade || '').trim().toUpperCase();
+        if (!siglaPdv) return;
+        pdvCountsRaw[siglaPdv] = (pdvCountsRaw[siglaPdv] || 0) + 1;
       });
 
-      // Mapeia a contagem para o nome da unidade (pois a tabela de PDVs usa siglas como AL/PE/JZ)
+      // Mapeia a contagem para o nome da unidade
       const pdvCountsByNome: Record<string, number> = {};
       unidades.forEach((u) => {
         const codigo = (u.codigo || '').trim().toUpperCase();
-        const codigoSemPrefixo = codigo.startsWith('R') ? codigo.slice(1) : codigo;
-        const aliases = [
-          (u.nome || '').trim().toUpperCase(),
-          codigo,
-          codigoSemPrefixo,
-        ].filter(Boolean);
+        const nome = (u.nome || '').trim().toUpperCase();
+        
+        // Procura qual sigla PDV corresponde a esta unidade
+        let count = 0;
+        for (const [siglaPdv, codigosUnidade] of Object.entries(pdvToUnidadeMap)) {
+          if (codigosUnidade.includes(codigo) || codigosUnidade.includes(nome)) {
+            count += pdvCountsRaw[siglaPdv] || 0;
+          }
+        }
 
-        const count = aliases.reduce<number>((acc, alias) => {
-          return acc + (pdvCountsRaw[alias] || 0);
-        }, 0);
+        // Fallback: tenta match direto pelo código sem R
+        if (count === 0) {
+          const codigoSemPrefixo = codigo.startsWith('R') ? codigo.slice(1) : codigo;
+          count = pdvCountsRaw[codigoSemPrefixo] || pdvCountsRaw[codigo] || pdvCountsRaw[nome] || 0;
+        }
 
         pdvCountsByNome[u.nome] = count;
       });
