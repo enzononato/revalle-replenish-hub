@@ -52,9 +52,9 @@ const calcularSlaDias = (createdAt: string, status?: string, observacoesLog?: Ob
 };
 
 const getSlaColor = (dias: number): string => {
-  if (dias >= 15) return 'text-[#1F2937] bg-[#FCA5A5]';
-  if (dias > 7) return 'text-[#1F2937] bg-[#FDE68A]';
-  return 'text-[#1F2937] bg-[#86EFAC]';
+  if (dias >= 15) return 'text-foreground bg-red-300 dark:bg-red-500/30 dark:text-red-300';
+  if (dias > 7) return 'text-foreground bg-amber-200 dark:bg-amber-500/30 dark:text-amber-300';
+  return 'text-foreground bg-emerald-300 dark:bg-emerald-500/30 dark:text-emerald-300';
 };
 
 export default function Protocolos() {
@@ -550,25 +550,25 @@ export default function Protocolos() {
         <TabsList className="bg-transparent gap-1.5 h-auto p-0">
           <TabsTrigger 
             value="todos" 
-            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-xl px-2.5 py-1 text-xs transition-colors"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=inactive]:text-muted-foreground data-[state=inactive]:bg-transparent hover:bg-muted/50 rounded-xl px-2.5 py-1 text-xs transition-colors"
           >
             Todos
           </TabsTrigger>
           <TabsTrigger 
             value="aberto" 
-            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-xl px-2.5 py-1 text-xs transition-colors"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=inactive]:text-muted-foreground data-[state=inactive]:bg-transparent hover:bg-muted/50 rounded-xl px-2.5 py-1 text-xs transition-colors"
           >
             Abertos
           </TabsTrigger>
           <TabsTrigger 
             value="em_andamento" 
-            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-xl px-2.5 py-1 text-xs transition-colors"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=inactive]:text-muted-foreground data-[state=inactive]:bg-transparent hover:bg-muted/50 rounded-xl px-2.5 py-1 text-xs transition-colors"
           >
             Em andamento
           </TabsTrigger>
           <TabsTrigger 
             value="encerrado" 
-            className="data-[state=active]:bg-[#E0E7FF] data-[state=active]:text-[#1E3A8A] data-[state=active]:font-semibold data-[state=inactive]:text-[#64748B] data-[state=inactive]:bg-transparent hover:bg-[#F1F5F9] rounded-xl px-2.5 py-1 text-xs transition-colors"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:font-semibold data-[state=inactive]:text-muted-foreground data-[state=inactive]:bg-transparent hover:bg-muted/50 rounded-xl px-2.5 py-1 text-xs transition-colors"
           >
             Encerrados
           </TabsTrigger>
@@ -638,25 +638,25 @@ export default function Protocolos() {
       )}
 
       {/* Protocols count */}
-      <p className="text-[12px] font-medium text-[#475569]">
+      <p className="text-[12px] font-medium text-muted-foreground">
         {filteredProtocolos.length} protocolo(s) encontrado(s)
       </p>
 
       {/* Table */}
-      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
+      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto border border-border/50">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-              <th className="text-left p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Data/Hora</th>
-              <th className="text-left p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Protocolo</th>
-              <th className="text-left p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Motorista</th>
-              <th className="text-left p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">WhatsApp</th>
-              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">SLA</th>
-              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Validação</th>
-              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Lançado</th>
-              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Lançar</th>
-              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider border-r border-[#E5E7EB]">Env. Encerrar</th>
-              <th className="text-center p-2.5 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Ações</th>
+            <tr className="bg-muted/50 border-b border-border">
+              <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Data/Hora</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Protocolo</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Motorista</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">WhatsApp</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">SLA</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Validação</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Lançado</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Env. Lançar</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Env. Encerrar</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -672,32 +672,32 @@ export default function Protocolos() {
                     "hover:bg-primary/5 hover:shadow-sm"
                   )}
                 >
-                  <td className="p-2.5 border-r border-[#E5E7EB]">
-                    <div className="text-[12px] text-[#1F2937]">
+                  <td className="p-2.5 border-r border-border">
+                    <div className="text-[12px] text-foreground">
                       <p className="font-bold">{protocolo.data}</p>
                       <p className="font-bold">{protocolo.hora}</p>
                     </div>
                   </td>
-                  <td className="p-2.5 border-r border-[#E5E7EB]">
-                    <span className="text-[#1F2937] font-medium text-[12px]">
+                  <td className="p-2.5 border-r border-border">
+                    <span className="text-foreground font-medium text-[12px]">
                       {protocolo.numero}
                     </span>
                   </td>
-                  <td className="p-2.5 border-r border-[#E5E7EB] text-[12px] text-[#1F2937] font-bold">
+                  <td className="p-2.5 border-r border-border text-[12px] text-foreground font-bold">
                     {protocolo.motorista.nome}
                   </td>
-                  <td className="p-2.5 border-r border-[#E5E7EB]">
-                    <span className="text-[#16A34A] font-medium text-[12px] flex items-center gap-1">
+                  <td className="p-2.5 border-r border-border">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[12px] flex items-center gap-1">
                       <Phone size={12} />
                       {protocolo.contatoWhatsapp || '-'}
                     </span>
                   </td>
-                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-border">
                     {(() => {
                       const dias = calcularSlaDias(protocolo.createdAt, protocolo.status, protocolo.observacoesLog);
                       if (protocolo.status === 'encerrado') {
                         return (
-                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-200 text-gray-600">
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">
                             ✓ {dias} {dias === 1 ? 'dia' : 'dias'}
                           </span>
                         );
@@ -709,7 +709,7 @@ export default function Protocolos() {
                       );
                     })()}
                   </td>
-                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-border">
                     <button
                       onClick={() => handleToggleValidacao(protocolo.id)}
                       className="inline-flex"
@@ -722,7 +722,7 @@ export default function Protocolos() {
                       )}
                     </button>
                   </td>
-                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-border">
                     <button
                       onClick={() => handleToggleLancado(protocolo.id)}
                       className={`inline-flex ${!protocolo.validacao ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -736,7 +736,7 @@ export default function Protocolos() {
                       )}
                     </button>
                   </td>
-                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-border">
                     {/* Conferente só vê status, sem ação */}
                     {isConferente ? (
                       protocolo.enviadoLancarStatus === 'enviado' || protocolo.enviadoLancar ? (
@@ -782,7 +782,7 @@ export default function Protocolos() {
                       )
                     )}
                   </td>
-                  <td className="p-2.5 text-center border-r border-[#E5E7EB]">
+                  <td className="p-2.5 text-center border-r border-border">
                     {/* Conferente só vê status, sem ação */}
                     {isConferente ? (
                       protocolo.enviadoEncerrarStatus === 'enviado' || protocolo.enviadoEncerrar ? (
@@ -852,7 +852,7 @@ export default function Protocolos() {
                               <MoreVertical size={14} />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-white">
+                          <DropdownMenuContent align="end" className="bg-card">
                             <DropdownMenuItem onClick={() => handleOcultar(protocolo.id)} className="text-xs">
                               <EyeOff size={14} className="mr-1.5" />
                               Ocultar
