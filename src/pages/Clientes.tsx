@@ -50,6 +50,12 @@ const getUnidadeNome = (codigo: string | null): string => {
   return unidade ? unidade.nome : codigo;
 };
 
+const getUnidadeCodigo = (nome: string | null): string | null => {
+  if (!nome) return null;
+  const unidade = UNIDADES_MAP.find(u => u.nome.toLowerCase() === nome.toLowerCase());
+  return unidade ? unidade.codigo : null;
+};
+
 // Função para formatar CNPJ (XX.XXX.XXX/XXXX-XX)
 const formatCNPJ = (value: string): string => {
   // Remove tudo que não é número
@@ -170,7 +176,11 @@ export default function Clientes() {
 
       // Filtro por unidade
       if (!isAdmin && user?.unidade) {
-        query = query.eq('unidade', user.unidade);
+        // Converte o nome da unidade para o código usado nos PDVs
+        const codigoUnidade = getUnidadeCodigo(user.unidade);
+        if (codigoUnidade) {
+          query = query.eq('unidade', codigoUnidade);
+        }
       } else if (isAdmin && unidadeFiltro !== 'todas') {
         query = query.eq('unidade', unidadeFiltro);
       }
