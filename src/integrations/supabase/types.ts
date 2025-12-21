@@ -58,25 +58,37 @@ export type Database = {
       }
       pdvs: {
         Row: {
+          bairro: string | null
+          cidade: string | null
+          cnpj: string | null
           codigo: string
           created_at: string | null
           endereco: string | null
           id: string
           nome: string
+          unidade: string | null
         }
         Insert: {
+          bairro?: string | null
+          cidade?: string | null
+          cnpj?: string | null
           codigo: string
           created_at?: string | null
           endereco?: string | null
           id?: string
           nome: string
+          unidade?: string | null
         }
         Update: {
+          bairro?: string | null
+          cidade?: string | null
+          cnpj?: string | null
           codigo?: string
           created_at?: string | null
           endereco?: string | null
           id?: string
           nome?: string
+          unidade?: string | null
         }
         Relationships: []
       }
