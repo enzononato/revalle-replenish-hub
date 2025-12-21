@@ -191,16 +191,36 @@ export function useProtocolosDB() {
       if (error) throw error;
       return dbToProtocolo(data as unknown as ProtocoloDB);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['protocolos'] });
+    // Optimistic update para resposta instantânea
+    onMutate: async (newProtocolo) => {
+      // Cancelar queries em andamento
+      await queryClient.cancelQueries({ queryKey: ['protocolos'] });
+
+      // Salvar estado anterior
+      const previousProtocolos = queryClient.getQueryData<Protocolo[]>(['protocolos']);
+
+      // Atualizar cache otimisticamente
+      queryClient.setQueryData<Protocolo[]>(['protocolos'], (old) => 
+        old?.map(p => p.id === newProtocolo.id ? newProtocolo : p) ?? []
+      );
+
+      return { previousProtocolos };
     },
-    onError: (error) => {
+    onError: (error, _newProtocolo, context) => {
+      // Reverter para estado anterior em caso de erro
+      if (context?.previousProtocolos) {
+        queryClient.setQueryData(['protocolos'], context.previousProtocolos);
+      }
       console.error('Erro ao atualizar protocolo:', error);
       toast({
         title: 'Erro',
         description: 'Erro ao atualizar protocolo',
         variant: 'destructive'
       });
+    },
+    onSettled: () => {
+      // Revalidar dados após mutação (em background)
+      queryClient.invalidateQueries({ queryKey: ['protocolos'] });
     }
   });
 
