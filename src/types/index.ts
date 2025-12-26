@@ -95,7 +95,7 @@ export interface Protocolo {
   mensagemEncerramento?: string;
   arquivoEncerramento?: string;
   oculto?: boolean;
-  // Campos de status de envio WhatsApp
+  // Campos de status de envio WhatsApp (legado)
   enviadoLancarStatus?: 'pendente' | 'enviado' | 'erro';
   enviadoLancarErro?: string;
   enviadoEncerrarStatus?: 'pendente' | 'enviado' | 'erro';
@@ -104,6 +104,9 @@ export interface Protocolo {
   // Campos de contato preenchidos no formulário
   contatoWhatsapp?: string;
   contatoEmail?: string;
+  // Novos campos de status de mensagem
+  statusEnvio?: 'pendente' | 'sucesso' | 'erro';
+  statusEncerramento?: 'pendente' | 'sucesso' | 'erro';
 }
 
 export interface DashboardStats {

@@ -41,6 +41,9 @@ interface ProtocoloDB {
   motorista_unidade: string | null;
   contato_whatsapp: string | null;
   contato_email: string | null;
+  // Novos campos de status de mensagem
+  status_envio: string | null;
+  status_encerramento: string | null;
 }
 
 // Convert DB record to Protocolo type
@@ -91,7 +94,10 @@ function dbToProtocolo(db: ProtocoloDB): Protocolo {
     contatoWhatsapp: db.contato_whatsapp || undefined,
     contatoEmail: db.contato_email || undefined,
     // Mapear unidade do motorista para unidadeNome
-    unidadeNome: db.motorista_unidade || undefined
+    unidadeNome: db.motorista_unidade || undefined,
+    // Novos campos de status de mensagem
+    statusEnvio: (db.status_envio as 'pendente' | 'sucesso' | 'erro') || 'pendente',
+    statusEncerramento: (db.status_encerramento as 'pendente' | 'sucesso' | 'erro') || 'pendente'
   };
 }
 
@@ -133,7 +139,10 @@ function protocoloToDB(p: Protocolo): Omit<ProtocoloDB, 'id'> {
     cliente_telefone: p.clienteTelefone || null,
     motorista_unidade: p.motorista.unidade || null,
     contato_whatsapp: p.contatoWhatsapp || null,
-    contato_email: p.contatoEmail || null
+    contato_email: p.contatoEmail || null,
+    // Novos campos de status de mensagem
+    status_envio: p.statusEnvio || 'pendente',
+    status_encerramento: p.statusEncerramento || 'pendente'
   };
 }
 

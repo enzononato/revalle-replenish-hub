@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Phone, Download, Plus, EyeOff, Trash2, FileText, RefreshCw, AlertCircle } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Phone, Download, Plus, EyeOff, Trash2, FileText, RefreshCw, AlertCircle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { differenceInDays, parseISO, format, isAfter, isBefore, parse, isToday } from 'date-fns';
@@ -669,7 +669,8 @@ export default function Protocolos() {
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">SLA</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Validação</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Lançado</th>
-              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Env. Lançar</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Msg. Envio</th>
+              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Msg. Encerramento</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
             </tr>
           </thead>
@@ -695,6 +696,9 @@ export default function Protocolos() {
                   </td>
                   <td className="p-2.5 text-center border-r border-border">
                     <Skeleton className="h-5 w-16 mx-auto rounded-full" />
+                  </td>
+                  <td className="p-2.5 text-center border-r border-border">
+                    <Skeleton className="h-5 w-5 mx-auto rounded-full" />
                   </td>
                   <td className="p-2.5 text-center border-r border-border">
                     <Skeleton className="h-5 w-5 mx-auto rounded-full" />
@@ -787,14 +791,21 @@ export default function Protocolos() {
                     </button>
                   </td>
                   <td className="p-2.5 text-center border-r border-border">
-                    {protocolo.enviadoLancarStatus === 'enviado' || protocolo.enviadoLancar ? (
+                    {protocolo.statusEnvio === 'sucesso' ? (
                       <CheckCircle className="text-green-500 mx-auto" size={18} />
-                    ) : protocolo.enviadoLancarStatus === 'erro' ? (
-                      <span title={protocolo.enviadoLancarErro || 'Erro ao enviar'}>
-                        <XCircle className="text-red-500 mx-auto" size={18} />
-                      </span>
+                    ) : protocolo.statusEnvio === 'erro' ? (
+                      <XCircle className="text-red-500 mx-auto" size={18} />
                     ) : (
-                      <XCircle className="text-muted-foreground mx-auto" size={18} />
+                      <Clock className="text-yellow-500 mx-auto" size={18} />
+                    )}
+                  </td>
+                  <td className="p-2.5 text-center border-r border-border">
+                    {protocolo.statusEncerramento === 'sucesso' ? (
+                      <CheckCircle className="text-green-500 mx-auto" size={18} />
+                    ) : protocolo.statusEncerramento === 'erro' ? (
+                      <XCircle className="text-red-500 mx-auto" size={18} />
+                    ) : (
+                      <Clock className="text-yellow-500 mx-auto" size={18} />
                     )}
                   </td>
                   <td className="p-2.5">

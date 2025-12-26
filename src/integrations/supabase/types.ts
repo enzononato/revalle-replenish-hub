@@ -307,6 +307,8 @@ export type Database = {
           oculto: boolean | null
           produtos: Json | null
           status: string
+          status_encerramento: string | null
+          status_envio: string | null
           tipo_reposicao: string | null
           validacao: boolean | null
         }
@@ -345,6 +347,8 @@ export type Database = {
           oculto?: boolean | null
           produtos?: Json | null
           status?: string
+          status_encerramento?: string | null
+          status_envio?: string | null
           tipo_reposicao?: string | null
           validacao?: boolean | null
         }
@@ -383,6 +387,8 @@ export type Database = {
           oculto?: boolean | null
           produtos?: Json | null
           status?: string
+          status_encerramento?: string | null
+          status_envio?: string | null
           tipo_reposicao?: string | null
           validacao?: boolean | null
         }
