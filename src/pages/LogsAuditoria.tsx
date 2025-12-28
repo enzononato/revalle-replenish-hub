@@ -74,6 +74,8 @@ const getAcaoLabel = (acao: string): string => {
       return 'Lançamento';
     case 'reenvio':
       return 'Reenvio';
+    case 'reabertura':
+      return 'Reabertura';
     default:
       return acao.charAt(0).toUpperCase() + acao.slice(1).replace(/_/g, ' ');
   }
@@ -108,6 +110,8 @@ const getAcaoIcon = (acao: string) => {
       return CheckCircle;
     case 'reenvio':
       return Send;
+    case 'reabertura':
+      return RefreshCw;
     default:
       return ClipboardList;
   }
@@ -140,6 +144,8 @@ const getAcaoColor = (acao: string): string => {
     case 'validacao':
     case 'lancamento':
       return 'bg-teal-500/20 text-teal-700 dark:text-teal-400';
+    case 'reabertura':
+      return 'bg-amber-500/20 text-amber-700 dark:text-amber-400';
     default:
       return 'bg-muted text-muted-foreground';
   }
@@ -307,6 +313,7 @@ export default function LogsAuditoria() {
             <SelectItem value="envio_email">E-mail</SelectItem>
             <SelectItem value="validacao">Validação</SelectItem>
             <SelectItem value="lancamento">Lançamento</SelectItem>
+            <SelectItem value="reabertura">Reabertura</SelectItem>
           </SelectContent>
         </Select>
       </div>

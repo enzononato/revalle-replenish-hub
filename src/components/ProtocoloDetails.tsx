@@ -85,6 +85,8 @@ export function ProtocoloDetails({
   const [clienteTelefone, setClienteTelefone] = useState(protocolo?.clienteTelefone || '');
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showReabrirModal, setShowReabrirModal] = useState(false);
+  const [motivoReabertura, setMotivoReabertura] = useState('');
   const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>();
   const [chatTargetUser, setChatTargetUser] = useState<{ id: string; nome: string; nivel: string; unidade: string } | null>(null);
 
@@ -998,6 +1000,18 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                       <strong>Arquivo anexado:</strong> {protocolo.arquivoEncerramento}
                     </p>
                   )}
+                  
+                  {/* Botão de Reabertura - apenas Admin e Distribuição */}
+                  {(isAdmin || isDistribuicao) && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setShowReabrirModal(true)}
+                      className="w-full mt-3 border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                    >
+                      <RefreshCw size={16} className="mr-2" />
+                      Reabrir Protocolo
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -1032,6 +1046,86 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
           targetUser={chatTargetUser}
         />
       )}
+
+      {/* Modal de Reabertura */}
+      <Dialog open={showReabrirModal} onOpenChange={setShowReabrirModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="text-amber-500" />
+              Reabrir Protocolo {protocolo.numero}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Motivo da Reabertura <span className="text-destructive">*</span>
+              </label>
+              <Textarea
+                placeholder="Explique o motivo pelo qual este protocolo está sendo reaberto..."
+                value={motivoReabertura}
+                onChange={(e) => setMotivoReabertura(e.target.value)}
+                className="min-h-[100px]"
+              />
+              <p className="text-xs text-muted-foreground">
+                Este motivo será registrado no histórico do protocolo.
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => {
+                setShowReabrirModal(false);
+                setMotivoReabertura('');
+              }}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={async () => {
+                  if (!motivoReabertura.trim()) {
+                    toast.error('Informe o motivo da reabertura');
+                    return;
+                  }
+                  if (!onUpdateProtocolo || !user) return;
+
+                  const logEntry: ObservacaoLog = {
+                    id: Date.now().toString(),
+                    usuarioNome: user.nome,
+                    usuarioId: user.id,
+                    data: format(new Date(), 'dd/MM/yyyy'),
+                    hora: format(new Date(), 'HH:mm'),
+                    acao: 'Reabriu o protocolo',
+                    texto: motivoReabertura
+                  };
+
+                  const protocoloAtualizado: Protocolo = {
+                    ...protocolo,
+                    status: 'aberto',
+                    observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
+                  };
+
+                  await registrarLog({
+                    acao: 'reabertura',
+                    tabela: 'protocolos',
+                    registro_id: protocolo.id,
+                    registro_dados: { numero: protocolo.numero, motivo: motivoReabertura },
+                    usuario_nome: user.nome,
+                    usuario_role: user.nivel,
+                    usuario_unidade: user.unidade,
+                  });
+
+                  onUpdateProtocolo(protocoloAtualizado);
+                  setShowReabrirModal(false);
+                  setMotivoReabertura('');
+                  toast.success('Protocolo reaberto com sucesso!');
+                }}
+                disabled={!motivoReabertura.trim()}
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                Confirmar Reabertura
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
