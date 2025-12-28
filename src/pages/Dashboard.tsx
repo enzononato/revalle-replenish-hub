@@ -7,7 +7,7 @@ import { mockUnidades } from '@/data/mockData';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
-import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin, CalendarRange, X } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin, CalendarRange, X, RefreshCw } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -373,6 +373,11 @@ export default function Dashboard() {
     return 'text-foreground bg-emerald-300 dark:bg-emerald-500/30 dark:text-emerald-300';
   };
 
+  // Verificar se protocolo foi reaberto
+  const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
+    return !!observacoesLog?.some(log => log.acao === 'Reabriu o protocolo');
+  };
+
   // Cor para avatar baseado no nome
   const getAvatarColor = (nome: string) => {
     const colors = [
@@ -701,7 +706,18 @@ export default function Dashboard() {
                     className="border-b border-border hover:bg-primary/5 transition-all duration-200 group"
                   >
                     <td className="p-2">
-                      <span className="font-semibold text-primary text-[11px]">{protocolo.numero}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-semibold text-primary text-[11px]">{protocolo.numero}</span>
+                        {foiReaberto(protocolo.observacoesLog) && (
+                          <span 
+                            className="inline-flex items-center gap-0.5 text-[9px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-1.5 py-0.5 rounded-full w-fit"
+                            title="Protocolo reaberto"
+                          >
+                            <RefreshCw size={9} />
+                            Reaberto
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1.5">

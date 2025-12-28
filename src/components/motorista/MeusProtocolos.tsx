@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, Clock, CheckCircle, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Package } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Motorista, Produto } from '@/types';
+import { Motorista, Produto, ObservacaoLog } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface MeusProtocolosProps {
@@ -26,7 +26,13 @@ interface ProtocoloSimples {
   nota_fiscal: string | null;
   produtos: unknown;
   created_at: string | null;
+  observacoes_log: unknown;
 }
+
+// Verificar se protocolo foi reaberto
+const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
+  return !!observacoesLog?.some(log => log.acao === 'Reabriu o protocolo');
+};
 
 export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
   const [protocolos, setProtocolos] = useState<ProtocoloSimples[]>([]);
@@ -81,7 +87,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
     try {
       let query = supabase
         .from('protocolos')
-        .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, produtos, created_at')
+        .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, produtos, created_at, observacoes_log')
         .eq('motorista_codigo', motorista.codigo)
         .or('oculto.is.null,oculto.eq.false');
       
@@ -234,11 +240,22 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           <CardContent className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="w-4 h-4 text-primary shrink-0" />
-                  <span className="font-mono text-sm font-medium truncate">
-                    {protocolo.numero}
-                  </span>
+                <div className="flex flex-col gap-0.5 mb-1">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary shrink-0" />
+                    <span className="font-mono text-sm font-medium truncate">
+                      {protocolo.numero}
+                    </span>
+                  </div>
+                  {foiReaberto(protocolo.observacoes_log as ObservacaoLog[]) && (
+                    <span 
+                      className="inline-flex items-center gap-0.5 text-[9px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-1.5 py-0.5 rounded-full w-fit ml-6"
+                      title="Protocolo reaberto"
+                    >
+                      <RefreshCw size={9} />
+                      Reaberto
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground space-y-0.5">
                   <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>

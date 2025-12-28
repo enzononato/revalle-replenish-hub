@@ -200,8 +200,13 @@ export default function Unidades() {
     );
   }
 
+  // Calcular totais para os cards de resumo
+  const totalMotoristas = motoristas.length;
+  const totalClientes = Object.values(clientesPorUnidade).reduce((acc, val) => acc + val, 0);
+  const totalSolicitacoes = Object.values(protocolosPorUnidade).reduce((acc, val) => acc + val, 0);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
@@ -275,6 +280,65 @@ export default function Unidades() {
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Building2 size={18} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Unidades</p>
+              <p className="text-lg font-bold text-foreground">{unidades.length}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-blue-500/10">
+              <Users size={18} className="text-blue-500" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Motoristas</p>
+              <p className="text-lg font-bold text-foreground">
+                {isLoadingMotoristas ? <Loader2 className="h-4 w-4 animate-spin" /> : totalMotoristas}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {canViewClientes && (
+          <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '150ms' }}>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-emerald-500/10">
+                <Store size={18} className="text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Clientes</p>
+                <p className="text-lg font-bold text-foreground">
+                  {isLoadingCounts ? <Loader2 className="h-4 w-4 animate-spin" /> : totalClientes}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-amber-500/10">
+              <FileText size={18} className="text-amber-500" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Solicitações</p>
+              <p className="text-lg font-bold text-foreground">
+                {isLoadingCounts ? <Loader2 className="h-4 w-4 animate-spin" /> : totalSolicitacoes}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search and Date Filter */}
@@ -366,15 +430,15 @@ export default function Unidades() {
               <th className="text-center p-2.5 text-[11px]">Motoristas</th>
               {canViewClientes && <th className="text-center p-2.5 text-[11px]">Clientes</th>}
               <th className="text-center p-2.5 text-[11px]">Solicitações</th>
-              <th className="text-center p-2.5 text-[11px]">Solicitações</th>
               <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filteredUnidades.map((unidade) => (
+            {filteredUnidades.map((unidade, index) => (
               <tr 
                 key={unidade.id} 
-                className="border-b border-border"
+                className="border-b border-border hover:bg-muted/50 transition-colors animate-fade-in"
+                style={{ animationDelay: `${index * 30}ms` }}
               >
                 <td className="p-2.5 font-medium text-xs">
                   <span className="inline-flex items-center gap-1.5">
@@ -434,7 +498,7 @@ export default function Unidades() {
                       variant="ghost"
                       size="sm"
                       onClick={() => openEditDialog(unidade)}
-                      className="text-primary hover:text-primary/80 h-6 w-6 p-0"
+                      className="text-primary hover:text-primary/80 hover:bg-primary/10 h-7 w-7 p-0"
                     >
                       <Pencil size={14} />
                     </Button>
@@ -442,7 +506,7 @@ export default function Unidades() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(unidade.id)}
-                      className="text-destructive hover:text-destructive/80 h-6 w-6 p-0"
+                      className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-7 w-7 p-0"
                     >
                       <Trash2 size={14} />
                     </Button>
