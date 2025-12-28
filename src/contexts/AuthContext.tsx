@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { User, UserRole } from '@/types';
-
+import { useAuditLog } from '@/hooks/useAuditLog';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem('revalle_user');
     return saved ? JSON.parse(saved) : null;
   });
+  const { registrarLog } = useAuditLog();
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     const foundUser = mockUsers.find(u => u.email === email && u.password === password);
@@ -56,15 +57,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { password: _, ...userData } = foundUser;
       setUser(userData);
       localStorage.setItem('revalle_user', JSON.stringify(userData));
+      
+      // Registrar log de login
+      await registrarLog({
+        acao: 'login',
+        tabela: 'sessao',
+        registro_id: userData.id,
+        registro_dados: { email: userData.email },
+        usuario_nome: userData.nome,
+        usuario_role: userData.nivel,
+        usuario_unidade: userData.unidade,
+      });
+      
       return true;
     }
     return false;
-  }, []);
+  }, [registrarLog]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    if (user) {
+      // Registrar log de logout
+      await registrarLog({
+        acao: 'logout',
+        tabela: 'sessao',
+        registro_id: user.id,
+        registro_dados: { email: user.email },
+        usuario_nome: user.nome,
+        usuario_role: user.nivel,
+        usuario_unidade: user.unidade,
+      });
+    }
     setUser(null);
     localStorage.removeItem('revalle_user');
-  }, []);
+  }, [user, registrarLog]);
 
   const isAdmin = user?.nivel === 'admin';
   const isDistribuicao = user?.nivel === 'distribuicao';

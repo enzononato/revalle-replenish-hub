@@ -16,13 +16,13 @@ import {
   ClipboardList,
   MessageSquare,
   Sun,
-  Moon
+  Moon,
+  Circle
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-
+import { Switch } from '@/components/ui/switch';
 type NavItem = {
   icon: typeof LayoutDashboard;
   label: string;
@@ -136,48 +136,62 @@ export function Sidebar() {
         </nav>
 
         {/* User Profile Section - at bottom */}
-        <div className="flex-shrink-0 p-3 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/30">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-              <User size={16} className="text-primary-foreground" />
+        <div className="flex-shrink-0 p-3 border-t border-sidebar-border space-y-3">
+          {/* User Info Card */}
+          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-gradient-to-r from-sidebar-accent/50 to-sidebar-accent/20 border border-sidebar-border/50">
+            {/* Avatar with online indicator */}
+            <div className="relative flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary via-primary/80 to-accent flex items-center justify-center shadow-lg shadow-primary/30">
+                <span className="text-sm font-bold text-primary-foreground">
+                  {user?.nome?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'US'}
+                </span>
+              </div>
+              {/* Online indicator */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-sidebar-background flex items-center justify-center">
+                <Circle size={6} fill="currentColor" className="text-emerald-300 animate-pulse" />
+              </div>
             </div>
+            
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-sidebar-foreground truncate">
                 {user?.nome || 'Usuário'}
               </p>
-              <div className="flex items-center gap-1.5 text-xs text-sidebar-foreground/70 mt-0.5">
-                <Building2 size={10} />
+              <div className="flex items-center gap-1.5 text-[10px] text-sidebar-foreground/60 mt-0.5">
+                <Building2 size={9} />
                 <span className="truncate">{user?.unidade || 'Sem unidade'}</span>
               </div>
-              <Badge variant={roleBadge.variant} className="mt-1.5 text-[10px] px-1.5 py-0.5">
+              <Badge variant={roleBadge.variant} className="mt-1 text-[9px] px-1.5 py-0 h-4">
                 {roleBadge.label}
               </Badge>
             </div>
           </div>
-        </div>
 
-        {/* Theme toggle and Logout */}
-        <div className="flex-shrink-0 p-3 pt-0 space-y-2">
-        {/* Theme toggle */}
-          <button
+          {/* Theme toggle with Switch */}
+          <div 
             data-tour="theme-toggle"
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground text-sm"
+            className="flex items-center justify-between px-3 py-2 rounded-lg bg-sidebar-accent/20 border border-sidebar-border/30"
           >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            <span className="flex-1 text-left">{theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}</span>
-          </button>
+            <div className="flex items-center gap-2 text-sidebar-foreground/80">
+              {theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
+              <span className="text-xs">{theme === 'dark' ? 'Modo Escuro' : 'Modo Claro'}</span>
+            </div>
+            <Switch
+              checked={theme === 'dark'}
+              onCheckedChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="data-[state=checked]:bg-primary"
+            />
+          </div>
           
-          {/* Logout */}
+          {/* Logout button */}
           <button
             onClick={() => {
               setIsOpen(false);
               logout();
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 text-red-400 hover:bg-red-500/10 hover:text-red-300 text-sm"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 text-sm border border-red-500/20"
           >
-            <LogOut size={16} />
-            <span className="flex-1 text-left">Sair</span>
+            <LogOut size={14} />
+            <span>Sair do Sistema</span>
           </button>
         </div>
       </aside>

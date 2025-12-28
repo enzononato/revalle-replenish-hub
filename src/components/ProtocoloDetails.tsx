@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Protocolo, ObservacaoLog, User } from '@/types';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -42,6 +42,7 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { ChatBubbleExpanded } from '@/components/chat/ChatBubbleExpanded';
 import { useChatDB } from '@/hooks/useChatDB';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 interface ProtocoloDetailsProps {
   protocolo: Protocolo | null;
@@ -88,6 +89,27 @@ export function ProtocoloDetails({
   const [chatTargetUser, setChatTargetUser] = useState<{ id: string; nome: string; nivel: string; unidade: string } | null>(null);
 
   const { getOrCreateConversation, getOrCreateUnitGroup, sendMessage } = useChatDB();
+  const { registrarLog } = useAuditLog();
+  const hasLoggedView = useRef(false);
+
+  // Registrar visualização do protocolo
+  useEffect(() => {
+    if (open && protocolo && user && !hasLoggedView.current) {
+      hasLoggedView.current = true;
+      registrarLog({
+        acao: 'visualizacao',
+        tabela: 'protocolos',
+        registro_id: protocolo.id,
+        registro_dados: { numero: protocolo.numero, motorista: protocolo.motorista.nome },
+        usuario_nome: user.nome,
+        usuario_role: user.nivel,
+        usuario_unidade: user.unidade,
+      });
+    }
+    if (!open) {
+      hasLoggedView.current = false;
+    }
+  }, [open, protocolo, user, registrarLog]);
 
   if (!protocolo) return null;
 

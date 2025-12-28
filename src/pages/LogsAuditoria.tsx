@@ -9,7 +9,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ClipboardList, User, Calendar, Trash2, MapPin, Loader2 } from 'lucide-react';
+import { 
+  ClipboardList, 
+  User, 
+  Calendar, 
+  Trash2, 
+  MapPin, 
+  Loader2,
+  PlusCircle,
+  Edit,
+  Eye,
+  LogIn,
+  LogOut,
+  Send,
+  MessageSquare,
+  Upload,
+  RefreshCw,
+  CheckCircle,
+  Mail,
+  Phone
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -33,8 +52,96 @@ const getAcaoLabel = (acao: string): string => {
       return 'Criação';
     case 'edicao':
       return 'Edição';
+    case 'login':
+      return 'Login';
+    case 'logout':
+      return 'Logout';
+    case 'visualizacao':
+      return 'Visualização';
+    case 'envio_mensagem':
+      return 'Mensagem Chat';
+    case 'alteracao_status':
+      return 'Status Alterado';
+    case 'upload_foto':
+      return 'Upload Foto';
+    case 'envio_whatsapp':
+      return 'WhatsApp Enviado';
+    case 'envio_email':
+      return 'E-mail Enviado';
+    case 'validacao':
+      return 'Validação';
+    case 'lancamento':
+      return 'Lançamento';
+    case 'reenvio':
+      return 'Reenvio';
     default:
-      return acao;
+      return acao.charAt(0).toUpperCase() + acao.slice(1).replace(/_/g, ' ');
+  }
+};
+
+const getAcaoIcon = (acao: string) => {
+  switch (acao) {
+    case 'exclusao':
+      return Trash2;
+    case 'criacao':
+      return PlusCircle;
+    case 'edicao':
+      return Edit;
+    case 'login':
+      return LogIn;
+    case 'logout':
+      return LogOut;
+    case 'visualizacao':
+      return Eye;
+    case 'envio_mensagem':
+      return MessageSquare;
+    case 'alteracao_status':
+      return RefreshCw;
+    case 'upload_foto':
+      return Upload;
+    case 'envio_whatsapp':
+      return Phone;
+    case 'envio_email':
+      return Mail;
+    case 'validacao':
+    case 'lancamento':
+      return CheckCircle;
+    case 'reenvio':
+      return Send;
+    default:
+      return ClipboardList;
+  }
+};
+
+const getAcaoColor = (acao: string): string => {
+  switch (acao) {
+    case 'exclusao':
+      return 'bg-destructive/20 text-destructive';
+    case 'criacao':
+      return 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400';
+    case 'edicao':
+      return 'bg-blue-500/20 text-blue-700 dark:text-blue-400';
+    case 'login':
+      return 'bg-green-500/20 text-green-700 dark:text-green-400';
+    case 'logout':
+      return 'bg-orange-500/20 text-orange-700 dark:text-orange-400';
+    case 'visualizacao':
+      return 'bg-slate-500/20 text-slate-700 dark:text-slate-400';
+    case 'envio_mensagem':
+      return 'bg-purple-500/20 text-purple-700 dark:text-purple-400';
+    case 'alteracao_status':
+      return 'bg-amber-500/20 text-amber-700 dark:text-amber-400';
+    case 'upload_foto':
+      return 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-400';
+    case 'envio_whatsapp':
+      return 'bg-green-500/20 text-green-700 dark:text-green-400';
+    case 'envio_email':
+      return 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-400';
+    case 'validacao':
+    case 'lancamento':
+      return 'bg-teal-500/20 text-teal-700 dark:text-teal-400';
+    default:
+      return 'bg-muted text-muted-foreground';
   }
 };
 
@@ -48,8 +155,16 @@ const getTabelaLabel = (tabela: string): string => {
       return 'Protocolo';
     case 'unidades':
       return 'Unidade';
+    case 'sessao':
+      return 'Sessão';
+    case 'chat':
+      return 'Chat';
+    case 'storage':
+      return 'Arquivo';
+    case 'notificacao':
+      return 'Notificação';
     default:
-      return tabela;
+      return tabela.charAt(0).toUpperCase() + tabela.slice(1);
   }
 };
 
@@ -174,14 +289,24 @@ export default function LogsAuditoria() {
         </Select>
 
         <Select value={acaoFiltro} onValueChange={setAcaoFiltro}>
-          <SelectTrigger className="w-[140px] h-8 text-xs">
+          <SelectTrigger className="w-[160px] h-8 text-xs">
             <SelectValue placeholder="Todas as Ações" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas as Ações</SelectItem>
-            <SelectItem value="exclusao">Exclusão</SelectItem>
+            <SelectItem value="login">Login</SelectItem>
+            <SelectItem value="logout">Logout</SelectItem>
             <SelectItem value="criacao">Criação</SelectItem>
             <SelectItem value="edicao">Edição</SelectItem>
+            <SelectItem value="exclusao">Exclusão</SelectItem>
+            <SelectItem value="visualizacao">Visualização</SelectItem>
+            <SelectItem value="envio_mensagem">Mensagem Chat</SelectItem>
+            <SelectItem value="alteracao_status">Status Alterado</SelectItem>
+            <SelectItem value="upload_foto">Upload Foto</SelectItem>
+            <SelectItem value="envio_whatsapp">WhatsApp</SelectItem>
+            <SelectItem value="envio_email">E-mail</SelectItem>
+            <SelectItem value="validacao">Validação</SelectItem>
+            <SelectItem value="lancamento">Lançamento</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -216,16 +341,15 @@ export default function LogsAuditoria() {
                       </span>
                     </td>
                     <td className="p-2.5">
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                        log.acao === 'exclusao' 
-                          ? 'bg-destructive/20 text-destructive' 
-                          : log.acao === 'criacao'
-                          ? 'bg-green-500/20 text-green-700 dark:text-green-400'
-                          : 'bg-blue-500/20 text-blue-700 dark:text-blue-400'
-                      }`}>
-                        <Trash2 size={10} />
-                        {getAcaoLabel(log.acao)}
-                      </span>
+                      {(() => {
+                        const Icon = getAcaoIcon(log.acao);
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getAcaoColor(log.acao)}`}>
+                            <Icon size={10} />
+                            {getAcaoLabel(log.acao)}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="p-2.5 text-xs font-medium">
                       {getTabelaLabel(log.tabela)}

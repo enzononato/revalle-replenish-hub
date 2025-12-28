@@ -7,7 +7,7 @@ import { mockUnidades } from '@/data/mockData';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
-import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin, CalendarRange, X } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,7 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { format, isToday, parseISO, differenceInHours, differenceInDays, subDays, parse } from 'date-fns';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format, isToday, parseISO, differenceInHours, differenceInDays, subDays, parse, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { 
@@ -35,10 +41,12 @@ import {
   LabelList
 } from 'recharts';
 import { ObservacaoLog } from '@/types';
+import { DateRange } from 'react-day-picker';
+import { cn } from '@/lib/utils';
 
 const COLORS = ['hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(160, 84%, 39%)'];
 
-type PeriodoFiltro = 'hoje' | 'semana' | 'mes' | 'todos';
+type PeriodoFiltro = 'hoje' | 'semana' | 'mes' | 'todos' | 'custom';
 
 export default function Dashboard() {
   const { protocolos } = useProtocolos();
@@ -46,6 +54,8 @@ export default function Dashboard() {
   const { motoristas } = useMotoristasDB();
   const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
   const [periodoFiltro, setPeriodoFiltro] = useState<PeriodoFiltro>('todos');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   // Protocolos filtrados por unidade e período
   const protocolosFiltrados = useMemo(() => {
@@ -58,7 +68,18 @@ export default function Dashboard() {
     }
 
     // Filtro por período
-    if (periodoFiltro !== 'todos') {
+    if (periodoFiltro === 'custom' && dateRange?.from) {
+      filtered = filtered.filter(p => {
+        try {
+          const dataProtocolo = parseISO(p.createdAt);
+          const from = startOfDay(dateRange.from!);
+          const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from!);
+          return isWithinInterval(dataProtocolo, { start: from, end: to });
+        } catch {
+          return true;
+        }
+      });
+    } else if (periodoFiltro !== 'todos') {
       const now = new Date();
       filtered = filtered.filter(p => {
         try {
@@ -80,7 +101,7 @@ export default function Dashboard() {
     }
     
     return filtered;
-  }, [protocolos, isAdmin, user?.unidade, unidadeFiltro, periodoFiltro]);
+  }, [protocolos, isAdmin, user?.unidade, unidadeFiltro, periodoFiltro, dateRange]);
 
   // Total de motoristas do banco de dados (filtrado por unidade)
   const totalMotoristasBase = useMemo(() => {
@@ -392,7 +413,12 @@ export default function Dashboard() {
           
           <div className="flex flex-wrap gap-2 items-center">
             {/* Filtro de Período */}
-            <Select value={periodoFiltro} onValueChange={(v) => setPeriodoFiltro(v as PeriodoFiltro)}>
+            <Select value={periodoFiltro} onValueChange={(v) => {
+              setPeriodoFiltro(v as PeriodoFiltro);
+              if (v !== 'custom') {
+                setDateRange(undefined);
+              }
+            }}>
               <SelectTrigger className="w-[130px] h-8 text-xs bg-background/80 backdrop-blur-sm">
                 <Calendar size={14} className="mr-1.5 text-muted-foreground" />
                 <SelectValue placeholder="Período" />
@@ -402,8 +428,69 @@ export default function Dashboard() {
                 <SelectItem value="semana">Última Semana</SelectItem>
                 <SelectItem value="mes">Último Mês</SelectItem>
                 <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="custom">Personalizado</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Date Range Picker */}
+            {periodoFiltro === 'custom' && (
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-8 text-xs bg-background/80 backdrop-blur-sm justify-start text-left font-normal",
+                      !dateRange && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarRange size={14} className="mr-1.5" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "dd/MM/yy")} - {format(dateRange.to, "dd/MM/yy")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "dd/MM/yyyy")
+                      )
+                    ) : (
+                      <span>Selecionar datas</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={(range) => {
+                      setDateRange(range);
+                      if (range?.from && range?.to) {
+                        setIsDatePickerOpen(false);
+                      }
+                    }}
+                    numberOfMonths={2}
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+
+            {/* Clear date filter */}
+            {periodoFiltro === 'custom' && dateRange?.from && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => {
+                  setDateRange(undefined);
+                  setPeriodoFiltro('todos');
+                }}
+              >
+                <X size={14} />
+              </Button>
+            )}
 
             {isAdmin && (
               <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
