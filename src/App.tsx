@@ -39,87 +39,87 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <KeyboardShortcutsModal />
-              <GuidedTour />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/abrir-protocolo" element={<AbrirProtocolo />} />
-                <Route path="/motorista" element={<Navigate to="/motorista/login" replace />} />
-                <Route path="/motorista/login" element={<MotoristaLogin />} />
-                <Route path="/motorista/portal" element={<MotoristaPortal />} />
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route element={<MainLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/protocolos" element={<Protocolos />} />
-                  <Route 
-                    path="/motoristas" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin', 'distribuicao']}>
-                        <Motoristas />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/clientes" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin', 'distribuicao']}>
-                        <Clientes />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/unidades" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin']}>
-                        <Unidades />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/usuarios" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin']}>
-                        <Usuarios />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/configuracoes" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin']}>
-                        <Configuracoes />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/logs-auditoria" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin']}>
-                        <LogsAuditoria />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/chat" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'conferente']}>
-                        <Chat />
-                      </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/logs-chat" 
-                    element={
-                      <ProtectedRoute allowedRoles={['admin']}>
-                        <LogsChat />
-                      </ProtectedRoute>
-                    } 
-                  />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
+              <BrowserRouter>
+                <KeyboardShortcutsModal />
+                <GuidedTour />
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/abrir-protocolo" element={<AbrirProtocolo />} />
+                  <Route path="/motorista" element={<Navigate to="/motorista/login" replace />} />
+                  <Route path="/motorista/login" element={<MotoristaLogin />} />
+                  <Route path="/motorista/portal" element={<MotoristaPortal />} />
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route element={<MainLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/protocolos" element={<Protocolos />} />
+                    <Route 
+                      path="/motoristas" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin', 'distribuicao']}>
+                          <Motoristas />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/clientes" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin', 'distribuicao']}>
+                          <Clientes />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/unidades" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <Unidades />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/usuarios" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <Usuarios />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/configuracoes" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <Configuracoes />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/logs-auditoria" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <LogsAuditoria />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/chat" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'conferente']}>
+                          <Chat />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/logs-chat" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <LogsChat />
+                        </ProtectedRoute>
+                      } 
+                    />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
             </TooltipProvider>
           </MotoristaAuthProvider>
         </ProtocolosProvider>
