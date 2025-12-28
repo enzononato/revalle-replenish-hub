@@ -148,7 +148,7 @@ export function GuidedTour() {
               <Sparkles className="h-6 w-6 text-primary" />
             </div>
             <h2 className="text-xl font-heading font-bold text-foreground">
-              Bem-vindo ao Revalle!
+              Bem-vindo ao sistema de Reposição!
             </h2>
           </div>
           
