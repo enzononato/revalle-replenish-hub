@@ -58,6 +58,11 @@ const getSlaColor = (dias: number): string => {
   return 'text-foreground bg-emerald-300 dark:bg-emerald-500/30 dark:text-emerald-300';
 };
 
+// Função para verificar se protocolo foi reaberto
+const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
+  return !!observacoesLog?.some(log => log.acao === 'Reabriu o protocolo');
+};
+
 export default function Protocolos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -733,9 +738,20 @@ export default function Protocolos() {
                     </div>
                   </td>
                   <td className="p-2.5 border-r border-border">
-                    <span className="text-foreground font-medium text-[12px]">
-                      {protocolo.numero}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-foreground font-medium text-[12px]">
+                        {protocolo.numero}
+                      </span>
+                      {foiReaberto(protocolo.observacoesLog) && (
+                        <span 
+                          className="inline-flex items-center gap-0.5 text-[10px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-1.5 py-0.5 rounded-full"
+                          title="Protocolo reaberto"
+                        >
+                          <RefreshCw size={10} />
+                          Reaberto
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-2.5 border-r border-border text-[12px] text-foreground font-bold">
                     {protocolo.motorista.nome}
@@ -749,6 +765,8 @@ export default function Protocolos() {
                   <td className="p-2.5 text-center border-r border-border">
                     {(() => {
                       const dias = calcularSlaDias(protocolo.createdAt, protocolo.status, protocolo.observacoesLog);
+                      const reaberto = foiReaberto(protocolo.observacoesLog);
+                      
                       if (protocolo.status === 'encerrado') {
                         return (
                           <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">
@@ -756,6 +774,16 @@ export default function Protocolos() {
                           </span>
                         );
                       }
+                      
+                      // Cor especial para protocolos reabertos (roxo)
+                      if (reaberto) {
+                        return (
+                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium text-purple-700 bg-purple-200 dark:bg-purple-500/30 dark:text-purple-300 ring-2 ring-purple-400">
+                            {dias} {dias === 1 ? 'dia' : 'dias'}
+                          </span>
+                        );
+                      }
+                      
                       return (
                         <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(dias)}`}>
                           {dias} {dias === 1 ? 'dia' : 'dias'}
