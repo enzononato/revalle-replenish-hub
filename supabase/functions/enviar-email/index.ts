@@ -27,7 +27,7 @@ interface FotosProtocolo {
 }
 
 interface EnviarEmailRequest {
-  tipo: 'lancar' | 'encerrar';
+  tipo: 'lancar' | 'encerrar' | 'reabrir';
   numero: string;
   data: string;
   hora: string;
@@ -43,6 +43,9 @@ interface EnviarEmailRequest {
   clienteEmail: string;
   observacaoGeral?: string;
   mensagemEncerramento?: string;
+  // Campos para reabertura
+  motivoReabertura?: string;
+  usuarioReabertura?: string;
 }
 
 function formatarProdutosHTML(produtos: Produto[]): string {
@@ -310,6 +313,104 @@ function gerarEmailEncerrar(data: EnviarEmailRequest): string {
   `;
 }
 
+function gerarEmailReabrir(data: EnviarEmailRequest): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f9fafb;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <div style="background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); padding: 24px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px;">🚚 Revalle Distribuição</h1>
+          <p style="color: #fef3c7; margin: 8px 0 0 0; font-size: 14px;">Sistema de Protocolos</p>
+        </div>
+        
+        <div style="padding: 24px;">
+          <div style="background-color: #fef3c7; border-left: 4px solid #d97706; padding: 16px; margin-bottom: 24px;">
+            <h2 style="color: #92400e; margin: 0 0 8px 0; font-size: 18px;">🔄 Protocolo Reaberto</h2>
+            <p style="color: #b45309; margin: 0; font-size: 24px; font-weight: bold;">#${data.numero}</p>
+          </div>
+          
+          <table style="width: 100%; margin-bottom: 24px;">
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                <strong style="color: #6b7280;">📅 Data/Hora:</strong>
+              </td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                ${data.data} às ${data.hora}
+              </td>
+            </tr>
+            ${data.mapa ? `
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                <strong style="color: #6b7280;">🗺️ MAPA:</strong>
+              </td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                ${data.mapa}
+              </td>
+            </tr>
+            ` : ''}
+            ${data.codigoPdv ? `
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                <strong style="color: #6b7280;">🏪 Código PDV:</strong>
+              </td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                ${data.codigoPdv}
+              </td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                <strong style="color: #6b7280;">👤 Motorista:</strong>
+              </td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                ${data.motoristaNome}
+              </td>
+            </tr>
+            ${data.unidadeNome ? `
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                <strong style="color: #6b7280;">🏢 Unidade:</strong>
+              </td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                ${data.unidadeNome}
+              </td>
+            </tr>
+            ` : ''}
+            <tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                <strong style="color: #6b7280;">🔓 Reaberto por:</strong>
+              </td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                ${data.usuarioReabertura || '-'}
+              </td>
+            </tr>
+          </table>
+          
+          ${data.motivoReabertura ? `
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-top: 24px;">
+            <strong style="color: #92400e;">📝 Motivo da Reabertura:</strong>
+            <p style="color: #b45309; margin: 8px 0 0 0;">${data.motivoReabertura}</p>
+          </div>
+          ` : ''}
+        </div>
+        
+        <div style="background-color: #f3f4f6; padding: 16px; text-align: center; border-top: 1px solid #e5e7eb;">
+          <p style="color: #6b7280; margin: 0; font-size: 12px;">
+            Este é um e-mail automático do Sistema de Protocolos Revalle.<br>
+            Por favor, não responda diretamente a este e-mail.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
 // Função para codificar em Base64
 function encodeBase64(str: string): string {
   return btoa(unescape(encodeURIComponent(str)));
@@ -449,13 +550,19 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const assunto = data.tipo === 'lancar' 
-      ? `📋 Novo Protocolo #${data.numero} - Revalle` 
-      : `✅ Protocolo #${data.numero} Encerrado - Revalle`;
-
-    const htmlContent = data.tipo === 'lancar' 
-      ? gerarEmailLancar(data) 
-      : gerarEmailEncerrar(data);
+    let assunto: string;
+    let htmlContent: string;
+    
+    if (data.tipo === 'lancar') {
+      assunto = `📋 Novo Protocolo #${data.numero} - Revalle`;
+      htmlContent = gerarEmailLancar(data);
+    } else if (data.tipo === 'reabrir') {
+      assunto = `🔄 Protocolo #${data.numero} Reaberto - Revalle`;
+      htmlContent = gerarEmailReabrir(data);
+    } else {
+      assunto = `✅ Protocolo #${data.numero} Encerrado - Revalle`;
+      htmlContent = gerarEmailEncerrar(data);
+    }
 
     await enviarEmailSMTP(data.clienteEmail, assunto, htmlContent);
 

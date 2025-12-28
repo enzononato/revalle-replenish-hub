@@ -1112,6 +1112,59 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     usuario_unidade: user.unidade,
                   });
 
+                  // Enviar notificação de reabertura via WhatsApp
+                  if (protocolo.clienteTelefone) {
+                    try {
+                      const whatsappResponse = await supabase.functions.invoke('enviar-whatsapp', {
+                        body: {
+                          tipo: 'reabrir',
+                          numero: protocolo.numero,
+                          data: format(new Date(), 'dd/MM/yyyy'),
+                          hora: format(new Date(), 'HH:mm'),
+                          mapa: protocolo.mapa,
+                          notaFiscal: protocolo.notaFiscal,
+                          motoristaNome: protocolo.motorista.nome,
+                          unidade: protocolo.motorista.unidade,
+                          clienteTelefone: protocolo.clienteTelefone,
+                          motivoReabertura: motivoReabertura,
+                          usuarioReabertura: user.nome,
+                        }
+                      });
+                      if (whatsappResponse.error) {
+                        console.error('Erro ao enviar WhatsApp de reabertura:', whatsappResponse.error);
+                      }
+                    } catch (err) {
+                      console.error('Erro ao enviar WhatsApp de reabertura:', err);
+                    }
+                  }
+
+                  // Enviar notificação de reabertura via Email
+                  if (protocolo.contatoEmail) {
+                    try {
+                      const emailResponse = await supabase.functions.invoke('enviar-email', {
+                        body: {
+                          tipo: 'reabrir',
+                          numero: protocolo.numero,
+                          data: format(new Date(), 'dd/MM/yyyy'),
+                          hora: format(new Date(), 'HH:mm'),
+                          mapa: protocolo.mapa,
+                          codigoPdv: protocolo.codigoPdv,
+                          notaFiscal: protocolo.notaFiscal,
+                          motoristaNome: protocolo.motorista.nome,
+                          unidadeNome: protocolo.motorista.unidade,
+                          clienteEmail: protocolo.contatoEmail,
+                          motivoReabertura: motivoReabertura,
+                          usuarioReabertura: user.nome,
+                        }
+                      });
+                      if (emailResponse.error) {
+                        console.error('Erro ao enviar email de reabertura:', emailResponse.error);
+                      }
+                    } catch (err) {
+                      console.error('Erro ao enviar email de reabertura:', err);
+                    }
+                  }
+
                   onUpdateProtocolo(protocoloAtualizado);
                   setShowReabrirModal(false);
                   setMotivoReabertura('');

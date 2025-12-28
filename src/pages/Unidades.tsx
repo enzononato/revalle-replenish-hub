@@ -284,7 +284,7 @@ export default function Unidades() {
 
       {/* Cards de Resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '50ms' }}>
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border hover:shadow-md hover:border-primary/30 transition-all duration-200 animate-fade-in" style={{ animationDelay: '50ms' }}>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-primary/10">
               <Building2 size={18} className="text-primary" />
@@ -296,7 +296,7 @@ export default function Unidades() {
           </div>
         </div>
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '100ms' }}>
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border hover:shadow-md hover:border-blue-500/30 transition-all duration-200 animate-fade-in" style={{ animationDelay: '100ms' }}>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-blue-500/10">
               <Users size={18} className="text-blue-500" />
@@ -311,7 +311,7 @@ export default function Unidades() {
         </div>
         
         {canViewClientes && (
-          <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '150ms' }}>
+          <div className="bg-card rounded-xl p-3 shadow-sm border border-border hover:shadow-md hover:border-emerald-500/30 transition-all duration-200 animate-fade-in" style={{ animationDelay: '150ms' }}>
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-lg bg-emerald-500/10">
                 <Store size={18} className="text-emerald-500" />
@@ -326,7 +326,7 @@ export default function Unidades() {
           </div>
         )}
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '200ms' }}>
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border hover:shadow-md hover:border-amber-500/30 transition-all duration-200 animate-fade-in" style={{ animationDelay: '200ms' }}>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-amber-500/10">
               <FileText size={18} className="text-amber-500" />

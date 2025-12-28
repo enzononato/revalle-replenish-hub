@@ -21,7 +21,7 @@ interface FotosProtocolo {
 }
 
 interface EnviarWhatsAppRequest {
-  tipo: 'lancar' | 'encerrar';
+  tipo: 'lancar' | 'encerrar' | 'reabrir';
   numero: string;
   data: string;
   hora: string;
@@ -36,6 +36,9 @@ interface EnviarWhatsAppRequest {
   fotosProtocolo?: FotosProtocolo;
   mensagemEncerramento?: string;
   clienteTelefone: string;
+  // Campos para reabertura
+  motivoReabertura?: string;
+  usuarioReabertura?: string;
 }
 
 function formatMensagemLancar(data: EnviarWhatsAppRequest): string {
@@ -101,6 +104,22 @@ function formatMensagemEncerrar(data: EnviarWhatsAppRequest): string {
 ⚙️ Status: Encerrado com sucesso.`;
 }
 
+function formatMensagemReabrir(data: EnviarWhatsAppRequest): string {
+  return `🔄 Revalle - Reabertura de Protocolo
+
+⚠️ Protocolo: ${data.numero}
+🧾 NF: ${data.notaFiscal || '-'}
+👤 Motorista: ${data.motoristaNome}
+🏭 Unidade: ${data.unidade || '-'}
+📅 Data: ${data.data}
+⏰ Horário: ${data.hora}
+
+🔓 Reaberto por: ${data.usuarioReabertura || '-'}
+📝 Motivo: ${data.motivoReabertura || 'Não informado'}
+
+⚙️ Status: Protocolo reaberto para tratativa.`;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -127,9 +146,14 @@ serve(async (req) => {
     console.log('Recebendo requisição para enviar WhatsApp:', data.tipo, 'para', data.clienteTelefone);
 
     // Formatar mensagem baseado no tipo
-    const mensagem = data.tipo === 'lancar' 
-      ? formatMensagemLancar(data) 
-      : formatMensagemEncerrar(data);
+    let mensagem: string;
+    if (data.tipo === 'lancar') {
+      mensagem = formatMensagemLancar(data);
+    } else if (data.tipo === 'reabrir') {
+      mensagem = formatMensagemReabrir(data);
+    } else {
+      mensagem = formatMensagemEncerrar(data);
+    }
 
     // Formatar número (remover caracteres especiais e adicionar código do país se necessário)
     let numero = data.clienteTelefone.replace(/\D/g, '');

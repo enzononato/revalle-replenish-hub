@@ -247,8 +247,20 @@ export default function Motoristas() {
     return setor === 'interior' ? 'Interior' : 'Sede';
   };
 
+  // Estatísticas para cards de resumo
+  const totalMotoristas = motoristas.length;
+  const totalPorFuncao = {
+    motorista: motoristas.filter(m => m.funcao === 'motorista').length,
+    ajudante: motoristas.filter(m => m.funcao === 'ajudante_entrega').length,
+  };
+  const totalPorSetor = {
+    sede: motoristas.filter(m => m.setor === 'sede').length,
+    interior: motoristas.filter(m => m.setor === 'interior').length,
+  };
+  const unidadesAtivas = new Set(motoristas.map(m => m.unidade)).size;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
@@ -384,6 +396,65 @@ export default function Motoristas() {
         </div>
       </div>
 
+      {/* Cards de Resumo */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Users size={18} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
+              <p className="text-lg font-bold text-foreground">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalMotoristas}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-green-500/10">
+              <Truck size={18} className="text-green-500" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Motoristas</p>
+              <p className="text-lg font-bold text-foreground">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalPorFuncao.motorista}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '150ms' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-orange-500/10">
+              <Users size={18} className="text-orange-500" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Ajudantes</p>
+              <p className="text-lg font-bold text-foreground">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalPorFuncao.ajudante}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-blue-500/10">
+              <Building size={18} className="text-blue-500" />
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Unidades</p>
+              <p className="text-lg font-bold text-foreground">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : unidadesAtivas}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <SearchInput
@@ -463,10 +534,11 @@ export default function Motoristas() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedMotoristas.map((motorista) => (
+                {paginatedMotoristas.map((motorista, index) => (
                   <tr 
                     key={motorista.id} 
-                    className={`border-b border-border ${selectedIds.has(motorista.id) ? 'bg-primary/5' : ''}`}
+                    className={`border-b border-border hover:bg-muted/50 transition-colors ${selectedIds.has(motorista.id) ? 'bg-primary/5' : ''}`}
+                    style={{ animationDelay: `${index * 20}ms` }}
                   >
                     <td className="p-2.5">
                       <Checkbox
