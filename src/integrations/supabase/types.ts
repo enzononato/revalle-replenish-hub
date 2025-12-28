@@ -418,6 +418,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_profiles: {
+        Row: {
+          created_at: string | null
+          email_contato: string | null
+          foto_url: string | null
+          id: string
+          nivel: string | null
+          nome: string | null
+          telefone: string | null
+          unidade: string | null
+          updated_at: string | null
+          user_email: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_contato?: string | null
+          foto_url?: string | null
+          id?: string
+          nivel?: string | null
+          nome?: string | null
+          telefone?: string | null
+          unidade?: string | null
+          updated_at?: string | null
+          user_email: string
+        }
+        Update: {
+          created_at?: string | null
+          email_contato?: string | null
+          foto_url?: string | null
+          id?: string
+          nivel?: string | null
+          nome?: string | null
+          telefone?: string | null
+          unidade?: string | null
+          updated_at?: string | null
+          user_email?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
