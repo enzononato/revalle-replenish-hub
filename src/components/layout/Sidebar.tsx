@@ -89,11 +89,14 @@ export function Sidebar() {
       )}
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-40 w-56 bg-sidebar transform transition-transform duration-300 ease-in-out flex flex-col",
-        "lg:transform-none",
-        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
+      <aside 
+        data-tour="sidebar"
+        className={cn(
+          "fixed lg:static inset-y-0 left-0 z-40 w-56 bg-sidebar transform transition-all duration-300 ease-out flex flex-col",
+          "lg:transform-none",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
         {/* Logo */}
         <div className="flex-shrink-0 p-4 border-b border-sidebar-border">
           <h1 className="font-heading text-xl font-bold text-white">
@@ -114,6 +117,7 @@ export function Sidebar() {
                 key={item.path}
                 to={item.path}
                 onClick={() => setIsOpen(false)}
+                data-tour={item.path === '/chat' ? 'chat' : item.path === '/protocolos' ? 'protocolos' : undefined}
                 className={cn(
                   "sidebar-item",
                   isActive && "active"
@@ -154,8 +158,9 @@ export function Sidebar() {
 
         {/* Theme toggle and Logout */}
         <div className="flex-shrink-0 p-3 pt-0 space-y-2">
-          {/* Theme toggle */}
+        {/* Theme toggle */}
           <button
+            data-tour="theme-toggle"
             onClick={toggleTheme}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground text-sm"
           >
