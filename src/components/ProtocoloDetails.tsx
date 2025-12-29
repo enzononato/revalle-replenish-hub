@@ -364,39 +364,89 @@ export function ProtocoloDetails({
   };
 
   const handleReenviarWhatsapp = async (tipo: 'lancar' | 'encerrar') => {
-    if (!clienteTelefone.trim()) {
-      toast.error('Digite o telefone do cliente para reenviar');
-      return;
-    }
-
     if (!onUpdateProtocolo) return;
 
     setEnviandoWhatsapp(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('enviar-whatsapp', {
-        body: {
-          tipo,
+      let webhookPayload: Record<string, unknown>;
+      
+      if (tipo === 'lancar') {
+        // Mesmo JSON enviado na criação do protocolo
+        webhookPayload = {
           numero: protocolo.numero,
           data: protocolo.data,
           hora: protocolo.hora,
+          mapa: protocolo.mapa || '',
+          codigoPdv: protocolo.codigoPdv || '',
+          notaFiscal: protocolo.notaFiscal || '',
+          motoristaNome: protocolo.motorista.nome,
+          motoristaCodigo: protocolo.motorista.codigo,
+          motoristaWhatsapp: protocolo.motorista.whatsapp || '',
+          motoristaEmail: protocolo.motorista.email || '',
+          unidade: protocolo.unidadeNome || protocolo.motorista.unidade || '',
+          tipoReposicao: (protocolo.tipoReposicao || '').toUpperCase(),
+          causa: protocolo.causa || '',
+          produtos: protocolo.produtos || [],
+          fotos: {
+            fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
+            fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
+            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+          },
+          whatsappContato: protocolo.contatoWhatsapp || clienteTelefone || '',
+          emailContato: protocolo.contatoEmail || '',
+          observacaoGeral: protocolo.observacaoGeral || ''
+        };
+      } else {
+        // Mesmo JSON enviado no encerramento do protocolo
+        // Buscar data/hora de encerramento do log
+        const logEncerramento = protocolo.observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+        
+        webhookPayload = {
+          tipo: 'encerramento',
+          numero: protocolo.numero,
+          data: protocolo.data,
+          hora: protocolo.hora,
+          dataEncerramento: logEncerramento?.data || format(new Date(), 'dd/MM/yyyy'),
+          horaEncerramento: logEncerramento?.hora || format(new Date(), 'HH:mm'),
+          status: 'encerrado',
           mapa: protocolo.mapa,
           notaFiscal: protocolo.notaFiscal,
+          codigoPdv: protocolo.codigoPdv,
+          tipoReposicao: protocolo.tipoReposicao,
+          causa: protocolo.causa,
           motoristaNome: protocolo.motorista.nome,
+          motoristaCodigo: protocolo.motorista.codigo,
           motoristaWhatsapp: protocolo.motorista.whatsapp,
           motoristaEmail: protocolo.motorista.email,
-          unidade: protocolo.unidadeNome,
+          unidade: protocolo.unidadeNome || protocolo.motorista.unidade,
+          clienteTelefone: protocolo.clienteTelefone || clienteTelefone,
+          contatoEmail: protocolo.contatoEmail,
+          contatoWhatsapp: protocolo.contatoWhatsapp,
           observacaoGeral: protocolo.observacaoGeral,
           produtos: protocolo.produtos,
           fotosProtocolo: protocolo.fotosProtocolo,
-          mensagemEncerramento: protocolo.mensagemEncerramento || 'Encerrando protocolo',
-          clienteTelefone
-        }
+          mensagemEncerramento: protocolo.mensagemEncerramento || '',
+          arquivoEncerramentoUrl: protocolo.arquivoEncerramento,
+          usuarioEncerramento: logEncerramento ? {
+            nome: logEncerramento.usuarioNome,
+            id: logEncerramento.usuarioId
+          } : {
+            nome: user?.nome || 'Sistema',
+            id: user?.id || ''
+          }
+        };
+      }
+
+      const response = await fetch('https://n8n.revalle.com.br/webhook/reposicaowpp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload),
       });
 
-      if (error) throw error;
-
-      if (data?.success) {
+      if (response.ok) {
         const statusField = tipo === 'lancar' ? 'enviadoLancarStatus' : 'enviadoEncerrarStatus';
         const erroField = tipo === 'lancar' ? 'enviadoLancarErro' : 'enviadoEncerrarErro';
         const enviadoField = tipo === 'lancar' ? 'enviadoLancar' : 'enviadoEncerrar';
@@ -406,7 +456,7 @@ export function ProtocoloDetails({
           [enviadoField]: true,
           [statusField]: 'enviado',
           [erroField]: undefined,
-          clienteTelefone,
+          clienteTelefone: clienteTelefone || protocolo.clienteTelefone,
           habilitarReenvio: false,
           observacoesLog: [
             ...(protocolo.observacoesLog || []),
@@ -417,7 +467,7 @@ export function ProtocoloDetails({
               data: format(new Date(), 'dd/MM/yyyy'),
               hora: format(new Date(), 'HH:mm'),
               acao: tipo === 'lancar' ? 'Reenviou mensagem de lançamento' : 'Reenviou mensagem de encerramento',
-              texto: `Mensagem reenviada para ${clienteTelefone}`
+              texto: `Mensagem reenviada via webhook`
             }
           ]
         };
@@ -426,7 +476,7 @@ export function ProtocoloDetails({
         setHabilitarReenvio(false);
         toast.success(`Mensagem de ${tipo === 'lancar' ? 'lançamento' : 'encerramento'} reenviada com sucesso!`);
       } else {
-        throw new Error(data?.error || 'Erro desconhecido');
+        throw new Error(`Erro ao enviar webhook: ${response.status}`);
       }
     } catch (error) {
       console.error('Erro ao reenviar:', error);
