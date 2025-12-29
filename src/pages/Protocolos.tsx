@@ -669,6 +669,7 @@ export default function Protocolos() {
             <tr className="bg-muted/50 border-b border-border">
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Data/Hora</th>
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Protocolo</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Tipo</th>
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Motorista</th>
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">WhatsApp</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">SLA</th>
@@ -692,6 +693,9 @@ export default function Protocolos() {
                   </td>
                   <td className="p-2.5 border-r border-border">
                     <Skeleton className="h-4 w-32" />
+                  </td>
+                  <td className="p-2.5 border-r border-border">
+                    <Skeleton className="h-4 w-16" />
                   </td>
                   <td className="p-2.5 border-r border-border">
                     <Skeleton className="h-4 w-28" />
@@ -752,6 +756,19 @@ export default function Protocolos() {
                         </span>
                       )}
                     </div>
+                  </td>
+                  <td className="p-2.5 border-r border-border">
+                    <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                      protocolo.tipoReposicao === 'Inversão' 
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' 
+                        : protocolo.tipoReposicao === 'Avaria' 
+                          ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' 
+                          : protocolo.tipoReposicao === 'Falta' 
+                            ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' 
+                            : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {protocolo.tipoReposicao || '-'}
+                    </span>
                   </td>
                   <td className="p-2.5 border-r border-border text-[12px] text-foreground font-bold">
                     {protocolo.motorista.nome}
