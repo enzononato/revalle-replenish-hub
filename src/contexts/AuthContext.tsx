@@ -1,11 +1,24 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { User, UserRole } from '@/types';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { UserRole } from '@/types';
 import { useAuditLog } from '@/hooks/useAuditLog';
+
+interface AppUser {
+  id: string;
+  nome: string;
+  email: string;
+  nivel: UserRole;
+  unidade: string;
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
+  session: Session | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAdmin: boolean;
   isDistribuicao: boolean;
   isConferente: boolean;
@@ -15,64 +28,120 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo - 3 níveis
-const mockUsers: (User & { password: string })[] = [
-  {
-    id: '1',
-    nome: 'Administrador',
-    email: 'admin@revalle.com',
-    nivel: 'admin',
-    unidade: 'Todas',
-    password: 'admin123'
-  },
-  {
-    id: '2',
-    nome: 'Distribuição Juazeiro',
-    email: 'distribuicao@revalle.com',
-    nivel: 'distribuicao',
-    unidade: 'Revalle Juazeiro',
-    password: 'dist123'
-  },
-  {
-    id: '3',
-    nome: 'Conferente Juazeiro',
-    email: 'conferente@revalle.com',
-    nivel: 'conferente',
-    unidade: 'Revalle Juazeiro',
-    password: 'conf123'
-  }
-];
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('revalle_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { registrarLog } = useAuditLog();
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-    
-    if (foundUser) {
-      const { password: _, ...userData } = foundUser;
-      setUser(userData);
-      localStorage.setItem('revalle_user', JSON.stringify(userData));
-      
-      // Registrar log de login
-      await registrarLog({
-        acao: 'login',
-        tabela: 'sessao',
-        registro_id: userData.id,
-        registro_dados: { email: userData.email },
-        usuario_nome: userData.nome,
-        usuario_role: userData.nivel,
-        usuario_unidade: userData.unidade,
-      });
-      
-      return true;
+  // Buscar perfil do usuário no banco
+  const fetchUserProfile = useCallback(async (authUser: User): Promise<AppUser | null> => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_email', authUser.email)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Erro ao buscar perfil:', error);
+        return null;
+      }
+
+      if (!profile) {
+        console.warn('Perfil não encontrado para:', authUser.email);
+        return null;
+      }
+
+      return {
+        id: profile.id,
+        nome: profile.nome || authUser.email || '',
+        email: profile.user_email,
+        nivel: (profile.nivel as UserRole) || 'conferente',
+        unidade: profile.unidade || '',
+      };
+    } catch (err) {
+      console.error('Erro ao buscar perfil:', err);
+      return null;
     }
-    return false;
-  }, [registrarLog]);
+  }, []);
+
+  // Inicialização - verificar sessão existente
+  useEffect(() => {
+    // Configurar listener de mudanças de auth PRIMEIRO
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      setSession(newSession);
+      
+      if (newSession?.user) {
+        // Usar setTimeout para evitar deadlock
+        setTimeout(() => {
+          fetchUserProfile(newSession.user).then(profile => {
+            setUser(profile);
+            setIsLoading(false);
+          });
+        }, 0);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+
+    // DEPOIS verificar sessão existente
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      
+      if (existingSession?.user) {
+        fetchUserProfile(existingSession.user).then(profile => {
+          setUser(profile);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchUserProfile]);
+
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Erro no login:', error.message);
+        return false;
+      }
+
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user);
+        
+        if (profile) {
+          setUser(profile);
+          
+          // Registrar log de login
+          await registrarLog({
+            acao: 'login',
+            tabela: 'sessao',
+            registro_id: profile.id,
+            registro_dados: { email: profile.email },
+            usuario_nome: profile.nome,
+            usuario_role: profile.nivel,
+            usuario_unidade: profile.unidade,
+          });
+        }
+        
+        return true;
+      }
+      
+      return false;
+    } catch (err) {
+      console.error('Erro no login:', err);
+      return false;
+    }
+  }, [fetchUserProfile, registrarLog]);
 
   const logout = useCallback(async () => {
     if (user) {
@@ -87,8 +156,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         usuario_unidade: user.unidade,
       });
     }
+    
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('revalle_user');
+    setSession(null);
   }, [user, registrarLog]);
 
   const isAdmin = user?.nivel === 'admin';
@@ -98,7 +169,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user,
-      isAuthenticated: !!user,
+      session,
+      isAuthenticated: !!user && !!session,
+      isLoading,
       login,
       logout,
       isAdmin,

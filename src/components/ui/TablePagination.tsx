@@ -67,7 +67,7 @@ export function TablePagination({
   if (totalItems === 0) return null;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3">
       <p className="text-xs text-muted-foreground">
         Mostrando {startIndex}-{endIndex} de {totalItems} registro(s)
       </p>
