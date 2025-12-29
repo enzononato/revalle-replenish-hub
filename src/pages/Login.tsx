@@ -8,11 +8,21 @@ import { Truck, Lock, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Login() {
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin text-primary">
+          <Truck size={48} />
+        </div>
+      </div>
+    );
+  }
 
   if (isAuthenticated) {
     // Todos vão para Dashboard

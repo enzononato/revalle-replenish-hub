@@ -175,6 +175,7 @@ export default function Usuarios() {
         await addUsuario({
           nome: formData.nome.trim(),
           email: formData.email.trim(),
+          senha: formData.senha,
           telefone: formData.telefone.trim(),
           nivel: formData.nivel,
           unidades: formData.unidades,

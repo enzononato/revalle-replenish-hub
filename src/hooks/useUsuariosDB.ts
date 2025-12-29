@@ -10,6 +10,16 @@ export interface Usuario {
   unidades: string[];
   telefone?: string;
   createdAt: string;
+  authUserId?: string;
+}
+
+interface CreateUsuarioInput {
+  nome: string;
+  email: string;
+  senha: string;
+  telefone?: string;
+  nivel: 'admin' | 'distribuicao' | 'conferente';
+  unidades: string[];
 }
 
 export function useUsuariosDB() {
@@ -39,40 +49,71 @@ export function useUsuariosDB() {
   });
 
   const addMutation = useMutation({
-    mutationFn: async (usuario: Omit<Usuario, 'id' | 'createdAt'>) => {
-      const { data, error } = await supabase
+    mutationFn: async (usuario: CreateUsuarioInput) => {
+      // 1. Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: usuario.email,
+        password: usuario.senha,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            nome: usuario.nome,
+          },
+        },
+      });
+
+      if (authError) {
+        if (authError.message.includes('already registered')) {
+          throw new Error('EMAIL_EXISTS');
+        }
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error('Falha ao criar usuário');
+      }
+
+      // 2. Aguardar um pouco para o trigger criar o user_profile
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 3. Atualizar o user_profile com os dados adicionais
+      const { error: updateError } = await supabase
         .from('user_profiles')
-        .insert({
-          user_email: usuario.email,
+        .update({
           nome: usuario.nome,
           nivel: usuario.nivel,
           unidade: usuario.unidades.join(', '),
           telefone: usuario.telefone || null,
         })
-        .select()
-        .single();
+        .eq('user_email', usuario.email);
 
-      if (error) throw error;
+      if (updateError) {
+        console.error('Erro ao atualizar profile:', updateError);
+      }
 
-      return {
-        id: data.id,
-        nome: data.nome || '',
-        email: data.user_email,
-        nivel: (data.nivel as Usuario['nivel']) || 'conferente',
-        unidades: data.unidade ? data.unidade.split(',').map(s => s.trim()) : [],
-        telefone: data.telefone || undefined,
-        createdAt: data.created_at || new Date().toISOString(),
-      } as Usuario;
+      // 4. Criar role do usuário
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: authData.user.id,
+          role: usuario.nivel,
+        });
+
+      if (roleError) {
+        console.error('Erro ao criar role:', roleError);
+      }
+
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast.success('Usuário cadastrado com sucesso!');
+      toast.success('Usuário criado com sucesso! Ele já pode fazer login.');
     },
     onError: (error: any) => {
-      if (error.code === '23505') {
+      if (error.message === 'EMAIL_EXISTS') {
         toast.error('Já existe um usuário com este email');
       } else {
-        toast.error('Erro ao cadastrar usuário');
+        toast.error('Erro ao criar usuário: ' + (error.message || 'Erro desconhecido'));
       }
     },
   });
