@@ -29,12 +29,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Shield, UserCircle, Truck, Users, Loader2, Mail, Phone, Building2, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Shield, UserCircle, Truck, Users, Loader2, Mail, Phone, Building2, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUsuariosDB, Usuario } from '@/hooks/useUsuariosDB';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
+import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type UserRole = 'admin' | 'distribuicao' | 'conferente';
 
@@ -51,9 +53,9 @@ const nivelDescriptions: Record<UserRole, string> = {
 };
 
 export default function Usuarios() {
-  const { usuarios, isLoading, addUsuario, updateUsuario, deleteUsuario, isAdding, isUpdating, isDeleting } = useUsuariosDB();
+  const { usuarios, isLoading, addUsuario, updateUsuario, deleteUsuario, isAdding, isUpdating, isDeleting, refetch } = useUsuariosDB();
   const { unidades, isLoading: isLoadingUnidades } = useUnidadesDB();
-  
+  const { isAdmin, user } = useAuth();
   const [search, setSearch] = useState('');
   const [filterNivel, setFilterNivel] = useState<string>('todos');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -199,6 +201,8 @@ export default function Usuarios() {
     
     try {
       await deleteUsuario(usuarioToDelete.id);
+      // Forçar refresh da lista após exclusão
+      await refetch();
     } catch (error) {
       // Error handled by mutation
     } finally {
@@ -263,6 +267,16 @@ export default function Usuarios() {
 
   return (
     <div className="space-y-6">
+      {/* Alerta para não-admins */}
+      {!isAdmin && (
+        <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Você não tem permissão para criar ou excluir usuários. Apenas administradores podem gerenciar usuários.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -278,7 +292,7 @@ export default function Usuarios() {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="btn-accent-gradient">
+            <Button className="btn-accent-gradient" disabled={!isAdmin}>
               <Plus size={20} className="mr-2" />
               Novo Usuário
             </Button>
@@ -686,7 +700,14 @@ export default function Usuarios() {
                           size="sm"
                           onClick={() => handleDeleteClick(usuario)}
                           className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                          disabled={isDeleting}
+                          disabled={isDeleting || !isAdmin || usuario.email === user?.email}
+                          title={
+                            !isAdmin 
+                              ? 'Apenas administradores podem excluir' 
+                              : usuario.email === user?.email 
+                                ? 'Você não pode excluir seu próprio usuário'
+                                : 'Excluir usuário'
+                          }
                         >
                           <Trash2 size={16} />
                         </Button>
