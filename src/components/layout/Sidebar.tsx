@@ -103,7 +103,7 @@ export function Sidebar() {
         {/* Logo */}
         <div className="flex-shrink-0 p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
-            <img src="/favicon.ico" alt="Revalle" className="w-7 h-7" />
+            <img src="/favicon.png" alt="Revalle" className="w-7 h-7 rounded" />
             <h1 className="font-heading text-xl font-bold text-white">
               Revalle
             </h1>
