@@ -90,6 +90,7 @@ export default function Protocolos() {
   useEffect(() => {
     const statusParam = searchParams.get('status');
     const periodoParam = searchParams.get('periodo');
+    const tipoParam = searchParams.get('tipo');
     
     if (statusParam) {
       setActiveTab(statusParam);
@@ -97,6 +98,11 @@ export default function Protocolos() {
     
     if (periodoParam) {
       setPeriodoFilter(periodoParam);
+    }
+    
+    if (tipoParam) {
+      setTipoFilter(tipoParam);
+      setShowFilters(true);
     }
   }, [searchParams]);
 
