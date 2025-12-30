@@ -75,6 +75,7 @@ export default function Protocolos() {
   const [dataFinalFilter, setDataFinalFilter] = useState('');
   const [lancadoFilter, setLancadoFilter] = useState<string>('todos');
   const [validadoFilter, setValidadoFilter] = useState<string>('todos');
+  const [tipoFilter, setTipoFilter] = useState<string>('todos');
   const [selectedProtocolo, setSelectedProtocolo] = useState<Protocolo | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -171,7 +172,10 @@ export default function Protocolos() {
         (validadoFilter === 'sim' && p.validacao) || 
         (validadoFilter === 'nao' && !p.validacao);
       
-      return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch;
+      // Filtro de tipo
+      const tipoMatch = tipoFilter === 'todos' || p.tipoReposicao === tipoFilter;
+      
+      return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
     })
     // Ordenar por SLA: mais antigos primeiro (maior SLA = topo)
     .sort((a, b) => {
@@ -190,7 +194,7 @@ export default function Protocolos() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, pageSize]);
+  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, pageSize]);
 
   const [enviandoLancar, setEnviandoLancar] = useState<string | null>(null);
   const [enviandoEncerrar, setEnviandoEncerrar] = useState<string | null>(null);
@@ -495,9 +499,10 @@ export default function Protocolos() {
     setDataFinalFilter('');
     setLancadoFilter('todos');
     setValidadoFilter('todos');
+    setTipoFilter('todos');
   };
 
-  const hasActiveFilters = activeTab === 'todos' || dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos';
+  const hasActiveFilters = activeTab === 'todos' || dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos' || tipoFilter !== 'todos';
 
   return (
     <div className="space-y-4">
@@ -643,6 +648,21 @@ export default function Protocolos() {
                   <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="sim">Sim</SelectItem>
                   <SelectItem value="nao">Não</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-1 min-w-[110px]">
+              <label className="text-xs font-medium text-muted-foreground">Tipo</label>
+              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="Inversão">Inversão</SelectItem>
+                  <SelectItem value="Avaria">Avaria</SelectItem>
+                  <SelectItem value="Falta">Falta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
