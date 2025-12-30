@@ -7,7 +7,7 @@ import { mockUnidades } from '@/data/mockData';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
-import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin, CalendarRange, X, RefreshCw } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin, CalendarRange, X, RefreshCw, Repeat, AlertTriangle, PackageX } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -297,6 +297,14 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [protocolosFiltrados]);
 
+  // Contagem por tipo de reposição
+  const contagemPorTipo = useMemo(() => {
+    const inversao = protocolosFiltrados.filter(p => p.tipoReposicao === 'INVERSAO').length;
+    const avaria = protocolosFiltrados.filter(p => p.tipoReposicao === 'AVARIA').length;
+    const falta = protocolosFiltrados.filter(p => p.tipoReposicao === 'FALTA').length;
+    return { inversao, avaria, falta };
+  }, [protocolosFiltrados]);
+
   // Saudação
   const saudacao = useMemo(() => {
     const hora = new Date().getHours();
@@ -561,6 +569,34 @@ export default function Dashboard() {
           variant="info"
           delay={400}
           href="/protocolos?periodo=hoje"
+        />
+      </div>
+
+      {/* Estatísticas por Tipo */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          title="Inversão"
+          value={contagemPorTipo.inversao}
+          icon={Repeat}
+          variant="info"
+          delay={450}
+          href="/protocolos?tipo=INVERSAO"
+        />
+        <StatCard
+          title="Avaria"
+          value={contagemPorTipo.avaria}
+          icon={AlertTriangle}
+          variant="warning"
+          delay={475}
+          href="/protocolos?tipo=AVARIA"
+        />
+        <StatCard
+          title="Falta"
+          value={contagemPorTipo.falta}
+          icon={PackageX}
+          variant="primary"
+          delay={500}
+          href="/protocolos?tipo=FALTA"
         />
       </div>
 
