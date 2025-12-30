@@ -580,7 +580,7 @@ export default function Dashboard() {
           icon={Repeat}
           variant="info"
           delay={450}
-          href="/protocolos?tipo=INVERSAO"
+          href="/protocolos?tipo=INVERSAO&status=todos"
         />
         <StatCard
           title="Avaria"
@@ -588,7 +588,7 @@ export default function Dashboard() {
           icon={AlertTriangle}
           variant="warning"
           delay={475}
-          href="/protocolos?tipo=AVARIA"
+          href="/protocolos?tipo=AVARIA&status=todos"
         />
         <StatCard
           title="Falta"
@@ -596,7 +596,7 @@ export default function Dashboard() {
           icon={PackageX}
           variant="primary"
           delay={500}
-          href="/protocolos?tipo=FALTA"
+          href="/protocolos?tipo=FALTA&status=todos"
         />
       </div>
 
