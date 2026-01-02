@@ -339,6 +339,7 @@ export type Database = {
           status_encerramento: string | null
           status_envio: string | null
           tipo_reposicao: string | null
+          ultimo_alerta_sla: number | null
           validacao: boolean | null
         }
         Insert: {
@@ -381,6 +382,7 @@ export type Database = {
           status_encerramento?: string | null
           status_envio?: string | null
           tipo_reposicao?: string | null
+          ultimo_alerta_sla?: number | null
           validacao?: boolean | null
         }
         Update: {
@@ -423,6 +425,7 @@ export type Database = {
           status_encerramento?: string | null
           status_envio?: string | null
           tipo_reposicao?: string | null
+          ultimo_alerta_sla?: number | null
           validacao?: boolean | null
         }
         Relationships: []

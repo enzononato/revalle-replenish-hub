@@ -41,12 +41,11 @@ serve(async (req) => {
 
     console.log('Iniciando verificação de protocolos com SLA de 16 dias...');
 
-    // Buscar protocolos abertos ou em andamento que ainda não tiveram o alerta enviado
+    // Buscar protocolos abertos ou em andamento
     const { data: protocolos, error: fetchError } = await supabase
       .from('protocolos')
       .select('*')
       .in('status', ['aberto', 'em_andamento'])
-      .eq('sla_16_enviado', false)
       .eq('oculto', false);
 
     if (fetchError) {
@@ -75,9 +74,19 @@ serve(async (req) => {
       
       console.log(`Protocolo ${protocolo.numero}: ${diasSla} dias de SLA`);
 
-      // Verificar se atingiu 16 dias ou mais
-      if (diasSla >= 16) {
-        console.log(`Protocolo ${protocolo.numero} atingiu ${diasSla} dias de SLA (>= 16). Enviando webhook...`);
+      // Verificar se deve enviar alerta:
+      // - Primeiro alerta aos 16 dias
+      // - Depois a cada 7 dias (23, 30, 37, etc.)
+      const ultimoAlerta = protocolo.ultimo_alerta_sla || 0;
+      const deveEnviarAlerta = diasSla >= 16 && (
+        // Nunca recebeu alerta e já tem 16+ dias
+        (ultimoAlerta === 0 && diasSla >= 16) ||
+        // Já recebeu alerta e passou 7+ dias desde o último
+        (ultimoAlerta > 0 && diasSla >= ultimoAlerta + 7)
+      );
+
+      if (deveEnviarAlerta) {
+        console.log(`Protocolo ${protocolo.numero} atingiu ${diasSla} dias de SLA. Último alerta: ${ultimoAlerta} dias. Enviando webhook...`);
 
         // Buscar gestor responsável pela unidade do protocolo
         const unidadeProtocolo = protocolo.motorista_unidade?.toUpperCase().trim() || '';
@@ -110,10 +119,13 @@ serve(async (req) => {
           emailContato: protocolo.contato_email || '',
           observacaoGeral: protocolo.observacao_geral || '',
           // Campos adicionais do alerta SLA
-          alertaSla16Dias: true,
-          diasSla: diasSla,
-          motivoEnvio: 'SLA_16_DIAS',
-          mensagemAlerta: `Protocolo ${protocolo.numero} atingiu ${diasSla} dias sem encerramento (SLA 16 dias)`,
+          alertaSla: true,
+          diasAberto: diasSla,
+          ultimoAlertaEm: ultimoAlerta,
+          motivoEnvio: ultimoAlerta === 0 ? 'SLA_16_DIAS' : 'SLA_RECORRENTE_7_DIAS',
+          mensagemAlerta: ultimoAlerta === 0 
+            ? `Protocolo ${protocolo.numero} atingiu ${diasSla} dias sem encerramento (SLA 16 dias)`
+            : `Protocolo ${protocolo.numero} está há ${diasSla} dias sem encerramento (alerta recorrente a cada 7 dias)`,
           // Dados do gestor responsável pela unidade
           gestorNome: gestorResponsavel?.nome || '',
           gestorWhatsapp: gestorResponsavel?.whatsapp || '',
@@ -137,7 +149,8 @@ serve(async (req) => {
               .from('protocolos')
               .update({
                 sla_16_enviado: true,
-                sla_16_enviado_at: new Date().toISOString()
+                sla_16_enviado_at: new Date().toISOString(),
+                ultimo_alerta_sla: diasSla
               })
               .eq('id', protocolo.id);
 
