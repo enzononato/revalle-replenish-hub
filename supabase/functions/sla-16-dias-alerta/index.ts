@@ -54,7 +54,18 @@ serve(async (req) => {
       throw fetchError;
     }
 
+    // Buscar todos os gestores para mapear unidades
+    const { data: gestores, error: gestoresError } = await supabase
+      .from('gestores')
+      .select('*');
+
+    if (gestoresError) {
+      console.error('Erro ao buscar gestores:', gestoresError);
+      throw gestoresError;
+    }
+
     console.log(`Encontrados ${protocolos?.length || 0} protocolos para verificar`);
+    console.log(`Encontrados ${gestores?.length || 0} gestores cadastrados`);
 
     const protocolosAlertados: string[] = [];
     const erros: string[] = [];
@@ -67,6 +78,15 @@ serve(async (req) => {
       // Verificar se atingiu exatamente 16 dias
       if (diasSla === 16) {
         console.log(`Protocolo ${protocolo.numero} atingiu 16 dias de SLA. Enviando webhook...`);
+
+        // Buscar gestor responsável pela unidade do protocolo
+        const unidadeProtocolo = protocolo.motorista_unidade?.toUpperCase().trim() || '';
+        const gestorResponsavel = gestores?.find(g => 
+          g.unidades.some((u: string) => u.toUpperCase().trim() === unidadeProtocolo)
+        );
+
+        console.log(`Unidade do protocolo: ${unidadeProtocolo}`);
+        console.log(`Gestor encontrado: ${gestorResponsavel?.nome || 'Nenhum'}`);
 
         // Montar o payload do webhook (mesmo formato da criação)
         const webhookPayload = {
@@ -93,7 +113,10 @@ serve(async (req) => {
           alertaSla16Dias: true,
           diasSla: diasSla,
           motivoEnvio: 'SLA_16_DIAS',
-          mensagemAlerta: `Protocolo ${protocolo.numero} atingiu ${diasSla} dias sem encerramento (SLA 16 dias)`
+          mensagemAlerta: `Protocolo ${protocolo.numero} atingiu ${diasSla} dias sem encerramento (SLA 16 dias)`,
+          // Dados do gestor responsável pela unidade
+          gestorNome: gestorResponsavel?.nome || '',
+          gestorWhatsapp: gestorResponsavel?.whatsapp || '',
         };
 
         try {
