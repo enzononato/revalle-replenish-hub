@@ -297,17 +297,6 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [protocolosFiltrados]);
 
-  // Protocolos próximos de atingir 16 dias de SLA (13-15 dias)
-  const protocolosProximosSLA = useMemo(() => {
-    return protocolosFiltrados
-      .filter(p => p.status !== 'encerrado')
-      .map(p => {
-        const slaDias = calcularSlaDias(p.createdAt, p.status, p.observacoesLog);
-        return { ...p, slaDias };
-      })
-      .filter(p => p.slaDias >= 13 && p.slaDias <= 15)
-      .sort((a, b) => b.slaDias - a.slaDias);
-  }, [protocolosFiltrados]);
 
   // Contagem por tipo de reposição
   const contagemPorTipo = useMemo(() => {
@@ -386,6 +375,18 @@ export default function Dashboard() {
       return 0;
     }
   };
+
+  // Protocolos próximos de atingir 16 dias de SLA (13-15 dias)
+  const protocolosProximosSLA = useMemo(() => {
+    return protocolosFiltrados
+      .filter(p => p.status !== 'encerrado')
+      .map(p => {
+        const slaDias = calcularSlaDias(p.createdAt, p.status, p.observacoesLog);
+        return { ...p, slaDias };
+      })
+      .filter(p => p.slaDias >= 13 && p.slaDias <= 15)
+      .sort((a, b) => b.slaDias - a.slaDias);
+  }, [protocolosFiltrados]);
 
   const getSlaColor = (dias: number): string => {
     if (dias >= 15) return 'text-foreground bg-red-300 dark:bg-red-500/30 dark:text-red-300';
