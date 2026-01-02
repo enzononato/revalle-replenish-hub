@@ -306,6 +306,8 @@ export type Database = {
           observacoes_log: Json | null
           oculto: boolean | null
           produtos: Json | null
+          sla_16_enviado: boolean | null
+          sla_16_enviado_at: string | null
           status: string
           status_encerramento: string | null
           status_envio: string | null
@@ -346,6 +348,8 @@ export type Database = {
           observacoes_log?: Json | null
           oculto?: boolean | null
           produtos?: Json | null
+          sla_16_enviado?: boolean | null
+          sla_16_enviado_at?: string | null
           status?: string
           status_encerramento?: string | null
           status_envio?: string | null
@@ -386,6 +390,8 @@ export type Database = {
           observacoes_log?: Json | null
           oculto?: boolean | null
           produtos?: Json | null
+          sla_16_enviado?: boolean | null
+          sla_16_enviado_at?: string | null
           status?: string
           status_encerramento?: string | null
           status_envio?: string | null
