@@ -7,7 +7,7 @@ import { mockUnidades } from '@/data/mockData';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
-import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin, CalendarRange, X, RefreshCw, Repeat, AlertTriangle, PackageX } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Truck, Calendar, Users, Building2, Package, Download, Eye, TrendingUp, MapPin, CalendarRange, X, RefreshCw, Repeat, AlertTriangle, PackageX, Timer } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { 
@@ -295,6 +295,18 @@ export default function Dashboard() {
       .map(([nome, quantidade], index) => ({ id: `produto-${index}`, nome, quantidade }))
       .sort((a, b) => b.quantidade - a.quantidade)
       .slice(0, 5);
+  }, [protocolosFiltrados]);
+
+  // Protocolos próximos de atingir 16 dias de SLA (13-15 dias)
+  const protocolosProximosSLA = useMemo(() => {
+    return protocolosFiltrados
+      .filter(p => p.status !== 'encerrado')
+      .map(p => {
+        const slaDias = calcularSlaDias(p.createdAt, p.status, p.observacoesLog);
+        return { ...p, slaDias };
+      })
+      .filter(p => p.slaDias >= 13 && p.slaDias <= 15)
+      .sort((a, b) => b.slaDias - a.slaDias);
   }, [protocolosFiltrados]);
 
   // Contagem por tipo de reposição
@@ -629,9 +641,92 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Protocolos Próximos do SLA 16 dias */}
+      {protocolosProximosSLA.length > 0 && (
+        <div className="card-stats animate-slide-up border-l-4 border-l-amber-500" style={{ animationDelay: '850ms' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg bg-amber-500/10">
+              <Timer className="text-amber-500" size={16} />
+            </div>
+            <div>
+              <h3 className="font-heading text-base font-semibold">⚠️ Protocolos Próximos do SLA 16 dias</h3>
+              <p className="text-xs text-muted-foreground">Estes protocolos atingirão 16 dias em breve e dispararão alerta automático</p>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="table-header bg-amber-500/10">
+                  <th className="text-left p-2 text-[10px] rounded-tl-lg">Protocolo</th>
+                  <th className="text-left p-2 text-[10px]">Motorista</th>
+                  <th className="text-left p-2 text-[10px]">Data</th>
+                  <th className="text-left p-2 text-[10px]">Dias SLA</th>
+                  <th className="text-left p-2 text-[10px]">Faltam</th>
+                  <th className="text-left p-2 text-[10px]">Status</th>
+                  <th className="text-right p-2 text-[10px] rounded-tr-lg">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {protocolosProximosSLA.map((protocolo) => {
+                  const diasFaltando = 16 - protocolo.slaDias;
+                  
+                  return (
+                    <tr 
+                      key={protocolo.id} 
+                      className="border-b border-border hover:bg-amber-500/5 transition-all duration-200 group"
+                    >
+                      <td className="p-2">
+                        <span className="font-semibold text-primary text-[11px]">{protocolo.numero}</span>
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-[9px] font-bold ${getAvatarColor(protocolo.motorista.nome)}`}>
+                            {getInitials(protocolo.motorista.nome)}
+                          </div>
+                          <span className="font-medium text-[11px]">{protocolo.motorista.nome}</span>
+                        </div>
+                      </td>
+                      <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
+                      <td className="p-2">
+                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-200 text-amber-800 dark:bg-amber-500/30 dark:text-amber-300">
+                          {protocolo.slaDias} dias
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          diasFaltando === 1 
+                            ? 'bg-red-200 text-red-800 dark:bg-red-500/30 dark:text-red-300' 
+                            : 'bg-orange-200 text-orange-800 dark:bg-orange-500/30 dark:text-orange-300'
+                        }`}>
+                          {diasFaltando} {diasFaltando === 1 ? 'dia' : 'dias'}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        <StatusBadge status={protocolo.status} />
+                      </td>
+                      <td className="p-2 text-right">
+                        <Link to={`/protocolos?id=${protocolo.id}`}>
+                          <Button 
+                            variant="outline" 
+                            className="h-5 text-[11px] border-amber-500 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                          >
+                            <Eye size={11} className="mr-1" />
+                            Ver
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Motoristas por Unidade - apenas para admin */}
       {isAdmin && motoristasPorUnidade.length > 0 && (
-        <div className="card-stats animate-slide-up" style={{ animationDelay: '850ms' }}>
+        <div className="card-stats animate-slide-up" style={{ animationDelay: '900ms' }}>
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="text-primary" size={16} />
             <h3 className="font-heading text-base font-semibold">Motoristas por Unidade</h3>
@@ -641,7 +736,7 @@ export default function Dashboard() {
               <div 
                 key={item.id}
                 className="flex flex-col items-center p-2.5 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                style={{ animationDelay: `${850 + index * 50}ms` }}
+                style={{ animationDelay: `${900 + index * 50}ms` }}
               >
                 <span className="text-xl font-bold text-primary">{item.quantidade}</span>
                 <span className="text-xs text-muted-foreground text-center truncate w-full">{item.nome}</span>
@@ -654,7 +749,7 @@ export default function Dashboard() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Bar Chart */}
-        <div className="card-stats animate-slide-up" style={{ animationDelay: '900ms' }}>
+        <div className="card-stats animate-slide-up" style={{ animationDelay: '950ms' }}>
           <h3 className="font-heading text-base font-semibold mb-3">Protocolos da Semana</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={barData}>
