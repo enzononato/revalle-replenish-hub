@@ -75,9 +75,9 @@ serve(async (req) => {
       
       console.log(`Protocolo ${protocolo.numero}: ${diasSla} dias de SLA`);
 
-      // Verificar se atingiu exatamente 16 dias
-      if (diasSla === 16) {
-        console.log(`Protocolo ${protocolo.numero} atingiu 16 dias de SLA. Enviando webhook...`);
+      // Verificar se atingiu 16 dias ou mais
+      if (diasSla >= 16) {
+        console.log(`Protocolo ${protocolo.numero} atingiu ${diasSla} dias de SLA (>= 16). Enviando webhook...`);
 
         // Buscar gestor responsável pela unidade do protocolo
         const unidadeProtocolo = protocolo.motorista_unidade?.toUpperCase().trim() || '';
