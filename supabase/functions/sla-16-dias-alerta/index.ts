@@ -64,8 +64,8 @@ serve(async (req) => {
       
       console.log(`Protocolo ${protocolo.numero}: ${diasSla} dias de SLA`);
 
-      // Verificar se atingiu 16 dias
-      if (diasSla >= 16) {
+      // Verificar se atingiu exatamente 16 dias
+      if (diasSla === 16) {
         console.log(`Protocolo ${protocolo.numero} atingiu 16 dias de SLA. Enviando webhook...`);
 
         // Montar o payload do webhook (mesmo formato da criação)
