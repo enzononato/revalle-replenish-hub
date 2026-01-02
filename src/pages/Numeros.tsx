@@ -340,7 +340,7 @@ export default function Numeros() {
                   ) : (
                     <div className="grid grid-cols-2 gap-2">
                       {unidades.map(unidade => (
-                        <div
+                        <label
                           key={unidade.id}
                           className={cn(
                             "flex items-center gap-2 p-2 rounded-md cursor-pointer transition-colors",
@@ -348,14 +348,13 @@ export default function Numeros() {
                               ? "bg-primary/10 border border-primary/30"
                               : "hover:bg-muted"
                           )}
-                          onClick={() => toggleUnidade(unidade.nome)}
                         >
                           <Checkbox
                             checked={formData.unidades.includes(unidade.nome)}
                             onCheckedChange={() => toggleUnidade(unidade.nome)}
                           />
                           <span className="text-sm">{unidade.nome}</span>
-                        </div>
+                        </label>
                       ))}
                     </div>
                   )}
