@@ -357,9 +357,10 @@ export default function Dashboard() {
   };
 
   // Função para cor do SLA - padronizada com página Protocolos (dias)
-  const calcularSlaDias = (createdAt: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
+  // Função para cor do SLA - usando campo data (DD/MM/YYYY) para consistência com backend
+  const calcularSlaDias = (dataStr: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
     try {
-      const dataProtocolo = parseISO(createdAt);
+      const dataProtocolo = parse(dataStr, 'dd/MM/yyyy', new Date());
       
       // Se encerrado, calcular até a data de encerramento
       if (status === 'encerrado') {
@@ -381,7 +382,7 @@ export default function Dashboard() {
     return protocolosFiltrados
       .filter(p => p.status !== 'encerrado')
       .map(p => {
-        const slaDias = calcularSlaDias(p.createdAt, p.status, p.observacoesLog);
+        const slaDias = calcularSlaDias(p.data, p.status, p.observacoesLog);
         return { ...p, slaDias };
       })
       .filter(p => p.slaDias >= 13 && p.slaDias <= 15)
@@ -830,7 +831,7 @@ export default function Dashboard() {
             </thead>
             <tbody>
               {recentProtocolos.map((protocolo) => {
-                const slaDias = calcularSlaDias(protocolo.createdAt, protocolo.status, protocolo.observacoesLog);
+                const slaDias = calcularSlaDias(protocolo.data, protocolo.status, protocolo.observacoesLog);
                 
                 return (
                   <tr 

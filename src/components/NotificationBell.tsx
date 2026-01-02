@@ -2,7 +2,7 @@ import { Bell, AlertTriangle, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatDistanceToNow, differenceInDays, parseISO, format, isToday } from 'date-fns';
+import { formatDistanceToNow, differenceInDays, parse, parseISO, format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import {
@@ -16,10 +16,14 @@ import { Link } from 'react-router-dom';
 const DISMISSED_KEY = 'critical_sla_dismissed_date';
 const DISMISSED_NOTIFICATIONS_KEY = 'dismissed_notifications';
 
-const calcularSlaDias = (createdAt: string): number => {
-  const dataProtocolo = parseISO(createdAt);
-  const hoje = new Date();
-  return differenceInDays(hoje, dataProtocolo);
+const calcularSlaDias = (dataStr: string): number => {
+  try {
+    const dataProtocolo = parse(dataStr, 'dd/MM/yyyy', new Date());
+    const hoje = new Date();
+    return differenceInDays(hoje, dataProtocolo);
+  } catch {
+    return 0;
+  }
 };
 
 interface DismissedNotification {
@@ -80,7 +84,7 @@ export function NotificationBell() {
 
   // Count critical SLA protocols (>15 days)
   const criticalCount = protocolosFiltrados.filter(p => 
-    !p.oculto && p.status !== 'encerrado' && calcularSlaDias(p.createdAt) >= 15
+    !p.oculto && p.status !== 'encerrado' && calcularSlaDias(p.data) >= 15
   ).length;
 
   // Show critical only if not dismissed today
@@ -189,7 +193,7 @@ export function NotificationBell() {
         <div className="max-h-[300px] overflow-y-auto">
           {recentProtocolos.length > 0 ? (
             recentProtocolos.map((protocolo) => {
-              const slaDias = calcularSlaDias(protocolo.createdAt);
+              const slaDias = calcularSlaDias(protocolo.data);
               const isCritical = slaDias >= 15;
               
               return (

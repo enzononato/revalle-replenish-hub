@@ -36,8 +36,9 @@ const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | 
   return logEncerramento?.data || null;
 };
 
-const calcularSlaDias = (createdAt: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
-  const dataProtocolo = parseISO(createdAt);
+const calcularSlaDias = (dataStr: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
+  // data vem no formato DD/MM/YYYY - consistente com o backend
+  const dataProtocolo = parse(dataStr, 'dd/MM/yyyy', new Date());
   
   // Se encerrado, calcular até a data de encerramento
   if (status === 'encerrado') {
@@ -185,8 +186,8 @@ export default function Protocolos() {
     })
     // Ordenar por SLA: mais antigos primeiro (maior SLA = topo)
     .sort((a, b) => {
-      const slaA = calcularSlaDias(a.createdAt, a.status, a.observacoesLog);
-      const slaB = calcularSlaDias(b.createdAt, b.status, b.observacoesLog);
+      const slaA = calcularSlaDias(a.data, a.status, a.observacoesLog);
+      const slaB = calcularSlaDias(b.data, b.status, b.observacoesLog);
       return slaB - slaA;
     });
 
@@ -460,7 +461,7 @@ export default function Protocolos() {
         `${p.codigo} - ${p.nome} (${p.quantidade} ${p.unidade})`
       ).join('; ') || '';
 
-      const slaDias = calcularSlaDias(protocolo.createdAt, protocolo.status, protocolo.observacoesLog);
+      const slaDias = calcularSlaDias(protocolo.data, protocolo.status, protocolo.observacoesLog);
 
       return [
         protocolo.numero,
@@ -807,7 +808,7 @@ export default function Protocolos() {
                   </td>
                   <td className="p-2.5 text-center border-r border-border">
                     {(() => {
-                      const dias = calcularSlaDias(protocolo.createdAt, protocolo.status, protocolo.observacoesLog);
+                      const dias = calcularSlaDias(protocolo.data, protocolo.status, protocolo.observacoesLog);
                       
                       if (protocolo.status === 'encerrado') {
                         return (
