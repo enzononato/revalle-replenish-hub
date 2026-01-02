@@ -70,6 +70,7 @@ serve(async (req) => {
 
         // Montar o payload do webhook (mesmo formato da criação)
         const webhookPayload = {
+          tipo: 'alerta_sla_16_dias',
           numero: protocolo.numero,
           data: protocolo.data,
           hora: protocolo.hora,
@@ -88,7 +89,7 @@ serve(async (req) => {
           whatsappContato: protocolo.contato_whatsapp || '',
           emailContato: protocolo.contato_email || '',
           observacaoGeral: protocolo.observacao_geral || '',
-          // Campo adicional indicando que foi por causa do SLA de 16 dias
+          // Campos adicionais do alerta SLA
           alertaSla16Dias: true,
           diasSla: diasSla,
           motivoEnvio: 'SLA_16_DIAS',

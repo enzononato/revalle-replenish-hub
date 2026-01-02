@@ -498,6 +498,7 @@ export default function MotoristaPortal() {
         );
 
         const webhookPayload = {
+          tipo: 'criacao_protocolo',
           numero,
           data: format(now, 'dd/MM/yyyy'),
           hora: format(now, 'HH:mm:ss'),

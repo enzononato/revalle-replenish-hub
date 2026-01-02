@@ -374,6 +374,7 @@ export function ProtocoloDetails({
       if (tipo === 'lancar') {
         // Mesmo JSON enviado na criação do protocolo
         webhookPayload = {
+          tipo: 'criacao_protocolo',
           numero: protocolo.numero,
           data: protocolo.data,
           hora: protocolo.hora,
