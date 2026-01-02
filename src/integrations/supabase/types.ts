@@ -169,6 +169,33 @@ export type Database = {
           },
         ]
       }
+      gestores: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          unidades: string[]
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          unidades?: string[]
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          unidades?: string[]
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       motoristas: {
         Row: {
           codigo: string

@@ -18,6 +18,7 @@ import Motoristas from "./pages/Motoristas";
 import Clientes from "./pages/Clientes";
 import Unidades from "./pages/Unidades";
 import Usuarios from "./pages/Usuarios";
+import Numeros from "./pages/Numeros";
 import Configuracoes from "./pages/Configuracoes";
 import AbrirProtocolo from "./pages/AbrirProtocolo";
 import MotoristaLogin from "./pages/MotoristaLogin";
@@ -81,6 +82,14 @@ const App = () => (
                       element={
                         <ProtectedRoute allowedRoles={['admin']}>
                           <Usuarios />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/numeros" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <Numeros />
                         </ProtectedRoute>
                       } 
                     />
