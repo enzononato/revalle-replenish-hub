@@ -256,18 +256,36 @@ export default function Numeros() {
                   <Phone size={14} className="text-muted-foreground" />
                   WhatsApp <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="whatsapp"
-                  value={formData.whatsapp}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, whatsapp: e.target.value }));
-                    if (formErrors.whatsapp) setFormErrors(prev => ({ ...prev, whatsapp: '' }));
-                  }}
-                  placeholder="5511999999999"
-                  className={formErrors.whatsapp ? 'border-destructive' : ''}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="ddd"
+                    value={formData.whatsapp.slice(0, 2)}
+                    onChange={(e) => {
+                      const ddd = e.target.value.replace(/\D/g, '').slice(0, 2);
+                      const numero = formData.whatsapp.slice(2);
+                      setFormData(prev => ({ ...prev, whatsapp: ddd + numero }));
+                      if (formErrors.whatsapp) setFormErrors(prev => ({ ...prev, whatsapp: '' }));
+                    }}
+                    placeholder="DDD"
+                    className={cn("w-20", formErrors.whatsapp ? 'border-destructive' : '')}
+                    maxLength={2}
+                  />
+                  <Input
+                    id="whatsapp"
+                    value={formData.whatsapp.slice(2)}
+                    onChange={(e) => {
+                      const numero = e.target.value.replace(/\D/g, '').slice(0, 9);
+                      const ddd = formData.whatsapp.slice(0, 2);
+                      setFormData(prev => ({ ...prev, whatsapp: ddd + numero }));
+                      if (formErrors.whatsapp) setFormErrors(prev => ({ ...prev, whatsapp: '' }));
+                    }}
+                    placeholder="999999999"
+                    className={cn("flex-1", formErrors.whatsapp ? 'border-destructive' : '')}
+                    maxLength={9}
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Formato: código do país + DDD + número (ex: 5511999999999)
+                  DDD + número (ex: 11 + 999999999)
                 </p>
                 {formErrors.whatsapp && (
                   <p className="text-destructive text-xs">{formErrors.whatsapp}</p>
@@ -441,7 +459,7 @@ export default function Numeros() {
                     <td className="p-4">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Phone size={16} />
-                        <span>{gestor.whatsapp}</span>
+                        <span>({gestor.whatsapp.slice(0, 2)}) {gestor.whatsapp.slice(2)}</span>
                       </div>
                     </td>
                     <td className="p-4">
