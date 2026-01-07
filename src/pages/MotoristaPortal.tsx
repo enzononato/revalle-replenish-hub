@@ -1353,41 +1353,36 @@ export default function MotoristaPortal() {
         </div>
       )}
 
-      {/* Sticky Submit Button - Only show on new protocol tab */}
+      {/* Submit Button - Only show on new protocol tab */}
       {activeTab === 'novo' && (
-        <div 
-          className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border safe-area-bottom"
-          style={{ zIndex: 9999 }}
-        >
-          <div className="max-w-lg mx-auto">
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSubmit();
-              }}
-              disabled={isCompressing || isUploading}
-              className="w-full h-14 flex items-center justify-center gap-2 text-base font-semibold shadow-lg bg-primary text-primary-foreground rounded-xl active:opacity-80 disabled:opacity-50"
-              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Enviando fotos...</span>
-                </>
-              ) : isCompressing ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Processando imagem...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-5 w-5" />
-                  <span>Enviar Protocolo</span>
-                </>
-              )}
-            </button>
-          </div>
+        <div className="mt-6 mb-8">
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSubmit();
+            }}
+            disabled={isCompressing || isUploading}
+            className="w-full h-14 flex items-center justify-center gap-2 text-base font-semibold shadow-lg bg-primary text-primary-foreground rounded-xl active:opacity-80 disabled:opacity-50"
+            style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Enviando fotos...</span>
+              </>
+            ) : isCompressing ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Processando imagem...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-5 w-5" />
+                <span>Enviar Protocolo</span>
+              </>
+            )}
+          </button>
         </div>
       )}
       </div>
