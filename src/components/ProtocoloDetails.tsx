@@ -784,7 +784,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           size="sm" 
                           className="h-5 w-5 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
                           onClick={() => {
-                            setWhatsappEditado(protocolo.motorista.whatsapp || '');
+                            setWhatsappEditado(protocolo.contatoWhatsapp || protocolo.motorista.whatsapp || '');
                             setEditandoWhatsapp(true);
                           }}
                         >
@@ -808,6 +808,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                             
                             const protocoloAtualizado = {
                               ...protocolo,
+                              contatoWhatsapp: whatsappEditado,
                               motorista: {
                                 ...protocolo.motorista,
                                 whatsapp: whatsappEditado
