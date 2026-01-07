@@ -36,6 +36,7 @@ import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 import { PdvAutocomplete } from '@/components/PdvAutocomplete';
 import { MeusProtocolos } from '@/components/motorista/MeusProtocolos';
 import { MotoristaHeader } from '@/components/motorista/MotoristaHeader';
+import { MotoristaTour } from '@/components/MotoristaTour';
 import CameraCapture from '@/components/CameraCapture';
 
 interface ProdutoForm {
@@ -837,7 +838,7 @@ export default function MotoristaPortal() {
 
       {/* Tabs */}
       <div className="px-4 pt-4 pb-2 max-w-lg mx-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
           <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60 p-1 rounded-lg border border-border/50">
             <TabsTrigger 
               value="novo" 
@@ -856,7 +857,7 @@ export default function MotoristaPortal() {
           </TabsList>
 
           {/* Tab: Novo Protocolo */}
-          <TabsContent value="novo" className="mt-4 pb-24 space-y-4">
+          <TabsContent value="novo" className="mt-4 pb-24 space-y-4" data-tour="motorista-form">
             {/* Seção: Dados Gerais */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
@@ -1386,6 +1387,9 @@ export default function MotoristaPortal() {
         </div>
       )}
       </div>
+      
+      {/* Guided Tour for Motorista */}
+      <MotoristaTour />
     </>
   );
 }
