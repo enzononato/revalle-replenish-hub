@@ -8,7 +8,6 @@ export interface Usuario {
   email: string;
   nivel: 'admin' | 'distribuicao' | 'conferente';
   unidades: string[];
-  telefone?: string;
   createdAt: string;
   authUserId?: string;
 }
@@ -17,7 +16,6 @@ interface CreateUsuarioInput {
   nome: string;
   email: string;
   senha: string;
-  telefone?: string;
   nivel: 'admin' | 'distribuicao' | 'conferente';
   unidades: string[];
 }
@@ -41,7 +39,6 @@ export function useUsuariosDB() {
         email: u.user_email,
         nivel: (u.nivel as Usuario['nivel']) || 'conferente',
         unidades: u.unidade ? u.unidade.split(',').map(s => s.trim()) : [],
-        telefone: u.telefone || undefined,
         createdAt: u.created_at || new Date().toISOString(),
       }));
     },
@@ -83,7 +80,6 @@ export function useUsuariosDB() {
           nome: usuario.nome,
           nivel: usuario.nivel,
           unidade: usuario.unidades.join(', '),
-          telefone: usuario.telefone || null,
         })
         .eq('user_email', usuario.email);
 
@@ -126,7 +122,6 @@ export function useUsuariosDB() {
       if (updates.email !== undefined) updateData.user_email = updates.email;
       if (updates.nivel !== undefined) updateData.nivel = updates.nivel;
       if (updates.unidades !== undefined) updateData.unidade = updates.unidades.join(', ');
-      if (updates.telefone !== undefined) updateData.telefone = updates.telefone || null;
 
       const { error } = await supabase
         .from('user_profiles')
