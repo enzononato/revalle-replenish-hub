@@ -83,11 +83,44 @@ export function ProtocoloDetails({
   const [editandoWhatsapp, setEditandoWhatsapp] = useState(false);
   const [whatsappEditado, setWhatsappEditado] = useState(protocolo?.motorista.whatsapp || '');
   const [clienteTelefone, setClienteTelefone] = useState(protocolo?.clienteTelefone || '');
+  const [clienteTelefoneErro, setClienteTelefoneErro] = useState('');
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showReabrirModal, setShowReabrirModal] = useState(false);
   const [motivoReabertura, setMotivoReabertura] = useState('');
   const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>();
+
+  // Função para validar formato de telefone brasileiro
+  const validarTelefone = (telefone: string): boolean => {
+    // Remove tudo que não é número
+    const apenasNumeros = telefone.replace(/\D/g, '');
+    // Aceita formatos: 11999999999 (11 dígitos) ou 1199999999 (10 dígitos)
+    return apenasNumeros.length >= 10 && apenasNumeros.length <= 11;
+  };
+
+  // Função para formatar telefone
+  const formatarTelefone = (valor: string): string => {
+    const apenasNumeros = valor.replace(/\D/g, '');
+    if (apenasNumeros.length <= 2) return apenasNumeros;
+    if (apenasNumeros.length <= 7) return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2)}`;
+    if (apenasNumeros.length <= 11) return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2, 7)}-${apenasNumeros.slice(7)}`;
+    return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2, 7)}-${apenasNumeros.slice(7, 11)}`;
+  };
+
+  // Handler para mudança no campo de telefone
+  const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valorFormatado = formatarTelefone(e.target.value);
+    setClienteTelefone(valorFormatado);
+    
+    if (valorFormatado && !validarTelefone(valorFormatado)) {
+      setClienteTelefoneErro('Formato inválido. Use: (XX) XXXXX-XXXX');
+    } else {
+      setClienteTelefoneErro('');
+    }
+  };
+
+  // Verifica se o telefone é válido para habilitar envio
+  const telefoneValido = clienteTelefone.trim() && validarTelefone(clienteTelefone);
   const [chatTargetUser, setChatTargetUser] = useState<{ id: string; nome: string; nivel: string; unidade: string } | null>(null);
 
   const { getOrCreateConversation, getOrCreateUnitGroup, sendMessage } = useChatDB();
@@ -836,18 +869,24 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         <Phone size={14} className="text-primary" />
                         <span className="text-xs font-bold text-foreground uppercase">Telefone do Cliente:</span>
                       </div>
-                      <Input 
-                        value={clienteTelefone}
-                        onChange={(e) => setClienteTelefone(e.target.value)}
-                        placeholder="(XX) XXXXX-XXXX"
-                        className="max-w-[200px] h-7 text-xs"
-                      />
+                      <div className="space-y-1">
+                        <Input 
+                          value={clienteTelefone}
+                          onChange={handleTelefoneChange}
+                          placeholder="(XX) XXXXX-XXXX"
+                          className={`max-w-[200px] h-7 text-xs ${clienteTelefoneErro ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                          maxLength={16}
+                        />
+                        {clienteTelefoneErro && (
+                          <p className="text-xs text-destructive">{clienteTelefoneErro}</p>
+                        )}
+                      </div>
                       <div className="flex gap-2 pt-1">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleReenviarWhatsapp('lancar')}
-                          disabled={enviandoWhatsapp || !clienteTelefone.trim()}
+                          disabled={enviandoWhatsapp || !telefoneValido}
                           className="gap-1.5 h-7 text-xs"
                         >
                           {enviandoWhatsapp ? (
@@ -861,7 +900,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           size="sm"
                           variant="default"
                           onClick={() => handleReenviarWhatsapp('encerrar')}
-                          disabled={enviandoWhatsapp || !clienteTelefone.trim()}
+                          disabled={enviandoWhatsapp || !telefoneValido}
                           className="gap-1.5 h-7 text-xs"
                         >
                           {enviandoWhatsapp ? (
