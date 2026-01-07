@@ -1163,31 +1163,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     usuario_unidade: user.unidade,
                   });
 
-                  // Enviar notificação de reabertura via WhatsApp
-                  if (protocolo.clienteTelefone) {
-                    try {
-                      const whatsappResponse = await supabase.functions.invoke('enviar-whatsapp', {
-                        body: {
-                          tipo: 'reabrir',
-                          numero: protocolo.numero,
-                          data: format(new Date(), 'dd/MM/yyyy'),
-                          hora: format(new Date(), 'HH:mm'),
-                          mapa: protocolo.mapa,
-                          notaFiscal: protocolo.notaFiscal,
-                          motoristaNome: protocolo.motorista.nome,
-                          unidade: protocolo.motorista.unidade,
-                          clienteTelefone: protocolo.clienteTelefone,
-                          motivoReabertura: motivoReabertura,
-                          usuarioReabertura: user.nome,
-                        }
-                      });
-                      if (whatsappResponse.error) {
-                        console.error('Erro ao enviar WhatsApp de reabertura:', whatsappResponse.error);
-                      }
-                    } catch (err) {
-                      console.error('Erro ao enviar WhatsApp de reabertura:', err);
-                    }
-                  }
+                  // WhatsApp de reabertura é enviado via webhook n8n
 
                   // Enviar notificação de reabertura via Email
                   if (protocolo.contatoEmail) {
