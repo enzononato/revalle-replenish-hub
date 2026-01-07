@@ -35,6 +35,7 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
             size="sm" 
             onClick={onLogout} 
             className="h-8 px-3 text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+            data-tour="motorista-logout"
           >
             <LogOut className="h-4 w-4 mr-1.5" />
             Sair

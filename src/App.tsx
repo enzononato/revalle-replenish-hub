@@ -10,7 +10,7 @@ import { MotoristaAuthProvider } from "@/contexts/MotoristaAuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
-import { GuidedTour } from "@/components/GuidedTour";
+
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Protocolos from "./pages/Protocolos";
@@ -42,7 +42,6 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <KeyboardShortcutsModal />
-                <GuidedTour />
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/abrir-protocolo" element={<AbrirProtocolo />} />
