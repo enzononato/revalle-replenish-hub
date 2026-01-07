@@ -219,10 +219,24 @@ export default function AbrirProtocolo() {
       protocoloNumero
     );
 
+    // Validar se os uploads foram bem-sucedidos
+    if (!fotosUrls.fotoMotoristaPdv) {
+      toast.error('Erro ao fazer upload da foto Motorista/PDV. Tente novamente.');
+      return;
+    }
+    if (!fotosUrls.fotoLoteProduto) {
+      toast.error('Erro ao fazer upload da foto Lote do Produto. Tente novamente.');
+      return;
+    }
+    if (tipoReposicao === 'avaria' && !fotosUrls.fotoAvaria) {
+      toast.error('Erro ao fazer upload da foto de Avaria. Tente novamente.');
+      return;
+    }
+
     const fotosProtocolo: FotosProtocolo = {
-      fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv || fotoMotoristaPdv || undefined,
-      fotoLoteProduto: fotosUrls.fotoLoteProduto || fotoLoteProduto || undefined,
-      fotoAvaria: tipoReposicao === 'avaria' ? (fotosUrls.fotoAvaria || fotoAvaria || undefined) : undefined,
+      fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv,
+      fotoLoteProduto: fotosUrls.fotoLoteProduto,
+      fotoAvaria: tipoReposicao === 'avaria' ? fotosUrls.fotoAvaria : undefined,
     };
 
     const novoProtocolo: Protocolo = {

@@ -424,12 +424,6 @@ export default function MotoristaPortal() {
     const now = new Date();
     const numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
-    const fotosProtocolo: FotosProtocolo = {
-      fotoMotoristaPdv: fotoMotoristaPdv || undefined,
-      fotoLoteProduto: fotoLoteProduto || undefined,
-      fotoAvaria: fotoAvaria || undefined
-    };
-
     const produtosFormatados = validProdutos.map(p => {
       const parts = p.produto.split(' - ');
       const codigo = parts[0] || '';
@@ -443,33 +437,39 @@ export default function MotoristaPortal() {
       };
     });
 
-    const novoProtocolo: Protocolo = {
-      id: generateUUID(),
-      numero,
-      motorista: motorista,
-      data: format(now, 'dd/MM/yyyy'),
-      hora: format(now, 'HH:mm:ss'),
-      sla: '4h',
-      status: 'aberto',
-      validacao: false,
-      lancado: false,
-      enviadoLancar: false,
-      enviadoEncerrar: false,
-      tipoReposicao: tipoReposicao.toUpperCase(),
-      causa,
-      mapa,
-      codigoPdv,
-      notaFiscal,
-      produtos: produtosFormatados as Produto[],
-      fotosProtocolo,
-      observacaoGeral: observacao || undefined,
-      contatoWhatsapp: whatsappContato || undefined,
-      contatoEmail: emailContato || undefined,
-      createdAt: now.toISOString()
-    };
-
-    // Se offline, salvar localmente
+    // Se offline, salvar localmente com fotos base64
     if (!isOnline) {
+      const fotosProtocolo: FotosProtocolo = {
+        fotoMotoristaPdv: fotoMotoristaPdv || undefined,
+        fotoLoteProduto: fotoLoteProduto || undefined,
+        fotoAvaria: fotoAvaria || undefined
+      };
+
+      const novoProtocolo: Protocolo = {
+        id: generateUUID(),
+        numero,
+        motorista: motorista,
+        data: format(now, 'dd/MM/yyyy'),
+        hora: format(now, 'HH:mm:ss'),
+        sla: '4h',
+        status: 'aberto',
+        validacao: false,
+        lancado: false,
+        enviadoLancar: false,
+        enviadoEncerrar: false,
+        tipoReposicao: tipoReposicao.toUpperCase(),
+        causa,
+        mapa,
+        codigoPdv,
+        notaFiscal,
+        produtos: produtosFormatados as Produto[],
+        fotosProtocolo,
+        observacaoGeral: observacao || undefined,
+        contatoWhatsapp: whatsappContato || undefined,
+        contatoEmail: emailContato || undefined,
+        createdAt: now.toISOString()
+      };
+
       saveOffline(novoProtocolo);
       setNumeroProtocolo(numero);
       setProtocoloCriado(true);
@@ -477,6 +477,61 @@ export default function MotoristaPortal() {
     }
 
     try {
+      // Upload das fotos para o storage ANTES de salvar o protocolo
+      const fotosUrls = await uploadFotosProtocolo(
+        {
+          fotoMotoristaPdv,
+          fotoLoteProduto,
+          fotoAvaria
+        },
+        numero
+      );
+
+      // Validar se os uploads foram bem-sucedidos
+      if (!fotosUrls.fotoMotoristaPdv) {
+        toast({ title: 'Erro', description: 'Erro ao fazer upload da foto Motorista/PDV. Tente novamente.', variant: 'destructive' });
+        return;
+      }
+      if (!fotosUrls.fotoLoteProduto) {
+        toast({ title: 'Erro', description: 'Erro ao fazer upload da foto Lote do Produto. Tente novamente.', variant: 'destructive' });
+        return;
+      }
+      if (tipoReposicao === 'avaria' && !fotosUrls.fotoAvaria) {
+        toast({ title: 'Erro', description: 'Erro ao fazer upload da foto de Avaria. Tente novamente.', variant: 'destructive' });
+        return;
+      }
+
+      const fotosProtocolo: FotosProtocolo = {
+        fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv,
+        fotoLoteProduto: fotosUrls.fotoLoteProduto,
+        fotoAvaria: fotosUrls.fotoAvaria || undefined
+      };
+
+      const novoProtocolo: Protocolo = {
+        id: generateUUID(),
+        numero,
+        motorista: motorista,
+        data: format(now, 'dd/MM/yyyy'),
+        hora: format(now, 'HH:mm:ss'),
+        sla: '4h',
+        status: 'aberto',
+        validacao: false,
+        lancado: false,
+        enviadoLancar: false,
+        enviadoEncerrar: false,
+        tipoReposicao: tipoReposicao.toUpperCase(),
+        causa,
+        mapa,
+        codigoPdv,
+        notaFiscal,
+        produtos: produtosFormatados as Produto[],
+        fotosProtocolo,
+        observacaoGeral: observacao || undefined,
+        contatoWhatsapp: whatsappContato || undefined,
+        contatoEmail: emailContato || undefined,
+        createdAt: now.toISOString()
+      };
+
       await addProtocolo(novoProtocolo);
       setNumeroProtocolo(numero);
       setProtocoloCriado(true);
@@ -485,62 +540,48 @@ export default function MotoristaPortal() {
         description: `Protocolo ${numero} criado com sucesso`
       });
 
-      // Fazer upload das fotos e enviar webhook para n8n
-      try {
-        // Upload das fotos para o storage e obter URLs públicas
-        const fotosUrls = await uploadFotosProtocolo(
-          {
-            fotoMotoristaPdv,
-            fotoLoteProduto,
-            fotoAvaria
-          },
-          numero
-        );
+      // Enviar webhook para n8n com URLs das fotos
+      const webhookPayload = {
+        tipo: 'criacao_protocolo',
+        numero,
+        data: format(now, 'dd/MM/yyyy'),
+        hora: format(now, 'HH:mm:ss'),
+        mapa: mapa || '',
+        codigoPdv: codigoPdv || '',
+        notaFiscal: notaFiscal || '',
+        motoristaNome: motorista.nome,
+        motoristaCodigo: motorista.codigo,
+        motoristaWhatsapp: motorista.whatsapp || '',
+        motoristaEmail: motorista.email || '',
+        unidade: motorista.unidade || '',
+        tipoReposicao: tipoReposicao.toUpperCase(),
+        causa,
+        produtos: produtosFormatados,
+        fotos: {
+          fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv || '',
+          fotoLoteProduto: fotosUrls.fotoLoteProduto || '',
+          fotoAvaria: fotosUrls.fotoAvaria || ''
+        },
+        whatsappContato: whatsappContato || '',
+        emailContato: emailContato || '',
+        observacaoGeral: observacao || ''
+      };
 
-        const webhookPayload = {
-          tipo: 'criacao_protocolo',
-          numero,
-          data: format(now, 'dd/MM/yyyy'),
-          hora: format(now, 'HH:mm:ss'),
-          mapa: mapa || '',
-          codigoPdv: codigoPdv || '',
-          notaFiscal: notaFiscal || '',
-          motoristaNome: motorista.nome,
-          motoristaCodigo: motorista.codigo,
-          motoristaWhatsapp: motorista.whatsapp || '',
-          motoristaEmail: motorista.email || '',
-          unidade: motorista.unidade || '',
-          tipoReposicao: tipoReposicao.toUpperCase(),
-          causa,
-          produtos: produtosFormatados,
-          fotos: {
-            fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv || '',
-            fotoLoteProduto: fotosUrls.fotoLoteProduto || '',
-            fotoAvaria: fotosUrls.fotoAvaria || ''
-          },
-          whatsappContato: whatsappContato || '',
-          emailContato: emailContato || '',
-          observacaoGeral: observacao || ''
-        };
-
-        fetch('https://n8n.revalle.com.br/webhook/reposicaowpp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(webhookPayload),
-        }).then(response => {
-          if (response.ok) {
-            console.log('Webhook n8n enviado com sucesso');
-          } else {
-            console.error('Erro ao enviar webhook n8n:', response.status);
-          }
-        }).catch(error => {
-          console.error('Erro ao enviar webhook n8n:', error);
-        });
-      } catch (webhookError) {
-        console.error('Erro ao enviar webhook:', webhookError);
-      }
+      fetch('https://n8n.revalle.com.br/webhook/reposicaowpp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload),
+      }).then(response => {
+        if (response.ok) {
+          console.log('Webhook n8n enviado com sucesso');
+        } else {
+          console.error('Erro ao enviar webhook n8n:', response.status);
+        }
+      }).catch(error => {
+        console.error('Erro ao enviar webhook n8n:', error);
+      });
 
       // Enviar e-mail se preenchido
       if (emailContato) {
@@ -578,10 +619,11 @@ export default function MotoristaPortal() {
       }
     } catch (error) {
       console.error('Erro ao criar protocolo:', error);
-      // Salvar offline se falhar
-      saveOffline(novoProtocolo);
-      setNumeroProtocolo(numero);
-      setProtocoloCriado(true);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao criar protocolo. Verifique sua conexão e tente novamente.',
+        variant: 'destructive'
+      });
     }
   };
 
