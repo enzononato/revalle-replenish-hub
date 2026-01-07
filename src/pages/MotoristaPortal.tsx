@@ -1355,7 +1355,7 @@ export default function MotoristaPortal() {
 
       {/* Submit Button - Only show on new protocol tab */}
       {activeTab === 'novo' && (
-        <div className="mt-6 mb-8">
+        <div className="mt-4 mb-6 flex justify-center">
           <button 
             type="button"
             onClick={(e) => {
@@ -1363,22 +1363,22 @@ export default function MotoristaPortal() {
               handleSubmit();
             }}
             disabled={isCompressing || isUploading}
-            className="w-full h-14 flex items-center justify-center gap-2 text-base font-semibold shadow-lg bg-primary text-primary-foreground rounded-xl active:opacity-80 disabled:opacity-50"
+            className="h-11 px-8 flex items-center justify-center gap-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg active:opacity-80 disabled:opacity-50 transition-colors"
             style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             {isUploading ? (
               <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Enviando fotos...</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Enviando...</span>
               </>
             ) : isCompressing ? (
               <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Processando imagem...</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Processando...</span>
               </>
             ) : (
               <>
-                <CheckCircle className="h-5 w-5" />
+                <CheckCircle className="h-4 w-4" />
                 <span>Enviar Protocolo</span>
               </>
             )}
