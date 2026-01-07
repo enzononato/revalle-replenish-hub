@@ -6,7 +6,7 @@ import { useMotoristaAuth } from '@/contexts/MotoristaAuthContext';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useOfflineProtocolos } from '@/hooks/useOfflineProtocolos';
 import { compressImage } from '@/utils/imageCompression';
-import { uploadFotosProtocolo } from '@/utils/uploadFotoStorage';
+import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
@@ -125,6 +125,8 @@ export default function MotoristaPortal() {
   const [protocoloCriado, setProtocoloCriado] = useState(false);
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
   const [isCompressing, setIsCompressing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   // Touched state for validation
   const [touched, setTouched] = useState<TouchedFields>({
@@ -148,6 +150,18 @@ export default function MotoristaPortal() {
   // Camera modal state
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraTarget, setCameraTarget] = useState<'fotoMotoristaPdv' | 'fotoLoteProduto' | 'fotoAvaria' | null>(null);
+
+  // Calcular progresso do upload
+  const getUploadPercentage = () => {
+    if (!uploadProgress) return 0;
+    const statuses = [
+      uploadProgress.fotoMotoristaPdv,
+      uploadProgress.fotoLoteProduto,
+      tipoReposicao === 'avaria' ? uploadProgress.fotoAvaria : 'success'
+    ];
+    const completed = statuses.filter(s => s === 'success').length;
+    return Math.round((completed / statuses.length) * 100);
+  };
 
   // Sincronizar protocolos pendentes quando online
   useEffect(() => {
@@ -424,12 +438,6 @@ export default function MotoristaPortal() {
     const now = new Date();
     const numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
-    const fotosProtocolo: FotosProtocolo = {
-      fotoMotoristaPdv: fotoMotoristaPdv || undefined,
-      fotoLoteProduto: fotoLoteProduto || undefined,
-      fotoAvaria: fotoAvaria || undefined
-    };
-
     const produtosFormatados = validProdutos.map(p => {
       const parts = p.produto.split(' - ');
       const codigo = parts[0] || '';
@@ -443,33 +451,39 @@ export default function MotoristaPortal() {
       };
     });
 
-    const novoProtocolo: Protocolo = {
-      id: generateUUID(),
-      numero,
-      motorista: motorista,
-      data: format(now, 'dd/MM/yyyy'),
-      hora: format(now, 'HH:mm:ss'),
-      sla: '4h',
-      status: 'aberto',
-      validacao: false,
-      lancado: false,
-      enviadoLancar: false,
-      enviadoEncerrar: false,
-      tipoReposicao: tipoReposicao.toUpperCase(),
-      causa,
-      mapa,
-      codigoPdv,
-      notaFiscal,
-      produtos: produtosFormatados as Produto[],
-      fotosProtocolo,
-      observacaoGeral: observacao || undefined,
-      contatoWhatsapp: whatsappContato || undefined,
-      contatoEmail: emailContato || undefined,
-      createdAt: now.toISOString()
-    };
-
-    // Se offline, salvar localmente
+    // Se offline, salvar localmente com fotos base64
     if (!isOnline) {
+      const fotosProtocolo: FotosProtocolo = {
+        fotoMotoristaPdv: fotoMotoristaPdv || undefined,
+        fotoLoteProduto: fotoLoteProduto || undefined,
+        fotoAvaria: fotoAvaria || undefined
+      };
+
+      const novoProtocolo: Protocolo = {
+        id: generateUUID(),
+        numero,
+        motorista: motorista,
+        data: format(now, 'dd/MM/yyyy'),
+        hora: format(now, 'HH:mm:ss'),
+        sla: '4h',
+        status: 'aberto',
+        validacao: false,
+        lancado: false,
+        enviadoLancar: false,
+        enviadoEncerrar: false,
+        tipoReposicao: tipoReposicao.toUpperCase(),
+        causa,
+        mapa,
+        codigoPdv,
+        notaFiscal,
+        produtos: produtosFormatados as Produto[],
+        fotosProtocolo,
+        observacaoGeral: observacao || undefined,
+        contatoWhatsapp: whatsappContato || undefined,
+        contatoEmail: emailContato || undefined,
+        createdAt: now.toISOString()
+      };
+
       saveOffline(novoProtocolo);
       setNumeroProtocolo(numero);
       setProtocoloCriado(true);
@@ -477,6 +491,73 @@ export default function MotoristaPortal() {
     }
 
     try {
+      // Iniciar upload com progresso
+      setIsUploading(true);
+      setUploadProgress({
+        fotoMotoristaPdv: 'pending',
+        fotoLoteProduto: 'pending',
+        fotoAvaria: tipoReposicao === 'avaria' ? 'pending' : 'success'
+      });
+
+      // Upload das fotos para o storage ANTES de salvar o protocolo
+      const fotosUrls = await uploadFotosProtocolo(
+        {
+          fotoMotoristaPdv,
+          fotoLoteProduto,
+          fotoAvaria
+        },
+        numero,
+        (progress) => setUploadProgress(progress)
+      );
+
+      setIsUploading(false);
+      setUploadProgress(null);
+
+      // Validar se os uploads foram bem-sucedidos
+      if (!fotosUrls.fotoMotoristaPdv) {
+        toast({ title: 'Erro', description: 'Erro ao fazer upload da foto Motorista/PDV após 3 tentativas.', variant: 'destructive' });
+        return;
+      }
+      if (!fotosUrls.fotoLoteProduto) {
+        toast({ title: 'Erro', description: 'Erro ao fazer upload da foto Lote do Produto após 3 tentativas.', variant: 'destructive' });
+        return;
+      }
+      if (tipoReposicao === 'avaria' && !fotosUrls.fotoAvaria) {
+        toast({ title: 'Erro', description: 'Erro ao fazer upload da foto de Avaria após 3 tentativas.', variant: 'destructive' });
+        return;
+      }
+
+      const fotosProtocolo: FotosProtocolo = {
+        fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv,
+        fotoLoteProduto: fotosUrls.fotoLoteProduto,
+        fotoAvaria: fotosUrls.fotoAvaria || undefined
+      };
+
+      const novoProtocolo: Protocolo = {
+        id: generateUUID(),
+        numero,
+        motorista: motorista,
+        data: format(now, 'dd/MM/yyyy'),
+        hora: format(now, 'HH:mm:ss'),
+        sla: '4h',
+        status: 'aberto',
+        validacao: false,
+        lancado: false,
+        enviadoLancar: false,
+        enviadoEncerrar: false,
+        tipoReposicao: tipoReposicao.toUpperCase(),
+        causa,
+        mapa,
+        codigoPdv,
+        notaFiscal,
+        produtos: produtosFormatados as Produto[],
+        fotosProtocolo,
+        observacaoGeral: observacao || undefined,
+        contatoWhatsapp: whatsappContato || undefined,
+        contatoEmail: emailContato || undefined,
+        createdAt: now.toISOString()
+      };
+
       await addProtocolo(novoProtocolo);
       setNumeroProtocolo(numero);
       setProtocoloCriado(true);
@@ -485,62 +566,48 @@ export default function MotoristaPortal() {
         description: `Protocolo ${numero} criado com sucesso`
       });
 
-      // Fazer upload das fotos e enviar webhook para n8n
-      try {
-        // Upload das fotos para o storage e obter URLs públicas
-        const fotosUrls = await uploadFotosProtocolo(
-          {
-            fotoMotoristaPdv,
-            fotoLoteProduto,
-            fotoAvaria
-          },
-          numero
-        );
+      // Enviar webhook para n8n com URLs das fotos
+      const webhookPayload = {
+        tipo: 'criacao_protocolo',
+        numero,
+        data: format(now, 'dd/MM/yyyy'),
+        hora: format(now, 'HH:mm:ss'),
+        mapa: mapa || '',
+        codigoPdv: codigoPdv || '',
+        notaFiscal: notaFiscal || '',
+        motoristaNome: motorista.nome,
+        motoristaCodigo: motorista.codigo,
+        motoristaWhatsapp: motorista.whatsapp || '',
+        motoristaEmail: motorista.email || '',
+        unidade: motorista.unidade || '',
+        tipoReposicao: tipoReposicao.toUpperCase(),
+        causa,
+        produtos: produtosFormatados,
+        fotos: {
+          fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv || '',
+          fotoLoteProduto: fotosUrls.fotoLoteProduto || '',
+          fotoAvaria: fotosUrls.fotoAvaria || ''
+        },
+        whatsappContato: whatsappContato || '',
+        emailContato: emailContato || '',
+        observacaoGeral: observacao || ''
+      };
 
-        const webhookPayload = {
-          tipo: 'criacao_protocolo',
-          numero,
-          data: format(now, 'dd/MM/yyyy'),
-          hora: format(now, 'HH:mm:ss'),
-          mapa: mapa || '',
-          codigoPdv: codigoPdv || '',
-          notaFiscal: notaFiscal || '',
-          motoristaNome: motorista.nome,
-          motoristaCodigo: motorista.codigo,
-          motoristaWhatsapp: motorista.whatsapp || '',
-          motoristaEmail: motorista.email || '',
-          unidade: motorista.unidade || '',
-          tipoReposicao: tipoReposicao.toUpperCase(),
-          causa,
-          produtos: produtosFormatados,
-          fotos: {
-            fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv || '',
-            fotoLoteProduto: fotosUrls.fotoLoteProduto || '',
-            fotoAvaria: fotosUrls.fotoAvaria || ''
-          },
-          whatsappContato: whatsappContato || '',
-          emailContato: emailContato || '',
-          observacaoGeral: observacao || ''
-        };
-
-        fetch('https://n8n.revalle.com.br/webhook/reposicaowpp', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(webhookPayload),
-        }).then(response => {
-          if (response.ok) {
-            console.log('Webhook n8n enviado com sucesso');
-          } else {
-            console.error('Erro ao enviar webhook n8n:', response.status);
-          }
-        }).catch(error => {
-          console.error('Erro ao enviar webhook n8n:', error);
-        });
-      } catch (webhookError) {
-        console.error('Erro ao enviar webhook:', webhookError);
-      }
+      fetch('https://n8n.revalle.com.br/webhook/reposicaowpp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload),
+      }).then(response => {
+        if (response.ok) {
+          console.log('Webhook n8n enviado com sucesso');
+        } else {
+          console.error('Erro ao enviar webhook n8n:', response.status);
+        }
+      }).catch(error => {
+        console.error('Erro ao enviar webhook n8n:', error);
+      });
 
       // Enviar e-mail se preenchido
       if (emailContato) {
@@ -578,10 +645,11 @@ export default function MotoristaPortal() {
       }
     } catch (error) {
       console.error('Erro ao criar protocolo:', error);
-      // Salvar offline se falhar
-      saveOffline(novoProtocolo);
-      setNumeroProtocolo(numero);
-      setProtocoloCriado(true);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao criar protocolo. Verifique sua conexão e tente novamente.',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -1220,27 +1288,101 @@ export default function MotoristaPortal() {
         </Tabs>
       </div>
 
-      {/* Sticky Submit Button - Only show on new protocol tab */}
-      {activeTab === 'novo' && (
+      {/* Upload Progress Indicator */}
+      {isUploading && uploadProgress && activeTab === 'novo' && (
         <div 
-          className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border safe-area-bottom"
-          style={{ zIndex: 9999 }}
+          className="fixed bottom-20 left-0 right-0 p-4 bg-background border-t border-border"
+          style={{ zIndex: 9998 }}
         >
-          <div className="max-w-lg mx-auto">
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSubmit();
-              }}
-              disabled={isCompressing}
-              className="w-full h-14 flex items-center justify-center gap-2 text-base font-semibold shadow-lg bg-primary text-primary-foreground rounded-xl active:opacity-80 disabled:opacity-50"
-              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
-            >
-              <CheckCircle className="h-5 w-5" />
-              <span>{isCompressing ? 'Processando imagem...' : 'Enviar Protocolo'}</span>
-            </button>
+          <div className="max-w-lg mx-auto bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="font-medium text-sm">
+                {uploadProgress.currentRetry 
+                  ? `Tentativa ${uploadProgress.currentRetry.attempt}/3 - ${uploadProgress.currentRetry.foto}...`
+                  : 'Enviando fotos...'}
+              </span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300" 
+                style={{ width: `${getUploadPercentage()}%` }}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="flex items-center gap-1">
+                {uploadProgress.fotoMotoristaPdv === 'success' ? (
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                ) : uploadProgress.fotoMotoristaPdv === 'uploading' || uploadProgress.fotoMotoristaPdv === 'retrying' ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : uploadProgress.fotoMotoristaPdv === 'error' ? (
+                  <X className="h-3 w-3 text-red-500" />
+                ) : (
+                  <div className="h-3 w-3 rounded-full bg-muted" />
+                )}
+                <span>Motorista</span>
+              </div>
+              <div className="flex items-center gap-1">
+                {uploadProgress.fotoLoteProduto === 'success' ? (
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                ) : uploadProgress.fotoLoteProduto === 'uploading' || uploadProgress.fotoLoteProduto === 'retrying' ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : uploadProgress.fotoLoteProduto === 'error' ? (
+                  <X className="h-3 w-3 text-red-500" />
+                ) : (
+                  <div className="h-3 w-3 rounded-full bg-muted" />
+                )}
+                <span>Lote</span>
+              </div>
+              {tipoReposicao === 'avaria' && (
+                <div className="flex items-center gap-1">
+                  {uploadProgress.fotoAvaria === 'success' ? (
+                    <CheckCircle className="h-3 w-3 text-green-500" />
+                  ) : uploadProgress.fotoAvaria === 'uploading' || uploadProgress.fotoAvaria === 'retrying' ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : uploadProgress.fotoAvaria === 'error' ? (
+                    <X className="h-3 w-3 text-red-500" />
+                  ) : (
+                    <div className="h-3 w-3 rounded-full bg-muted" />
+                  )}
+                  <span>Avaria</span>
+                </div>
+              )}
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* Submit Button - Only show on new protocol tab */}
+      {activeTab === 'novo' && (
+        <div className="mt-1 mb-6 flex justify-center">
+          <button 
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSubmit();
+            }}
+            disabled={isCompressing || isUploading}
+            className="h-11 px-8 flex items-center justify-center gap-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg active:opacity-80 disabled:opacity-50 transition-colors"
+            style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Enviando...</span>
+              </>
+            ) : isCompressing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Processando...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4" />
+                <span>Enviar Protocolo</span>
+              </>
+            )}
+          </button>
         </div>
       )}
       </div>

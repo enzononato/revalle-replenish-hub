@@ -1,8 +1,5 @@
 project_id = "miwbbdhfbpmcrfbpulkj"
 
-[functions.enviar-whatsapp]
-verify_jwt = false
-
 [functions.enviar-email]
 verify_jwt = false
 

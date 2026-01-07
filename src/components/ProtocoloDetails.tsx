@@ -83,11 +83,44 @@ export function ProtocoloDetails({
   const [editandoWhatsapp, setEditandoWhatsapp] = useState(false);
   const [whatsappEditado, setWhatsappEditado] = useState(protocolo?.motorista.whatsapp || '');
   const [clienteTelefone, setClienteTelefone] = useState(protocolo?.clienteTelefone || '');
+  const [clienteTelefoneErro, setClienteTelefoneErro] = useState('');
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showReabrirModal, setShowReabrirModal] = useState(false);
   const [motivoReabertura, setMotivoReabertura] = useState('');
   const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>();
+
+  // Função para validar formato de telefone brasileiro
+  const validarTelefone = (telefone: string): boolean => {
+    // Remove tudo que não é número
+    const apenasNumeros = telefone.replace(/\D/g, '');
+    // Aceita formatos: 11999999999 (11 dígitos) ou 1199999999 (10 dígitos)
+    return apenasNumeros.length >= 10 && apenasNumeros.length <= 11;
+  };
+
+  // Função para formatar telefone
+  const formatarTelefone = (valor: string): string => {
+    const apenasNumeros = valor.replace(/\D/g, '');
+    if (apenasNumeros.length <= 2) return apenasNumeros;
+    if (apenasNumeros.length <= 7) return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2)}`;
+    if (apenasNumeros.length <= 11) return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2, 7)}-${apenasNumeros.slice(7)}`;
+    return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2, 7)}-${apenasNumeros.slice(7, 11)}`;
+  };
+
+  // Handler para mudança no campo de telefone
+  const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valorFormatado = formatarTelefone(e.target.value);
+    setClienteTelefone(valorFormatado);
+    
+    if (valorFormatado && !validarTelefone(valorFormatado)) {
+      setClienteTelefoneErro('Formato inválido. Use: (XX) XXXXX-XXXX');
+    } else {
+      setClienteTelefoneErro('');
+    }
+  };
+
+  // Verifica se o telefone é válido para habilitar envio
+  const telefoneValido = clienteTelefone.trim() && validarTelefone(clienteTelefone);
   const [chatTargetUser, setChatTargetUser] = useState<{ id: string; nome: string; nivel: string; unidade: string } | null>(null);
 
   const { getOrCreateConversation, getOrCreateUnitGroup, sendMessage } = useChatDB();
@@ -312,7 +345,11 @@ export function ProtocoloDetails({
         contatoWhatsapp: protocolo.contatoWhatsapp,
         observacaoGeral: protocolo.observacaoGeral,
         produtos: protocolo.produtos,
-        fotosProtocolo: protocolo.fotosProtocolo,
+        fotos: {
+          fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
+          fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
+          fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+        },
         mensagemEncerramento: mensagemEncerramento || '',
         arquivoEncerramentoUrl: arquivoUrl,
         usuarioEncerramento: {
@@ -371,6 +408,9 @@ export function ProtocoloDetails({
     try {
       let webhookPayload: Record<string, unknown>;
       
+      // Usar o número informado no campo de reenvio (clienteTelefone) se disponível
+      const numeroContatoReenvio = clienteTelefone || protocolo.clienteTelefone || protocolo.contatoWhatsapp || '';
+      
       if (tipo === 'lancar') {
         // Mesmo JSON enviado na criação do protocolo
         webhookPayload = {
@@ -394,7 +434,7 @@ export function ProtocoloDetails({
             fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
             fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
           },
-          whatsappContato: protocolo.contatoWhatsapp || clienteTelefone || '',
+          whatsappContato: numeroContatoReenvio,
           emailContato: protocolo.contatoEmail || '',
           observacaoGeral: protocolo.observacaoGeral || ''
         };
@@ -421,12 +461,16 @@ export function ProtocoloDetails({
           motoristaWhatsapp: protocolo.motorista.whatsapp,
           motoristaEmail: protocolo.motorista.email,
           unidade: protocolo.unidadeNome || protocolo.motorista.unidade,
-          clienteTelefone: protocolo.clienteTelefone || clienteTelefone,
+          clienteTelefone: numeroContatoReenvio,
           contatoEmail: protocolo.contatoEmail,
-          contatoWhatsapp: protocolo.contatoWhatsapp,
+          contatoWhatsapp: numeroContatoReenvio,
           observacaoGeral: protocolo.observacaoGeral,
           produtos: protocolo.produtos,
-          fotosProtocolo: protocolo.fotosProtocolo,
+          fotos: {
+            fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
+            fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
+            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+          },
           mensagemEncerramento: protocolo.mensagemEncerramento || '',
           arquivoEncerramentoUrl: protocolo.arquivoEncerramento,
           usuarioEncerramento: logEncerramento ? {
@@ -458,7 +502,7 @@ export function ProtocoloDetails({
           [statusField]: 'enviado',
           [erroField]: undefined,
           clienteTelefone: clienteTelefone || protocolo.clienteTelefone,
-          habilitarReenvio: false,
+          contatoWhatsapp: clienteTelefone || protocolo.contatoWhatsapp,
           observacoesLog: [
             ...(protocolo.observacoesLog || []),
             {
@@ -468,7 +512,7 @@ export function ProtocoloDetails({
               data: format(new Date(), 'dd/MM/yyyy'),
               hora: format(new Date(), 'HH:mm'),
               acao: tipo === 'lancar' ? 'Reenviou mensagem de lançamento' : 'Reenviou mensagem de encerramento',
-              texto: `Mensagem reenviada via webhook`
+              texto: `Mensagem reenviada para o número ${clienteTelefone || protocolo.clienteTelefone || 'não informado'}`
             }
           ]
         };
@@ -740,7 +784,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           size="sm" 
                           className="h-5 w-5 p-0 text-primary hover:text-primary/80 hover:bg-primary/10"
                           onClick={() => {
-                            setWhatsappEditado(protocolo.motorista.whatsapp || '');
+                            setWhatsappEditado(protocolo.contatoWhatsapp || protocolo.motorista.whatsapp || '');
                             setEditandoWhatsapp(true);
                           }}
                         >
@@ -764,6 +808,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                             
                             const protocoloAtualizado = {
                               ...protocolo,
+                              contatoWhatsapp: whatsappEditado,
                               motorista: {
                                 ...protocolo.motorista,
                                 whatsapp: whatsappEditado
@@ -825,18 +870,24 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         <Phone size={14} className="text-primary" />
                         <span className="text-xs font-bold text-foreground uppercase">Telefone do Cliente:</span>
                       </div>
-                      <Input 
-                        value={clienteTelefone}
-                        onChange={(e) => setClienteTelefone(e.target.value)}
-                        placeholder="(XX) XXXXX-XXXX"
-                        className="max-w-[200px] h-7 text-xs"
-                      />
+                      <div className="space-y-1">
+                        <Input 
+                          value={clienteTelefone}
+                          onChange={handleTelefoneChange}
+                          placeholder="(XX) XXXXX-XXXX"
+                          className={`max-w-[200px] h-7 text-xs ${clienteTelefoneErro ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                          maxLength={16}
+                        />
+                        {clienteTelefoneErro && (
+                          <p className="text-xs text-destructive">{clienteTelefoneErro}</p>
+                        )}
+                      </div>
                       <div className="flex gap-2 pt-1">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleReenviarWhatsapp('lancar')}
-                          disabled={enviandoWhatsapp || !clienteTelefone.trim()}
+                          disabled={enviandoWhatsapp || !telefoneValido}
                           className="gap-1.5 h-7 text-xs"
                         >
                           {enviandoWhatsapp ? (
@@ -850,7 +901,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           size="sm"
                           variant="default"
                           onClick={() => handleReenviarWhatsapp('encerrar')}
-                          disabled={enviandoWhatsapp || !clienteTelefone.trim()}
+                          disabled={enviandoWhatsapp || !telefoneValido}
                           className="gap-1.5 h-7 text-xs"
                         >
                           {enviandoWhatsapp ? (
@@ -861,6 +912,33 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           Reenviar Encerramento
                         </Button>
                       </div>
+                      
+                      {/* Histórico de reenvios */}
+                      {(() => {
+                        const historicoReenvios = protocolo.observacoesLog?.filter(
+                          log => log.acao?.includes('Reenviou mensagem')
+                        ) || [];
+                        
+                        if (historicoReenvios.length === 0) return null;
+                        
+                        return (
+                          <div className="mt-3 pt-3 border-t border-primary/20">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Clock size={12} className="text-muted-foreground" />
+                              <span className="text-xs font-bold text-muted-foreground uppercase">Histórico de Reenvios:</span>
+                            </div>
+                            <div className="space-y-1.5 max-h-24 overflow-y-auto">
+                              {historicoReenvios.map((log, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-xs bg-background/50 rounded px-2 py-1">
+                                  <span className="text-muted-foreground">{log.data} {log.hora}</span>
+                                  <span className="text-foreground">{log.texto}</span>
+                                  <span className="text-muted-foreground">por {log.usuarioNome}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                   <div className="flex items-start gap-1.5">
@@ -1163,31 +1241,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     usuario_unidade: user.unidade,
                   });
 
-                  // Enviar notificação de reabertura via WhatsApp
-                  if (protocolo.clienteTelefone) {
-                    try {
-                      const whatsappResponse = await supabase.functions.invoke('enviar-whatsapp', {
-                        body: {
-                          tipo: 'reabrir',
-                          numero: protocolo.numero,
-                          data: format(new Date(), 'dd/MM/yyyy'),
-                          hora: format(new Date(), 'HH:mm'),
-                          mapa: protocolo.mapa,
-                          notaFiscal: protocolo.notaFiscal,
-                          motoristaNome: protocolo.motorista.nome,
-                          unidade: protocolo.motorista.unidade,
-                          clienteTelefone: protocolo.clienteTelefone,
-                          motivoReabertura: motivoReabertura,
-                          usuarioReabertura: user.nome,
-                        }
-                      });
-                      if (whatsappResponse.error) {
-                        console.error('Erro ao enviar WhatsApp de reabertura:', whatsappResponse.error);
-                      }
-                    } catch (err) {
-                      console.error('Erro ao enviar WhatsApp de reabertura:', err);
-                    }
-                  }
+                  // WhatsApp de reabertura é enviado via webhook n8n
 
                   // Enviar notificação de reabertura via Email
                   if (protocolo.contatoEmail) {
