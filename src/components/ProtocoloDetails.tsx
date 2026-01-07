@@ -911,6 +911,33 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           Reenviar Encerramento
                         </Button>
                       </div>
+                      
+                      {/* Histórico de reenvios */}
+                      {(() => {
+                        const historicoReenvios = protocolo.observacoesLog?.filter(
+                          log => log.acao?.includes('Reenviou mensagem')
+                        ) || [];
+                        
+                        if (historicoReenvios.length === 0) return null;
+                        
+                        return (
+                          <div className="mt-3 pt-3 border-t border-primary/20">
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Clock size={12} className="text-muted-foreground" />
+                              <span className="text-xs font-bold text-muted-foreground uppercase">Histórico de Reenvios:</span>
+                            </div>
+                            <div className="space-y-1.5 max-h-24 overflow-y-auto">
+                              {historicoReenvios.map((log, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-xs bg-background/50 rounded px-2 py-1">
+                                  <span className="text-muted-foreground">{log.data} {log.hora}</span>
+                                  <span className="text-foreground">{log.texto}</span>
+                                  <span className="text-muted-foreground">por {log.usuarioNome}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                   <div className="flex items-start gap-1.5">
