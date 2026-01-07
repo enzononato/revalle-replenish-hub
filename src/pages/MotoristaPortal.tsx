@@ -233,6 +233,10 @@ export default function MotoristaPortal() {
         setProdutos([produtos[0]]);
         setTouched(prev => ({ ...prev, produtos: [prev.produtos[0] || false] }));
       }
+      // Limpar validades quando tipo for "falta"
+      if (value === 'falta') {
+        setProdutos(prev => prev.map(p => ({ ...p, validade: undefined })));
+      }
     }
     setTipoReposicao(value);
     handleBlur('tipoReposicao');
@@ -1113,17 +1117,24 @@ export default function MotoristaPortal() {
                               </Select>
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-muted-foreground">Validade</Label>
+                              <Label className={cn(
+                                "text-[10px] font-medium",
+                                tipoReposicao === 'falta' ? "text-muted-foreground/50" : "text-muted-foreground"
+                              )}>Validade</Label>
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button
                                     variant="outline"
+                                    disabled={tipoReposicao === 'falta'}
                                     className={cn(
                                       "h-9 w-full justify-start text-left font-normal text-xs",
-                                      !produto.validade && "text-muted-foreground"
+                                      !produto.validade && "text-muted-foreground",
+                                      tipoReposicao === 'falta' && "opacity-50 cursor-not-allowed"
                                     )}
                                   >
-                                    {produto.validade ? (
+                                    {tipoReposicao === 'falta' ? (
+                                      <span className="text-muted-foreground/50">N/A</span>
+                                    ) : produto.validade ? (
                                       format(produto.validade, "dd/MM/yy")
                                     ) : (
                                       <CalendarIcon className="h-3.5 w-3.5" />
