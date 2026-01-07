@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Shield, UserCircle, Truck, Users, Loader2, Mail, Phone, Building2, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Shield, UserCircle, Truck, Users, Loader2, Mail, Building2, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUsuariosDB, Usuario } from '@/hooks/useUsuariosDB';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
@@ -68,7 +68,6 @@ export default function Usuarios() {
     nome: '',
     email: '',
     senha: '',
-    telefone: '',
     nivel: 'conferente' as UserRole,
     unidades: [] as string[],
   });
@@ -100,7 +99,6 @@ export default function Usuarios() {
       nome: '',
       email: '',
       senha: '',
-      telefone: '',
       nivel: 'conferente',
       unidades: [],
     });
@@ -115,7 +113,6 @@ export default function Usuarios() {
       nome: usuario.nome,
       email: usuario.email,
       senha: '',
-      telefone: usuario.telefone || '',
       nivel: usuario.nivel,
       unidades: usuario.unidades,
     });
@@ -144,10 +141,6 @@ export default function Usuarios() {
       errors.senha = 'Senha deve ter pelo menos 6 caracteres';
     }
 
-    if (!formData.telefone.trim()) {
-      errors.telefone = 'Telefone é obrigatório';
-    }
-
     if (formData.unidades.length === 0) {
       errors.unidades = 'Selecione pelo menos uma unidade';
     }
@@ -168,7 +161,6 @@ export default function Usuarios() {
           updates: {
             nome: formData.nome.trim(),
             email: formData.email.trim(),
-            telefone: formData.telefone.trim(),
             nivel: formData.nivel,
             unidades: formData.unidades,
           },
@@ -178,7 +170,6 @@ export default function Usuarios() {
           nome: formData.nome.trim(),
           email: formData.email.trim(),
           senha: formData.senha,
-          telefone: formData.telefone.trim(),
           nivel: formData.nivel,
           unidades: formData.unidades,
         });
@@ -334,48 +325,26 @@ export default function Usuarios() {
                 )}
               </div>
               
-              {/* Email e Telefone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-1">
-                    <Mail size={14} className="text-muted-foreground" />
-                    Email <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, email: e.target.value }));
-                      if (formErrors.email) setFormErrors(prev => ({ ...prev, email: '' }));
-                    }}
-                    placeholder="usuario@email.com"
-                    className={formErrors.email ? 'border-destructive' : ''}
-                  />
-                  {formErrors.email && (
-                    <p className="text-destructive text-xs">{formErrors.email}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="telefone" className="flex items-center gap-1">
-                    <Phone size={14} className="text-muted-foreground" />
-                    Telefone <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="telefone"
-                    value={formData.telefone}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, telefone: e.target.value }));
-                      if (formErrors.telefone) setFormErrors(prev => ({ ...prev, telefone: '' }));
-                    }}
-                    placeholder="(00) 00000-0000"
-                    className={formErrors.telefone ? 'border-destructive' : ''}
-                  />
-                  {formErrors.telefone && (
-                    <p className="text-destructive text-xs">{formErrors.telefone}</p>
-                  )}
-                </div>
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-1">
+                  <Mail size={14} className="text-muted-foreground" />
+                  Email <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, email: e.target.value }));
+                    if (formErrors.email) setFormErrors(prev => ({ ...prev, email: '' }));
+                  }}
+                  placeholder="usuario@email.com"
+                  className={formErrors.email ? 'border-destructive' : ''}
+                />
+                {formErrors.email && (
+                  <p className="text-destructive text-xs">{formErrors.email}</p>
+                )}
               </div>
               
               {/* Senha */}
@@ -597,7 +566,7 @@ export default function Usuarios() {
             <thead>
               <tr className="bg-muted/50 border-b border-border">
                 <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Usuário</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Contato</th>
+                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</th>
                 <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nível</th>
                 <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Unidades</th>
                 <th className="text-right p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
@@ -639,17 +608,9 @@ export default function Usuarios() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Mail size={12} />
-                          {usuario.email}
-                        </div>
-                        {usuario.telefone && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Phone size={12} />
-                            {usuario.telefone}
-                          </div>
-                        )}
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Mail size={12} />
+                        {usuario.email}
                       </div>
                     </td>
                     <td className="p-4">

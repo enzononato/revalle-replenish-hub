@@ -22,16 +22,16 @@ Deno.serve(async (req) => {
       }
     )
 
-    const { email, password, nome } = await req.json()
+    const { email, password, nome, nivel, unidades } = await req.json()
 
-    if (!email || !password) {
+    if (!email || !password || !nome || !nivel || !unidades) {
       return new Response(
-        JSON.stringify({ error: 'Email e senha são obrigatórios' }),
+        JSON.stringify({ error: 'Campos obrigatórios faltando' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
 
-    // Criar usuário no Auth
+    // Criar usuário usando a API admin (não faz login)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -40,21 +40,42 @@ Deno.serve(async (req) => {
     })
 
     if (authError) {
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
+      if (authError.message.includes('already been registered')) {
+        return new Response(
+          JSON.stringify({ error: 'EMAIL_EXISTS' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      throw authError
     }
 
-    // Criar role admin
-    if (authData.user) {
-      await supabaseAdmin
-        .from('user_roles')
-        .insert({ user_id: authData.user.id, role: 'admin' })
+    if (!authData.user) {
+      throw new Error('Falha ao criar usuário')
     }
+
+    // Aguardar o trigger criar o user_profile
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Atualizar o user_profile
+    await supabaseAdmin
+      .from('user_profiles')
+      .update({
+        nome,
+        nivel,
+        unidade: unidades.join(', ')
+      })
+      .eq('user_email', email)
+
+    // Criar role do usuário
+    await supabaseAdmin
+      .from('user_roles')
+      .insert({
+        user_id: authData.user.id,
+        role: nivel
+      })
 
     return new Response(
-      JSON.stringify({ success: true, user: authData.user }),
+      JSON.stringify({ success: true, userId: authData.user.id }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error: unknown) {

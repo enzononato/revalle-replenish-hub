@@ -36,7 +36,6 @@ import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 import { PdvAutocomplete } from '@/components/PdvAutocomplete';
 import { MeusProtocolos } from '@/components/motorista/MeusProtocolos';
 import { MotoristaHeader } from '@/components/motorista/MotoristaHeader';
-import { MotoristaTour } from '@/components/MotoristaTour';
 import CameraCapture from '@/components/CameraCapture';
 
 interface ProdutoForm {
@@ -233,6 +232,10 @@ export default function MotoristaPortal() {
       if (value === 'inversao' && produtos.length > 1) {
         setProdutos([produtos[0]]);
         setTouched(prev => ({ ...prev, produtos: [prev.produtos[0] || false] }));
+      }
+      // Limpar validades quando tipo for "falta"
+      if (value === 'falta') {
+        setProdutos(prev => prev.map(p => ({ ...p, validade: undefined })));
       }
     }
     setTipoReposicao(value);
@@ -869,7 +872,7 @@ export default function MotoristaPortal() {
               <div className="p-4 space-y-4">
                 {/* General Info */}
                 <div className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-2" data-tour="campo-mapa">
                     <div className="flex items-center gap-2">
                       <Label htmlFor="mapa" className="text-sm font-medium">MAPA *</Label>
                       {touched.mapa && mapa.trim() && <Check size={14} className="text-green-500" />}
@@ -891,7 +894,7 @@ export default function MotoristaPortal() {
                       </p>
                     )}
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5" data-tour="campo-pdv">
                     <div className="flex items-center gap-1.5">
                       <Label htmlFor="codigoPdv" className="text-xs font-medium">Código PDV *</Label>
                       {touched.codigoPdv && codigoPdv.trim() && <Check size={12} className="text-green-500" />}
@@ -911,7 +914,7 @@ export default function MotoristaPortal() {
                       </p>
                     )}
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5" data-tour="campo-nota-fiscal">
                     <div className="flex items-center gap-1.5">
                       <Label htmlFor="notaFiscal" className="text-xs font-medium">Nota Fiscal *</Label>
                       {touched.notaFiscal && notaFiscal.trim() && <Check size={12} className="text-green-500" />}
@@ -946,7 +949,7 @@ export default function MotoristaPortal() {
                 </h3>
               </div>
               <div className="p-3">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2" data-tour="campo-tipo-reposicao">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
                       <Label className="text-xs font-medium">Tipo *</Label>
@@ -1015,7 +1018,7 @@ export default function MotoristaPortal() {
             </div>
 
             {/* Seção: Produtos */}
-            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden" data-tour="secao-produtos">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30 flex items-center justify-between">
                 <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
                   <Package className="h-3.5 w-3.5 text-primary" />
@@ -1114,17 +1117,24 @@ export default function MotoristaPortal() {
                               </Select>
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-muted-foreground">Validade</Label>
+                              <Label className={cn(
+                                "text-[10px] font-medium",
+                                tipoReposicao === 'falta' ? "text-muted-foreground/50" : "text-muted-foreground"
+                              )}>Validade</Label>
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button
                                     variant="outline"
+                                    disabled={tipoReposicao === 'falta'}
                                     className={cn(
                                       "h-9 w-full justify-start text-left font-normal text-xs",
-                                      !produto.validade && "text-muted-foreground"
+                                      !produto.validade && "text-muted-foreground",
+                                      tipoReposicao === 'falta' && "opacity-50 cursor-not-allowed"
                                     )}
                                   >
-                                    {produto.validade ? (
+                                    {tipoReposicao === 'falta' ? (
+                                      <span className="text-muted-foreground/50">N/A</span>
+                                    ) : produto.validade ? (
                                       format(produto.validade, "dd/MM/yy")
                                     ) : (
                                       <CalendarIcon className="h-3.5 w-3.5" />
@@ -1151,7 +1161,7 @@ export default function MotoristaPortal() {
             </div>
 
             {/* Seção: Fotos */}
-            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden" data-tour="secao-fotos">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30">
                 <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
                   <Camera className="h-3.5 w-3.5 text-primary" />
@@ -1208,7 +1218,7 @@ export default function MotoristaPortal() {
                 </h3>
               </div>
               <div className="p-3 space-y-2">
-                    <div className="space-y-1">
+                    <div className="space-y-1" data-tour="campo-whatsapp">
                       <Label htmlFor="whatsappContato" className="text-[10px] font-medium text-muted-foreground">
                         WhatsApp *
                       </Label>
@@ -1356,7 +1366,7 @@ export default function MotoristaPortal() {
 
       {/* Submit Button - Only show on new protocol tab */}
       {activeTab === 'novo' && (
-        <div className="mt-1 mb-6 flex justify-center">
+        <div className="mt-1 mb-6 flex justify-center" data-tour="btn-enviar">
           <button 
             type="button"
             onClick={(e) => {
@@ -1387,9 +1397,6 @@ export default function MotoristaPortal() {
         </div>
       )}
       </div>
-      
-      {/* Guided Tour for Motorista */}
-      <MotoristaTour />
     </>
   );
 }
