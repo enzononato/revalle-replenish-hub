@@ -1355,7 +1355,7 @@ export default function MotoristaPortal() {
 
       {/* Submit Button - Only show on new protocol tab */}
       {activeTab === 'novo' && (
-        <div className="mt-4 mb-6 flex justify-center">
+        <div className="mt-2 mb-6 flex justify-center">
           <button 
             type="button"
             onClick={(e) => {
