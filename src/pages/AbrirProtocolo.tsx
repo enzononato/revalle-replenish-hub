@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { uploadFotosProtocolo } from '@/utils/uploadFotoStorage';
 import {
   Select,
   SelectContent,
@@ -160,7 +161,7 @@ export default function AbrirProtocolo() {
     setFotoAvaria(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedMotorista) {
       toast.error('Selecione um motorista');
       return;
@@ -208,10 +209,20 @@ export default function AbrirProtocolo() {
     const now = new Date();
     const protocoloNumero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
+    // Upload das fotos para o storage e obter URLs públicas
+    const fotosUrls = await uploadFotosProtocolo(
+      {
+        fotoMotoristaPdv,
+        fotoLoteProduto,
+        fotoAvaria: tipoReposicao === 'avaria' ? fotoAvaria : null
+      },
+      protocoloNumero
+    );
+
     const fotosProtocolo: FotosProtocolo = {
-      fotoMotoristaPdv: fotoMotoristaPdv || undefined,
-      fotoLoteProduto: fotoLoteProduto || undefined,
-      fotoAvaria: tipoReposicao === 'avaria' ? fotoAvaria || undefined : undefined,
+      fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv || fotoMotoristaPdv || undefined,
+      fotoLoteProduto: fotosUrls.fotoLoteProduto || fotoLoteProduto || undefined,
+      fotoAvaria: tipoReposicao === 'avaria' ? (fotosUrls.fotoAvaria || fotoAvaria || undefined) : undefined,
     };
 
     const novoProtocolo: Protocolo = {
@@ -242,6 +253,47 @@ export default function AbrirProtocolo() {
       createdAt: now.toISOString(),
       observacoesLog: [],
     };
+
+    // Enviar webhook com URLs das fotos
+    try {
+      const webhookPayload = {
+        tipo: 'criacao_protocolo',
+        numero: protocoloNumero,
+        data: format(now, 'dd/MM/yyyy'),
+        hora: format(now, 'HH:mm'),
+        mapa: mapa || '',
+        codigoPdv: codigoPdv || '',
+        notaFiscal: notaFiscal || '',
+        motoristaNome: selectedMotorista.nome,
+        motoristaCodigo: selectedMotorista.codigo,
+        motoristaWhatsapp: selectedMotorista.whatsapp || '',
+        motoristaEmail: selectedMotorista.email || '',
+        unidade: selectedMotorista.unidade || '',
+        tipoReposicao: tipoReposicao.toUpperCase(),
+        causa: '',
+        produtos: novoProtocolo.produtos,
+        fotos: {
+          fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv || '',
+          fotoLoteProduto: fotosUrls.fotoLoteProduto || '',
+          fotoAvaria: fotosUrls.fotoAvaria || ''
+        },
+        whatsappContato: whatsapp || '',
+        emailContato: email || '',
+        observacaoGeral: observacao || ''
+      };
+
+      fetch('https://n8n.revalle.com.br/webhook/reposicaowpp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookPayload),
+      }).catch(error => {
+        console.error('Erro ao enviar webhook:', error);
+      });
+    } catch (webhookError) {
+      console.error('Erro ao enviar webhook:', webhookError);
+    }
 
     addProtocolo(novoProtocolo);
     setProtocoloCriado(protocoloNumero);

@@ -312,7 +312,11 @@ export function ProtocoloDetails({
         contatoWhatsapp: protocolo.contatoWhatsapp,
         observacaoGeral: protocolo.observacaoGeral,
         produtos: protocolo.produtos,
-        fotosProtocolo: protocolo.fotosProtocolo,
+        fotos: {
+          fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
+          fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
+          fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+        },
         mensagemEncerramento: mensagemEncerramento || '',
         arquivoEncerramentoUrl: arquivoUrl,
         usuarioEncerramento: {
@@ -426,7 +430,11 @@ export function ProtocoloDetails({
           contatoWhatsapp: protocolo.contatoWhatsapp,
           observacaoGeral: protocolo.observacaoGeral,
           produtos: protocolo.produtos,
-          fotosProtocolo: protocolo.fotosProtocolo,
+          fotos: {
+            fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
+            fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
+            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+          },
           mensagemEncerramento: protocolo.mensagemEncerramento || '',
           arquivoEncerramentoUrl: protocolo.arquivoEncerramento,
           usuarioEncerramento: logEncerramento ? {
