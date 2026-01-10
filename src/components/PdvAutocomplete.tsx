@@ -78,7 +78,7 @@ export function PdvAutocomplete({
   };
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className="relative">
       <div className="relative">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -90,7 +90,7 @@ export function PdvAutocomplete({
           onFocus={() => setIsOpen(true)}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={cn('h-12 text-base pl-10 pr-10 w-full', className)}
+          className={cn('pl-9 pr-10', className)}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
