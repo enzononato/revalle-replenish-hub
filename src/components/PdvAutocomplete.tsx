@@ -78,7 +78,7 @@ export function PdvAutocomplete({
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative w-full">
       <div className="relative">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
           <Search className="h-4 w-4 text-muted-foreground" />
@@ -90,9 +90,9 @@ export function PdvAutocomplete({
           onFocus={() => setIsOpen(true)}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={cn('pl-9 pr-10', className)}
+          className={cn('h-12 text-base pl-10 pr-10 w-full', className)}
         />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
           {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           {inputValue && !isLoading && (
             <button
@@ -107,13 +107,13 @@ export function PdvAutocomplete({
       </div>
 
       {isOpen && pdvs.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-60 overflow-auto">
           {pdvs.map((pdv) => (
             <button
               key={`${pdv.codigo}-${pdv.nome}`}
               type="button"
               onClick={() => handleSelectPdv(pdv)}
-              className="w-full px-3 py-2 text-left hover:bg-muted flex items-start gap-2 border-b last:border-b-0"
+              className="w-full px-3 py-3 text-left hover:bg-accent transition-colors flex items-start gap-2 border-b border-border last:border-b-0"
             >
               <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
               <div className="flex-1 min-w-0">
@@ -137,7 +137,7 @@ export function PdvAutocomplete({
       )}
 
       {isOpen && inputValue.length >= 2 && pdvs.length === 0 && !isLoading && (
-        <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg p-3 text-center text-sm text-muted-foreground">
+        <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg p-3 text-center text-sm text-muted-foreground">
           Nenhum PDV encontrado para "{inputValue}"
         </div>
       )}

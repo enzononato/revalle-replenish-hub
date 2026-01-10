@@ -949,7 +949,7 @@ export default function MotoristaPortal() {
                 </h3>
               </div>
               <div className="p-3">
-                <div className="grid grid-cols-2 gap-2" data-tour="campo-tipo-reposicao">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" data-tour="campo-tipo-reposicao">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
                       <Label className="text-xs font-medium">Tipo *</Label>

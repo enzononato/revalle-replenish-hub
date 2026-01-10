@@ -53,7 +53,7 @@ export function ProdutoAutocomplete({
   };
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className="relative w-full">
       <div className="relative">
         <Input
           value={inputValue}
@@ -63,7 +63,7 @@ export function ProdutoAutocomplete({
             setTimeout(() => onBlur?.(), 150);
           }}
           placeholder={placeholder}
-          className={cn("h-11 text-base pr-10 placeholder:text-muted-foreground/50", className)}
+          className={cn("h-12 text-base pr-10 placeholder:text-muted-foreground/50 w-full", className)}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
           {isLoading ? (

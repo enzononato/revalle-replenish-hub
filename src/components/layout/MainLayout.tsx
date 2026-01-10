@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar } from './Sidebar';
 import { ContentHeader } from './ContentHeader';
 import { ChatBubble } from '@/components/chat/ChatBubble';
+import { GuidedTour } from '@/components/GuidedTour';
 import { useChatDB } from '@/hooks/useChatDB';
 import { supabase } from '@/integrations/supabase/client';
 export function MainLayout() {
@@ -66,6 +67,9 @@ export function MainLayout() {
       {showChatBubble && (
         <ChatBubble unreadCount={totalUnread} />
       )}
+      
+      {/* Guided Tour - only shows on first visit */}
+      <GuidedTour />
     </div>
   );
 }
