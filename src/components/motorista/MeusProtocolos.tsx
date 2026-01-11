@@ -387,33 +387,20 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
             </span>
           )}
         </Button>
-        <div className="flex items-center gap-1">
-          <Button
-            variant={filtroStatus === 'em_andamento' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFiltroStatus('em_andamento')}
-            className="shrink-0 h-8 text-xs"
-          >
-            <AlertCircle className="w-3 h-3 mr-1" />
-            Em Atendimento
-            {!loadingContadores && (
-              <span className="ml-1.5 bg-background/20 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                {contadores.em_andamento}
-              </span>
-            )}
-          </Button>
-          {filtroStatus === 'em_andamento' && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 shrink-0"
-              onClick={() => setShowBuscaPdv(true)}
-              title="Buscar por PDV"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
+        <Button
+          variant={filtroStatus === 'em_andamento' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFiltroStatus('em_andamento')}
+          className="shrink-0 h-8 text-xs"
+        >
+          <AlertCircle className="w-3 h-3 mr-1" />
+          Em Atendimento
+          {!loadingContadores && (
+            <span className="ml-1.5 bg-background/20 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+              {contadores.em_andamento}
+            </span>
           )}
-        </div>
+        </Button>
         <Button
           variant={filtroStatus === 'encerrados' ? 'default' : 'outline'}
           size="sm"
@@ -434,17 +421,30 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         <p className="text-sm text-muted-foreground">
           {protocolos.length} protocolo{protocolos.length !== 1 ? 's' : ''} encontrado{protocolos.length !== 1 ? 's' : ''}
         </p>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0" 
-          onClick={() => {
-            fetchProtocolos();
-            fetchContadores();
-          }}
-        >
-          <RefreshCw className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {filtroStatus === 'em_andamento' && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowBuscaPdv(true)}
+              title="Buscar por PDV"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          )}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0" 
+            onClick={() => {
+              fetchProtocolos();
+              fetchContadores();
+            }}
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {renderContent()}
