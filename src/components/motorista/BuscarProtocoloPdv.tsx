@@ -27,11 +27,17 @@ interface ProtocoloEncontrado {
   nota_fiscal: string | null;
   motorista_nome: string;
   motorista_codigo: string | null;
+  motorista_whatsapp: string | null;
+  motorista_email: string | null;
+  motorista_unidade: string | null;
   produtos: unknown;
   observacao_geral: string | null;
   contato_whatsapp: string | null;
   contato_email: string | null;
+  cliente_telefone: string | null;
   fotos_protocolo: unknown;
+  observacoes_log: unknown;
+  mapa: string | null;
 }
 
 interface BuscarProtocoloPdvProps {
@@ -56,7 +62,7 @@ export function BuscarProtocoloPdv({ isOpen, onClose, onSelectProtocolo, motoris
     try {
       const { data, error } = await supabase
         .from('protocolos')
-        .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, motorista_nome, motorista_codigo, produtos, observacao_geral, contato_whatsapp, contato_email, fotos_protocolo')
+        .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, motorista_nome, motorista_codigo, motorista_whatsapp, motorista_email, motorista_unidade, produtos, observacao_geral, contato_whatsapp, contato_email, cliente_telefone, fotos_protocolo, observacoes_log, mapa')
         .eq('status', 'em_andamento')
         .ilike('codigo_pdv', `%${codigoPdv.trim()}%`)
         .or('oculto.is.null,oculto.eq.false')
