@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Clock, CheckCircle, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import { FileText, Clock, CheckCircle, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Package, Plus, XCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Motorista, Produto, ObservacaoLog } from '@/types';
+import { Motorista, Produto, ObservacaoLog, FotosProtocolo } from '@/types';
 import { cn } from '@/lib/utils';
+import { BuscarProtocoloPdv } from './BuscarProtocoloPdv';
+import { EncerrarProtocoloModal } from './EncerrarProtocoloModal';
 
 interface MeusProtocolosProps {
   motorista: Motorista;
@@ -27,6 +29,17 @@ interface ProtocoloSimples {
   produtos: unknown;
   created_at: string | null;
   observacoes_log: unknown;
+  mapa: string | null;
+  motorista_nome: string;
+  motorista_codigo: string | null;
+  motorista_whatsapp: string | null;
+  motorista_email: string | null;
+  motorista_unidade: string | null;
+  observacao_geral: string | null;
+  contato_whatsapp: string | null;
+  contato_email: string | null;
+  cliente_telefone: string | null;
+  fotos_protocolo: unknown;
 }
 
 // Verificar se protocolo foi reaberto
@@ -42,6 +55,11 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
   const [filtroStatus, setFiltroStatus] = useState<'abertos' | 'em_andamento' | 'encerrados'>('abertos');
   const [contadores, setContadores] = useState({ abertos: 0, em_andamento: 0, encerrados: 0 });
   const [loadingContadores, setLoadingContadores] = useState(true);
+  
+  // Modal states
+  const [showBuscaPdv, setShowBuscaPdv] = useState(false);
+  const [showEncerrarModal, setShowEncerrarModal] = useState(false);
+  const [protocoloParaEncerrar, setProtocoloParaEncerrar] = useState<ProtocoloSimples | null>(null);
 
   // Buscar contadores de todos os status
   const fetchContadores = async () => {
@@ -87,7 +105,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
     try {
       let query = supabase
         .from('protocolos')
-        .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, produtos, created_at, observacoes_log')
+        .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, produtos, created_at, observacoes_log, mapa, motorista_nome, motorista_codigo, motorista_whatsapp, motorista_email, motorista_unidade, observacao_geral, contato_whatsapp, contato_email, cliente_telefone, fotos_protocolo')
         .eq('motorista_codigo', motorista.codigo)
         .or('oculto.is.null,oculto.eq.false');
       
@@ -313,12 +331,42 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                     </div>
                   </div>
                 )}
+
+                {/* Botão Encerrar - apenas para protocolos em_andamento */}
+                {protocolo.status === 'em_andamento' && (
+                  <div className="pt-2 mt-2 border-t border-border">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProtocoloParaEncerrar(protocolo);
+                        setShowEncerrarModal(true);
+                      }}
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Encerrar Reposição
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
       );
     });
+  };
+
+  const handleProtocoloEncontrado = (protocolo: ProtocoloSimples) => {
+    setProtocoloParaEncerrar(protocolo);
+    setShowEncerrarModal(true);
+  };
+
+  const handleEncerrarSuccess = () => {
+    fetchProtocolos();
+    fetchContadores();
+    setProtocoloParaEncerrar(null);
   };
 
   return (
@@ -373,20 +421,53 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         <p className="text-sm text-muted-foreground">
           {protocolos.length} protocolo{protocolos.length !== 1 ? 's' : ''} encontrado{protocolos.length !== 1 ? 's' : ''}
         </p>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0" 
-          onClick={() => {
-            fetchProtocolos();
-            fetchContadores();
-          }}
-        >
-          <RefreshCw className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {filtroStatus === 'em_andamento' && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowBuscaPdv(true)}
+              title="Buscar por PDV"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          )}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0" 
+            onClick={() => {
+              fetchProtocolos();
+              fetchContadores();
+            }}
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {renderContent()}
+
+      {/* Modal de Busca por PDV */}
+      <BuscarProtocoloPdv
+        isOpen={showBuscaPdv}
+        onClose={() => setShowBuscaPdv(false)}
+        onSelectProtocolo={handleProtocoloEncontrado as any}
+        motorista={motorista}
+      />
+
+      {/* Modal de Encerramento */}
+      <EncerrarProtocoloModal
+        isOpen={showEncerrarModal}
+        protocolo={protocoloParaEncerrar}
+        motorista={motorista}
+        onClose={() => {
+          setShowEncerrarModal(false);
+          setProtocoloParaEncerrar(null);
+        }}
+        onSuccess={handleEncerrarSuccess}
+      />
     </div>
   );
 }

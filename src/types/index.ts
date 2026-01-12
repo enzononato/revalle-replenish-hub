@@ -107,6 +107,12 @@ export interface Protocolo {
   // Novos campos de status de mensagem
   statusEnvio?: 'pendente' | 'sucesso' | 'erro';
   statusEncerramento?: 'pendente' | 'sucesso' | 'erro';
+  // Campos de encerramento pelo motorista
+  encerradoPorTipo?: 'motorista' | 'admin';
+  encerradoPorMotoristaId?: string;
+  encerradoPorMotoristaNome?: string;
+  fotoNotaFiscalEncerramento?: string;
+  fotoEntregaMercadoria?: string;
 }
 
 export interface DashboardStats {

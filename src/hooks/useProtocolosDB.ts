@@ -44,6 +44,12 @@ interface ProtocoloDB {
   // Novos campos de status de mensagem
   status_envio: string | null;
   status_encerramento: string | null;
+  // Campos de encerramento pelo motorista
+  encerrado_por_tipo: string | null;
+  encerrado_por_motorista_id: string | null;
+  encerrado_por_motorista_nome: string | null;
+  foto_nota_fiscal_encerramento: string | null;
+  foto_entrega_mercadoria: string | null;
 }
 
 // Convert DB record to Protocolo type
@@ -97,7 +103,13 @@ function dbToProtocolo(db: ProtocoloDB): Protocolo {
     unidadeNome: db.motorista_unidade || undefined,
     // Novos campos de status de mensagem
     statusEnvio: (db.status_envio as 'pendente' | 'sucesso' | 'erro') || 'pendente',
-    statusEncerramento: (db.status_encerramento as 'pendente' | 'sucesso' | 'erro') || 'pendente'
+    statusEncerramento: (db.status_encerramento as 'pendente' | 'sucesso' | 'erro') || 'pendente',
+    // Campos de encerramento pelo motorista
+    encerradoPorTipo: (db.encerrado_por_tipo as 'motorista' | 'admin') || undefined,
+    encerradoPorMotoristaId: db.encerrado_por_motorista_id || undefined,
+    encerradoPorMotoristaNome: db.encerrado_por_motorista_nome || undefined,
+    fotoNotaFiscalEncerramento: db.foto_nota_fiscal_encerramento || undefined,
+    fotoEntregaMercadoria: db.foto_entrega_mercadoria || undefined
   };
 }
 
@@ -142,7 +154,13 @@ function protocoloToDB(p: Protocolo): Omit<ProtocoloDB, 'id'> {
     contato_email: p.contatoEmail || null,
     // Novos campos de status de mensagem
     status_envio: p.statusEnvio || 'pendente',
-    status_encerramento: p.statusEncerramento || 'pendente'
+    status_encerramento: p.statusEncerramento || 'pendente',
+    // Campos de encerramento pelo motorista
+    encerrado_por_tipo: p.encerradoPorTipo || null,
+    encerrado_por_motorista_id: p.encerradoPorMotoristaId || null,
+    encerrado_por_motorista_nome: p.encerradoPorMotoristaNome || null,
+    foto_nota_fiscal_encerramento: p.fotoNotaFiscalEncerramento || null,
+    foto_entrega_mercadoria: p.fotoEntregaMercadoria || null
   };
 }
 

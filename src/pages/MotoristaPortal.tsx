@@ -862,7 +862,7 @@ export default function MotoristaPortal() {
           {/* Tab: Novo Protocolo */}
           <TabsContent value="novo" className="mt-4 pb-24 space-y-4" data-tour="motorista-form">
             {/* Seção: Dados Gerais */}
-            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+            <div className="bg-card rounded-xl shadow-sm border border-border/50">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
                 <h3 className="text-base font-medium text-foreground flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
@@ -949,7 +949,7 @@ export default function MotoristaPortal() {
                 </h3>
               </div>
               <div className="p-3">
-                <div className="grid grid-cols-2 gap-2" data-tour="campo-tipo-reposicao">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" data-tour="campo-tipo-reposicao">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
                       <Label className="text-xs font-medium">Tipo *</Label>
@@ -1018,7 +1018,7 @@ export default function MotoristaPortal() {
             </div>
 
             {/* Seção: Produtos */}
-            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden" data-tour="secao-produtos">
+            <div className="bg-card rounded-xl shadow-sm border border-border/50" data-tour="secao-produtos">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30 flex items-center justify-between">
                 <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
                   <Package className="h-3.5 w-3.5 text-primary" />

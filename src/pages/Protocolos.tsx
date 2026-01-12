@@ -185,10 +185,13 @@ export default function Protocolos() {
       return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
     })
     // Ordenar por SLA: mais antigos primeiro (maior SLA = topo)
+    // Para protocolos com mesmo SLA, ordenar por número (mais antigo primeiro)
     .sort((a, b) => {
       const slaA = calcularSlaDias(a.data, a.status, a.observacoesLog);
       const slaB = calcularSlaDias(b.data, b.status, b.observacoesLog);
-      return slaB - slaA;
+      if (slaB !== slaA) return slaB - slaA;
+      // Ordenação secundária: número do protocolo (mais antigo primeiro)
+      return a.numero.localeCompare(b.numero);
     });
 
   // Pagination calculations

@@ -308,12 +308,17 @@ export type Database = {
           contato_whatsapp: string | null
           created_at: string | null
           data: string
+          encerrado_por_motorista_id: string | null
+          encerrado_por_motorista_nome: string | null
+          encerrado_por_tipo: string | null
           enviado_encerrar: boolean | null
           enviado_encerrar_erro: string | null
           enviado_encerrar_status: string | null
           enviado_lancar: boolean | null
           enviado_lancar_erro: string | null
           enviado_lancar_status: string | null
+          foto_entrega_mercadoria: string | null
+          foto_nota_fiscal_encerramento: string | null
           fotos_protocolo: Json | null
           habilitar_reenvio: boolean | null
           hora: string
@@ -351,12 +356,17 @@ export type Database = {
           contato_whatsapp?: string | null
           created_at?: string | null
           data: string
+          encerrado_por_motorista_id?: string | null
+          encerrado_por_motorista_nome?: string | null
+          encerrado_por_tipo?: string | null
           enviado_encerrar?: boolean | null
           enviado_encerrar_erro?: string | null
           enviado_encerrar_status?: string | null
           enviado_lancar?: boolean | null
           enviado_lancar_erro?: string | null
           enviado_lancar_status?: string | null
+          foto_entrega_mercadoria?: string | null
+          foto_nota_fiscal_encerramento?: string | null
           fotos_protocolo?: Json | null
           habilitar_reenvio?: boolean | null
           hora: string
@@ -394,12 +404,17 @@ export type Database = {
           contato_whatsapp?: string | null
           created_at?: string | null
           data?: string
+          encerrado_por_motorista_id?: string | null
+          encerrado_por_motorista_nome?: string | null
+          encerrado_por_tipo?: string | null
           enviado_encerrar?: boolean | null
           enviado_encerrar_erro?: string | null
           enviado_encerrar_status?: string | null
           enviado_lancar?: boolean | null
           enviado_lancar_erro?: string | null
           enviado_lancar_status?: string | null
+          foto_entrega_mercadoria?: string | null
+          foto_nota_fiscal_encerramento?: string | null
           fotos_protocolo?: Json | null
           habilitar_reenvio?: boolean | null
           hora?: string
