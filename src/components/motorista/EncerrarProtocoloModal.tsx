@@ -156,7 +156,7 @@ export function EncerrarProtocoloModal({
 
       if (updateError) throw updateError;
 
-      // 4. Registrar auditoria
+      // 4. Registrar auditoria de encerramento
       await supabase.from('audit_logs').insert({
         acao: 'encerramento_motorista',
         tabela: 'protocolos',
@@ -173,6 +173,26 @@ export function EncerrarProtocoloModal({
         usuario_role: 'motorista',
         usuario_unidade: motorista.unidade
       });
+
+      // 5. Registrar auditoria de troca de motorista (se houve mudança)
+      if (protocolo.motorista_codigo !== motorista.codigo) {
+        await supabase.from('audit_logs').insert({
+          acao: 'troca_motorista_encerramento',
+          tabela: 'protocolos',
+          registro_id: protocolo.id,
+          registro_dados: {
+            numero: protocolo.numero,
+            motorista_anterior: protocolo.motorista_nome,
+            motorista_anterior_codigo: protocolo.motorista_codigo,
+            motorista_novo: motorista.nome,
+            motorista_novo_codigo: motorista.codigo,
+            motivo: 'Encerramento por outro motorista'
+          },
+          usuario_nome: motorista.nome,
+          usuario_role: 'motorista',
+          usuario_unidade: motorista.unidade
+        });
+      }
 
       // 5. Enviar webhook para n8n (mesmo formato do encerramento admin)
       const produtos = Array.isArray(protocolo.produtos) ? protocolo.produtos as Produto[] : [];
