@@ -580,7 +580,7 @@ export default function Protocolos() {
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Protocolo</th>
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Tipo</th>
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Motorista</th>
-              <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">WhatsApp</th>
+              <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Cód. PDV</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">SLA</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Validação</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Lançado</th>
@@ -683,9 +683,8 @@ export default function Protocolos() {
                     {protocolo.motorista.nome}
                   </td>
                   <td className="p-2.5 border-r border-border">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[12px] flex items-center gap-1">
-                      <Phone size={12} />
-                      {protocolo.contatoWhatsapp || '-'}
+                    <span className="text-foreground font-medium text-[12px]">
+                      {protocolo.codigoPdv || '-'}
                     </span>
                   </td>
                   <td className="p-2.5 text-center border-r border-border">
