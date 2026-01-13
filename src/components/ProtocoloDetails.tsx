@@ -269,6 +269,46 @@ export function ProtocoloDetails({
   const infoCriacao = getLogCriacao();
   const infoEncerramento = getLogEncerramento();
 
+  // Calcular o SLA (tempo total entre criação e encerramento)
+  const calcularSLA = (): { dias: number; horas: number; minutos: number; textoCompleto: string } | null => {
+    if (protocolo.status !== 'encerrado' || !infoCriacao || !infoEncerramento) return null;
+    
+    try {
+      // Parsear data e hora de criação (formato dd/MM/yyyy HH:mm)
+      const [diaCriacao, mesCriacao, anoCriacao] = infoCriacao.data.split('/').map(Number);
+      const [horaCriacao, minCriacao] = infoCriacao.hora.split(':').map(Number);
+      const dataCriacao = new Date(anoCriacao, mesCriacao - 1, diaCriacao, horaCriacao, minCriacao);
+      
+      // Parsear data e hora de encerramento
+      const [diaEnc, mesEnc, anoEnc] = infoEncerramento.data.split('/').map(Number);
+      const [horaEnc, minEnc] = infoEncerramento.hora.split(':').map(Number);
+      const dataEncerramento = new Date(anoEnc, mesEnc - 1, diaEnc, horaEnc, minEnc);
+      
+      // Calcular diferença em milissegundos
+      const diffMs = dataEncerramento.getTime() - dataCriacao.getTime();
+      if (diffMs < 0) return null;
+      
+      // Converter para dias, horas e minutos
+      const diffMinutos = Math.floor(diffMs / (1000 * 60));
+      const dias = Math.floor(diffMinutos / (60 * 24));
+      const horas = Math.floor((diffMinutos % (60 * 24)) / 60);
+      const minutos = diffMinutos % 60;
+      
+      // Criar texto legível
+      const partes: string[] = [];
+      if (dias > 0) partes.push(`${dias} dia${dias > 1 ? 's' : ''}`);
+      if (horas > 0) partes.push(`${horas} hora${horas > 1 ? 's' : ''}`);
+      if (minutos > 0 || partes.length === 0) partes.push(`${minutos} minuto${minutos !== 1 ? 's' : ''}`);
+      
+      return { dias, horas, minutos, textoCompleto: partes.join(', ') };
+    } catch (e) {
+      console.error('Erro ao calcular SLA:', e);
+      return null;
+    }
+  };
+
+  const slaInfo = calcularSLA();
+
   const handleSalvarObservacao = () => {
     if (!novaObservacao.trim() || !user || !onUpdateProtocolo) return;
     
@@ -1346,11 +1386,46 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                   <p className="text-sm text-muted-foreground italic">Você não tem permissão para encerrar este protocolo.</p>
                 )
               ) : (
-                <div className="text-sm space-y-3 p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+              <div className="text-sm space-y-3 p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
                   <p className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-2">
                     <CheckCircle size={18} />
                     Este protocolo foi encerrado.
                   </p>
+                  
+                  {/* Resumo do SLA */}
+                  {slaInfo && (
+                    <div className="bg-white dark:bg-slate-800/50 rounded-lg p-3 border border-emerald-200 dark:border-emerald-700">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock size={16} className="text-emerald-600" />
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-400 text-xs uppercase tracking-wide">Tempo Total (SLA)</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                          {slaInfo.textoCompleto}
+                        </div>
+                        {slaInfo.dias > 16 && (
+                          <span className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1">
+                            <AlertTriangle size={12} />
+                            SLA Excedido
+                          </span>
+                        )}
+                        {slaInfo.dias <= 16 && slaInfo.dias > 10 && (
+                          <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full text-[10px] font-bold">
+                            Atenção
+                          </span>
+                        )}
+                        {slaInfo.dias <= 10 && (
+                          <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-full text-[10px] font-bold">
+                            Dentro do SLA
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        <span className="font-medium">Abertura:</span> {infoCriacao?.data} às {infoCriacao?.hora} → <span className="font-medium">Encerramento:</span> {infoEncerramento?.data} às {infoEncerramento?.hora}
+                      </div>
+                    </div>
+                  )}
+                  
                   {protocolo.mensagemEncerramento && (
                     <p className="text-foreground"><strong>Mensagem:</strong> {protocolo.mensagemEncerramento}</p>
                   )}
