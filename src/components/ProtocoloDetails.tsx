@@ -205,7 +205,7 @@ export function ProtocoloDetails({
   const canGoPrevious = currentIndex > 0;
   const canGoNext = currentIndex < protocolos.length - 1;
 
-  // Coletar todas as fotos disponíveis
+  // Coletar todas as fotos disponíveis (fotos da abertura)
   const todasFotos: { url: string; label: string }[] = [];
   
   // Fotos do array protocolo.fotos
@@ -227,6 +227,47 @@ export function ProtocoloDetails({
       todasFotos.push({ url: protocolo.fotosProtocolo.fotoAvaria, label: 'Avaria' });
     }
   }
+
+  // Coletar fotos de encerramento (apenas para protocolos encerrados)
+  const fotosEncerramento: { url: string; label: string }[] = [];
+  if (protocolo.status === 'encerrado') {
+    if (protocolo.fotoNotaFiscalEncerramento) {
+      fotosEncerramento.push({ url: protocolo.fotoNotaFiscalEncerramento, label: 'Nota Fiscal (Encerramento)' });
+    }
+    if (protocolo.fotoEntregaMercadoria) {
+      fotosEncerramento.push({ url: protocolo.fotoEntregaMercadoria, label: 'Entrega Mercadoria' });
+    }
+    if (protocolo.arquivoEncerramento && (protocolo.arquivoEncerramento.startsWith('http') || protocolo.arquivoEncerramento.includes('supabase'))) {
+      fotosEncerramento.push({ url: protocolo.arquivoEncerramento, label: 'Anexo Encerramento' });
+    }
+  }
+
+  // Extrair informações de criação e encerramento do log
+  const getLogCriacao = (): { data: string; hora: string; usuarioNome?: string } | null => {
+    const logCriacao = protocolo.observacoesLog?.find(l => l.acao === 'Abriu protocolo');
+    if (logCriacao) {
+      return { data: logCriacao.data, hora: logCriacao.hora, usuarioNome: logCriacao.usuarioNome };
+    }
+    return { data: protocolo.data, hora: protocolo.hora };
+  };
+
+  const getLogEncerramento = (): { data: string; hora: string; usuarioNome: string; texto: string; tipo?: string; motoristaNome?: string } | null => {
+    const logEncerramento = protocolo.observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+    if (logEncerramento) {
+      return {
+        data: logEncerramento.data,
+        hora: logEncerramento.hora,
+        usuarioNome: logEncerramento.usuarioNome,
+        texto: logEncerramento.texto,
+        tipo: protocolo.encerradoPorTipo,
+        motoristaNome: protocolo.encerradoPorMotoristaNome
+      };
+    }
+    return null;
+  };
+
+  const infoCriacao = getLogCriacao();
+  const infoEncerramento = getLogEncerramento();
 
   const handleSalvarObservacao = () => {
     if (!novaObservacao.trim() || !user || !onUpdateProtocolo) return;
@@ -987,12 +1028,12 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               )}
             </div>
 
-            {/* Fotos Enviadas */}
+            {/* Fotos Enviadas (Abertura) */}
             {todasFotos.length > 0 && (
               <div className="bg-card rounded-xl p-4 border shadow-sm">
                 <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wide">
                   <Camera size={16} className="text-primary" />
-                  FOTOS ENVIADAS
+                  FOTOS DA ABERTURA
                 </h3>
                 <div className="flex flex-wrap gap-3">
                   {todasFotos.map((foto, index) => (
@@ -1015,28 +1056,216 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               </div>
             )}
 
-            {/* Seção de Observações - Todos podem comentar */}
+            {/* Fotos de Encerramento - Apenas para protocolos encerrados */}
+            {protocolo.status === 'encerrado' && fotosEncerramento.length > 0 && (
+              <div className="bg-card rounded-xl p-4 border shadow-sm border-emerald-200 dark:border-emerald-800">
+                <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                  <Camera size={16} className="text-emerald-600" />
+                  FOTOS DO ENCERRAMENTO
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {fotosEncerramento.map((foto, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(foto.url)}
+                      className="group relative w-28 h-28 rounded-lg overflow-hidden border border-emerald-200 dark:border-emerald-700 hover:border-emerald-500 transition-all hover:scale-105 shadow-sm"
+                    >
+                      <img 
+                        src={foto.url} 
+                        alt={foto.label} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-emerald-100/90 dark:bg-emerald-900/80 text-[10px] text-center py-1 font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                        {foto.label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Linha do Tempo - Criação e Encerramento */}
+            <div className="bg-card rounded-xl p-4 border shadow-sm">
+              <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wide">
+                <Clock size={16} className="text-primary" />
+                LINHA DO TEMPO
+              </h3>
+              
+              <div className="relative">
+                {/* Linha conectora */}
+                <div className="absolute left-3 top-6 bottom-6 w-0.5 bg-border" />
+                
+                <div className="space-y-4">
+                  {/* Criação do Protocolo */}
+                  <div className="relative flex gap-3 items-start">
+                    <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white z-10 shrink-0">
+                      <FileText size={12} />
+                    </div>
+                    <div className="flex-1 bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="font-bold text-blue-700 dark:text-blue-400">Protocolo Criado</span>
+                        <span className="text-blue-600 dark:text-blue-400">{infoCriacao?.data} às {infoCriacao?.hora}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-foreground">
+                        <p><strong>Motorista:</strong> {protocolo.motorista.codigo} - {protocolo.motorista.nome}</p>
+                        <p><strong>Unidade:</strong> {protocolo.motorista.unidade || protocolo.unidadeNome || '-'}</p>
+                        {protocolo.tipoReposicao && <p><strong>Tipo:</strong> {protocolo.tipoReposicao}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Validação (se existir) */}
+                  {protocolo.validacao && (
+                    <div className="relative flex gap-3 items-start">
+                      <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white z-10 shrink-0">
+                        <CheckCircle size={12} />
+                      </div>
+                      <div className="flex-1 bg-purple-50 dark:bg-purple-950/30 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="font-bold text-purple-700 dark:text-purple-400">Protocolo Validado</span>
+                          {(() => {
+                            const validador = getValidadorFromLog();
+                            const logValidacao = protocolo.observacoesLog?.find(l => l.acao === 'Confirmou validação');
+                            return (
+                              <>
+                                {logValidacao && (
+                                  <span className="text-purple-600 dark:text-purple-400">{logValidacao.data} às {logValidacao.hora}</span>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                        <div className="mt-1 text-xs text-foreground">
+                          {(() => {
+                            const validador = getValidadorFromLog();
+                            return validador ? (
+                              <p><strong>Validado por:</strong> {validador.nome}</p>
+                            ) : null;
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Lançamento (se existir) */}
+                  {protocolo.lancado && (
+                    <div className="relative flex gap-3 items-start">
+                      <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white z-10 shrink-0">
+                        <Send size={12} />
+                      </div>
+                      <div className="flex-1 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3 border border-amber-200 dark:border-amber-800">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="font-bold text-amber-700 dark:text-amber-400">Protocolo Lançado</span>
+                          {(() => {
+                            const logLancamento = protocolo.observacoesLog?.find(l => l.acao === 'Marcou como lançado');
+                            return logLancamento ? (
+                              <span className="text-amber-600 dark:text-amber-400">{logLancamento.data} às {logLancamento.hora}</span>
+                            ) : null;
+                          })()}
+                        </div>
+                        <div className="mt-1 text-xs text-foreground">
+                          {(() => {
+                            const logLancamento = protocolo.observacoesLog?.find(l => l.acao === 'Marcou como lançado');
+                            return logLancamento ? (
+                              <p><strong>Lançado por:</strong> {logLancamento.usuarioNome}</p>
+                            ) : null;
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Encerramento (se existir) */}
+                  {protocolo.status === 'encerrado' && infoEncerramento && (
+                    <div className="relative flex gap-3 items-start">
+                      <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white z-10 shrink-0">
+                        <Lock size={12} />
+                      </div>
+                      <div className="flex-1 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="font-bold text-emerald-700 dark:text-emerald-400">Protocolo Encerrado</span>
+                          <span className="text-emerald-600 dark:text-emerald-400">{infoEncerramento.data} às {infoEncerramento.hora}</span>
+                        </div>
+                        <div className="mt-1 text-xs text-foreground space-y-0.5">
+                          {infoEncerramento.tipo === 'motorista' ? (
+                            <>
+                              <p><strong>Encerrado por:</strong> Motorista</p>
+                              <p><strong>Motorista:</strong> {infoEncerramento.motoristaNome || protocolo.encerradoPorMotoristaNome || '-'}</p>
+                            </>
+                          ) : (
+                            <p><strong>Encerrado por:</strong> {infoEncerramento.usuarioNome} (Admin/Distribuição)</p>
+                          )}
+                          {infoEncerramento.texto && infoEncerramento.texto !== 'Protocolo encerrado' && (
+                            <p><strong>Mensagem:</strong> {infoEncerramento.texto}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reabertura (se existir) */}
+                  {protocolo.observacoesLog?.some(l => l.acao === 'Reabriu o protocolo') && (
+                    (() => {
+                      const logsReabertura = protocolo.observacoesLog?.filter(l => l.acao === 'Reabriu o protocolo') || [];
+                      return logsReabertura.map((logReabertura, idx) => (
+                        <div key={idx} className="relative flex gap-3 items-start">
+                          <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white z-10 shrink-0">
+                            <RefreshCw size={12} />
+                          </div>
+                          <div className="flex-1 bg-orange-50 dark:bg-orange-950/30 rounded-lg p-3 border border-orange-200 dark:border-orange-800">
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="font-bold text-orange-700 dark:text-orange-400">Protocolo Reaberto</span>
+                              <span className="text-orange-600 dark:text-orange-400">{logReabertura.data} às {logReabertura.hora}</span>
+                            </div>
+                            <div className="mt-1 text-xs text-foreground">
+                              <p><strong>Reaberto por:</strong> {logReabertura.usuarioNome}</p>
+                              {logReabertura.texto && <p><strong>Motivo:</strong> {logReabertura.texto}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ));
+                    })()
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Histórico Completo - Todas as ações */}
             <div className="bg-card rounded-xl p-4 border shadow-sm">
               <h3 className="font-bold text-xs text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wide">
                 <MessageSquare size={16} className="text-primary" />
-                Histórico de Observações
+                Histórico Completo
               </h3>
               
-              {/* Log de observações anteriores */}
-              {protocolo.observacoesLog && protocolo.observacoesLog.length > 0 && (
+              {/* Log de todas as ações */}
+              {protocolo.observacoesLog && protocolo.observacoesLog.length > 0 ? (
                 <div className="space-y-2 mb-3">
-                  {[...protocolo.observacoesLog].reverse().map((log, index) => {
+                  {[...protocolo.observacoesLog].reverse().map((log) => {
+                    // Determinar cor e ícone baseado na ação
+                    const getActionStyle = (acao: string) => {
+                      if (acao.includes('Encerrou')) return { bg: 'bg-emerald-500', bgLight: 'bg-emerald-100 dark:bg-emerald-900/30' };
+                      if (acao.includes('Reabriu')) return { bg: 'bg-orange-500', bgLight: 'bg-orange-100 dark:bg-orange-900/30' };
+                      if (acao.includes('validação') || acao.includes('Validou')) return { bg: 'bg-purple-500', bgLight: 'bg-purple-100 dark:bg-purple-900/30' };
+                      if (acao.includes('lançado') || acao.includes('Lançou')) return { bg: 'bg-amber-500', bgLight: 'bg-amber-100 dark:bg-amber-900/30' };
+                      if (acao.includes('Abriu') || acao.includes('Criou')) return { bg: 'bg-blue-500', bgLight: 'bg-blue-100 dark:bg-blue-900/30' };
+                      if (acao.includes('Reenviou')) return { bg: 'bg-cyan-500', bgLight: 'bg-cyan-100 dark:bg-cyan-900/30' };
+                      if (acao.includes('Editou')) return { bg: 'bg-slate-500', bgLight: 'bg-slate-100 dark:bg-slate-900/30' };
+                      return { bg: 'bg-primary', bgLight: 'bg-muted/30' };
+                    };
+                    
+                    const style = getActionStyle(log.acao);
+                    
                     return (
-                      <div key={log.id} className="flex gap-2 p-2.5 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold shrink-0">
+                      <div key={log.id} className={`flex gap-2 p-2.5 ${style.bgLight} rounded-lg hover:opacity-90 transition-opacity`}>
+                        <div className={`w-7 h-7 rounded-full ${style.bg} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
                           {log.usuarioNome.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 text-xs">
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
                             <span className="font-semibold text-foreground">{log.usuarioNome}</span>
                             <span className="text-muted-foreground">•</span>
                             <span className="text-muted-foreground">{log.data} às {log.hora}</span>
-                            <span className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-medium">
+                            <span className={`px-1.5 py-0.5 ${style.bg} text-white rounded-full text-[10px] font-medium`}>
                               {log.acao}
                             </span>
                           </div>
@@ -1046,6 +1275,8 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     );
                   })}
                 </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">Nenhum registro no histórico</p>
               )}
               
               {/* Campo para nova observação */}
