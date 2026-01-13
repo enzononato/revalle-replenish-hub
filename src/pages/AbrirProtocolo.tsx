@@ -292,7 +292,17 @@ export default function AbrirProtocolo() {
       })),
       fotosProtocolo,
       createdAt: now.toISOString(),
-      observacoesLog: [],
+      observacoesLog: [
+        {
+          id: Date.now().toString(),
+          usuarioNome: selectedMotorista.nome,
+          usuarioId: selectedMotorista.id,
+          data: format(now, 'dd/MM/yyyy'),
+          hora: format(now, 'HH:mm'),
+          acao: 'Abriu protocolo',
+          texto: `Protocolo criado pelo motorista ${selectedMotorista.codigo} - ${selectedMotorista.nome}`
+        }
+      ],
     };
 
     // Enviar webhook com URLs das fotos

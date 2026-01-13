@@ -559,7 +559,18 @@ export default function MotoristaPortal() {
         observacaoGeral: observacao || undefined,
         contatoWhatsapp: whatsappContato || undefined,
         contatoEmail: emailContato || undefined,
-        createdAt: now.toISOString()
+        createdAt: now.toISOString(),
+        observacoesLog: [
+          {
+            id: Date.now().toString(),
+            usuarioNome: motorista.nome,
+            usuarioId: motorista.id,
+            data: format(now, 'dd/MM/yyyy'),
+            hora: format(now, 'HH:mm'),
+            acao: 'Abriu protocolo',
+            texto: `Protocolo criado pelo motorista ${motorista.codigo} - ${motorista.nome}`
+          }
+        ]
       };
 
       await addProtocolo(novoProtocolo);
