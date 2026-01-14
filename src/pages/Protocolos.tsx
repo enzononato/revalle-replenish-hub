@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { differenceInDays, parseISO, format, isAfter, isBefore, parse, isToday } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUnidadesDB } from '@/hooks/useUnidadesDB';
 import CreateProtocoloModal from '@/components/CreateProtocoloModal';
 
 // Função para extrair data de encerramento do log
@@ -68,6 +69,7 @@ export default function Protocolos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, user } = useAuth();
+  const { unidades } = useUnidadesDB();
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo, isLoading } = useProtocolos();
   
   const [search, setSearch] = useState('');
@@ -82,7 +84,14 @@ export default function Protocolos() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [periodoFilter, setPeriodoFilter] = useState<string>('todos');
+  const [unidadeFilter, setUnidadeFilter] = useState<string>('');
   
+  // Inicializar filtro de unidade com a unidade do usuário (para não-admins)
+  useEffect(() => {
+    if (user?.unidade && !isAdmin) {
+      setUnidadeFilter(user.unidade);
+    }
+  }, [user?.unidade, isAdmin]);
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -130,8 +139,14 @@ export default function Protocolos() {
       // Não mostrar protocolos ocultos (exceto para admin que os ocultou)
       if (p.oculto) return false;
       
-      // Filtrar por unidade do usuário (exceto para admin)
-      if (!isAdmin && p.unidadeNome !== user?.unidade) return false;
+      // Filtrar por unidade do motorista
+      // Se o usuário não é admin, filtra pela unidade do usuário
+      // Se é admin e tem filtro selecionado, aplica o filtro
+      if (!isAdmin) {
+        if (p.unidadeNome !== user?.unidade) return false;
+      } else if (unidadeFilter && unidadeFilter !== 'todas') {
+        if (p.unidadeNome !== unidadeFilter) return false;
+      }
       
       const searchMatch = 
         p.numero.toLowerCase().includes(search.toLowerCase()) ||
@@ -204,7 +219,7 @@ export default function Protocolos() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, pageSize]);
+  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, unidadeFilter, pageSize]);
 
   // Envio WhatsApp é feito via webhook n8n
 
@@ -389,9 +404,12 @@ export default function Protocolos() {
     setLancadoFilter('todos');
     setValidadoFilter('todos');
     setTipoFilter('todos');
+    if (isAdmin) {
+      setUnidadeFilter('todas');
+    }
   };
 
-  const hasActiveFilters = activeTab === 'todos' || dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos' || tipoFilter !== 'todos';
+  const hasActiveFilters = activeTab === 'todos' || dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos' || tipoFilter !== 'todos' || (isAdmin && unidadeFilter && unidadeFilter !== 'todas');
 
   return (
     <div className="space-y-4">
@@ -555,6 +573,26 @@ export default function Protocolos() {
                 </SelectContent>
               </Select>
             </div>
+            
+            {/* Filtro de Unidade - Apenas para Admin */}
+            {isAdmin && (
+              <div className="space-y-1 min-w-[130px]">
+                <label className="text-xs font-medium text-muted-foreground">Unidade</label>
+                <Select value={unidadeFilter || 'todas'} onValueChange={setUnidadeFilter}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {unidades.map((unidade) => (
+                      <SelectItem key={unidade.id} value={unidade.nome}>
+                        {unidade.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters} className="text-destructive h-8">
