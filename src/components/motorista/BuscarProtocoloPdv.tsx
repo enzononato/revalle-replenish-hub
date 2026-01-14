@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, FileText, AlertCircle, Loader2, Package } from 'lucide-react';
+import { Search, FileText, AlertCircle, Loader2, Package, MessageSquare } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Motorista, Produto } from '@/types';
@@ -179,6 +179,14 @@ export function BuscarProtocoloPdv({ isOpen, onClose, onSelectProtocolo, motoris
                           <p className="capitalize">{protocolo.tipo_reposicao.toLowerCase()}</p>
                         )}
                       </div>
+                      {protocolo.observacao_geral && (
+                        <div className="mt-2 pt-2 border-t border-border/50">
+                          <div className="flex items-start gap-1 text-xs">
+                            <MessageSquare className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
+                            <p className="text-foreground line-clamp-3">{protocolo.observacao_geral}</p>
+                          </div>
+                        </div>
+                      )}
                       {produtos.length > 0 && (
                         <div className="mt-2 pt-2 border-t border-border/50">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
