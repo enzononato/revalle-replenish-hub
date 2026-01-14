@@ -225,9 +225,59 @@ export default function Motoristas() {
     e.preventDefault();
     
     if (editingMotorista) {
-      await updateMotorista(editingMotorista.id, formData);
+      // Salvar dados anteriores para o log
+      const dadosAnteriores = {
+        nome: editingMotorista.nome,
+        codigo: editingMotorista.codigo,
+        unidade: editingMotorista.unidade,
+        funcao: editingMotorista.funcao,
+        setor: editingMotorista.setor,
+      };
+      
+      const success = await updateMotorista(editingMotorista.id, formData);
+      
+      if (success) {
+        // Registrar log de edição
+        await registrarLog({
+          acao: 'edicao',
+          tabela: 'motoristas',
+          registro_id: editingMotorista.id,
+          registro_dados: {
+            antes: dadosAnteriores,
+            depois: {
+              nome: formData.nome,
+              codigo: formData.codigo,
+              unidade: formData.unidade,
+              funcao: formData.funcao,
+              setor: formData.setor,
+            },
+          },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
+      }
     } else {
-      await addMotorista(formData);
+      const success = await addMotorista(formData);
+      
+      if (success) {
+        // Registrar log de criação
+        await registrarLog({
+          acao: 'criacao',
+          tabela: 'motoristas',
+          registro_id: formData.codigo,
+          registro_dados: {
+            nome: formData.nome,
+            codigo: formData.codigo,
+            unidade: formData.unidade,
+            funcao: formData.funcao,
+            setor: formData.setor,
+          },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
+      }
     }
     
     setIsDialogOpen(false);
@@ -236,7 +286,28 @@ export default function Motoristas() {
 
 
   const handleImportCSV = async (importedMotoristas: Motorista[]) => {
-    await importMotoristas(importedMotoristas);
+    const success = await importMotoristas(importedMotoristas);
+    
+    if (success) {
+      // Registrar log de importação
+      await registrarLog({
+        acao: 'importacao',
+        tabela: 'motoristas',
+        registro_id: `lote-${Date.now()}`,
+        registro_dados: {
+          quantidade: importedMotoristas.length,
+          motoristas: importedMotoristas.slice(0, 10).map(m => ({
+            nome: m.nome,
+            codigo: m.codigo,
+            unidade: m.unidade,
+          })),
+          total_importado: importedMotoristas.length,
+        },
+        usuario_nome: user?.nome || 'Desconhecido',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+    }
   };
 
   const getFuncaoLabel = (funcao: FuncaoMotorista) => {

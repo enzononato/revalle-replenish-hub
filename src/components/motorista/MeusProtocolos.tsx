@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FileText, Clock, CheckCircle, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Package, Plus, XCircle } from 'lucide-react';
+import { FileText, Clock, CheckCircle, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Package, Plus, XCircle, MessageSquare } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Motorista, Produto, ObservacaoLog, FotosProtocolo } from '@/types';
@@ -313,6 +313,18 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                   </div>
                 )}
                 
+                {protocolo.observacao_geral && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Observação</span>
+                    </div>
+                    <div className="bg-muted/50 rounded-md p-2">
+                      <p className="text-[11px] text-foreground">{protocolo.observacao_geral}</p>
+                    </div>
+                  </div>
+                )}
+
                 {produtos && produtos.length > 0 && (
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

@@ -52,6 +52,8 @@ const getAcaoLabel = (acao: string): string => {
       return 'Criação';
     case 'edicao':
       return 'Edição';
+    case 'importacao':
+      return 'Importação';
     case 'login':
       return 'Login';
     case 'logout':
@@ -89,6 +91,8 @@ const getAcaoIcon = (acao: string) => {
       return PlusCircle;
     case 'edicao':
       return Edit;
+    case 'importacao':
+      return Upload;
     case 'login':
       return LogIn;
     case 'logout':
@@ -125,6 +129,8 @@ const getAcaoColor = (acao: string): string => {
       return 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400';
     case 'edicao':
       return 'bg-blue-500/20 text-blue-700 dark:text-blue-400';
+    case 'importacao':
+      return 'bg-violet-500/20 text-violet-700 dark:text-violet-400';
     case 'login':
       return 'bg-green-500/20 text-green-700 dark:text-green-400';
     case 'logout':
@@ -305,6 +311,7 @@ export default function LogsAuditoria() {
             <SelectItem value="criacao">Criação</SelectItem>
             <SelectItem value="edicao">Edição</SelectItem>
             <SelectItem value="exclusao">Exclusão</SelectItem>
+            <SelectItem value="importacao">Importação</SelectItem>
             <SelectItem value="visualizacao">Visualização</SelectItem>
             <SelectItem value="envio_mensagem">Mensagem Chat</SelectItem>
             <SelectItem value="alteracao_status">Status Alterado</SelectItem>
