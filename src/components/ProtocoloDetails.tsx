@@ -1131,47 +1131,66 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 Histórico Completo
               </h3>
               
-              {/* Log de todas as ações */}
-              {protocolo.observacoesLog && protocolo.observacoesLog.length > 0 ? (
-                <div className="space-y-2 mb-3">
-                  {[...protocolo.observacoesLog].reverse().map((log) => {
-                    // Determinar cor e ícone baseado na ação
-                    const getActionStyle = (acao: string) => {
-                      if (acao.includes('Encerrou')) return { bg: 'bg-emerald-500', bgLight: 'bg-emerald-100 dark:bg-emerald-900/30' };
-                      if (acao.includes('Reabriu')) return { bg: 'bg-orange-500', bgLight: 'bg-orange-100 dark:bg-orange-900/30' };
-                      if (acao.includes('validação') || acao.includes('Validou')) return { bg: 'bg-purple-500', bgLight: 'bg-purple-100 dark:bg-purple-900/30' };
-                      if (acao.includes('lançado') || acao.includes('Lançou')) return { bg: 'bg-amber-500', bgLight: 'bg-amber-100 dark:bg-amber-900/30' };
-                      if (acao.includes('Abriu') || acao.includes('Criou')) return { bg: 'bg-blue-500', bgLight: 'bg-blue-100 dark:bg-blue-900/30' };
-                      if (acao.includes('Reenviou')) return { bg: 'bg-cyan-500', bgLight: 'bg-cyan-100 dark:bg-cyan-900/30' };
-                      if (acao.includes('Editou')) return { bg: 'bg-slate-500', bgLight: 'bg-slate-100 dark:bg-slate-900/30' };
-                      return { bg: 'bg-primary', bgLight: 'bg-muted/30' };
-                    };
-                    
-                    const style = getActionStyle(log.acao);
-                    
-                    return (
-                      <div key={log.id} className={`flex gap-2 p-2.5 ${style.bgLight} rounded-lg hover:opacity-90 transition-opacity`}>
-                        <div className={`w-7 h-7 rounded-full ${style.bg} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
-                          {log.usuarioNome.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                            <span className="font-semibold text-foreground">{log.usuarioNome}</span>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-muted-foreground">{log.data} às {log.hora}</span>
-                            <span className={`px-1.5 py-0.5 ${style.bg} text-white rounded-full text-[10px] font-medium`}>
-                              {log.acao}
-                            </span>
+              {/* Log de todas as ações - com fallback para criação */}
+              {(() => {
+                // Criar log de fallback para criação se não existir
+                const hasAbrirLog = protocolo.observacoesLog?.some(l => l.acao === 'Abriu protocolo' || l.acao === 'Criou protocolo');
+                const logsExibir = [...(protocolo.observacoesLog || [])];
+                
+                // Se não tem log de abertura, adicionar um baseado nos dados do protocolo
+                if (!hasAbrirLog) {
+                  logsExibir.unshift({
+                    id: 'criacao-fallback',
+                    usuarioNome: protocolo.motorista.nome,
+                    usuarioId: protocolo.motorista.id,
+                    data: protocolo.data,
+                    hora: protocolo.hora,
+                    acao: 'Abriu protocolo',
+                    texto: `Protocolo criado pelo motorista ${protocolo.motorista.codigo} - ${protocolo.motorista.nome}`
+                  });
+                }
+                
+                return logsExibir.length > 0 ? (
+                  <div className="space-y-2 mb-3">
+                    {[...logsExibir].reverse().map((log) => {
+                      // Determinar cor e ícone baseado na ação
+                      const getActionStyle = (acao: string) => {
+                        if (acao.includes('Encerrou')) return { bg: 'bg-emerald-500', bgLight: 'bg-emerald-100 dark:bg-emerald-900/30' };
+                        if (acao.includes('Reabriu')) return { bg: 'bg-orange-500', bgLight: 'bg-orange-100 dark:bg-orange-900/30' };
+                        if (acao.includes('validação') || acao.includes('Validou')) return { bg: 'bg-purple-500', bgLight: 'bg-purple-100 dark:bg-purple-900/30' };
+                        if (acao.includes('lançado') || acao.includes('Lançou')) return { bg: 'bg-amber-500', bgLight: 'bg-amber-100 dark:bg-amber-900/30' };
+                        if (acao.includes('Abriu') || acao.includes('Criou')) return { bg: 'bg-blue-500', bgLight: 'bg-blue-100 dark:bg-blue-900/30' };
+                        if (acao.includes('Reenviou')) return { bg: 'bg-cyan-500', bgLight: 'bg-cyan-100 dark:bg-cyan-900/30' };
+                        if (acao.includes('Editou')) return { bg: 'bg-slate-500', bgLight: 'bg-slate-100 dark:bg-slate-900/30' };
+                        return { bg: 'bg-primary', bgLight: 'bg-muted/30' };
+                      };
+                      
+                      const style = getActionStyle(log.acao);
+                      
+                      return (
+                        <div key={log.id} className={`flex gap-2 p-2.5 ${style.bgLight} rounded-lg hover:opacity-90 transition-opacity`}>
+                          <div className={`w-7 h-7 rounded-full ${style.bg} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
+                            {log.usuarioNome.charAt(0).toUpperCase()}
                           </div>
-                          <p className="text-xs mt-0.5 text-foreground">{log.texto}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                              <span className="font-semibold text-foreground">{log.usuarioNome}</span>
+                              <span className="text-muted-foreground">•</span>
+                              <span className="text-muted-foreground">{log.data} às {log.hora}</span>
+                              <span className={`px-1.5 py-0.5 ${style.bg} text-white rounded-full text-[10px] font-medium`}>
+                                {log.acao}
+                              </span>
+                            </div>
+                            <p className="text-xs mt-0.5 text-foreground">{log.texto}</p>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground italic">Nenhum registro no histórico</p>
-              )}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">Nenhum registro no histórico</p>
+                );
+              })()}
               
               {/* Campo para nova observação */}
               {user && onUpdateProtocolo && (
