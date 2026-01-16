@@ -17,6 +17,7 @@ interface MotoristaDB {
   id: string;
   nome: string;
   codigo: string;
+  cpf: string | null;
   data_nascimento: string | null;
   unidade: string;
   funcao: string;
@@ -27,10 +28,13 @@ interface MotoristaDB {
   created_at: string | null;
 }
 
+const UNIDADE_PETROLINA = 'Revalle Petrolina';
+
 const dbToMotorista = (db: MotoristaDB): Motorista => ({
   id: db.id,
   nome: db.nome,
   codigo: db.codigo,
+  cpf: db.cpf || undefined,
   dataNascimento: db.data_nascimento || '',
   unidade: db.unidade,
   funcao: db.funcao as FuncaoMotorista,
@@ -56,18 +60,44 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (codigo: string, senha: string): Promise<{ success: boolean; error?: string }> => {
-    const { data, error } = await supabase
+  const login = async (identificador: string, senha: string): Promise<{ success: boolean; error?: string }> => {
+    // Limpar o identificador (remover formatação de CPF se houver)
+    const identificadorLimpo = identificador.replace(/[.\-]/g, '').trim();
+    
+    // Primeiro, tentar buscar por CPF (para unidades diferentes de Petrolina)
+    const { data: porCpf } = await supabase
       .from('motoristas')
       .select('*')
-      .eq('codigo', codigo)
-      .single();
+      .eq('cpf', identificadorLimpo)
+      .neq('unidade', UNIDADE_PETROLINA)
+      .maybeSingle();
 
-    if (error || !data) {
-      return { success: false, error: 'Código de motorista não encontrado' };
+    // Se encontrou por CPF e não é Petrolina
+    if (porCpf) {
+      const foundMotorista = dbToMotorista(porCpf as MotoristaDB);
+      
+      if (foundMotorista.senha !== senha) {
+        return { success: false, error: 'Senha incorreta' };
+      }
+
+      setMotorista(foundMotorista);
+      localStorage.setItem(MOTORISTA_STORAGE_KEY, JSON.stringify(foundMotorista));
+      return { success: true };
     }
 
-    const foundMotorista = dbToMotorista(data as MotoristaDB);
+    // Se não encontrou por CPF, buscar por código promax (apenas para Petrolina)
+    const { data: porCodigo, error } = await supabase
+      .from('motoristas')
+      .select('*')
+      .eq('codigo', identificador)
+      .eq('unidade', UNIDADE_PETROLINA)
+      .maybeSingle();
+
+    if (error || !porCodigo) {
+      return { success: false, error: 'CPF ou código de motorista não encontrado' };
+    }
+
+    const foundMotorista = dbToMotorista(porCodigo as MotoristaDB);
 
     if (foundMotorista.senha !== senha) {
       return { success: false, error: 'Senha incorreta' };

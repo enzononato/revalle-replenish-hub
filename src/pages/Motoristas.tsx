@@ -49,6 +49,7 @@ export default function Motoristas() {
   const [formData, setFormData] = useState({
     nome: '',
     codigo: '',
+    cpf: '',
     dataNascimento: '',
     unidade: '',
     funcao: 'motorista' as FuncaoMotorista,
@@ -194,10 +195,13 @@ export default function Motoristas() {
     setIsDeleteMultipleDialogOpen(false);
   };
 
+  const UNIDADE_PETROLINA = 'Revalle Petrolina';
+
   const resetForm = () => {
     setFormData({
       nome: '',
       codigo: '',
+      cpf: '',
       dataNascimento: '',
       unidade: '',
       funcao: 'motorista',
@@ -212,6 +216,7 @@ export default function Motoristas() {
     setFormData({
       nome: motorista.nome,
       codigo: motorista.codigo,
+      cpf: motorista.cpf || '',
       dataNascimento: motorista.dataNascimento,
       unidade: motorista.unidade,
       funcao: motorista.funcao,
@@ -229,6 +234,7 @@ export default function Motoristas() {
       const dadosAnteriores = {
         nome: editingMotorista.nome,
         codigo: editingMotorista.codigo,
+        cpf: editingMotorista.cpf,
         unidade: editingMotorista.unidade,
         funcao: editingMotorista.funcao,
         setor: editingMotorista.setor,
@@ -247,6 +253,7 @@ export default function Motoristas() {
             depois: {
               nome: formData.nome,
               codigo: formData.codigo,
+              cpf: formData.cpf,
               unidade: formData.unidade,
               funcao: formData.funcao,
               setor: formData.setor,
@@ -269,6 +276,7 @@ export default function Motoristas() {
           registro_dados: {
             nome: formData.nome,
             codigo: formData.codigo,
+            cpf: formData.cpf,
             unidade: formData.unidade,
             funcao: formData.funcao,
             setor: formData.setor,
@@ -380,6 +388,29 @@ export default function Motoristas() {
                       onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
                       required
                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">
+                      CPF
+                      {formData.unidade && formData.unidade !== UNIDADE_PETROLINA && (
+                        <span className="text-destructive ml-1">*</span>
+                      )}
+                    </Label>
+                    <Input
+                      id="cpf"
+                      value={formData.cpf}
+                      onChange={(e) => {
+                        // Apenas números
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                        setFormData(prev => ({ ...prev, cpf: value }));
+                      }}
+                      placeholder="Somente números"
+                      required={formData.unidade !== '' && formData.unidade !== UNIDADE_PETROLINA}
+                    />
+                    {formData.unidade === UNIDADE_PETROLINA && (
+                      <p className="text-xs text-muted-foreground">Opcional para Petrolina</p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -598,6 +629,7 @@ export default function Motoristas() {
                   </th>
                   <th className="text-left p-2.5 text-[11px]">Nome</th>
                   <th className="text-left p-2.5 text-[11px]">Código</th>
+                  <th className="text-left p-2.5 text-[11px]">CPF</th>
                   <th className="text-left p-2.5 text-[11px]">Função</th>
                   <th className="text-left p-2.5 text-[11px]">Setor</th>
                   <th className="text-left p-2.5 text-[11px]">Unidade</th>
@@ -623,6 +655,11 @@ export default function Motoristas() {
                       <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
                         <Hash size={12} />
                         {motorista.codigo}
+                      </span>
+                    </td>
+                    <td className="p-2.5">
+                      <span className="text-muted-foreground text-xs font-mono">
+                        {motorista.cpf || '-'}
                       </span>
                     </td>
                     <td className="p-2.5">

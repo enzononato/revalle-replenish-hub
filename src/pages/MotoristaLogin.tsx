@@ -9,16 +9,16 @@ import { useMotoristaAuth } from '@/contexts/MotoristaAuthContext';
 import { Package, Eye, EyeOff, Loader2, Check, AlertCircle } from 'lucide-react';
 
 interface TouchedFields {
-  codigo: boolean;
+  identificador: boolean;
   senha: boolean;
 }
 
 export default function MotoristaLogin() {
-  const [codigo, setCodigo] = useState('');
+  const [identificador, setIdentificador] = useState('');
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [touched, setTouched] = useState<TouchedFields>({ codigo: false, senha: false });
+  const [touched, setTouched] = useState<TouchedFields>({ identificador: false, senha: false });
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login } = useMotoristaAuth();
@@ -27,18 +27,18 @@ export default function MotoristaLogin() {
     setTouched(prev => ({ ...prev, [field]: true }));
   };
 
-  const isFieldValid = (field: 'codigo' | 'senha') => {
-    if (field === 'codigo') return codigo.trim().length >= 1;
+  const isFieldValid = (field: 'identificador' | 'senha') => {
+    if (field === 'identificador') return identificador.trim().length >= 1;
     if (field === 'senha') return senha.length >= 4;
     return false;
   };
 
-  const getFieldStatus = (field: 'codigo' | 'senha') => {
+  const getFieldStatus = (field: 'identificador' | 'senha') => {
     if (!touched[field]) return 'neutral';
     return isFieldValid(field) ? 'valid' : 'invalid';
   };
 
-const getInputClassName = (field: 'codigo' | 'senha') => {
+const getInputClassName = (field: 'identificador' | 'senha') => {
     const status = getFieldStatus(field);
     const base = "h-12 text-base pr-10 transition-all";
     if (status === 'valid') return `${base} border-green-500 focus-visible:ring-green-500`;
@@ -49,9 +49,9 @@ const getInputClassName = (field: 'codigo' | 'senha') => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    setTouched({ codigo: true, senha: true });
+    setTouched({ identificador: true, senha: true });
     
-    if (!isFieldValid('codigo') || !isFieldValid('senha')) {
+    if (!isFieldValid('identificador') || !isFieldValid('senha')) {
       toast({
         title: "Campos inválidos",
         description: "Preencha todos os campos corretamente.",
@@ -63,7 +63,7 @@ const getInputClassName = (field: 'codigo' | 'senha') => {
     setIsLoading(true);
 
     try {
-      const result = await login(codigo.trim(), senha);
+      const result = await login(identificador.trim(), senha);
       
       if (result.success) {
         toast({
@@ -104,21 +104,21 @@ const getInputClassName = (field: 'codigo' | 'senha') => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="codigo">Código do Motorista</Label>
+              <Label htmlFor="identificador">CPF ou Código</Label>
               <div className="relative">
                 <Input
-                  id="codigo"
+                  id="identificador"
                   type="text"
-                  placeholder="Digite seu código"
-                  value={codigo}
-                  onChange={(e) => setCodigo(e.target.value)}
-                  onBlur={() => handleBlur('codigo')}
-                  className={getInputClassName('codigo')}
+                  placeholder="Digite seu CPF ou código"
+                  value={identificador}
+                  onChange={(e) => setIdentificador(e.target.value)}
+                  onBlur={() => handleBlur('identificador')}
+                  className={getInputClassName('identificador')}
                   disabled={isLoading}
                 />
-                {touched.codigo && (
+                {touched.identificador && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {isFieldValid('codigo') ? (
+                    {isFieldValid('identificador') ? (
                       <Check className="w-4 h-4 text-green-500" />
                     ) : (
                       <AlertCircle className="w-4 h-4 text-destructive" />
@@ -126,6 +126,9 @@ const getInputClassName = (field: 'codigo' | 'senha') => {
                   </div>
                 )}
               </div>
+              <p className="text-xs text-muted-foreground">
+                Petrolina: use o código Promax. Outras unidades: use o CPF.
+              </p>
             </div>
 
             <div className="space-y-2">

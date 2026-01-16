@@ -15,6 +15,7 @@ export interface Motorista {
   id: string;
   nome: string;
   codigo: string;
+  cpf?: string;
   dataNascimento: string;
   unidade: string;
   funcao: FuncaoMotorista;
