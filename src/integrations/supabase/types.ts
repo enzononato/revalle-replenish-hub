@@ -199,6 +199,7 @@ export type Database = {
       motoristas: {
         Row: {
           codigo: string
+          cpf: string | null
           created_at: string | null
           data_nascimento: string | null
           email: string | null
@@ -212,6 +213,7 @@ export type Database = {
         }
         Insert: {
           codigo: string
+          cpf?: string | null
           created_at?: string | null
           data_nascimento?: string | null
           email?: string | null
@@ -225,6 +227,7 @@ export type Database = {
         }
         Update: {
           codigo?: string
+          cpf?: string | null
           created_at?: string | null
           data_nascimento?: string | null
           email?: string | null

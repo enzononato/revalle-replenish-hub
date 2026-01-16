@@ -25,6 +25,7 @@ interface DataRow {
   'Código promax': string;
   UNIDADE: string;
   Senha?: string;
+  CPF?: string;
 }
 
 export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) {
@@ -44,6 +45,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
     if (h.includes('codigo') || h.includes('promax') || h.includes('cod')) return 'Código promax';
     if (h.includes('unidade') || h.includes('filial') || h.includes('loja')) return 'UNIDADE';
     if (h.includes('senha') || h.includes('password')) return 'Senha';
+    if (h === 'cpf') return 'CPF';
     
     return header;
   };
@@ -177,6 +179,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
       id: String(Date.now() + index),
       nome: row.Nome.trim(),
       codigo: String(row['Código promax']).trim(),
+      cpf: row.CPF ? row.CPF.replace(/\D/g, '') : undefined,
       dataNascimento: '',
       unidade: row.UNIDADE?.trim() || 'Revalle Juazeiro',
       funcao: mapFuncao(row.Função || ''),
@@ -231,7 +234,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
               className="cursor-pointer"
             />
             <p className="text-xs text-muted-foreground">
-              Colunas esperadas: Nome, Função, Setor, Código promax, UNIDADE, Senha (opcional)
+              Colunas esperadas: Nome, Função, Setor, Código promax, UNIDADE, CPF (opcional), Senha (opcional)
             </p>
           </div>
 
@@ -267,6 +270,7 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
                       <th className="text-left p-2 font-medium">Setor</th>
                       <th className="text-left p-2 font-medium">Código</th>
                       <th className="text-left p-2 font-medium">Unidade</th>
+                      <th className="text-left p-2 font-medium">CPF</th>
                       <th className="text-left p-2 font-medium">Senha</th>
                     </tr>
                   </thead>
@@ -294,6 +298,9 @@ export function ImportarMotoristasCSV({ onImport }: ImportarMotoristasCSVProps) 
                         </td>
                         <td className="p-2 font-mono">{row['Código promax']}</td>
                         <td className="p-2">{row.UNIDADE || 'Revalle Juazeiro'}</td>
+                        <td className="p-2 font-mono text-muted-foreground">
+                          {row.CPF ? row.CPF.replace(/\D/g, '') : '-'}
+                        </td>
                         <td className="p-2 font-mono text-muted-foreground">
                           {row.Senha ? '••••••' : '(código)'}
                         </td>
