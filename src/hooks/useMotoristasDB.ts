@@ -7,6 +7,7 @@ interface MotoristaDB {
   id: string;
   nome: string;
   codigo: string;
+  cpf: string | null;
   data_nascimento: string | null;
   unidade: string;
   funcao: string;
@@ -22,6 +23,7 @@ const dbToMotorista = (db: MotoristaDB): Motorista => ({
   id: db.id,
   nome: db.nome,
   codigo: db.codigo,
+  cpf: db.cpf || undefined,
   dataNascimento: db.data_nascimento || '',
   unidade: db.unidade,
   funcao: db.funcao as FuncaoMotorista,
@@ -36,6 +38,7 @@ const dbToMotorista = (db: MotoristaDB): Motorista => ({
 const motoristaToDB = (m: Motorista): Omit<MotoristaDB, 'id' | 'created_at'> => ({
   nome: m.nome,
   codigo: m.codigo,
+  cpf: m.cpf || null,
   data_nascimento: m.dataNascimento || null,
   unidade: m.unidade,
   funcao: m.funcao,
@@ -85,6 +88,7 @@ export function useMotoristasDB() {
       
       if (motorista.nome !== undefined) updateData.nome = motorista.nome;
       if (motorista.codigo !== undefined) updateData.codigo = motorista.codigo;
+      if (motorista.cpf !== undefined) updateData.cpf = motorista.cpf || null;
       if (motorista.dataNascimento !== undefined) updateData.data_nascimento = motorista.dataNascimento;
       if (motorista.unidade !== undefined) updateData.unidade = motorista.unidade;
       if (motorista.funcao !== undefined) updateData.funcao = motorista.funcao;
