@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2 } from 'lucide-react';
+import { Plus, Minus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
@@ -41,7 +41,7 @@ import CameraCapture from '@/components/CameraCapture';
 interface ProdutoForm {
   produto: string;
   unidade: string;
-  quantidade: number;
+  quantidade: string;
   validade: Date | undefined;
 }
 
@@ -117,7 +117,7 @@ export default function MotoristaPortal() {
   const [tipoReposicao, setTipoReposicao] = useState('');
   const [causa, setCausa] = useState('');
   const [produtos, setProdutos] = useState<ProdutoForm[]>([
-    { produto: '', unidade: '', quantidade: 1, validade: undefined }
+    { produto: '', unidade: '', quantidade: '1', validade: undefined }
   ]);
   const [whatsappContato, setWhatsappContato] = useState('');
   const [emailContato, setEmailContato] = useState('');
@@ -338,7 +338,7 @@ export default function MotoristaPortal() {
   };
 
   const addProduto = () => {
-    setProdutos([...produtos, { produto: '', unidade: '', quantidade: 1, validade: undefined }]);
+    setProdutos([...produtos, { produto: '', unidade: '', quantidade: '1', validade: undefined }]);
     setTouched(prev => ({ ...prev, produtos: [...prev.produtos, false] }));
   };
 
@@ -365,7 +365,7 @@ export default function MotoristaPortal() {
     setNotaFiscal('');
     setTipoReposicao('');
     setCausa('');
-    setProdutos([{ produto: '', unidade: '', quantidade: 1, validade: undefined }]);
+    setProdutos([{ produto: '', unidade: '', quantidade: '1', validade: undefined }]);
     setWhatsappContato('');
     setEmailContato('');
     setObservacao('');
@@ -439,6 +439,13 @@ export default function MotoristaPortal() {
       return;
     }
 
+    // Validar que todos os produtos têm quantidade válida
+    const produtosSemQuantidade = validProdutos.filter(p => !p.quantidade || parseInt(p.quantidade) < 1);
+    if (produtosSemQuantidade.length > 0) {
+      toast({ title: 'Erro', description: 'Preencha a quantidade de todos os produtos', variant: 'destructive' });
+      return;
+    }
+
     const now = new Date();
     const numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
@@ -450,7 +457,7 @@ export default function MotoristaPortal() {
         codigo,
         nome,
         unidade: p.unidade || 'UND',
-        quantidade: p.quantidade,
+        quantidade: parseInt(p.quantidade) || 1,
         validade: p.validade ? format(p.validade, 'dd/MM/yyyy') : ''
       };
     });
@@ -1099,17 +1106,47 @@ export default function MotoristaPortal() {
                               </p>
                             )}
                           </div>
-                          <div className="grid grid-cols-[1fr_60px_1fr] gap-1.5">
+                          <div className="grid grid-cols-[auto_60px_1fr] gap-1.5">
                             <div className="space-y-1">
                               <Label className="text-[10px] font-medium text-muted-foreground">Qtd</Label>
-                              <Input
-                                type="number"
-                                min="1"
-                                value={produto.quantidade}
-                                onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
-                                className="h-9 text-sm"
-                                inputMode="numeric"
-                              />
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0"
+                                  onClick={() => {
+                                    const current = parseInt(produto.quantidade) || 1;
+                                    if (current > 1) {
+                                      updateProduto(index, 'quantidade', String(current - 1));
+                                    }
+                                  }}
+                                  disabled={!produto.quantidade || parseInt(produto.quantidade) <= 1}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={produto.quantidade}
+                                  onChange={(e) => updateProduto(index, 'quantidade', e.target.value)}
+                                  onFocus={(e) => e.target.select()}
+                                  className={cn("h-9 text-sm text-center w-14", !produto.quantidade && "border-destructive")}
+                                  inputMode="numeric"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0"
+                                  onClick={() => {
+                                    const current = parseInt(produto.quantidade) || 0;
+                                    updateProduto(index, 'quantidade', String(current + 1));
+                                  }}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                             <div className="space-y-1">
                               <Label className="text-[10px] font-medium text-muted-foreground">Und</Label>
