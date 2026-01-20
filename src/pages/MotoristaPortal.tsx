@@ -41,7 +41,7 @@ import CameraCapture from '@/components/CameraCapture';
 interface ProdutoForm {
   produto: string;
   unidade: string;
-  quantidade: number;
+  quantidade: string;
   validade: Date | undefined;
 }
 
@@ -117,7 +117,7 @@ export default function MotoristaPortal() {
   const [tipoReposicao, setTipoReposicao] = useState('');
   const [causa, setCausa] = useState('');
   const [produtos, setProdutos] = useState<ProdutoForm[]>([
-    { produto: '', unidade: '', quantidade: 1, validade: undefined }
+    { produto: '', unidade: '', quantidade: '1', validade: undefined }
   ]);
   const [whatsappContato, setWhatsappContato] = useState('');
   const [emailContato, setEmailContato] = useState('');
@@ -338,7 +338,7 @@ export default function MotoristaPortal() {
   };
 
   const addProduto = () => {
-    setProdutos([...produtos, { produto: '', unidade: '', quantidade: 1, validade: undefined }]);
+    setProdutos([...produtos, { produto: '', unidade: '', quantidade: '1', validade: undefined }]);
     setTouched(prev => ({ ...prev, produtos: [...prev.produtos, false] }));
   };
 
@@ -365,7 +365,7 @@ export default function MotoristaPortal() {
     setNotaFiscal('');
     setTipoReposicao('');
     setCausa('');
-    setProdutos([{ produto: '', unidade: '', quantidade: 1, validade: undefined }]);
+    setProdutos([{ produto: '', unidade: '', quantidade: '1', validade: undefined }]);
     setWhatsappContato('');
     setEmailContato('');
     setObservacao('');
@@ -439,6 +439,13 @@ export default function MotoristaPortal() {
       return;
     }
 
+    // Validar que todos os produtos têm quantidade válida
+    const produtosSemQuantidade = validProdutos.filter(p => !p.quantidade || parseInt(p.quantidade) < 1);
+    if (produtosSemQuantidade.length > 0) {
+      toast({ title: 'Erro', description: 'Preencha a quantidade de todos os produtos', variant: 'destructive' });
+      return;
+    }
+
     const now = new Date();
     const numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
@@ -450,7 +457,7 @@ export default function MotoristaPortal() {
         codigo,
         nome,
         unidade: p.unidade || 'UND',
-        quantidade: p.quantidade,
+        quantidade: parseInt(p.quantidade) || 1,
         validade: p.validade ? format(p.validade, 'dd/MM/yyyy') : ''
       };
     });
@@ -1106,9 +1113,9 @@ export default function MotoristaPortal() {
                                 type="number"
                                 min="1"
                                 value={produto.quantidade}
-                                onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
+                                onChange={(e) => updateProduto(index, 'quantidade', e.target.value)}
                                 onFocus={(e) => e.target.select()}
-                                className="h-9 text-sm"
+                                className={cn("h-9 text-sm", !produto.quantidade && "border-destructive")}
                                 inputMode="numeric"
                               />
                             </div>
