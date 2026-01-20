@@ -85,7 +85,7 @@ export function useUsuariosDB() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Omit<Usuario, 'id' | 'createdAt'>> }) => {
+    mutationFn: async ({ id, updates, newPassword }: { id: string; updates: Partial<Omit<Usuario, 'id' | 'createdAt'>>; newPassword?: string }) => {
       const updateData: Record<string, unknown> = {};
       
       if (updates.nome !== undefined) updateData.nome = updates.nome;
@@ -99,16 +99,34 @@ export function useUsuariosDB() {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Se uma nova senha foi fornecida, atualizar via edge function
+      if (newPassword && updates.email) {
+        const { data, error: passwordError } = await supabase.functions.invoke('update-user-password', {
+          body: {
+            user_email: updates.email,
+            new_password: newPassword,
+          },
+        });
+
+        if (passwordError) {
+          throw new Error(passwordError.message || 'Erro ao atualizar senha');
+        }
+
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
       toast.success('Usuário atualizado com sucesso!');
     },
-    onError: (error: { code?: string }) => {
+    onError: (error: { code?: string; message?: string }) => {
       if (error.code === '23505') {
         toast.error('Já existe um usuário com este email');
       } else {
-        toast.error('Erro ao atualizar usuário');
+        toast.error(error.message || 'Erro ao atualizar usuário');
       }
     },
   });

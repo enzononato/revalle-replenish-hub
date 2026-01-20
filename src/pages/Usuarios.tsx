@@ -164,6 +164,7 @@ export default function Usuarios() {
             nivel: formData.nivel,
             unidades: formData.unidades,
           },
+          newPassword: formData.senha.trim() || undefined,
         });
       } else {
         await addUsuario({
