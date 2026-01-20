@@ -1107,6 +1107,7 @@ export default function MotoristaPortal() {
                                 min="1"
                                 value={produto.quantidade}
                                 onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
+                                onFocus={(e) => e.target.select()}
                                 className="h-9 text-sm"
                                 inputMode="numeric"
                               />
