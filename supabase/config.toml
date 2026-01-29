@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.teste-webhook-criacao]
 verify_jwt = false
+
+[functions.foto-proxy]
+verify_jwt = false
