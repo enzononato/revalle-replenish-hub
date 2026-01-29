@@ -1,88 +1,100 @@
 
-## Plano: Adicionar Cópia de E-mail (CC) para Logística
+## Plano: URLs de Fotos com Domínio Personalizado
 
-### Análise da Situação Atual
+### Situação Atual
 
-O sistema Lovable **já implementa 100%** da funcionalidade do seu código PHP:
+As fotos são armazenadas no Supabase Storage e geram URLs como:
+```
+https://miwbbdhfbpmcrfbpulkj.supabase.co/storage/v1/object/public/fotos-protocolos/REP-123/motorista_pdv_1234567890.jpg
+```
 
-| Funcionalidade | Status |
-|---|---|
-| Upload de fotos | Funcionando (Supabase Storage) |
-| Salvar no banco | Funcionando (Supabase/PostgreSQL) |
-| Enviar WhatsApp | Funcionando via n8n webhook |
-| Enviar E-mail SMTP | Funcionando via Edge Function |
+### Solução: Criar Edge Function de Proxy
 
-**Única diferença identificada**: O PHP envia cópia (CC) do e-mail para `logistica@revalle.com.br`, mas o Lovable atual envia apenas para o e-mail do contato.
+Criar uma Edge Function que funciona como **proxy** para as imagens, permitindo URLs mais amigáveis como:
+```
+https://revalle-flow-sync.lovable.app/functions/v1/foto/REP-123/motorista_pdv_1234567890.jpg
+```
+
+Ou, se você configurar seu domínio custom:
+```
+https://seudominio.com.br/functions/v1/foto/REP-123/motorista_pdv_1234567890.jpg
+```
 
 ---
 
-### Modificação Necessária
+### Implementação
 
-**Arquivo: `supabase/functions/enviar-email/index.ts`**
+**1. Criar Edge Function `foto-proxy`**
 
-Adicionar suporte a destinatários CC no envio SMTP:
-
-1. **Adicionar constante** para o e-mail de cópia:
 ```typescript
-const COPY_EMAIL = "logistica@revalle.com.br";
+// supabase/functions/foto-proxy/index.ts
+serve(async (req) => {
+  const url = new URL(req.url);
+  const path = url.pathname.replace('/foto-proxy/', '');
+  
+  // Buscar imagem do Storage
+  const storageUrl = `${SUPABASE_URL}/storage/v1/object/public/fotos-protocolos/${path}`;
+  
+  const response = await fetch(storageUrl);
+  return new Response(response.body, {
+    headers: {
+      'Content-Type': response.headers.get('Content-Type'),
+      'Cache-Control': 'public, max-age=31536000'
+    }
+  });
+});
 ```
 
-2. **Modificar a função `enviarEmailSMTP`** para aceitar CC:
+**2. Criar função utilitária para converter URLs**
+
 ```typescript
-async function enviarEmailSMTP(
-  to: string,
-  subject: string,
-  htmlBody: string,
-  cc?: string  // Novo parâmetro opcional
-): Promise<void> {
-  // ... código existente ...
+// src/utils/urlHelpers.ts
+export function getCustomPhotoUrl(supabaseUrl: string): string {
+  // Extrair o path da foto
+  const match = supabaseUrl.match(/\/fotos-protocolos\/(.+)$/);
+  if (!match) return supabaseUrl;
   
-  // RCPT TO principal
-  await write(`RCPT TO:<${to}>\r\n`);
-  await read();
-  
-  // RCPT TO para CC (se fornecido)
-  if (cc) {
-    await write(`RCPT TO:<${cc}>\r\n`);
-    await read();
-  }
-  
-  // ... resto do código ...
-  
-  // Atualizar headers do email
-  const emailContent = [
-    `From: "Revalle Protocolos" <${SMTP_USER}>`,
-    `To: ${to}`,
-    cc ? `Cc: ${cc}` : '', // Adicionar header CC
-    // ...
-  ].filter(Boolean).join("\r\n");
+  const baseDomain = window.location.origin;
+  return `${baseDomain}/functions/v1/foto-proxy/${match[1]}`;
 }
 ```
 
-3. **Chamar a função com CC**:
-```typescript
-await enviarEmailSMTP(
-  data.clienteEmail, 
-  assunto, 
-  htmlContent, 
-  COPY_EMAIL  // Sempre enviar cópia para logística
-);
+**3. Aplicar nos locais de geração de URL**
+
+Atualizar `uploadFotoStorage.ts` para retornar URLs customizadas.
+
+---
+
+### Alternativa Mais Simples (Sem Edge Function)
+
+Se o objetivo é apenas **exibir URLs mais amigáveis** nas mensagens de WhatsApp/e-mail, podemos criar um **encurtador de URL**:
+
+1. Criar tabela `url_shortcuts` com ID curto → URL completa
+2. Edge Function que redireciona: `/r/abc123` → URL do Supabase
+
+Isso geraria URLs como:
+```
+https://revalle-flow-sync.lovable.app/functions/v1/r/abc123
 ```
 
 ---
 
-### Resultado Esperado
+### Recomendação
 
-Após a modificação, todos os e-mails de protocolo (abertura, encerramento, reabertura) serão enviados:
-- **Para**: E-mail do contato informado no protocolo
-- **CC**: logistica@revalle.com.br
+A **opção do proxy** é mais robusta pois:
+- Mantém o caminho original legível
+- Não precisa de banco de dados extra
+- Cache eficiente
+- Funciona automaticamente com seu domínio custom
 
 ---
 
 ### Seção Técnica
 
-A modificação será feita na Edge Function `enviar-email` (linhas ~420-510) adicionando:
-1. Constante para o e-mail CC
-2. Comando SMTP adicional `RCPT TO` para o CC
-3. Header `Cc:` no corpo do e-mail MIME
-4. Filtro para remover linhas vazias quando CC não existir
+| Arquivo | Alteração |
+|---------|-----------|
+| `supabase/functions/foto-proxy/index.ts` | Nova Edge Function que faz proxy das imagens |
+| `src/utils/uploadFotoStorage.ts` | Converter URL do Supabase para URL customizada |
+| `src/utils/urlHelpers.ts` | Novo arquivo com função de conversão de URLs |
+
+A Edge Function recebe o path da imagem, busca no Storage e retorna a imagem com headers de cache otimizados.
