@@ -43,6 +43,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChatBubbleExpanded } from '@/components/chat/ChatBubbleExpanded';
 import { useChatDB } from '@/hooks/useChatDB';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { getCustomPhotoUrl } from '@/utils/urlHelpers';
 
 interface ProtocoloDetailsProps {
   protocolo: Protocolo | null;
@@ -427,9 +428,9 @@ export function ProtocoloDetails({
         observacaoGeral: protocolo.observacaoGeral,
         produtos: protocolo.produtos,
         fotos: {
-          fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
-          fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
-          fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+          fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
+          fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
+          fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
         },
         mensagemEncerramento: mensagemEncerramento || '',
         arquivoEncerramentoUrl: arquivoUrl,
@@ -548,9 +549,9 @@ export function ProtocoloDetails({
           observacaoGeral: protocolo.observacaoGeral,
           produtos: protocolo.produtos,
           fotos: {
-            fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
-            fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
-            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+            fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
+            fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
+            fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
           },
           mensagemEncerramento: protocolo.mensagemEncerramento || '',
           arquivoEncerramentoUrl: protocolo.arquivoEncerramento,
