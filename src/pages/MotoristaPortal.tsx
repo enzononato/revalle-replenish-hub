@@ -7,6 +7,7 @@ import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useOfflineProtocolos } from '@/hooks/useOfflineProtocolos';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
+import { getCustomPhotoUrl } from '@/utils/urlHelpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -606,9 +607,9 @@ export default function MotoristaPortal() {
         causa,
         produtos: produtosFormatados,
         fotos: {
-          fotoMotoristaPdv: fotosUrls.fotoMotoristaPdv || '',
-          fotoLoteProduto: fotosUrls.fotoLoteProduto || '',
-          fotoAvaria: fotosUrls.fotoAvaria || ''
+          fotoMotoristaPdv: getCustomPhotoUrl(fotosUrls.fotoMotoristaPdv || ''),
+          fotoLoteProduto: getCustomPhotoUrl(fotosUrls.fotoLoteProduto || ''),
+          fotoAvaria: getCustomPhotoUrl(fotosUrls.fotoAvaria || '')
         },
         whatsappContato: whatsappContato || '',
         emailContato: emailContato || '',
@@ -647,7 +648,11 @@ export default function MotoristaPortal() {
             tipoReposicao: tipoReposicao.toUpperCase(),
             causa,
             produtos: produtosFormatados,
-            fotosProtocolo,
+            fotosProtocolo: {
+              fotoMotoristaPdv: getCustomPhotoUrl(fotosProtocolo.fotoMotoristaPdv || ''),
+              fotoLoteProduto: getCustomPhotoUrl(fotosProtocolo.fotoLoteProduto || ''),
+              fotoAvaria: getCustomPhotoUrl(fotosProtocolo.fotoAvaria || '')
+            },
             clienteEmail: emailContato,
             observacaoGeral: observacao || undefined
           };
