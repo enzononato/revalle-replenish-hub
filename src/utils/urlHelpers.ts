@@ -8,15 +8,20 @@
 export function getCustomPhotoUrl(supabaseUrl: string): string {
   if (!supabaseUrl) return supabaseUrl;
   
-  const backendOrigin = import.meta.env.VITE_SUPABASE_URL;
-  if (!backendOrigin) return supabaseUrl;
+  // Usa o domínio customizado do app (ex: reposicao.revalle.com.br)
+  // O PhotoProxyRedirect no app vai redirecionar para o backend real
+  const appOrigin = typeof window !== 'undefined' 
+    ? window.location.origin 
+    : import.meta.env.VITE_SUPABASE_URL;
+  
+  if (!appOrigin) return supabaseUrl;
 
-  // Se já for URL do foto-proxy no domínio correto do backend, retornar como está
-  if (supabaseUrl.startsWith(backendOrigin) && supabaseUrl.includes('/functions/v1/foto-proxy/')) {
+  // Se já for URL do foto-proxy no domínio do app, retornar como está
+  if (supabaseUrl.startsWith(appOrigin) && supabaseUrl.includes('/functions/v1/foto-proxy/')) {
     return supabaseUrl;
   }
 
-  // Extrair o path da foto - pode vir do storage ou de um foto-proxy em domínio errado
+  // Extrair o path da foto - pode vir do storage ou de um foto-proxy em outro domínio
   let imagePath: string | null = null;
 
   // Caso 1: URL do storage do Supabase
@@ -25,7 +30,7 @@ export function getCustomPhotoUrl(supabaseUrl: string): string {
     imagePath = storageMatch[1];
   }
 
-  // Caso 2: URL de foto-proxy em domínio errado (customizado ou preview)
+  // Caso 2: URL de foto-proxy em qualquer domínio
   const proxyMatch = supabaseUrl.match(/\/functions\/v1\/foto-proxy\/(.+)$/);
   if (proxyMatch?.[1]) {
     imagePath = proxyMatch[1];
@@ -33,8 +38,8 @@ export function getCustomPhotoUrl(supabaseUrl: string): string {
 
   if (!imagePath) return supabaseUrl;
 
-  // Retorna sempre usando o domínio do backend onde as functions existem
-  return `${backendOrigin}/functions/v1/foto-proxy/${imagePath}`;
+  // Retorna usando o domínio customizado do app
+  return `${appOrigin}/functions/v1/foto-proxy/${imagePath}`;
 }
 
 /**
