@@ -1,100 +1,96 @@
 
-## Plano: URLs de Fotos com Domínio Personalizado
 
-### Situação Atual
+## Plano: Corrigir URLs de Fotos no Webhook WhatsApp
 
-As fotos são armazenadas no Supabase Storage e geram URLs como:
+### Problema Identificado
+
+Os protocolos estão salvando e enviando URLs no formato do Supabase:
 ```
-https://miwbbdhfbpmcrfbpulkj.supabase.co/storage/v1/object/public/fotos-protocolos/REP-123/motorista_pdv_1234567890.jpg
-```
-
-### Solução: Criar Edge Function de Proxy
-
-Criar uma Edge Function que funciona como **proxy** para as imagens, permitindo URLs mais amigáveis como:
-```
-https://revalle-flow-sync.lovable.app/functions/v1/foto/REP-123/motorista_pdv_1234567890.jpg
+https://miwbbdhfbpmcrfbpulkj.supabase.co/storage/v1/object/public/fotos-protocolos/...
 ```
 
-Ou, se você configurar seu domínio custom:
+Em vez do formato customizado:
 ```
-https://seudominio.com.br/functions/v1/foto/REP-123/motorista_pdv_1234567890.jpg
+https://revalle-flow-sync.lovable.app/functions/v1/foto-proxy/...
 ```
 
----
+### Causa Raiz
 
-### Implementação
+A modificação anterior no `uploadFotoStorage.ts` está correta, porém há dois problemas:
 
-**1. Criar Edge Function `foto-proxy`**
+1. **Cache do navegador**: O código pode não ter sido atualizado no dispositivo do motorista
+2. **Domínio hardcoded**: O domínio `revalle-flow-sync.lovable.app` está fixo no código, mas deveria detectar automaticamente o domínio em uso (especialmente se houver domínio customizado)
+
+### Solução Proposta
+
+**1. Atualizar `urlHelpers.ts` para detectar domínio dinamicamente**
+
+Modificar a função `getCustomPhotoUrl` para:
+- Detectar o domínio atual (`window.location.origin`) quando executado no navegador
+- Usar fallback para domínio publicado quando em contexto de servidor
+- Suportar domínio customizado automaticamente
 
 ```typescript
-// supabase/functions/foto-proxy/index.ts
-serve(async (req) => {
-  const url = new URL(req.url);
-  const path = url.pathname.replace('/foto-proxy/', '');
-  
-  // Buscar imagem do Storage
-  const storageUrl = `${SUPABASE_URL}/storage/v1/object/public/fotos-protocolos/${path}`;
-  
-  const response = await fetch(storageUrl);
-  return new Response(response.body, {
-    headers: {
-      'Content-Type': response.headers.get('Content-Type'),
-      'Cache-Control': 'public, max-age=31536000'
-    }
-  });
-});
-```
-
-**2. Criar função utilitária para converter URLs**
-
-```typescript
-// src/utils/urlHelpers.ts
 export function getCustomPhotoUrl(supabaseUrl: string): string {
-  // Extrair o path da foto
-  const match = supabaseUrl.match(/\/fotos-protocolos\/(.+)$/);
-  if (!match) return supabaseUrl;
+  if (!supabaseUrl) return supabaseUrl;
   
-  const baseDomain = window.location.origin;
-  return `${baseDomain}/functions/v1/foto-proxy/${match[1]}`;
+  // Se já for URL customizada, retornar como está
+  if (supabaseUrl.includes('/functions/v1/foto-proxy/')) {
+    return supabaseUrl;
+  }
+  
+  const match = supabaseUrl.match(/\/fotos-protocolos\/(.+)$/);
+  if (!match || !match[1]) return supabaseUrl;
+  
+  const imagePath = match[1];
+  
+  // Detectar domínio dinamicamente
+  const baseDomain = typeof window !== 'undefined' 
+    ? window.location.origin 
+    : 'https://revalle-flow-sync.lovable.app';
+  
+  return `${baseDomain}/functions/v1/foto-proxy/${imagePath}`;
 }
 ```
 
-**3. Aplicar nos locais de geração de URL**
+**2. Verificar chamadas de webhook no MotoristaPortal.tsx**
 
-Atualizar `uploadFotoStorage.ts` para retornar URLs customizadas.
+Garantir que as URLs no payload do webhook também usem `getCustomPhotoUrl`:
 
----
-
-### Alternativa Mais Simples (Sem Edge Function)
-
-Se o objetivo é apenas **exibir URLs mais amigáveis** nas mensagens de WhatsApp/e-mail, podemos criar um **encurtador de URL**:
-
-1. Criar tabela `url_shortcuts` com ID curto → URL completa
-2. Edge Function que redireciona: `/r/abc123` → URL do Supabase
-
-Isso geraria URLs como:
-```
-https://revalle-flow-sync.lovable.app/functions/v1/r/abc123
+```typescript
+fotos: {
+  fotoMotoristaPdv: getCustomPhotoUrl(fotosUrls.fotoMotoristaPdv || ''),
+  fotoLoteProduto: getCustomPhotoUrl(fotosUrls.fotoLoteProduto || ''),
+  fotoAvaria: getCustomPhotoUrl(fotosUrls.fotoAvaria || '')
+},
 ```
 
----
+**3. Adicionar validação no webhook de e-mail (MotoristaPortal.tsx)**
 
-### Recomendação
-
-A **opção do proxy** é mais robusta pois:
-- Mantém o caminho original legível
-- Não precisa de banco de dados extra
-- Cache eficiente
-- Funciona automaticamente com seu domínio custom
+Aplicar a mesma conversão para as fotos enviadas no payload de e-mail.
 
 ---
 
-### Seção Técnica
+### Arquivos a Modificar
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `supabase/functions/foto-proxy/index.ts` | Nova Edge Function que faz proxy das imagens |
-| `src/utils/uploadFotoStorage.ts` | Converter URL do Supabase para URL customizada |
-| `src/utils/urlHelpers.ts` | Novo arquivo com função de conversão de URLs |
+| `src/utils/urlHelpers.ts` | Adicionar detecção dinâmica de domínio + verificação de URL já convertida |
+| `src/pages/MotoristaPortal.tsx` | Importar `getCustomPhotoUrl` e aplicar nas fotos do webhook |
 
-A Edge Function recebe o path da imagem, busca no Storage e retorna a imagem com headers de cache otimizados.
+---
+
+### Seção Tecnica
+
+A modificação principal é no `urlHelpers.ts`:
+
+1. **Verificar se já é URL customizada**: Evitar dupla conversão
+2. **Usar `window.location.origin`**: Detecta automaticamente o domínio atual (incluindo domínios custom)
+3. **Fallback para SSR**: Caso `window` não exista, usar domínio padrão
+
+No `MotoristaPortal.tsx`, aplicar conversão explicita:
+- Linha ~608-612: Adicionar `getCustomPhotoUrl()` wrapper
+- Importar função do `urlHelpers.ts`
+
+Isso garante que mesmo se o `uploadFotoStorage` retornar URL do Supabase (por qualquer motivo), o webhook sempre enviará URL customizada.
+
