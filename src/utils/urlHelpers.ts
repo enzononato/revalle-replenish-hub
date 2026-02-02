@@ -8,14 +8,21 @@
 export function getCustomPhotoUrl(supabaseUrl: string): string {
   if (!supabaseUrl) return supabaseUrl;
   
+  // Se já for URL customizada, retornar como está
+  if (supabaseUrl.includes('/functions/v1/foto-proxy/')) {
+    return supabaseUrl;
+  }
+  
   // Extrair o path da foto do bucket fotos-protocolos
   const match = supabaseUrl.match(/\/fotos-protocolos\/(.+)$/);
   if (!match || !match[1]) return supabaseUrl;
   
   const imagePath = match[1];
   
-  // Usar o domínio publicado do projeto
-  const baseDomain = 'https://revalle-flow-sync.lovable.app';
+  // Detectar domínio dinamicamente (suporta domínio custom)
+  const baseDomain = typeof window !== 'undefined' 
+    ? window.location.origin 
+    : 'https://revalle-flow-sync.lovable.app';
   
   return `${baseDomain}/functions/v1/foto-proxy/${imagePath}`;
 }
