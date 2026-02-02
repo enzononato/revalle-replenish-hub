@@ -3,7 +3,7 @@
  * 
  * Exemplo:
  * Input:  https://miwbbdhfbpmcrfbpulkj.supabase.co/storage/v1/object/public/fotos-protocolos/REP-123/foto.jpg
- * Output: https://revalle-flow-sync.lovable.app/functions/v1/foto-proxy/REP-123/foto.jpg
+ * Output: https://<backend>/functions/v1/foto-proxy/REP-123/foto.jpg
  */
 export function getCustomPhotoUrl(supabaseUrl: string): string {
   if (!supabaseUrl) return supabaseUrl;
@@ -18,13 +18,14 @@ export function getCustomPhotoUrl(supabaseUrl: string): string {
   if (!match || !match[1]) return supabaseUrl;
   
   const imagePath = match[1];
-  
-  // Detectar domínio dinamicamente (suporta domínio custom)
-  const baseDomain = typeof window !== 'undefined' 
-    ? window.location.origin 
-    : 'https://revalle-flow-sync.lovable.app';
-  
-  return `${baseDomain}/functions/v1/foto-proxy/${imagePath}`;
+
+  // IMPORTANTE:
+  // O domínio do site (incluindo domínio customizado) serve apenas o app (SPA).
+  // O endpoint /functions/v1/* fica no domínio do backend.
+  const backendOrigin = import.meta.env.VITE_SUPABASE_URL;
+  if (!backendOrigin) return supabaseUrl;
+
+  return `${backendOrigin}/functions/v1/foto-proxy/${imagePath}`;
 }
 
 /**
