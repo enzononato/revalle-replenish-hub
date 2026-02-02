@@ -28,6 +28,7 @@ import LogsAuditoria from "./pages/LogsAuditoria";
 import Chat from "./pages/Chat";
 import LogsChat from "./pages/LogsChat";
 import NotFound from "./pages/NotFound";
+import PhotoProxyRedirect from "./pages/PhotoProxyRedirect";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
               <BrowserRouter>
                 <KeyboardShortcutsModal />
                 <Routes>
+                  <Route path="/functions/v1/foto-proxy/*" element={<PhotoProxyRedirect />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/abrir-protocolo" element={<AbrirProtocolo />} />
                   <Route path="/motorista" element={<Navigate to="/motorista/login" replace />} />
