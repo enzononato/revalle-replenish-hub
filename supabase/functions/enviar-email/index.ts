@@ -11,6 +11,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// E-mail de cópia para o setor de logística
+const COPY_EMAIL = "logistica@revalle.com.br";
+
 interface Produto {
   codigo: string;
   nome: string;
@@ -420,7 +423,8 @@ function encodeBase64(str: string): string {
 async function enviarEmailSMTP(
   to: string,
   subject: string,
-  htmlBody: string
+  htmlBody: string,
+  cc?: string
 ): Promise<void> {
   console.log(`Conectando a ${SMTP_HOST}:${SMTP_PORT}...`);
   
@@ -473,9 +477,15 @@ async function enviarEmailSMTP(
     await write(`MAIL FROM:<${SMTP_USER}>\r\n`);
     await read();
 
-    // RCPT TO
+    // RCPT TO principal
     await write(`RCPT TO:<${to}>\r\n`);
     await read();
+
+    // RCPT TO para CC (se fornecido)
+    if (cc) {
+      await write(`RCPT TO:<${cc}>\r\n`);
+      await read();
+    }
 
     // DATA
     await write(`DATA\r\n`);
@@ -483,12 +493,17 @@ async function enviarEmailSMTP(
 
     // Corpo do email
     const boundary = "----=_Part_" + Date.now();
-    const emailContent = [
+    const emailHeaders = [
       `From: "Revalle Protocolos" <${SMTP_USER}>`,
       `To: ${to}`,
+      cc ? `Cc: ${cc}` : '',
       `Subject: =?UTF-8?B?${encodeBase64(subject)}?=`,
       `MIME-Version: 1.0`,
       `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    ].filter(Boolean);
+    
+    const emailContent = [
+      ...emailHeaders,
       ``,
       `--${boundary}`,
       `Content-Type: text/html; charset=UTF-8`,
@@ -564,7 +579,7 @@ const handler = async (req: Request): Promise<Response> => {
       htmlContent = gerarEmailEncerrar(data);
     }
 
-    await enviarEmailSMTP(data.clienteEmail, assunto, htmlContent);
+    await enviarEmailSMTP(data.clienteEmail, assunto, htmlContent, COPY_EMAIL);
 
     console.log("E-mail enviado com sucesso!");
 

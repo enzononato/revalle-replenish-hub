@@ -195,8 +195,9 @@ export function BuscarProtocoloPdv({ isOpen, onClose, onSelectProtocolo, motoris
                           </div>
                           <ul className="text-xs text-foreground space-y-0.5 ml-4">
                             {produtos.slice(0, 5).map((produto, idx) => (
-                              <li key={idx} className="truncate">
-                                • {produto.nome} {produto.quantidade && `(${produto.quantidade} ${produto.unidade || 'un'})`}
+                              <li key={idx} className="flex items-center gap-1">
+                                <span className="truncate">• {produto.nome}</span>
+                                <span className="font-medium text-primary shrink-0">({produto.quantidade || 1} {produto.unidade || 'un'})</span>
                               </li>
                             ))}
                             {produtos.length > 5 && (

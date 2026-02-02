@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { Motorista, Produto, ObservacaoLog, FotosProtocolo } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
+import { getCustomPhotoUrl } from '@/utils/urlHelpers';
 import CameraCapture from '@/components/CameraCapture';
 
 interface ProtocoloParaEncerrar {
@@ -229,11 +230,11 @@ export function EncerrarProtocoloModal({
           observacao: p.observacao || ''
         })),
         fotos: {
-          fotoMotoristaPdv: fotosProtocolo?.fotoMotoristaPdv || '',
-          fotoLoteProduto: fotosProtocolo?.fotoLoteProduto || '',
-          fotoAvaria: fotosProtocolo?.fotoAvaria || ''
+          fotoMotoristaPdv: getCustomPhotoUrl(fotosProtocolo?.fotoMotoristaPdv || ''),
+          fotoLoteProduto: getCustomPhotoUrl(fotosProtocolo?.fotoLoteProduto || ''),
+          fotoAvaria: getCustomPhotoUrl(fotosProtocolo?.fotoAvaria || '')
         },
-        // Novas fotos de encerramento pelo motorista
+        // Novas fotos de encerramento pelo motorista (já vêm com URL customizada do uploadFotoParaStorage)
         fotoNotaFiscalEncerramento: urlFotoNF,
         fotoEntregaMercadoria: urlFotoMercadoria,
         mensagemEncerramento: observacao || 'Encerrado pelo motorista',

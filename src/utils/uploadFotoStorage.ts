@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getCustomPhotoUrl } from './urlHelpers';
 
 /**
  * Converte uma string base64 para Blob
@@ -60,13 +61,15 @@ export async function uploadFotoParaStorage(
         throw error;
       }
 
-      // Retorna a URL pública
+      // Retorna a URL pública convertida para domínio customizado
       const { data: publicUrlData } = supabase.storage
         .from('fotos-protocolos')
         .getPublicUrl(data.path);
 
+      const customUrl = getCustomPhotoUrl(publicUrlData.publicUrl);
+      
       onProgress?.('success');
-      return publicUrlData.publicUrl;
+      return customUrl;
     } catch (error) {
       lastError = error as Error;
       console.error(`Tentativa ${attempt}/${maxRetries} falhou:`, error);
