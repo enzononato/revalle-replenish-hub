@@ -233,7 +233,7 @@ export function ProtocoloDetails({
   const fotosEncerramento: { url: string; label: string }[] = [];
   if (protocolo.status === 'encerrado') {
     if (protocolo.fotoNotaFiscalEncerramento) {
-      fotosEncerramento.push({ url: protocolo.fotoNotaFiscalEncerramento, label: 'Nota Fiscal (Encerramento)' });
+      fotosEncerramento.push({ url: protocolo.fotoNotaFiscalEncerramento, label: 'Canhoto Assinado' });
     }
     if (protocolo.fotoEntregaMercadoria) {
       fotosEncerramento.push({ url: protocolo.fotoEntregaMercadoria, label: 'Entrega Mercadoria' });
