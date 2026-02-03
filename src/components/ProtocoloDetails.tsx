@@ -233,13 +233,13 @@ export function ProtocoloDetails({
   const fotosEncerramento: { url: string; label: string }[] = [];
   if (protocolo.status === 'encerrado') {
     if (protocolo.fotoNotaFiscalEncerramento) {
-      fotosEncerramento.push({ url: protocolo.fotoNotaFiscalEncerramento, label: 'Nota Fiscal (Encerramento)' });
+      fotosEncerramento.push({ url: getCustomPhotoUrl(protocolo.fotoNotaFiscalEncerramento), label: 'Canhoto Assinado' });
     }
     if (protocolo.fotoEntregaMercadoria) {
-      fotosEncerramento.push({ url: protocolo.fotoEntregaMercadoria, label: 'Entrega Mercadoria' });
+      fotosEncerramento.push({ url: getCustomPhotoUrl(protocolo.fotoEntregaMercadoria), label: 'Entrega Mercadoria' });
     }
     if (protocolo.arquivoEncerramento && (protocolo.arquivoEncerramento.startsWith('http') || protocolo.arquivoEncerramento.includes('supabase'))) {
-      fotosEncerramento.push({ url: protocolo.arquivoEncerramento, label: 'Anexo Encerramento' });
+      fotosEncerramento.push({ url: getCustomPhotoUrl(protocolo.arquivoEncerramento), label: 'Anexo Encerramento' });
     }
   }
 
