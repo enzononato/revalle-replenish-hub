@@ -94,7 +94,7 @@ export function EncerrarProtocoloModal({
     
     try {
       // 1. Upload das fotos para o Storage
-      setUploadProgress('Enviando foto da nota fiscal...');
+      setUploadProgress('Enviando foto do canhoto assinado...');
       const urlFotoNF = await uploadFotoParaStorage(
         fotoNotaFiscal,
         protocolo.numero,
@@ -102,7 +102,7 @@ export function EncerrarProtocoloModal({
       );
       
       if (!urlFotoNF) {
-        throw new Error('Falha ao enviar foto da nota fiscal');
+        throw new Error('Falha ao enviar foto do canhoto assinado');
       }
 
       setUploadProgress('Enviando foto da mercadoria...');
@@ -304,17 +304,17 @@ export function EncerrarProtocoloModal({
           </Card>
 
           <div className="space-y-4">
-            {/* Foto da Nota Fiscal */}
+            {/* Foto do Canhoto Assinado */}
             <div className="space-y-2">
               <Label className="flex items-center gap-1">
                 <Camera className="w-4 h-4" />
-                Foto da Nota Fiscal *
+                Foto do Canhoto Assinado *
               </Label>
               {fotoNotaFiscal ? (
                 <div className="relative">
                   <img 
                     src={fotoNotaFiscal} 
-                    alt="Nota Fiscal" 
+                    alt="Canhoto Assinado" 
                     className="w-full h-32 object-cover rounded-md border"
                   />
                   <Button
@@ -337,7 +337,7 @@ export function EncerrarProtocoloModal({
                   onClick={() => setCameraTarget('nota')}
                 >
                   <Camera className="w-6 h-6" />
-                  <span className="text-xs">Tirar foto da Nota Fiscal</span>
+                  <span className="text-xs">Tirar foto do Canhoto Assinado</span>
                 </Button>
               )}
             </div>
@@ -430,7 +430,7 @@ export function EncerrarProtocoloModal({
         isOpen={cameraTarget !== null}
         onClose={() => setCameraTarget(null)}
         onCapture={handleCapture}
-        title={cameraTarget === 'nota' ? 'Foto da Nota Fiscal' : 'Foto da Mercadoria'}
+        title={cameraTarget === 'nota' ? 'Foto do Canhoto Assinado' : 'Foto da Mercadoria'}
       />
     </>
   );
