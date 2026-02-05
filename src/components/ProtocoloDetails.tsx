@@ -43,7 +43,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ChatBubbleExpanded } from '@/components/chat/ChatBubbleExpanded';
 import { useChatDB } from '@/hooks/useChatDB';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { getCustomPhotoUrl } from '@/utils/urlHelpers';
+import { getCustomPhotoUrl, getDirectStorageUrl } from '@/utils/urlHelpers';
 
 interface ProtocoloDetailsProps {
   protocolo: Protocolo | null;
@@ -216,30 +216,30 @@ export function ProtocoloDetails({
     });
   }
   
-  // Fotos do objeto fotosProtocolo
+  // Fotos do objeto fotosProtocolo (usa URL direta do Storage para exibição)
   if (protocolo.fotosProtocolo) {
     if (protocolo.fotosProtocolo.fotoMotoristaPdv) {
-      todasFotos.push({ url: protocolo.fotosProtocolo.fotoMotoristaPdv, label: 'Motorista/PDV' });
+      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoMotoristaPdv), label: 'Motorista/PDV' });
     }
     if (protocolo.fotosProtocolo.fotoLoteProduto) {
-      todasFotos.push({ url: protocolo.fotosProtocolo.fotoLoteProduto, label: 'Lote Produto' });
+      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoLoteProduto), label: 'Lote Produto' });
     }
     if (protocolo.fotosProtocolo.fotoAvaria) {
-      todasFotos.push({ url: protocolo.fotosProtocolo.fotoAvaria, label: 'Avaria' });
+      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoAvaria), label: 'Avaria' });
     }
   }
 
-  // Coletar fotos de encerramento (apenas para protocolos encerrados)
+  // Coletar fotos de encerramento (apenas para protocolos encerrados) - usa URL direta do Storage
   const fotosEncerramento: { url: string; label: string }[] = [];
   if (protocolo.status === 'encerrado') {
     if (protocolo.fotoNotaFiscalEncerramento) {
-      fotosEncerramento.push({ url: getCustomPhotoUrl(protocolo.fotoNotaFiscalEncerramento), label: 'Canhoto Assinado' });
+      fotosEncerramento.push({ url: getDirectStorageUrl(protocolo.fotoNotaFiscalEncerramento), label: 'Canhoto Assinado' });
     }
     if (protocolo.fotoEntregaMercadoria) {
-      fotosEncerramento.push({ url: getCustomPhotoUrl(protocolo.fotoEntregaMercadoria), label: 'Entrega Mercadoria' });
+      fotosEncerramento.push({ url: getDirectStorageUrl(protocolo.fotoEntregaMercadoria), label: 'Entrega Mercadoria' });
     }
     if (protocolo.arquivoEncerramento && (protocolo.arquivoEncerramento.startsWith('http') || protocolo.arquivoEncerramento.includes('supabase'))) {
-      fotosEncerramento.push({ url: getCustomPhotoUrl(protocolo.arquivoEncerramento), label: 'Anexo Encerramento' });
+      fotosEncerramento.push({ url: getDirectStorageUrl(protocolo.arquivoEncerramento), label: 'Anexo Encerramento' });
     }
   }
 
