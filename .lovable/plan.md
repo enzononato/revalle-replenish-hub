@@ -1,96 +1,131 @@
 
+# Plano: Correção do Carregamento de Fotos nos Detalhes do Protocolo
 
-## Plano: Corrigir URLs de Fotos no Webhook WhatsApp
+## Diagnóstico
 
 ### Problema Identificado
+As fotos de abertura e encerramento não estão aparecendo nos detalhes do protocolo porque as URLs salvas no banco de dados usam o domínio customizado (`reposicao.revalle.com.br`), que não é acessível quando o usuário está visualizando pelo ambiente de preview do Lovable.
 
-Os protocolos estão salvando e enviando URLs no formato do Supabase:
-```
-https://miwbbdhfbpmcrfbpulkj.supabase.co/storage/v1/object/public/fotos-protocolos/...
-```
-
-Em vez do formato customizado:
-```
-https://revalle-flow-sync.lovable.app/functions/v1/foto-proxy/...
-```
-
-### Causa Raiz
-
-A modificação anterior no `uploadFotoStorage.ts` está correta, porém há dois problemas:
-
-1. **Cache do navegador**: O código pode não ter sido atualizado no dispositivo do motorista
-2. **Domínio hardcoded**: O domínio `revalle-flow-sync.lovable.app` está fixo no código, mas deveria detectar automaticamente o domínio em uso (especialmente se houver domínio customizado)
-
-### Solução Proposta
-
-**1. Atualizar `urlHelpers.ts` para detectar domínio dinamicamente**
-
-Modificar a função `getCustomPhotoUrl` para:
-- Detectar o domínio atual (`window.location.origin`) quando executado no navegador
-- Usar fallback para domínio publicado quando em contexto de servidor
-- Suportar domínio customizado automaticamente
-
-```typescript
-export function getCustomPhotoUrl(supabaseUrl: string): string {
-  if (!supabaseUrl) return supabaseUrl;
-  
-  // Se já for URL customizada, retornar como está
-  if (supabaseUrl.includes('/functions/v1/foto-proxy/')) {
-    return supabaseUrl;
-  }
-  
-  const match = supabaseUrl.match(/\/fotos-protocolos\/(.+)$/);
-  if (!match || !match[1]) return supabaseUrl;
-  
-  const imagePath = match[1];
-  
-  // Detectar domínio dinamicamente
-  const baseDomain = typeof window !== 'undefined' 
-    ? window.location.origin 
-    : 'https://revalle-flow-sync.lovable.app';
-  
-  return `${baseDomain}/functions/v1/foto-proxy/${imagePath}`;
+### Dados do Banco
+```json
+{
+  "fotoMotoristaPdv": "https://reposicao.revalle.com.br/functions/v1/foto-proxy/PROTOC-.../foto.jpeg",
+  "fotoLoteProduto": "https://reposicao.revalle.com.br/functions/v1/foto-proxy/PROTOC-.../foto.jpeg"
 }
 ```
 
-**2. Verificar chamadas de webhook no MotoristaPortal.tsx**
-
-Garantir que as URLs no payload do webhook também usem `getCustomPhotoUrl`:
-
-```typescript
-fotos: {
-  fotoMotoristaPdv: getCustomPhotoUrl(fotosUrls.fotoMotoristaPdv || ''),
-  fotoLoteProduto: getCustomPhotoUrl(fotosUrls.fotoLoteProduto || ''),
-  fotoAvaria: getCustomPhotoUrl(fotosUrls.fotoAvaria || '')
-},
+### Fluxo Atual (problemático)
+```text
+Upload → getCustomPhotoUrl() → Salva URL com domínio customizado no banco
+                                         ↓
+Exibição → <img src="URL customizada"> → Falha se não estiver no domínio correto
 ```
 
-**3. Adicionar validação no webhook de e-mail (MotoristaPortal.tsx)**
-
-Aplicar a mesma conversão para as fotos enviadas no payload de e-mail.
-
 ---
+
+## Solução Proposta
+
+### Abordagem
+Criar uma função que converte URLs de `foto-proxy` de qualquer domínio para a URL direta do Supabase Storage, garantindo que as imagens sempre carreguem corretamente independente do ambiente.
 
 ### Arquivos a Modificar
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/utils/urlHelpers.ts` | Adicionar detecção dinâmica de domínio + verificação de URL já convertida |
-| `src/pages/MotoristaPortal.tsx` | Importar `getCustomPhotoUrl` e aplicar nas fotos do webhook |
+#### 1. `src/utils/urlHelpers.ts`
+Adicionar nova função `getDirectStorageUrl()`:
+- Extrai o path da imagem de qualquer URL (foto-proxy ou storage direto)
+- Retorna URL direta do Supabase Storage usando a variável de ambiente `VITE_SUPABASE_URL`
+- Mantém `getCustomPhotoUrl()` para links externos (WhatsApp, Email)
+
+```text
+Novas funções:
+- getDirectStorageUrl(url): Converte para URL direta do Storage
+- getImagePath(url): Extrai apenas o path da imagem
+```
+
+#### 2. `src/components/ProtocoloDetails.tsx`
+Usar `getDirectStorageUrl()` para todas as fotos exibidas em tags `<img>`:
+- Fotos de abertura (Motorista/PDV, Lote Produto, Avaria)
+- Fotos de encerramento (Canhoto Assinado, Entrega Mercadoria, Anexo)
 
 ---
 
-### Seção Tecnica
+## Detalhes Técnicos
 
-A modificação principal é no `urlHelpers.ts`:
+### Nova função `getDirectStorageUrl()`
+```typescript
+export function getDirectStorageUrl(photoUrl: string): string {
+  if (!photoUrl) return photoUrl;
+  
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) return photoUrl;
 
-1. **Verificar se já é URL customizada**: Evitar dupla conversão
-2. **Usar `window.location.origin`**: Detecta automaticamente o domínio atual (incluindo domínios custom)
-3. **Fallback para SSR**: Caso `window` não exista, usar domínio padrão
+  // Extrair o path da foto de qualquer formato
+  let imagePath: string | null = null;
 
-No `MotoristaPortal.tsx`, aplicar conversão explicita:
-- Linha ~608-612: Adicionar `getCustomPhotoUrl()` wrapper
-- Importar função do `urlHelpers.ts`
+  // Caso 1: URL de foto-proxy (qualquer domínio)
+  const proxyMatch = photoUrl.match(/\/functions\/v1\/foto-proxy\/(.+)$/);
+  if (proxyMatch?.[1]) {
+    imagePath = proxyMatch[1];
+  }
 
-Isso garante que mesmo se o `uploadFotoStorage` retornar URL do Supabase (por qualquer motivo), o webhook sempre enviará URL customizada.
+  // Caso 2: URL do storage do Supabase
+  const storageMatch = photoUrl.match(/\/fotos-protocolos\/(.+)$/);
+  if (storageMatch?.[1]) {
+    imagePath = storageMatch[1];
+  }
 
+  if (!imagePath) return photoUrl;
+
+  // Retorna URL direta do Storage
+  return `${supabaseUrl}/storage/v1/object/public/fotos-protocolos/${imagePath}`;
+}
+```
+
+### Uso no ProtocoloDetails.tsx
+```typescript
+// Fotos de abertura
+if (protocolo.fotosProtocolo?.fotoMotoristaPdv) {
+  todasFotos.push({ 
+    url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoMotoristaPdv), 
+    label: 'Motorista/PDV' 
+  });
+}
+
+// Fotos de encerramento
+if (protocolo.fotoNotaFiscalEncerramento) {
+  fotosEncerramento.push({ 
+    url: getDirectStorageUrl(protocolo.fotoNotaFiscalEncerramento), 
+    label: 'Canhoto Assinado' 
+  });
+}
+```
+
+---
+
+## Fluxo Corrigido
+
+```text
+Upload → getCustomPhotoUrl() → Salva URL com domínio customizado (para WhatsApp/Email)
+                                         ↓
+Exibição → getDirectStorageUrl() → Converte para URL direta do Storage → <img> carrega OK
+                                         ↓
+Links externos → Mantém URL customizada para compartilhamento
+```
+
+---
+
+## Benefícios
+
+1. **Compatibilidade**: Fotos funcionam em qualquer ambiente (preview, produção, domínio customizado)
+2. **Sem migração**: Não precisa alterar dados existentes no banco
+3. **Manutenção separada**: URLs diretas para exibição, URLs customizadas para compartilhamento externo
+4. **Performance**: URLs diretas do Storage são mais rápidas que passar pelo proxy
+
+---
+
+## Resumo das Alterações
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/utils/urlHelpers.ts` | Adicionar função `getDirectStorageUrl()` |
+| `src/components/ProtocoloDetails.tsx` | Usar `getDirectStorageUrl()` nas fotos de abertura e encerramento |
