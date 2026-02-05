@@ -72,8 +72,9 @@ export function convertPhotosToCustomUrls(photos: {
 export function getDirectStorageUrl(photoUrl: string): string {
   if (!photoUrl) return photoUrl;
   
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) return photoUrl;
+  // Usar variável de ambiente ou fallback para o ID do projeto
+  const supabaseProjectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'miwbbdhfbpmcrfbpulkj';
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || `https://${supabaseProjectId}.supabase.co`;
 
   // Extrair o path da foto de qualquer formato
   let imagePath: string | null = null;
