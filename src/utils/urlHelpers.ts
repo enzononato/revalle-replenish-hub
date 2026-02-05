@@ -60,3 +60,40 @@ export function convertPhotosToCustomUrls(photos: {
     fotoAvaria: photos.fotoAvaria ? getCustomPhotoUrl(photos.fotoAvaria) : undefined,
   };
 }
+
+/**
+ * Converte qualquer URL de foto (proxy ou storage) para URL direta do Supabase Storage.
+ * Útil para exibição em tags <img> que precisam funcionar em qualquer ambiente.
+ * 
+ * Exemplo:
+ * Input:  https://reposicao.revalle.com.br/functions/v1/foto-proxy/REP-123/foto.jpg
+ * Output: https://miwbbdhfbpmcrfbpulkj.supabase.co/storage/v1/object/public/fotos-protocolos/REP-123/foto.jpg
+ */
+export function getDirectStorageUrl(photoUrl: string): string {
+  if (!photoUrl) return photoUrl;
+  
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) return photoUrl;
+
+  // Extrair o path da foto de qualquer formato
+  let imagePath: string | null = null;
+
+  // Caso 1: URL de foto-proxy (qualquer domínio)
+  const proxyMatch = photoUrl.match(/\/functions\/v1\/foto-proxy\/(.+)$/);
+  if (proxyMatch?.[1]) {
+    imagePath = proxyMatch[1];
+  }
+
+  // Caso 2: URL do storage do Supabase
+  if (!imagePath) {
+    const storageMatch = photoUrl.match(/\/fotos-protocolos\/(.+)$/);
+    if (storageMatch?.[1]) {
+      imagePath = storageMatch[1];
+    }
+  }
+
+  if (!imagePath) return photoUrl;
+
+  // Retorna URL direta do Storage
+  return `${supabaseUrl}/storage/v1/object/public/fotos-protocolos/${imagePath}`;
+}
