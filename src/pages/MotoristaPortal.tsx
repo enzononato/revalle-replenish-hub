@@ -103,6 +103,63 @@ const causasPorTipo: Record<string, string[]> = {
   ]
 };
 
+// Componente para seleção de validade com fechamento automático
+function ValidadeDatePicker({
+  validade,
+  disabled,
+  onSelect
+}: {
+  validade: Date | undefined;
+  disabled: boolean;
+  onSelect: (date: Date | undefined) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (date: Date | undefined) => {
+    onSelect(date);
+    setOpen(false);
+  };
+
+  return (
+    <div className="space-y-1">
+      <Label className={cn(
+        "text-[10px] font-medium",
+        disabled ? "text-muted-foreground/50" : "text-muted-foreground"
+      )}>Validade</Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            disabled={disabled}
+            className={cn(
+              "h-9 w-full justify-start text-left font-normal text-xs",
+              !validade && "text-muted-foreground",
+              disabled && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            {disabled ? (
+              <span className="text-muted-foreground/50">N/A</span>
+            ) : validade ? (
+              format(validade, "dd/MM/yy")
+            ) : (
+              <CalendarIcon className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={validade}
+            onSelect={handleSelect}
+            locale={ptBR}
+            className="pointer-events-auto"
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 export default function MotoristaPortal() {
   const navigate = useNavigate();
   const { motorista, logout, isAuthenticated } = useMotoristaAuth();
@@ -114,6 +171,7 @@ export default function MotoristaPortal() {
   // Form state
   const [mapa, setMapa] = useState('');
   const [codigoPdv, setCodigoPdv] = useState('');
+  const [pdvSelecionadoDaLista, setPdvSelecionadoDaLista] = useState(false);
   const [notaFiscal, setNotaFiscal] = useState('');
   const [tipoReposicao, setTipoReposicao] = useState('');
   const [causa, setCausa] = useState('');
@@ -363,6 +421,7 @@ export default function MotoristaPortal() {
   const resetForm = () => {
     setMapa('');
     setCodigoPdv('');
+    setPdvSelecionadoDaLista(false);
     setNotaFiscal('');
     setTipoReposicao('');
     setCausa('');
@@ -397,6 +456,10 @@ export default function MotoristaPortal() {
     }
     if (!codigoPdv.trim()) {
       toast({ title: 'Erro', description: 'Preencha o Código do PDV', variant: 'destructive' });
+      return;
+    }
+    if (!pdvSelecionadoDaLista) {
+      toast({ title: 'Erro', description: 'Selecione um PDV válido da lista', variant: 'destructive' });
       return;
     }
     if (!notaFiscal.trim()) {
@@ -924,16 +987,25 @@ export default function MotoristaPortal() {
                     </div>
                     <PdvAutocomplete
                       value={codigoPdv}
-                      onChange={(value) => setCodigoPdv(value)}
+                      onChange={(value, pdv) => {
+                        setCodigoPdv(value);
+                        setPdvSelecionadoDaLista(!!pdv);
+                      }}
                       unidade={motorista.unidade}
                       placeholder="Digite código ou nome do PDV..."
-                      className={getInputClassName('codigoPdv', codigoPdv)}
+                      className={getInputClassName('codigoPdv', pdvSelecionadoDaLista ? codigoPdv : '')}
                       onBlur={() => handleBlur('codigoPdv')}
                     />
                     {touched.codigoPdv && !codigoPdv.trim() && (
                       <p className="text-[10px] text-red-500 flex items-center gap-0.5">
                         <AlertCircle size={10} />
                         Campo obrigatório
+                      </p>
+                    )}
+                    {touched.codigoPdv && codigoPdv.trim() && !pdvSelecionadoDaLista && (
+                      <p className="text-[10px] text-amber-500 flex items-center gap-0.5">
+                        <AlertCircle size={10} />
+                        Selecione um PDV da lista
                       </p>
                     )}
                   </div>
@@ -1169,42 +1241,11 @@ export default function MotoristaPortal() {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="space-y-1">
-                              <Label className={cn(
-                                "text-[10px] font-medium",
-                                tipoReposicao === 'falta' ? "text-muted-foreground/50" : "text-muted-foreground"
-                              )}>Validade</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    disabled={tipoReposicao === 'falta'}
-                                    className={cn(
-                                      "h-9 w-full justify-start text-left font-normal text-xs",
-                                      !produto.validade && "text-muted-foreground",
-                                      tipoReposicao === 'falta' && "opacity-50 cursor-not-allowed"
-                                    )}
-                                  >
-                                    {tipoReposicao === 'falta' ? (
-                                      <span className="text-muted-foreground/50">N/A</span>
-                                    ) : produto.validade ? (
-                                      format(produto.validade, "dd/MM/yy")
-                                    ) : (
-                                      <CalendarIcon className="h-3.5 w-3.5" />
-                                    )}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={produto.validade}
-                                    onSelect={(date) => updateProduto(index, 'validade', date)}
-                                    locale={ptBR}
-                                    className="pointer-events-auto"
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            </div>
+                            <ValidadeDatePicker
+                              validade={produto.validade}
+                              disabled={tipoReposicao === 'falta'}
+                              onSelect={(date) => updateProduto(index, 'validade', date)}
+                            />
                           </div>
                         </div>
                       </div>
