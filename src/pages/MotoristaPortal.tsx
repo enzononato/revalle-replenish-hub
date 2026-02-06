@@ -114,6 +114,7 @@ export default function MotoristaPortal() {
   // Form state
   const [mapa, setMapa] = useState('');
   const [codigoPdv, setCodigoPdv] = useState('');
+  const [pdvSelecionadoDaLista, setPdvSelecionadoDaLista] = useState(false);
   const [notaFiscal, setNotaFiscal] = useState('');
   const [tipoReposicao, setTipoReposicao] = useState('');
   const [causa, setCausa] = useState('');
@@ -363,6 +364,7 @@ export default function MotoristaPortal() {
   const resetForm = () => {
     setMapa('');
     setCodigoPdv('');
+    setPdvSelecionadoDaLista(false);
     setNotaFiscal('');
     setTipoReposicao('');
     setCausa('');
@@ -397,6 +399,10 @@ export default function MotoristaPortal() {
     }
     if (!codigoPdv.trim()) {
       toast({ title: 'Erro', description: 'Preencha o Código do PDV', variant: 'destructive' });
+      return;
+    }
+    if (!pdvSelecionadoDaLista) {
+      toast({ title: 'Erro', description: 'Selecione um PDV válido da lista', variant: 'destructive' });
       return;
     }
     if (!notaFiscal.trim()) {
@@ -924,16 +930,25 @@ export default function MotoristaPortal() {
                     </div>
                     <PdvAutocomplete
                       value={codigoPdv}
-                      onChange={(value) => setCodigoPdv(value)}
+                      onChange={(value, pdv) => {
+                        setCodigoPdv(value);
+                        setPdvSelecionadoDaLista(!!pdv);
+                      }}
                       unidade={motorista.unidade}
                       placeholder="Digite código ou nome do PDV..."
-                      className={getInputClassName('codigoPdv', codigoPdv)}
+                      className={getInputClassName('codigoPdv', pdvSelecionadoDaLista ? codigoPdv : '')}
                       onBlur={() => handleBlur('codigoPdv')}
                     />
                     {touched.codigoPdv && !codigoPdv.trim() && (
                       <p className="text-[10px] text-red-500 flex items-center gap-0.5">
                         <AlertCircle size={10} />
                         Campo obrigatório
+                      </p>
+                    )}
+                    {touched.codigoPdv && codigoPdv.trim() && !pdvSelecionadoDaLista && (
+                      <p className="text-[10px] text-amber-500 flex items-center gap-0.5">
+                        <AlertCircle size={10} />
+                        Selecione um PDV da lista
                       </p>
                     )}
                   </div>
