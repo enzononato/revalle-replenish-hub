@@ -41,6 +41,12 @@ export interface Produto {
   quantidade: number;
   validade: string;
   observacao?: string;
+  entregue?: boolean;
+  dataEntrega?: string;
+  entregaPorMotoristaId?: string;
+  entregaPorMotoristaNome?: string;
+  fotoCanhoto?: string;
+  fotoMercadoria?: string;
 }
 
 export interface Observacao {
