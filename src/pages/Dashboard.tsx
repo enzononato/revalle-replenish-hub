@@ -62,7 +62,8 @@ export default function Dashboard() {
     let filtered = protocolos.filter(p => !p.oculto);
     
     if (!isAdmin) {
-      filtered = filtered.filter(p => p.unidadeNome === user?.unidade);
+      const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
+      filtered = filtered.filter(p => userUnidades.includes(p.unidadeNome));
     } else if (unidadeFiltro !== 'todas') {
       filtered = filtered.filter(p => p.unidadeNome === unidadeFiltro);
     }
@@ -288,7 +289,7 @@ export default function Dashboard() {
     const contagem: Record<string, number> = {};
     protocolosFiltrados.forEach(p => {
       p.produtos?.forEach(prod => {
-        contagem[prod.nome] = (contagem[prod.nome] || 0) + prod.quantidade;
+        contagem[prod.nome] = (contagem[prod.nome] || 0) + Number(prod.quantidade);
       });
     });
     return Object.entries(contagem)
@@ -296,6 +297,9 @@ export default function Dashboard() {
       .sort((a, b) => b.quantidade - a.quantidade)
       .slice(0, 5);
   }, [protocolosFiltrados]);
+
+
+
 
 
   // Contagem por tipo de reposição
@@ -376,6 +380,16 @@ export default function Dashboard() {
       return 0;
     }
   };
+
+  // Lead Time médio (dias) dos protocolos encerrados
+  const leadTime = useMemo(() => {
+    const encerrados = protocolosFiltrados.filter(p => p.status === 'encerrado');
+    if (encerrados.length === 0) return '—';
+    const totalDias = encerrados.reduce((acc, p) => {
+      return acc + calcularSlaDias(p.data, p.status, p.observacoesLog);
+    }, 0);
+    return (totalDias / encerrados.length).toFixed(1);
+  }, [protocolosFiltrados]);
 
   // Protocolos próximos de atingir 16 dias de SLA (13-15 dias)
   const protocolosProximosSLA = useMemo(() => {
@@ -541,7 +555,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <StatCard
           title="Em Aberto"
           value={stats.emAberto}
@@ -584,6 +598,14 @@ export default function Dashboard() {
           delay={400}
           href="/protocolos?periodo=hoje"
         />
+        <StatCard
+          title="Lead Time"
+          value={leadTime === '—' ? '—' : `${leadTime} dias`}
+          icon={Timer}
+          variant="default"
+          delay={500}
+        />
+      
       </div>
 
       {/* Estatísticas por Tipo */}

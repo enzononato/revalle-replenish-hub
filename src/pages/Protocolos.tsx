@@ -143,7 +143,8 @@ export default function Protocolos() {
       // Se o usuário não é admin, filtra pela unidade do usuário
       // Se é admin e tem filtro selecionado, aplica o filtro
       if (!isAdmin) {
-        if (p.unidadeNome !== user?.unidade) return false;
+        const userUnidades = (user?.unidade || '').split(',').map(u => u.trim());
+        if (!userUnidades.includes(p.unidadeNome)) return false;
       } else if (unidadeFilter && unidadeFilter !== 'todas') {
         if (p.unidadeNome !== unidadeFilter) return false;
       }
