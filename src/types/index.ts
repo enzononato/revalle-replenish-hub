@@ -45,6 +45,8 @@ export interface Produto {
   dataEntrega?: string;
   entregaPorMotoristaId?: string;
   entregaPorMotoristaNome?: string;
+  fotoCanhoto?: string;
+  fotoMercadoria?: string;
 }
 
 export interface Observacao {
