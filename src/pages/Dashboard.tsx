@@ -298,15 +298,8 @@ export default function Dashboard() {
   }, [protocolosFiltrados]);
 
 
-  // Lead Time médio (dias) dos protocolos encerrados
-  const leadTime = useMemo(() => {
-    const encerrados = protocolosFiltrados.filter(p => p.status === 'encerrado');
-    if (encerrados.length === 0) return '—';
-    const totalDias = encerrados.reduce((acc, p) => {
-      return acc + calcularSlaDias(p.data, p.status, p.observacoesLog);
-    }, 0);
-    return (totalDias / encerrados.length).toFixed(1);
-  }, [protocolosFiltrados]);
+
+
 
   // Contagem por tipo de reposição
   const contagemPorTipo = useMemo(() => {
@@ -386,6 +379,16 @@ export default function Dashboard() {
       return 0;
     }
   };
+
+  // Lead Time médio (dias) dos protocolos encerrados
+  const leadTime = useMemo(() => {
+    const encerrados = protocolosFiltrados.filter(p => p.status === 'encerrado');
+    if (encerrados.length === 0) return '—';
+    const totalDias = encerrados.reduce((acc, p) => {
+      return acc + calcularSlaDias(p.data, p.status, p.observacoesLog);
+    }, 0);
+    return (totalDias / encerrados.length).toFixed(1);
+  }, [protocolosFiltrados]);
 
   // Protocolos próximos de atingir 16 dias de SLA (13-15 dias)
   const protocolosProximosSLA = useMemo(() => {
