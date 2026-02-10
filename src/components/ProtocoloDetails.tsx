@@ -1103,38 +1103,43 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                               )}
                             </td>
                             <td className="px-2.5 py-1.5 text-center">
-                              {produto.entregue && (produto.fotoCanhoto || produto.fotoMercadoria) ? (
-                                <div className="flex items-center justify-center gap-1.5">
-                                  {produto.fotoCanhoto && (
-                                    <button
-                                      onClick={() => setSelectedImage(getDirectStorageUrl(produto.fotoCanhoto!))}
-                                      className="group relative w-8 h-8 rounded overflow-hidden border border-border hover:border-primary transition-all hover:scale-110 shadow-sm"
-                                      title="Canhoto Assinado"
-                                    >
-                                      <img 
-                                        src={getDirectStorageUrl(produto.fotoCanhoto)}
-                                        alt="Canhoto"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </button>
-                                  )}
-                                  {produto.fotoMercadoria && (
-                                    <button
-                                      onClick={() => setSelectedImage(getDirectStorageUrl(produto.fotoMercadoria!))}
-                                      className="group relative w-8 h-8 rounded overflow-hidden border border-border hover:border-primary transition-all hover:scale-110 shadow-sm"
-                                      title="Mercadoria Entregue"
-                                    >
-                                      <img 
-                                        src={getDirectStorageUrl(produto.fotoMercadoria)}
-                                        alt="Mercadoria"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </button>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-[9px] text-muted-foreground">—</span>
-                              )}
+                              {(() => {
+                                const fotoCanhoto = produto.fotoCanhoto || (produto.entregue ? protocolo?.fotoNotaFiscalEncerramento : null);
+                                const fotoMerc = produto.fotoMercadoria || (produto.entregue ? protocolo?.fotoEntregaMercadoria : null);
+                                if (produto.entregue && (fotoCanhoto || fotoMerc)) {
+                                  return (
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      {fotoCanhoto && (
+                                        <button
+                                          onClick={() => setSelectedImage(getDirectStorageUrl(fotoCanhoto))}
+                                          className="group relative w-8 h-8 rounded overflow-hidden border border-border hover:border-primary transition-all hover:scale-110 shadow-sm"
+                                          title="Canhoto Assinado"
+                                        >
+                                          <img 
+                                            src={getDirectStorageUrl(fotoCanhoto)}
+                                            alt="Canhoto"
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </button>
+                                      )}
+                                      {fotoMerc && (
+                                        <button
+                                          onClick={() => setSelectedImage(getDirectStorageUrl(fotoMerc))}
+                                          className="group relative w-8 h-8 rounded overflow-hidden border border-border hover:border-primary transition-all hover:scale-110 shadow-sm"
+                                          title="Mercadoria Entregue"
+                                        >
+                                          <img 
+                                            src={getDirectStorageUrl(fotoMerc)}
+                                            alt="Mercadoria"
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                return <span className="text-[9px] text-muted-foreground">—</span>;
+                              })()}
                             </td>
                           </tr>
                         ))}
