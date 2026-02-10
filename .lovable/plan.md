@@ -1,36 +1,29 @@
 
-## Correção: Top 5 Produtos com valores estranhos
+## Lead Time no Dashboard
 
-### Problema
-Alguns produtos no banco de dados têm o campo `quantidade` armazenado como **texto** (string) ao invés de **numero** no JSONB. Quando o dashboard soma as quantidades usando o operador `+`, o JavaScript faz **concatenacao de texto** ao invés de soma matematica.
+### O que e
+Lead Time e o **tempo medio de resolucao** (em dias) dos protocolos encerrados. Sera calculado usando a diferenca entre a data de abertura e a data de encerramento de cada protocolo encerrado.
 
-Exemplo: `0 + "1" + "2"` resulta em `"012"` ao inves de `3`.
+### Onde vai aparecer
+Um novo **StatCard** sera adicionado na primeira fileira de cards (junto com "Em Aberto", "Encerrados Hoje", etc.), mudando o grid de 5 para 6 colunas. O card mostrara o valor em formato "X dias" com o icone de cronometro (Timer).
 
-Atualmente: **8 produtos** de **675** estao com este problema no banco.
+### Como sera calculado
+- Filtrar apenas protocolos com status `encerrado`
+- Para cada um, calcular a diferenca em dias entre a data de abertura e a data de encerramento (extraida do `observacoesLog`)
+- Calcular a media e arredondar para 1 casa decimal
+- Se nao houver protocolos encerrados, exibir "—"
 
----
+### Detalhes tecnicos
 
-### Plano de Correção
+**Arquivo:** `src/pages/Dashboard.tsx`
 
-**1. Corrigir o codigo do Dashboard (prevenir o problema)**
-- No calculo do Top 5 Produtos (`src/pages/Dashboard.tsx`, linha 291), converter `prod.quantidade` para numero usando `Number()` antes de somar:
-  ```
-  contagem[prod.nome] = (contagem[prod.nome] || 0) + Number(prod.quantidade);
-  ```
+1. **Novo `useMemo` para Lead Time** — Calcular a media de dias de resolucao dos protocolos encerrados, reutilizando a funcao `calcularSlaDias` que ja existe no arquivo (linha 361).
 
-**2. Corrigir os dados existentes no banco**
-- Executar um UPDATE SQL para converter os 8 registros que tem `quantidade` como string para numero no JSONB, evitando problemas futuros.
+2. **Ajustar o grid dos StatCards** — Alterar de `lg:grid-cols-5` para `lg:grid-cols-6` na linha 544.
 
-**3. Prevenir novas ocorrencias**
-- Revisar o formulario de criacao de protocolo (`AbrirProtocolo.tsx`) para garantir que `quantidade` sempre seja salvo como numero (usando `parseInt` ou `Number`).
-
----
-
-### Detalhes Tecnicos
-
-**Arquivo modificado:** `src/pages/Dashboard.tsx`
-- Linha 291: adicionar `Number()` ao somar `prod.quantidade`
-
-**Migracao SQL:** Corrigir os 8 registros existentes convertendo strings para numeros no array JSONB de produtos.
-
-**Arquivo revisado:** `src/pages/AbrirProtocolo.tsx` - garantir que o campo quantidade seja numerico ao salvar.
+3. **Adicionar novo StatCard** — Inserir um card com:
+   - Titulo: "Lead Time"
+   - Valor: media calculada + " dias" (ex: "3.2 dias")
+   - Icone: `Timer` (ja importado)
+   - Variante: `default` ou `info`
+   - Posicao: apos "Encerrados Hoje"
