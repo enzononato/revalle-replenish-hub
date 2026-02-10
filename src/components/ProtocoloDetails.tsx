@@ -1071,7 +1071,8 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           <th className="text-center px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Qtd</th>
                           <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Validade</th>
                           <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Observação</th>
-                          <th className="text-center px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300">Status</th>
+                          <th className="text-center px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Status</th>
+                          <th className="text-center px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300">Fotos</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1083,7 +1084,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                             <td className="px-2.5 py-1.5 text-center text-foreground border-r border-slate-200 dark:border-slate-700">{produto.quantidade}</td>
                             <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.validade}</td>
                             <td className="px-2.5 py-1.5 text-muted-foreground border-r border-slate-200 dark:border-slate-700">{produto.observacao || ''}</td>
-                            <td className="px-2.5 py-1.5 text-center">
+                            <td className="px-2.5 py-1.5 text-center border-r border-slate-200 dark:border-slate-700">
                               {produto.entregue ? (
                                 <div className="flex flex-col items-center gap-0.5">
                                   <span className="inline-flex items-center gap-1 text-[10px] font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-500/20 px-1.5 py-0.5 rounded-full">
@@ -1099,6 +1100,40 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                                   <Clock size={10} />
                                   Pendente
                                 </span>
+                              )}
+                            </td>
+                            <td className="px-2.5 py-1.5 text-center">
+                              {produto.entregue && (produto.fotoCanhoto || produto.fotoMercadoria) ? (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  {produto.fotoCanhoto && (
+                                    <button
+                                      onClick={() => setSelectedImage(getDirectStorageUrl(produto.fotoCanhoto!))}
+                                      className="group relative w-8 h-8 rounded overflow-hidden border border-border hover:border-primary transition-all hover:scale-110 shadow-sm"
+                                      title="Canhoto Assinado"
+                                    >
+                                      <img 
+                                        src={getDirectStorageUrl(produto.fotoCanhoto)}
+                                        alt="Canhoto"
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </button>
+                                  )}
+                                  {produto.fotoMercadoria && (
+                                    <button
+                                      onClick={() => setSelectedImage(getDirectStorageUrl(produto.fotoMercadoria!))}
+                                      className="group relative w-8 h-8 rounded overflow-hidden border border-border hover:border-primary transition-all hover:scale-110 shadow-sm"
+                                      title="Mercadoria Entregue"
+                                    >
+                                      <img 
+                                        src={getDirectStorageUrl(produto.fotoMercadoria)}
+                                        alt="Mercadoria"
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </button>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[9px] text-muted-foreground">—</span>
                               )}
                             </td>
                           </tr>

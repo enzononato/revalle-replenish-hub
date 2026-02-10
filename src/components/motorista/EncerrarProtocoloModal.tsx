@@ -173,6 +173,8 @@ export function EncerrarProtocoloModal({
             dataEntrega: agora,
             entregaPorMotoristaId: motorista.id,
             entregaPorMotoristaNome: motorista.nome,
+            fotoCanhoto: urlFotoNF,
+            fotoMercadoria: urlFotoMercadoria,
           };
         }
         return p;
