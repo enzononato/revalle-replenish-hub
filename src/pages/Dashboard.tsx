@@ -62,7 +62,8 @@ export default function Dashboard() {
     let filtered = protocolos.filter(p => !p.oculto);
     
     if (!isAdmin) {
-      filtered = filtered.filter(p => p.unidadeNome === user?.unidade);
+      const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
+      filtered = filtered.filter(p => userUnidades.includes(p.unidadeNome));
     } else if (unidadeFiltro !== 'todas') {
       filtered = filtered.filter(p => p.unidadeNome === unidadeFiltro);
     }
