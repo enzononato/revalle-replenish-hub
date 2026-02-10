@@ -330,11 +330,30 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Package className="w-3.5 h-3.5" />
                       <span>Produtos ({produtos.length})</span>
+                      {(() => {
+                        const entregues = produtos.filter(p => p.entregue).length;
+                        if (entregues > 0) {
+                          return (
+                            <span className={cn(
+                              "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
+                              entregues === produtos.length
+                                ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
+                                : "bg-yellow-100 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400"
+                            )}>
+                              {entregues} de {produtos.length} entregues
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     <div className="bg-muted/50 rounded-md p-2 space-y-0.5">
                       {produtos.map((prod, idx) => (
-                        <div key={idx} className="text-[11px] flex justify-between">
-                          <span className="truncate">{prod.codigo} - {prod.nome}</span>
+                        <div key={idx} className="text-[11px] flex justify-between items-center">
+                          <span className="truncate flex items-center gap-1">
+                            {prod.entregue && <CheckCircle className="w-3 h-3 text-green-500 shrink-0" />}
+                            {prod.codigo} - {prod.nome}
+                          </span>
                           <span className="text-muted-foreground shrink-0 ml-2">
                             {prod.quantidade} {prod.unidade}
                           </span>
