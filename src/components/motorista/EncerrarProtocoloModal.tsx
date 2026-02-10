@@ -165,6 +165,8 @@ export function EncerrarProtocoloModal({
 
       // 2. Mark selected products as delivered
       const agora = format(new Date(), 'dd/MM/yyyy HH:mm');
+      const fotoNFPublicUrl = urlFotoNF;
+      const fotoMercPublicUrl = urlFotoMercadoria;
       const produtosAtualizados = produtos.map((p, i) => {
         if (produtosSelecionados.has(i) && !p.entregue) {
           return {
@@ -173,8 +175,8 @@ export function EncerrarProtocoloModal({
             dataEntrega: agora,
             entregaPorMotoristaId: motorista.id,
             entregaPorMotoristaNome: motorista.nome,
-            fotoCanhoto: urlFotoNF,
-            fotoMercadoria: urlFotoMercadoria,
+            fotoCanhoto: fotoNFPublicUrl,
+            fotoMercadoria: fotoMercPublicUrl,
           };
         }
         return p;
