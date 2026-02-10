@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -10,13 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Camera, CheckCircle, FileText, Loader2, X, ImageIcon } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Camera, CheckCircle, FileText, Loader2, X, ImageIcon, Package, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Motorista, Produto, ObservacaoLog, FotosProtocolo } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
 import { getCustomPhotoUrl } from '@/utils/urlHelpers';
 import CameraCapture from '@/components/CameraCapture';
+import { cn } from '@/lib/utils';
 
 interface ProtocoloParaEncerrar {
   id: string;
@@ -66,8 +68,27 @@ export function EncerrarProtocoloModal({
   const [cameraTarget, setCameraTarget] = useState<'nota' | 'mercadoria' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
+  const [produtosSelecionados, setProdutosSelecionados] = useState<Set<number>>(new Set());
 
-  const canSubmit = fotoNotaFiscal && fotoMercadoria;
+  const produtos = useMemo(() => {
+    return Array.isArray(protocolo?.produtos) ? protocolo.produtos as Produto[] : [];
+  }, [protocolo?.produtos]);
+
+  const produtosPendentes = useMemo(() => {
+    return produtos.filter(p => !p.entregue);
+  }, [produtos]);
+
+  const produtosJaEntregues = useMemo(() => {
+    return produtos.filter(p => p.entregue);
+  }, [produtos]);
+
+  // Check if selecting current products will complete all deliveries
+  const isEntregaTotal = useMemo(() => {
+    if (produtosPendentes.length === 0) return true;
+    return produtosSelecionados.size === produtosPendentes.length;
+  }, [produtosSelecionados, produtosPendentes]);
+
+  const canSubmit = fotoNotaFiscal && fotoMercadoria && produtosSelecionados.size > 0;
 
   const handleCapture = (imageData: string) => {
     if (cameraTarget === 'nota') {
@@ -84,11 +105,37 @@ export function EncerrarProtocoloModal({
     setFotoMercadoria(null);
     setCameraTarget(null);
     setUploadProgress('');
+    setProdutosSelecionados(new Set());
     onClose();
   };
 
+  const toggleProduto = (index: number) => {
+    setProdutosSelecionados(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const toggleTodos = () => {
+    if (produtosSelecionados.size === produtosPendentes.length) {
+      setProdutosSelecionados(new Set());
+    } else {
+      // Select all pending product indices
+      const allPendingIndices = new Set<number>();
+      produtos.forEach((p, i) => {
+        if (!p.entregue) allPendingIndices.add(i);
+      });
+      setProdutosSelecionados(allPendingIndices);
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!protocolo || !fotoNotaFiscal || !fotoMercadoria) return;
+    if (!protocolo || !fotoNotaFiscal || !fotoMercadoria || produtosSelecionados.size === 0) return;
     
     setIsSubmitting(true);
     
@@ -116,66 +163,96 @@ export function EncerrarProtocoloModal({
         throw new Error('Falha ao enviar foto da mercadoria');
       }
 
-      // 2. Preparar novo log de observação
+      // 2. Mark selected products as delivered
+      const agora = format(new Date(), 'dd/MM/yyyy HH:mm');
+      const produtosAtualizados = produtos.map((p, i) => {
+        if (produtosSelecionados.has(i) && !p.entregue) {
+          return {
+            ...p,
+            entregue: true,
+            dataEntrega: agora,
+            entregaPorMotoristaId: motorista.id,
+            entregaPorMotoristaNome: motorista.nome,
+          };
+        }
+        return p;
+      });
+
+      const todosEntregues = produtosAtualizados.every(p => p.entregue);
+      const novoStatus = todosEntregues ? 'encerrado' : 'em_andamento';
+
+      // 3. Prepare log entry
+      const produtosEntreguesAgora = produtos.filter((_, i) => produtosSelecionados.has(i) && !produtos[i].entregue);
+      const acaoLog = todosEntregues ? 'Encerrou o protocolo (entrega final)' : 'Entrega parcial';
+      const textoLog = todosEntregues
+        ? (observacao || 'Todos os produtos entregues pelo motorista')
+        : `Entregou ${produtosEntreguesAgora.length} produto(s): ${produtosEntreguesAgora.map(p => p.nome).join(', ')}${observacao ? ` - ${observacao}` : ''}`;
+
       const novaObservacao: ObservacaoLog = {
         id: crypto.randomUUID(),
         usuarioNome: motorista.nome,
         usuarioId: motorista.id,
         data: format(new Date(), 'dd/MM/yyyy'),
         hora: format(new Date(), 'HH:mm'),
-        acao: 'Encerrou o protocolo',
-        texto: observacao || 'Encerrado pelo motorista'
+        acao: acaoLog,
+        texto: textoLog
       };
 
       const observacoesLogExistentes = Array.isArray(protocolo.observacoes_log) 
         ? protocolo.observacoes_log as ObservacaoLog[]
         : [];
 
-      // 3. Atualizar protocolo no banco (incluindo novo motorista responsável)
-      setUploadProgress('Finalizando protocolo...');
+      // 4. Update protocolo in DB
+      setUploadProgress(todosEntregues ? 'Finalizando protocolo...' : 'Registrando entrega parcial...');
+      
+      const updateData: Record<string, unknown> = {
+        status: novoStatus,
+        produtos: JSON.parse(JSON.stringify(produtosAtualizados)),
+        observacoes_log: JSON.parse(JSON.stringify([...observacoesLogExistentes, novaObservacao])),
+        // Always update driver info
+        motorista_id: motorista.id,
+        motorista_nome: motorista.nome,
+        motorista_codigo: motorista.codigo,
+        motorista_whatsapp: motorista.whatsapp || null,
+        motorista_email: motorista.email || null,
+        motorista_unidade: motorista.unidade,
+      };
+
+      if (todosEntregues) {
+        updateData.encerrado_por_tipo = 'motorista';
+        updateData.encerrado_por_motorista_id = motorista.id;
+        updateData.encerrado_por_motorista_nome = motorista.nome;
+        updateData.foto_nota_fiscal_encerramento = urlFotoNF;
+        updateData.foto_entrega_mercadoria = urlFotoMercadoria;
+        updateData.mensagem_encerramento = observacao || 'Encerrado pelo motorista';
+      }
+
       const { error: updateError } = await supabase
         .from('protocolos')
-        .update({
-          status: 'encerrado',
-          // Atualizar motorista responsável para quem está encerrando
-          motorista_id: motorista.id,
-          motorista_nome: motorista.nome,
-          motorista_codigo: motorista.codigo,
-          motorista_whatsapp: motorista.whatsapp || null,
-          motorista_email: motorista.email || null,
-          motorista_unidade: motorista.unidade,
-          // Dados de encerramento
-          encerrado_por_tipo: 'motorista',
-          encerrado_por_motorista_id: motorista.id,
-          encerrado_por_motorista_nome: motorista.nome,
-          foto_nota_fiscal_encerramento: urlFotoNF,
-          foto_entrega_mercadoria: urlFotoMercadoria,
-          mensagem_encerramento: observacao || 'Encerrado pelo motorista',
-          observacoes_log: JSON.parse(JSON.stringify([...observacoesLogExistentes, novaObservacao]))
-        })
+        .update(updateData as never)
         .eq('id', protocolo.id);
 
       if (updateError) throw updateError;
 
-      // 4. Registrar auditoria de encerramento
+      // 5. Audit log
       await supabase.from('audit_logs').insert({
-        acao: 'encerramento_motorista',
+        acao: todosEntregues ? 'encerramento_motorista' : 'entrega_parcial',
         tabela: 'protocolos',
         registro_id: protocolo.id,
         registro_dados: {
           numero: protocolo.numero,
           motorista_encerrador: motorista.nome,
           motorista_encerrador_codigo: motorista.codigo,
+          produtos_entregues: produtosEntreguesAgora.map(p => ({ codigo: p.codigo, nome: p.nome })),
+          entrega_total: todosEntregues,
           observacao: observacao,
-          foto_nota_fiscal: urlFotoNF,
-          foto_mercadoria: urlFotoMercadoria
         },
         usuario_nome: motorista.nome,
         usuario_role: 'motorista',
         usuario_unidade: motorista.unidade
       });
 
-      // 5. Registrar auditoria de troca de motorista (se houve mudança)
+      // 6. Driver change audit
       if (protocolo.motorista_codigo !== motorista.codigo) {
         await supabase.from('audit_logs').insert({
           acao: 'troca_motorista_encerramento',
@@ -187,7 +264,7 @@ export function EncerrarProtocoloModal({
             motorista_anterior_codigo: protocolo.motorista_codigo,
             motorista_novo: motorista.nome,
             motorista_novo_codigo: motorista.codigo,
-            motivo: 'Encerramento por outro motorista'
+            motivo: todosEntregues ? 'Encerramento por outro motorista' : 'Entrega parcial por outro motorista'
           },
           usuario_nome: motorista.nome,
           usuario_role: 'motorista',
@@ -195,80 +272,82 @@ export function EncerrarProtocoloModal({
         });
       }
 
-      // 5. Enviar webhook para n8n (mesmo formato do encerramento admin)
-      const produtos = Array.isArray(protocolo.produtos) ? protocolo.produtos as Produto[] : [];
-      const fotosProtocolo = protocolo.fotos_protocolo as FotosProtocolo | null;
+      // 7. Webhook (only on full closure)
+      if (todosEntregues) {
+        const fotosProtocolo = protocolo.fotos_protocolo as FotosProtocolo | null;
+        const webhookPayload = {
+          tipo: 'encerramento',
+          numero: protocolo.numero,
+          data: protocolo.data,
+          hora: protocolo.hora,
+          dataEncerramento: format(new Date(), 'dd/MM/yyyy'),
+          horaEncerramento: format(new Date(), 'HH:mm'),
+          status: 'encerrado',
+          mapa: protocolo.mapa || '',
+          notaFiscal: protocolo.nota_fiscal || '',
+          codigoPdv: protocolo.codigo_pdv || '',
+          tipoReposicao: protocolo.tipo_reposicao || '',
+          causa: protocolo.causa || '',
+          motoristaNome: motorista.nome,
+          motoristaCodigo: motorista.codigo,
+          motoristaWhatsapp: motorista.whatsapp || '',
+          motoristaEmail: motorista.email || '',
+          unidade: motorista.unidade || '',
+          clienteTelefone: protocolo.cliente_telefone || '',
+          contatoEmail: protocolo.contato_email || '',
+          contatoWhatsapp: protocolo.contato_whatsapp || '',
+          observacaoGeral: protocolo.observacao_geral || '',
+          produtos: produtosAtualizados.map(p => ({
+            codigo: p.codigo,
+            nome: p.nome,
+            quantidade: p.quantidade,
+            unidade: p.unidade,
+            validade: p.validade,
+            observacao: p.observacao || '',
+            entregue: p.entregue,
+            dataEntrega: p.dataEntrega || '',
+          })),
+          fotos: {
+            fotoMotoristaPdv: getCustomPhotoUrl(fotosProtocolo?.fotoMotoristaPdv || ''),
+            fotoLoteProduto: getCustomPhotoUrl(fotosProtocolo?.fotoLoteProduto || ''),
+            fotoAvaria: getCustomPhotoUrl(fotosProtocolo?.fotoAvaria || '')
+          },
+          fotoNotaFiscalEncerramento: urlFotoNF,
+          fotoEntregaMercadoria: urlFotoMercadoria,
+          mensagemEncerramento: observacao || 'Encerrado pelo motorista',
+          usuarioEncerramento: {
+            nome: motorista.nome,
+            id: motorista.id,
+            codigo: motorista.codigo,
+            tipo: 'motorista'
+          }
+        };
 
-      const webhookPayload = {
-        tipo: 'encerramento',
-        numero: protocolo.numero,
-        data: protocolo.data,
-        hora: protocolo.hora,
-        dataEncerramento: format(new Date(), 'dd/MM/yyyy'),
-        horaEncerramento: format(new Date(), 'HH:mm'),
-        status: 'encerrado',
-        mapa: protocolo.mapa || '',
-        notaFiscal: protocolo.nota_fiscal || '',
-        codigoPdv: protocolo.codigo_pdv || '',
-        tipoReposicao: protocolo.tipo_reposicao || '',
-        causa: protocolo.causa || '',
-        motoristaNome: motorista.nome,
-        motoristaCodigo: motorista.codigo,
-        motoristaWhatsapp: motorista.whatsapp || '',
-        motoristaEmail: motorista.email || '',
-        unidade: motorista.unidade || '',
-        clienteTelefone: protocolo.cliente_telefone || '',
-        contatoEmail: protocolo.contato_email || '',
-        contatoWhatsapp: protocolo.contato_whatsapp || '',
-        observacaoGeral: protocolo.observacao_geral || '',
-        produtos: produtos.map(p => ({
-          codigo: p.codigo,
-          nome: p.nome,
-          quantidade: p.quantidade,
-          unidade: p.unidade,
-          validade: p.validade,
-          observacao: p.observacao || ''
-        })),
-        fotos: {
-          fotoMotoristaPdv: getCustomPhotoUrl(fotosProtocolo?.fotoMotoristaPdv || ''),
-          fotoLoteProduto: getCustomPhotoUrl(fotosProtocolo?.fotoLoteProduto || ''),
-          fotoAvaria: getCustomPhotoUrl(fotosProtocolo?.fotoAvaria || '')
-        },
-        // Novas fotos de encerramento pelo motorista (já vêm com URL customizada do uploadFotoParaStorage)
-        fotoNotaFiscalEncerramento: urlFotoNF,
-        fotoEntregaMercadoria: urlFotoMercadoria,
-        mensagemEncerramento: observacao || 'Encerrado pelo motorista',
-        usuarioEncerramento: {
-          nome: motorista.nome,
-          id: motorista.id,
-          codigo: motorista.codigo,
-          tipo: 'motorista'
+        try {
+          await fetch(N8N_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(webhookPayload)
+          });
+        } catch (webhookError) {
+          console.error('Erro ao enviar webhook:', webhookError);
         }
-      };
-
-      try {
-        await fetch(N8N_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(webhookPayload)
-        });
-      } catch (webhookError) {
-        console.error('Erro ao enviar webhook:', webhookError);
-        // Não falhar o encerramento por causa do webhook
       }
 
       toast({
-        title: 'Protocolo encerrado!',
-        description: `Reposição ${protocolo.numero} finalizada com sucesso.`,
+        title: todosEntregues ? 'Protocolo encerrado!' : 'Entrega parcial registrada!',
+        description: todosEntregues
+          ? `Reposição ${protocolo.numero} finalizada com sucesso.`
+          : `${produtosEntreguesAgora.length} produto(s) entregue(s). Protocolo continua em andamento.`,
       });
 
       handleClose();
       onSuccess();
     } catch (error) {
-      console.error('Erro ao encerrar protocolo:', error);
+      console.error('Erro ao processar entrega:', error);
       toast({
-        title: 'Erro ao encerrar',
-        description: 'Não foi possível encerrar o protocolo. Tente novamente.',
+        title: 'Erro ao processar',
+        description: 'Não foi possível registrar a entrega. Tente novamente.',
         variant: 'destructive'
       });
     } finally {
@@ -286,7 +365,7 @@ export function EncerrarProtocoloModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              Encerrar Reposição
+              {isEntregaTotal ? 'Encerrar Reposição' : 'Entrega Parcial'}
             </DialogTitle>
           </DialogHeader>
 
@@ -304,6 +383,79 @@ export function EncerrarProtocoloModal({
           </Card>
 
           <div className="space-y-4">
+            {/* Seleção de produtos */}
+            {produtos.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-1">
+                    <Package className="w-4 h-4" />
+                    Selecione os produtos entregues *
+                  </Label>
+                  {produtosPendentes.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] px-2"
+                      onClick={toggleTodos}
+                    >
+                      {produtosSelecionados.size === produtosPendentes.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="border rounded-lg divide-y">
+                  {produtos.map((produto, index) => {
+                    const jaEntregue = !!produto.entregue;
+                    const selecionado = produtosSelecionados.has(index);
+
+                    return (
+                      <div
+                        key={index}
+                        className={cn(
+                          "flex items-center gap-3 p-2.5 text-xs",
+                          jaEntregue && "bg-muted/50 opacity-60",
+                          !jaEntregue && selecionado && "bg-green-50 dark:bg-green-500/10",
+                          !jaEntregue && "cursor-pointer hover:bg-muted/30"
+                        )}
+                        onClick={() => !jaEntregue && toggleProduto(index)}
+                      >
+                        {jaEntregue ? (
+                          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                        ) : (
+                          <Checkbox
+                            checked={selecionado}
+                            onCheckedChange={() => toggleProduto(index)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className={cn("font-medium truncate", jaEntregue && "line-through")}>
+                            {produto.codigo} - {produto.nome}
+                          </p>
+                          <p className="text-muted-foreground">
+                            {produto.quantidade} {produto.unidade}
+                            {jaEntregue && produto.dataEntrega && ` • Entregue em ${produto.dataEntrega}`}
+                          </p>
+                        </div>
+                        {jaEntregue && (
+                          <span className="text-[9px] bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400 px-1.5 py-0.5 rounded-full shrink-0">
+                            Entregue
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {produtosJaEntregues.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {produtosJaEntregues.length} produto(s) já entregue(s) anteriormente
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Foto do Canhoto Assinado */}
             <div className="space-y-2">
               <Label className="flex items-center gap-1">
@@ -385,7 +537,7 @@ export function EncerrarProtocoloModal({
               <Label htmlFor="observacao">Observação (opcional)</Label>
               <Textarea
                 id="observacao"
-                placeholder="Adicione uma observação sobre o encerramento..."
+                placeholder="Adicione uma observação sobre a entrega..."
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
                 rows={3}
@@ -412,12 +564,12 @@ export function EncerrarProtocoloModal({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Encerrando...
+                  {isEntregaTotal ? 'Encerrando...' : 'Registrando...'}
                 </>
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Confirmar Encerramento
+                  {isEntregaTotal ? 'Confirmar Encerramento' : 'Confirmar Entrega'}
                 </>
               )}
             </Button>

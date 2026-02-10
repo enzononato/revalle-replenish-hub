@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Protocolo, ObservacaoLog, User } from '@/types';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Switch } from '@/components/ui/switch';
@@ -1038,32 +1039,74 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 Produtos Recebidos
               </h3>
               {protocolo.produtos && protocolo.produtos.length > 0 ? (
-                <div className="overflow-x-auto border border-slate-300 dark:border-slate-600 rounded-lg">
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-100 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Código</th>
-                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Produto</th>
-                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Unidade</th>
-                        <th className="text-center px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Qtd</th>
-                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Validade</th>
-                        <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300">Observação</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {protocolo.produtos.map((produto, index) => (
-                        <tr key={index} className="border-b border-slate-200 dark:border-slate-700 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                          <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.codigo}</td>
-                          <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.nome}</td>
-                          <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.unidade}</td>
-                          <td className="px-2.5 py-1.5 text-center text-foreground border-r border-slate-200 dark:border-slate-700">{produto.quantidade}</td>
-                          <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.validade}</td>
-                          <td className="px-2.5 py-1.5 text-muted-foreground">{produto.observacao || ''}</td>
+                <>
+                  {/* Resumo de entrega */}
+                  {(() => {
+                    const totalProdutos = protocolo.produtos.length;
+                    const entregues = protocolo.produtos.filter(p => p.entregue).length;
+                    if (entregues > 0) {
+                      return (
+                        <div className="mb-3 flex items-center gap-2 text-xs">
+                          <div className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium",
+                            entregues === totalProdutos
+                              ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400"
+                              : "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400"
+                          )}>
+                            {entregues === totalProdutos ? <CheckCircle size={12} /> : <Clock size={12} />}
+                            {entregues} de {totalProdutos} produtos entregues
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  <div className="overflow-x-auto border border-slate-300 dark:border-slate-600 rounded-lg">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                          <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Código</th>
+                          <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Produto</th>
+                          <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Unidade</th>
+                          <th className="text-center px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Qtd</th>
+                          <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Validade</th>
+                          <th className="text-left px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300 border-r border-slate-200 dark:border-slate-700">Observação</th>
+                          <th className="text-center px-2.5 py-2 font-semibold text-slate-600 dark:text-slate-300">Status</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {protocolo.produtos.map((produto, index) => (
+                          <tr key={index} className="border-b border-slate-200 dark:border-slate-700 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                            <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.codigo}</td>
+                            <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.nome}</td>
+                            <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.unidade}</td>
+                            <td className="px-2.5 py-1.5 text-center text-foreground border-r border-slate-200 dark:border-slate-700">{produto.quantidade}</td>
+                            <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">{produto.validade}</td>
+                            <td className="px-2.5 py-1.5 text-muted-foreground border-r border-slate-200 dark:border-slate-700">{produto.observacao || ''}</td>
+                            <td className="px-2.5 py-1.5 text-center">
+                              {produto.entregue ? (
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-500/20 px-1.5 py-0.5 rounded-full">
+                                    <CheckCircle size={10} />
+                                    Entregue
+                                  </span>
+                                  {produto.dataEntrega && (
+                                    <span className="text-[9px] text-muted-foreground">{produto.dataEntrega}</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-500/20 px-1.5 py-0.5 rounded-full">
+                                  <Clock size={10} />
+                                  Pendente
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               ) : (
                 <p className="text-xs text-muted-foreground italic">Nenhum produto registrado</p>
               )}
