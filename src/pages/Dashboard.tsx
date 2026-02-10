@@ -298,6 +298,16 @@ export default function Dashboard() {
   }, [protocolosFiltrados]);
 
 
+  // Lead Time médio (dias) dos protocolos encerrados
+  const leadTime = useMemo(() => {
+    const encerrados = protocolosFiltrados.filter(p => p.status === 'encerrado');
+    if (encerrados.length === 0) return '—';
+    const totalDias = encerrados.reduce((acc, p) => {
+      return acc + calcularSlaDias(p.data, p.status, p.observacoesLog);
+    }, 0);
+    return (totalDias / encerrados.length).toFixed(1);
+  }, [protocolosFiltrados]);
+
   // Contagem por tipo de reposição
   const contagemPorTipo = useMemo(() => {
     const inversao = protocolosFiltrados.filter(p => p.tipoReposicao === 'INVERSAO').length;
@@ -541,7 +551,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <StatCard
           title="Em Aberto"
           value={stats.emAberto}
@@ -559,6 +569,13 @@ export default function Dashboard() {
           variant="success"
           delay={100}
           href="/protocolos?status=encerrado&periodo=hoje"
+        />
+        <StatCard
+          title="Lead Time"
+          value={leadTime === '—' ? '—' : `${leadTime} dias`}
+          icon={Timer}
+          variant="default"
+          delay={150}
         />
         <StatCard
           title="Total de Protocolos"
