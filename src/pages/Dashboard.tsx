@@ -288,7 +288,7 @@ export default function Dashboard() {
     const contagem: Record<string, number> = {};
     protocolosFiltrados.forEach(p => {
       p.produtos?.forEach(prod => {
-        contagem[prod.nome] = (contagem[prod.nome] || 0) + prod.quantidade;
+        contagem[prod.nome] = (contagem[prod.nome] || 0) + Number(prod.quantidade);
       });
     });
     return Object.entries(contagem)
