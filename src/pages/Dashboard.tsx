@@ -574,13 +574,6 @@ export default function Dashboard() {
           href="/protocolos?status=encerrado&periodo=hoje"
         />
         <StatCard
-          title="Lead Time"
-          value={leadTime === '—' ? '—' : `${leadTime} dias`}
-          icon={Timer}
-          variant="default"
-          delay={150}
-        />
-        <StatCard
           title="Total de Protocolos"
           value={stats.totalProtocolos}
           icon={FileText}
@@ -604,6 +597,14 @@ export default function Dashboard() {
           delay={400}
           href="/protocolos?periodo=hoje"
         />
+        <StatCard
+          title="Lead Time"
+          value={leadTime === '—' ? '—' : `${leadTime} dias`}
+          icon={Timer}
+          variant="default"
+          delay={500}
+        />
+      
       </div>
 
       {/* Estatísticas por Tipo */}
