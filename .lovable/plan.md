@@ -1,131 +1,49 @@
 
-# Plano: Correção do Carregamento de Fotos nos Detalhes do Protocolo
+# Reposicao Parcial - Entrega parcial de produtos
 
-## Diagnóstico
+## Resumo
+Adicionar a funcionalidade de "reposicao parcial", onde o motorista pode selecionar quais produtos entregar ao encerrar um protocolo. O protocolo so sera encerrado de verdade quando TODOS os produtos forem entregues.
 
-### Problema Identificado
-As fotos de abertura e encerramento não estão aparecendo nos detalhes do protocolo porque as URLs salvas no banco de dados usam o domínio customizado (`reposicao.revalle.com.br`), que não é acessível quando o usuário está visualizando pelo ambiente de preview do Lovable.
+## Como vai funcionar
 
-### Dados do Banco
-```json
-{
-  "fotoMotoristaPdv": "https://reposicao.revalle.com.br/functions/v1/foto-proxy/PROTOC-.../foto.jpeg",
-  "fotoLoteProduto": "https://reposicao.revalle.com.br/functions/v1/foto-proxy/PROTOC-.../foto.jpeg"
-}
-```
+1. **No encerramento pelo motorista**: Em vez de encerrar tudo de uma vez, o motorista vera a lista de produtos e podera selecionar quais esta entregando naquele momento (com checkboxes).
 
-### Fluxo Atual (problemático)
-```text
-Upload → getCustomPhotoUrl() → Salva URL com domínio customizado no banco
-                                         ↓
-Exibição → <img src="URL customizada"> → Falha se não estiver no domínio correto
-```
+2. **Entrega parcial**: Se o motorista selecionar apenas alguns produtos, o protocolo permanece com status `em_andamento` e os produtos entregues sao marcados como tal.
 
----
+3. **Entrega total**: Quando todos os produtos forem entregues (naquela ou em entregas anteriores), o protocolo e encerrado automaticamente (status `encerrado`).
 
-## Solução Proposta
+4. **Nos detalhes do protocolo (admin)**: A tabela de produtos ganha uma coluna "Entregue" com indicador visual (check verde = entregue, X vermelho = pendente), alem da data da entrega.
 
-### Abordagem
-Criar uma função que converte URLs de `foto-proxy` de qualquer domínio para a URL direta do Supabase Storage, garantindo que as imagens sempre carreguem corretamente independente do ambiente.
+## Alteracoes Tecnicas
 
-### Arquivos a Modificar
+### 1. Tipo Produto (src/types/index.ts)
+Adicionar campos ao tipo `Produto`:
+- `entregue?: boolean` - se o produto ja foi entregue
+- `dataEntrega?: string` - data/hora da entrega
+- `entregaPorMotoristaId?: string` - ID do motorista que entregou
+- `entregaPorMotoristaNome?: string` - nome do motorista que entregou
 
-#### 1. `src/utils/urlHelpers.ts`
-Adicionar nova função `getDirectStorageUrl()`:
-- Extrai o path da imagem de qualquer URL (foto-proxy ou storage direto)
-- Retorna URL direta do Supabase Storage usando a variável de ambiente `VITE_SUPABASE_URL`
-- Mantém `getCustomPhotoUrl()` para links externos (WhatsApp, Email)
+### 2. Modal de Encerramento (src/components/motorista/EncerrarProtocoloModal.tsx)
+- Exibir lista de produtos com checkboxes para o motorista selecionar quais esta entregando
+- Produtos ja entregues anteriormente aparecem desabilitados com visual de "ja entregue"
+- O botao muda de "Confirmar Encerramento" para "Confirmar Entrega" quando for parcial
+- Ao confirmar:
+  - Se todos os produtos (pendentes + selecionados) ficarem entregues: status muda para `encerrado`
+  - Se ainda restarem pendentes: status permanece `em_andamento`, e os produtos selecionados sao marcados como entregues no array JSON de produtos
 
-```text
-Novas funções:
-- getDirectStorageUrl(url): Converte para URL direta do Storage
-- getImagePath(url): Extrai apenas o path da imagem
-```
+### 3. Detalhes do Protocolo (src/components/ProtocoloDetails.tsx)
+- Na tabela de produtos, adicionar coluna "Status" com badge visual:
+  - Verde com check: "Entregue" + data
+  - Amarelo com relogio: "Pendente"
+- Adicionar um resumo acima da tabela: "X de Y produtos entregues"
 
-#### 2. `src/components/ProtocoloDetails.tsx`
-Usar `getDirectStorageUrl()` para todas as fotos exibidas em tags `<img>`:
-- Fotos de abertura (Motorista/PDV, Lote Produto, Avaria)
-- Fotos de encerramento (Canhoto Assinado, Entrega Mercadoria, Anexo)
+### 4. Meus Protocolos - motorista (src/components/motorista/MeusProtocolos.tsx)
+- Na lista expandida de produtos, mostrar quais ja foram entregues
+- Indicador visual de progresso (ex: "2 de 5 entregues")
 
----
+### 5. Log de auditoria
+- Cada entrega parcial gera um log com acao "Entrega parcial" listando quais produtos foram entregues
+- Entrega final gera log "Encerrou o protocolo (entrega final)"
 
-## Detalhes Técnicos
-
-### Nova função `getDirectStorageUrl()`
-```typescript
-export function getDirectStorageUrl(photoUrl: string): string {
-  if (!photoUrl) return photoUrl;
-  
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) return photoUrl;
-
-  // Extrair o path da foto de qualquer formato
-  let imagePath: string | null = null;
-
-  // Caso 1: URL de foto-proxy (qualquer domínio)
-  const proxyMatch = photoUrl.match(/\/functions\/v1\/foto-proxy\/(.+)$/);
-  if (proxyMatch?.[1]) {
-    imagePath = proxyMatch[1];
-  }
-
-  // Caso 2: URL do storage do Supabase
-  const storageMatch = photoUrl.match(/\/fotos-protocolos\/(.+)$/);
-  if (storageMatch?.[1]) {
-    imagePath = storageMatch[1];
-  }
-
-  if (!imagePath) return photoUrl;
-
-  // Retorna URL direta do Storage
-  return `${supabaseUrl}/storage/v1/object/public/fotos-protocolos/${imagePath}`;
-}
-```
-
-### Uso no ProtocoloDetails.tsx
-```typescript
-// Fotos de abertura
-if (protocolo.fotosProtocolo?.fotoMotoristaPdv) {
-  todasFotos.push({ 
-    url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoMotoristaPdv), 
-    label: 'Motorista/PDV' 
-  });
-}
-
-// Fotos de encerramento
-if (protocolo.fotoNotaFiscalEncerramento) {
-  fotosEncerramento.push({ 
-    url: getDirectStorageUrl(protocolo.fotoNotaFiscalEncerramento), 
-    label: 'Canhoto Assinado' 
-  });
-}
-```
-
----
-
-## Fluxo Corrigido
-
-```text
-Upload → getCustomPhotoUrl() → Salva URL com domínio customizado (para WhatsApp/Email)
-                                         ↓
-Exibição → getDirectStorageUrl() → Converte para URL direta do Storage → <img> carrega OK
-                                         ↓
-Links externos → Mantém URL customizada para compartilhamento
-```
-
----
-
-## Benefícios
-
-1. **Compatibilidade**: Fotos funcionam em qualquer ambiente (preview, produção, domínio customizado)
-2. **Sem migração**: Não precisa alterar dados existentes no banco
-3. **Manutenção separada**: URLs diretas para exibição, URLs customizadas para compartilhamento externo
-4. **Performance**: URLs diretas do Storage são mais rápidas que passar pelo proxy
-
----
-
-## Resumo das Alterações
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/utils/urlHelpers.ts` | Adicionar função `getDirectStorageUrl()` |
-| `src/components/ProtocoloDetails.tsx` | Usar `getDirectStorageUrl()` nas fotos de abertura e encerramento |
+### Nenhuma alteracao no banco de dados
+Os campos de entrega serao armazenados dentro do JSON `produtos` (campo JSONB), entao nao e necessario criar colunas novas na tabela `protocolos`.
