@@ -60,6 +60,7 @@ interface ProtocoloDetailsProps {
   isConferente?: boolean;
   isAdmin?: boolean;
   isDistribuicao?: boolean;
+  isControle?: boolean;
 }
 
 export function ProtocoloDetails({ 
@@ -75,7 +76,8 @@ export function ProtocoloDetails({
   canEditMotorista,
   isConferente = false,
   isAdmin = false,
-  isDistribuicao = false
+  isDistribuicao = false,
+  isControle = false
 }: ProtocoloDetailsProps) {
   const [habilitarReenvio, setHabilitarReenvio] = useState(protocolo?.habilitarReenvio || false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -459,7 +461,7 @@ export function ProtocoloDetails({
     onClose();
   };
 
-  const handleConfirmarValidacao = () => {
+  const handleConfirmarValidacao = async () => {
     if (!onUpdateProtocolo) return;
     
     const protocoloAtualizado: Protocolo = {
@@ -479,8 +481,23 @@ export function ProtocoloDetails({
       ]
     };
     
-    onUpdateProtocolo(protocoloAtualizado);
-    toast.success(protocolo.validacao ? 'Validação removida!' : 'Protocolo validado!');
+    try {
+      await onUpdateProtocolo(protocoloAtualizado);
+      const novaValidacao = !protocolo.validacao;
+      await registrarLog({
+        acao: novaValidacao ? 'validacao' : 'edicao',
+        tabela: 'protocolos',
+        registro_id: protocolo.id,
+        registro_dados: { numero: protocolo.numero, validacao: novaValidacao },
+        usuario_nome: user?.nome || '',
+        usuario_role: user?.nivel,
+        usuario_unidade: user?.unidade,
+      });
+      toast.success(protocolo.validacao ? 'Validação removida!' : 'Protocolo validado!');
+    } catch (error) {
+      console.error('Erro ao atualizar validação:', error);
+      toast.error('Erro ao atualizar validação. Tente novamente.');
+    }
   };
 
   const handleReenviarWhatsapp = async (tipo: 'lancar' | 'encerrar') => {
@@ -1300,7 +1317,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               </h3>
               
               {protocolo.status !== 'encerrado' ? (
-                (isAdmin || isDistribuicao) && user && onUpdateProtocolo ? (
+                (isAdmin || isDistribuicao || isControle) && user && onUpdateProtocolo ? (
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Mensagem para o usuário</label>
@@ -1393,8 +1410,8 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     </p>
                   )}
                   
-                  {/* Botão de Reabertura - apenas Admin e Distribuição */}
-                  {(isAdmin || isDistribuicao) && (
+                  {/* Botão de Reabertura - apenas Admin, Distribuição e Controle */}
+                  {(isAdmin || isDistribuicao || isControle) && (
                     <Button 
                       variant="outline"
                       onClick={() => setShowReabrirModal(true)}

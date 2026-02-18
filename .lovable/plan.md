@@ -1,29 +1,84 @@
 
-## Lead Time no Dashboard
+## Importar apenas produtos novos (código não existente)
 
-### O que e
-Lead Time e o **tempo medio de resolucao** (em dias) dos protocolos encerrados. Sera calculado usando a diferenca entre a data de abertura e a data de encerramento de cada protocolo encerrado.
+### Problema atual
 
-### Onde vai aparecer
-Um novo **StatCard** sera adicionado na primeira fileira de cards (junto com "Em Aberto", "Encerrados Hoje", etc.), mudando o grid de 5 para 6 colunas. O card mostrara o valor em formato "X dias" com o icone de cronometro (Timer).
+O componente `ImportarProdutosCSV` usa `upsert` com `ignoreDuplicates: false`, o que **atualiza** produtos que já existem. O usuário quer que apenas produtos com código **novo** sejam inseridos.
 
-### Como sera calculado
-- Filtrar apenas protocolos com status `encerrado`
-- Para cada um, calcular a diferenca em dias entre a data de abertura e a data de encerramento (extraida do `observacoesLog`)
-- Calcular a media e arredondar para 1 casa decimal
-- Se nao houver protocolos encerrados, exibir "—"
+Além disso, o arquivo CSV enviado usa **ponto e vírgula** (`;`) como separador de colunas, o que precisa ser tratado corretamente.
 
-### Detalhes tecnicos
+---
 
-**Arquivo:** `src/pages/Dashboard.tsx`
+### Mudanças planejadas
 
-1. **Novo `useMemo` para Lead Time** — Calcular a media de dias de resolucao dos protocolos encerrados, reutilizando a funcao `calcularSlaDias` que ja existe no arquivo (linha 361).
+**1. `src/hooks/useProdutosDB.ts` — nova função `importProdutosNovos`**
 
-2. **Ajustar o grid dos StatCards** — Alterar de `lg:grid-cols-5` para `lg:grid-cols-6` na linha 544.
+Adicionar uma função que:
+- Busca todos os códigos já existentes no banco (`cod`)
+- Filtra da lista enviada apenas os produtos cujos códigos **não existem** ainda
+- Insere somente os novos
+- Retorna um resultado detalhado: `{ inseridos, ignorados, total }`
 
-3. **Adicionar novo StatCard** — Inserir um card com:
-   - Titulo: "Lead Time"
-   - Valor: media calculada + " dias" (ex: "3.2 dias")
-   - Icone: `Timer` (ja importado)
-   - Variante: `default` ou `info`
-   - Posicao: apos "Encerrados Hoje"
+```
+ImportResult expandido:
+  success: boolean
+  total: number       ← total do arquivo
+  inseridos: number   ← novos inseridos
+  ignorados: number   ← já existiam, pulados
+  error?: string
+```
+
+**2. `src/components/ImportarProdutosCSV.tsx` — melhorias**
+
+- Corrigir leitura de CSV com separador `;` (passar `FS: ';'` para o XLSX)
+- Usar a nova função `importProdutosNovos` em vez de `importProdutos`
+- Exibir no preview quantos produtos do arquivo já existem vs novos (com badge colorido por linha)
+- Mostrar na mensagem de sucesso: "X novos produtos inseridos, Y já existiam e foram ignorados"
+- O botão de importar mostrará: "Importar X produtos novos" (já filtrando a contagem)
+
+---
+
+### Fluxo detalhado
+
+```text
+[Usuário seleciona CSV]
+        |
+        v
+[Frontend lê e parseia o arquivo]
+        |
+        v
+[importProdutosNovos() é chamado]
+        |
+        v
+[Busca todos os CODs existentes no banco]
+        |
+        v
+[Filtra: apenas produtos com COD não encontrado]
+        |
+        v
+[Insere somente os novos via INSERT]
+        |
+        v
+[Retorna: inseridos=X, ignorados=Y]
+```
+
+---
+
+### Arquivos a modificar
+
+| Arquivo | O que muda |
+|---|---|
+| `src/hooks/useProdutosDB.ts` | Nova função `importProdutosNovos` que filtra por código antes de inserir |
+| `src/components/ImportarProdutosCSV.tsx` | Fix do separador CSV (`;`), usa nova função, exibe distinção no preview e no feedback |
+
+---
+
+### Técnico — busca de códigos existentes
+
+Como a tabela `produtos` pode ter muitos registros, a busca será feita pegando apenas a coluna `cod` (sem trazer todos os dados), e o filtro será feito em memória no cliente. Isso é eficiente pois o dado é leve (só texto de código).
+
+```typescript
+const { data } = await supabase.from('produtos').select('cod');
+const existentes = new Set(data.map(p => p.cod.trim()));
+const novos = produtos.filter(p => !existentes.has(p.cod.trim()));
+```

@@ -113,7 +113,7 @@ const App = () => (
                     <Route 
                       path="/chat" 
                       element={
-                        <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'conferente']}>
+                        <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'conferente', 'controle']}>
                           <Chat />
                         </ProtectedRoute>
                       } 

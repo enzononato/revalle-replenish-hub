@@ -6,7 +6,7 @@ export interface Usuario {
   id: string;
   nome: string;
   email: string;
-  nivel: 'admin' | 'distribuicao' | 'conferente';
+  nivel: 'admin' | 'distribuicao' | 'conferente' | 'controle';
   unidades: string[];
   createdAt: string;
   authUserId?: string;
@@ -16,7 +16,7 @@ interface CreateUsuarioInput {
   nome: string;
   email: string;
   senha: string;
-  nivel: 'admin' | 'distribuicao' | 'conferente';
+  nivel: 'admin' | 'distribuicao' | 'conferente' | 'controle';
   unidades: string[];
 }
 

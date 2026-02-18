@@ -29,13 +29,13 @@ type NavItem = {
   icon: typeof LayoutDashboard;
   label: string;
   path: string;
-  roles: ('admin' | 'distribuicao' | 'conferente')[];
+  roles: ('admin' | 'distribuicao' | 'conferente' | 'controle')[];
 };
 
 const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'distribuicao', 'conferente'] },
-  { icon: FileText, label: 'Protocolos', path: '/protocolos', roles: ['admin', 'distribuicao', 'conferente'] },
-  { icon: MessageSquare, label: 'Chat', path: '/chat', roles: ['admin', 'distribuicao', 'conferente'] },
+  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'distribuicao', 'conferente', 'controle'] },
+  { icon: FileText, label: 'Protocolos', path: '/protocolos', roles: ['admin', 'distribuicao', 'conferente', 'controle'] },
+  { icon: MessageSquare, label: 'Chat', path: '/chat', roles: ['admin', 'distribuicao', 'conferente', 'controle'] },
   { icon: Truck, label: 'Motoristas', path: '/motoristas', roles: ['admin', 'distribuicao'] },
   { icon: Building2, label: 'Unidades', path: '/unidades', roles: ['admin'] },
   { icon: Users, label: 'Usuários', path: '/usuarios', roles: ['admin'] },
@@ -53,6 +53,8 @@ const getRoleBadge = (role: string) => {
       return { label: 'Distribuição', variant: 'secondary' as const };
     case 'conferente':
       return { label: 'Conferente', variant: 'outline' as const };
+    case 'controle':
+      return { label: 'Controle', variant: 'outline' as const };
     default:
       return { label: role, variant: 'outline' as const };
   }

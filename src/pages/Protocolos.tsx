@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { differenceInDays, parseISO, format, isAfter, isBefore, parse, isToday } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import CreateProtocoloModal from '@/components/CreateProtocoloModal';
 
 // Função para extrair data de encerramento do log
@@ -68,9 +69,10 @@ const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
 export default function Protocolos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, user } = useAuth();
+  const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, isControle, user } = useAuth();
   const { unidades } = useUnidadesDB();
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo, isLoading } = useProtocolos();
+  const { registrarLog } = useAuditLog();
   
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>('aberto');
@@ -234,7 +236,7 @@ export default function Protocolos() {
     texto
   });
 
-  const handleToggleLancado = (id: string) => {
+  const handleToggleLancado = async (id: string) => {
     if (!canLaunch) {
       toast.error('Apenas Distribuição ou Admin pode lançar protocolos!');
       return;
@@ -252,17 +254,31 @@ export default function Protocolos() {
         newLancado ? 'Marcou como lançado' : 'Removeu lançamento',
         newLancado ? 'Protocolo marcado como lançado' : 'Lançamento removido do protocolo'
       );
-      updateProtocolo({ 
-        ...protocolo, 
-        lancado: newLancado, 
-        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
-        observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
-      });
+      try {
+        await updateProtocolo({ 
+          ...protocolo, 
+          lancado: newLancado, 
+          status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
+          observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
+        });
+        await registrarLog({
+          acao: newLancado ? 'lancamento' : 'edicao',
+          tabela: 'protocolos',
+          registro_id: protocolo.id,
+          registro_dados: { numero: protocolo.numero, lancado: newLancado },
+          usuario_nome: user?.nome || '',
+          usuario_role: user?.nivel,
+          usuario_unidade: user?.unidade,
+        });
+        toast.success('Status de lançamento atualizado!');
+      } catch (error) {
+        console.error('Erro ao atualizar lançamento:', error);
+        toast.error('Erro ao atualizar lançamento. Tente novamente.');
+      }
     }
-    toast.success('Status de lançamento atualizado!');
   };
 
-  const handleToggleValidacao = (id: string) => {
+  const handleToggleValidacao = async (id: string) => {
     if (!canValidate) {
       toast.error('Apenas Conferente ou Admin pode validar protocolos!');
       return;
@@ -275,14 +291,28 @@ export default function Protocolos() {
         newValidacao ? 'Confirmou validação' : 'Removeu validação',
         newValidacao ? 'Protocolo validado' : 'Validação removida do protocolo'
       );
-      updateProtocolo({ 
-        ...protocolo, 
-        validacao: newValidacao, 
-        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
-        observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
-      });
+      try {
+        await updateProtocolo({ 
+          ...protocolo, 
+          validacao: newValidacao, 
+          status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
+          observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
+        });
+        await registrarLog({
+          acao: newValidacao ? 'validacao' : 'edicao',
+          tabela: 'protocolos',
+          registro_id: protocolo.id,
+          registro_dados: { numero: protocolo.numero, validacao: newValidacao },
+          usuario_nome: user?.nome || '',
+          usuario_role: user?.nivel,
+          usuario_unidade: user?.unidade,
+        });
+        toast.success('Validação atualizada!');
+      } catch (error) {
+        console.error('Erro ao atualizar validação:', error);
+        toast.error('Erro ao atualizar validação. Tente novamente.');
+      }
     }
-    toast.success('Validação atualizada!');
   };
 
   const handleOcultar = (id: string) => {
@@ -867,10 +897,11 @@ export default function Protocolos() {
         onUpdateProtocolo={handleUpdateProtocolo}
         user={user}
         canValidate={canValidate}
-        canEditMotorista={isAdmin || isDistribuicao}
+        canEditMotorista={isAdmin || isDistribuicao || isControle}
         isConferente={isConferente}
         isAdmin={isAdmin}
         isDistribuicao={isDistribuicao}
+        isControle={isControle}
       />
 
       {/* Create Protocol Modal */}

@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Shield, UserCircle, Truck, Users, Loader2, Mail, Building2, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Shield, UserCircle, Truck, Users, Loader2, Mail, Building2, Eye, EyeOff, AlertTriangle, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUsuariosDB, Usuario } from '@/hooks/useUsuariosDB';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
@@ -38,18 +38,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-type UserRole = 'admin' | 'distribuicao' | 'conferente';
+type UserRole = 'admin' | 'distribuicao' | 'conferente' | 'controle';
 
 const nivelLabels: Record<UserRole, string> = {
   admin: 'Administrador',
   distribuicao: 'Distribuição',
   conferente: 'Conferente',
+  controle: 'Controle',
 };
 
 const nivelDescriptions: Record<UserRole, string> = {
   admin: 'Acesso total ao sistema',
   distribuicao: 'Gerencia protocolos e distribuição',
   conferente: 'Confere e valida protocolos',
+  controle: 'Lança e valida protocolos',
 };
 
 export default function Usuarios() {
@@ -239,6 +241,8 @@ export default function Usuarios() {
         return <Shield className="text-primary" size={18} />;
       case 'distribuicao':
         return <Truck className="text-info" size={18} />;
+      case 'controle':
+        return <ClipboardList className="text-warning" size={18} />;
       default:
         return <UserCircle className="text-muted-foreground" size={18} />;
     }
@@ -250,6 +254,8 @@ export default function Usuarios() {
         return "bg-primary/10 text-primary border-primary/20";
       case 'distribuicao':
         return "bg-info/10 text-info border-info/20";
+      case 'controle':
+        return "bg-warning/10 text-warning border-warning/20";
       default:
         return "bg-muted text-muted-foreground border-border";
     }
@@ -394,7 +400,7 @@ export default function Usuarios() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(['admin', 'distribuicao', 'conferente'] as UserRole[]).map(nivel => (
+                    {(['admin', 'distribuicao', 'conferente', 'controle'] as UserRole[]).map(nivel => (
                       <SelectItem key={nivel} value={nivel}>
                         <div className="flex items-center gap-2">
                           {getNivelIcon(nivel)}
@@ -524,6 +530,7 @@ export default function Usuarios() {
             <SelectItem value="admin">Administradores</SelectItem>
             <SelectItem value="distribuicao">Distribuição</SelectItem>
             <SelectItem value="conferente">Conferentes</SelectItem>
+            <SelectItem value="controle">Controle</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -556,6 +563,14 @@ export default function Usuarios() {
           </p>
           <p className="text-2xl font-bold">
             {usuarios.filter(u => u.nivel === 'conferente').length}
+          </p>
+        </div>
+        <div className="bg-card rounded-lg p-4 border">
+          <p className="text-muted-foreground text-sm flex items-center gap-1">
+            <ClipboardList size={14} className="text-warning" /> Controle
+          </p>
+          <p className="text-2xl font-bold text-warning">
+            {usuarios.filter(u => u.nivel === 'controle').length}
           </p>
         </div>
       </div>

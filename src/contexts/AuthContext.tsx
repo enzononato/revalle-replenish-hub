@@ -22,6 +22,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isDistribuicao: boolean;
   isConferente: boolean;
+  isControle: boolean;
   canValidate: boolean;
   canLaunch: boolean;
 }
@@ -165,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = user?.nivel === 'admin';
   const isDistribuicao = user?.nivel === 'distribuicao';
   const isConferente = user?.nivel === 'conferente';
+  const isControle = user?.nivel === 'controle';
 
   return (
     <AuthContext.Provider value={{
@@ -177,8 +179,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin,
       isDistribuicao,
       isConferente,
-      canValidate: isAdmin || isConferente,
-      canLaunch: isAdmin || isDistribuicao
+      isControle,
+      canValidate: isAdmin || isConferente || isControle,
+      canLaunch: isAdmin || isDistribuicao || isControle
     }}>
       {children}
     </AuthContext.Provider>

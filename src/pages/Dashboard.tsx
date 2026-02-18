@@ -107,7 +107,8 @@ export default function Dashboard() {
   // Total de motoristas do banco de dados (filtrado por unidade)
   const totalMotoristasBase = useMemo(() => {
     if (!isAdmin) {
-      return motoristas.filter(m => m.unidade === user?.unidade).length;
+      const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
+      return motoristas.filter(m => userUnidades.includes(m.unidade)).length;
     }
     if (unidadeFiltro !== 'todas') {
       return motoristas.filter(m => m.unidade === unidadeFiltro).length;

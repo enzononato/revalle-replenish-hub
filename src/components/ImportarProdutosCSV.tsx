@@ -1,14 +1,20 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Upload, FileSpreadsheet, Check, X, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProdutosDB, ProdutoImport } from '@/hooks/useProdutosDB';
+import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
 
 interface ImportarProdutosCSVProps {
   onImportComplete?: () => void;
+}
+
+interface ProdutoComStatus extends ProdutoImport {
+  existente: boolean;
 }
 
 const HEADER_VARIATIONS: Record<string, string[]> = {
@@ -18,46 +24,44 @@ const HEADER_VARIATIONS: Record<string, string[]> = {
 
 const normalizeHeader = (header: string): string | null => {
   if (!header) return null;
-  
-  // Remove acentos, espaços, underscores, hifens e converte para lowercase
   const normalized = header
     .toLowerCase()
     .trim()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[_\-\s.]/g, ''); // Remove _, -, espaços e pontos
-  
-  // Primeiro verifica matches exatos
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_\-\s.]/g, '');
+
   for (const [key, variations] of Object.entries(HEADER_VARIATIONS)) {
     for (const variation of variations) {
       const normalizedVariation = variation
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[_\-\s.]/g, '');
-      
-      if (normalized === normalizedVariation) {
-        return key;
-      }
+      if (normalized === normalizedVariation) return key;
     }
   }
-  
   return null;
 };
 
 export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVProps) {
-  const [produtos, setProdutos] = useState<ProdutoImport[]>([]);
+  const [produtos, setProdutos] = useState<ProdutoComStatus[]>([]);
   const [fileName, setFileName] = useState<string>('');
   const [errors, setErrors] = useState<string[]>([]);
+  const [loadingStatus, setLoadingStatus] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { importProdutos, isImporting } = useProdutosDB();
+  const { importProdutosNovos, isImporting } = useProdutosDB();
 
-  const processFile = (file: File) => {
+  const novos = produtos.filter(p => !p.existente);
+  const existentes = produtos.filter(p => p.existente);
+
+  const processFile = async (file: File) => {
     const reader = new FileReader();
-    
-    reader.onload = (e) => {
+
+    reader.onload = async (e) => {
       try {
         const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
+        // Passa FS: ';' para suportar CSVs com separador ponto e vírgula
+        const workbook = XLSX.read(data, { type: 'binary', FS: ';' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
@@ -68,19 +72,12 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
         }
 
         const headers = jsonData[0].map(h => String(h || ''));
-        console.log('Headers encontrados:', headers);
-        
         const headerMap: Record<number, string> = {};
-        
+
         headers.forEach((header, index) => {
           const normalized = normalizeHeader(header);
-          console.log(`Header "${header}" -> normalizado para: "${normalized}"`);
-          if (normalized) {
-            headerMap[index] = normalized;
-          }
+          if (normalized) headerMap[index] = normalized;
         });
-
-        console.log('Mapa de headers:', headerMap);
 
         const requiredFields = ['cod', 'produto'];
         const foundFields = Object.values(headerMap);
@@ -101,8 +98,8 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
           const produto: Partial<ProdutoImport> = {};
 
           Object.entries(headerMap).forEach(([indexStr, field]) => {
-            const index = parseInt(indexStr);
-            const value = row[index];
+            const idx = parseInt(indexStr);
+            const value = row[idx];
             if (value !== undefined && value !== null) {
               (produto as any)[field] = String(value).trim();
             }
@@ -112,7 +109,6 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
             parseErrors.push(`Linha ${i + 1}: Código não informado`);
             continue;
           }
-
           if (!produto.produto) {
             parseErrors.push(`Linha ${i + 1}: Nome do produto não informado`);
             continue;
@@ -121,12 +117,31 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
           parsedProdutos.push(produto as ProdutoImport);
         }
 
-        setProdutos(parsedProdutos);
         setErrors(parseErrors);
         setFileName(file.name);
 
         if (parsedProdutos.length === 0 && parseErrors.length === 0) {
           setErrors(['Nenhum produto válido encontrado no arquivo']);
+          return;
+        }
+
+        // Busca códigos existentes para exibir status no preview
+        setLoadingStatus(true);
+        try {
+          const { data: existentesData } = await supabase
+            .from('produtos')
+            .select('cod');
+
+          const existentesSet = new Set((existentesData || []).map(p => p.cod.trim()));
+
+          const comStatus: ProdutoComStatus[] = parsedProdutos.map(p => ({
+            ...p,
+            existente: existentesSet.has(p.cod.trim()),
+          }));
+
+          setProdutos(comStatus);
+        } finally {
+          setLoadingStatus(false);
         }
       } catch (error) {
         console.error('Erro ao processar arquivo:', error);
@@ -140,23 +155,29 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setProdutos([]);
       processFile(file);
     }
   };
 
   const handleImport = async () => {
-    if (produtos.length === 0) return;
+    if (novos.length === 0) return;
 
-    const result = await importProdutos(produtos);
+    const result = await importProdutosNovos(novos);
 
     if (result.success) {
-      toast.success(`${result.total} produtos importados/atualizados com sucesso!`);
+      if (result.inseridos === 0) {
+        toast.info('Nenhum produto novo para inserir — todos já existiam na base.');
+      } else {
+        const msg = result.ignorados && result.ignorados > 0
+          ? `${result.inseridos} novo(s) produto(s) inserido(s). ${result.ignorados} já existiam e foram ignorados.`
+          : `${result.inseridos} produto(s) inserido(s) com sucesso!`;
+        toast.success(msg);
+      }
       setProdutos([]);
       setFileName('');
       setErrors([]);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
       onImportComplete?.();
     } else {
       toast.error(`Erro ao importar: ${result.error}`);
@@ -167,9 +188,7 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
     setProdutos([]);
     setFileName('');
     setErrors([]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -202,6 +221,7 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
       <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
         <p className="font-medium mb-1">Formato esperado da planilha:</p>
         <p>Colunas: <strong>Código</strong> (ou cod, codigo) | <strong>Produto</strong> (ou nome, descrição)</p>
+        <p className="mt-1">Separadores suportados: vírgula (,) e ponto e vírgula (;)</p>
       </div>
 
       {errors.length > 0 && (
@@ -221,8 +241,28 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
         </div>
       )}
 
-      {produtos.length > 0 && (
+      {loadingStatus && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 size={14} className="animate-spin" />
+          Verificando códigos existentes...
+        </div>
+      )}
+
+      {produtos.length > 0 && !loadingStatus && (
         <>
+          {/* Resumo */}
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-muted-foreground">Total no arquivo: <strong>{produtos.length}</strong></span>
+            <Badge variant="default" className="bg-primary/90">
+              {novos.length} novo{novos.length !== 1 ? 's' : ''}
+            </Badge>
+            {existentes.length > 0 && (
+              <Badge variant="secondary">
+                {existentes.length} já existente{existentes.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+
           <div className="border rounded-lg overflow-hidden">
             <div className="bg-muted/50 px-4 py-2 border-b">
               <span className="text-sm font-medium">
@@ -235,35 +275,45 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
                   <TableRow>
                     <TableHead className="w-32">Código</TableHead>
                     <TableHead>Produto</TableHead>
+                    <TableHead className="w-28 text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {produtos.slice(0, 20).map((produto, index) => (
-                    <TableRow key={index}>
+                  {produtos.map((produto, index) => (
+                    <TableRow key={index} className={produto.existente ? 'opacity-50' : ''}>
                       <TableCell className="font-mono text-sm">{produto.cod}</TableCell>
                       <TableCell>{produto.produto}</TableCell>
-                    </TableRow>
-                  ))}
-                  {produtos.length > 20 && (
-                    <TableRow>
-                      <TableCell colSpan={2} className="text-center text-muted-foreground text-sm">
-                        ... e mais {produtos.length - 20} produtos
+                      <TableCell className="text-center">
+                        {produto.existente ? (
+                          <Badge variant="secondary" className="text-xs">Existente</Badge>
+                        ) : (
+                          <Badge variant="default" className="text-xs bg-primary/90">Novo</Badge>
+                        )}
                       </TableCell>
                     </TableRow>
-                  )}
+                  ))}
                 </TableBody>
               </Table>
             </div>
           </div>
 
           <div className="flex gap-2">
-            <Button onClick={handleImport} disabled={isImporting} className="gap-2">
+            <Button
+              onClick={handleImport}
+              disabled={isImporting || novos.length === 0}
+              className="gap-2"
+            >
               {isImporting ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
                 <Check size={16} />
               )}
-              {isImporting ? 'Importando...' : `Importar ${produtos.length} produtos`}
+              {isImporting
+                ? 'Importando...'
+                : novos.length === 0
+                  ? 'Nenhum produto novo'
+                  : `Importar ${novos.length} produto${novos.length !== 1 ? 's' : ''} novo${novos.length !== 1 ? 's' : ''}`
+              }
             </Button>
             <Button variant="outline" onClick={handleClear} disabled={isImporting} className="gap-2">
               <X size={16} />
