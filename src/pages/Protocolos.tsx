@@ -234,7 +234,7 @@ export default function Protocolos() {
     texto
   });
 
-  const handleToggleLancado = (id: string) => {
+  const handleToggleLancado = async (id: string) => {
     if (!canLaunch) {
       toast.error('Apenas Distribuição ou Admin pode lançar protocolos!');
       return;
@@ -252,17 +252,22 @@ export default function Protocolos() {
         newLancado ? 'Marcou como lançado' : 'Removeu lançamento',
         newLancado ? 'Protocolo marcado como lançado' : 'Lançamento removido do protocolo'
       );
-      updateProtocolo({ 
-        ...protocolo, 
-        lancado: newLancado, 
-        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
-        observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
-      });
+      try {
+        await updateProtocolo({ 
+          ...protocolo, 
+          lancado: newLancado, 
+          status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
+          observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
+        });
+        toast.success('Status de lançamento atualizado!');
+      } catch (error) {
+        console.error('Erro ao atualizar lançamento:', error);
+        toast.error('Erro ao atualizar lançamento. Tente novamente.');
+      }
     }
-    toast.success('Status de lançamento atualizado!');
   };
 
-  const handleToggleValidacao = (id: string) => {
+  const handleToggleValidacao = async (id: string) => {
     if (!canValidate) {
       toast.error('Apenas Conferente ou Admin pode validar protocolos!');
       return;
@@ -275,14 +280,19 @@ export default function Protocolos() {
         newValidacao ? 'Confirmou validação' : 'Removeu validação',
         newValidacao ? 'Protocolo validado' : 'Validação removida do protocolo'
       );
-      updateProtocolo({ 
-        ...protocolo, 
-        validacao: newValidacao, 
-        status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
-        observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
-      });
+      try {
+        await updateProtocolo({ 
+          ...protocolo, 
+          validacao: newValidacao, 
+          status: protocolo.status === 'encerrado' ? protocolo.status : newStatus,
+          observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
+        });
+        toast.success('Validação atualizada!');
+      } catch (error) {
+        console.error('Erro ao atualizar validação:', error);
+        toast.error('Erro ao atualizar validação. Tente novamente.');
+      }
     }
-    toast.success('Validação atualizada!');
   };
 
   const handleOcultar = (id: string) => {
