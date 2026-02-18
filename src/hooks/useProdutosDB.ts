@@ -9,6 +9,8 @@ export interface ProdutoImport {
 export interface ImportResult {
   success: boolean;
   total: number;
+  inseridos?: number;
+  ignorados?: number;
   error?: string;
 }
 
@@ -46,6 +48,51 @@ export function useProdutosDB() {
     }
   };
 
+  const importProdutosNovos = async (produtos: ProdutoImport[]): Promise<ImportResult> => {
+    setIsImporting(true);
+    try {
+      // Busca todos os códigos existentes
+      const { data: existentesData, error: fetchError } = await supabase
+        .from('produtos')
+        .select('cod');
+
+      if (fetchError) throw fetchError;
+
+      const existentes = new Set((existentesData || []).map(p => p.cod.trim()));
+      const novos = produtos.filter(p => !existentes.has(p.cod.trim()));
+      const ignorados = produtos.length - novos.length;
+
+      if (novos.length === 0) {
+        return { success: true, total: produtos.length, inseridos: 0, ignorados };
+      }
+
+      const novosComEmbalagem = novos.map(p => ({
+        cod: p.cod.trim(),
+        produto: p.produto.trim(),
+        embalagem: 'UN',
+      }));
+
+      const { error } = await supabase
+        .from('produtos')
+        .insert(novosComEmbalagem);
+
+      if (error) throw error;
+
+      return { success: true, total: produtos.length, inseridos: novos.length, ignorados };
+    } catch (error) {
+      console.error('Erro ao importar produtos novos:', error);
+      return {
+        success: false,
+        total: 0,
+        inseridos: 0,
+        ignorados: 0,
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      };
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const getTotalProdutos = async (): Promise<number> => {
     const { count, error } = await supabase
       .from('produtos')
@@ -58,5 +105,5 @@ export function useProdutosDB() {
     return count || 0;
   };
 
-  return { importProdutos, getTotalProdutos, isImporting };
+  return { importProdutos, importProdutosNovos, getTotalProdutos, isImporting };
 }
