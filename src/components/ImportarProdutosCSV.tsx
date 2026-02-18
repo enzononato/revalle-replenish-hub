@@ -279,7 +279,7 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {produtos.slice(0, 20).map((produto, index) => (
+                  {produtos.map((produto, index) => (
                     <TableRow key={index} className={produto.existente ? 'opacity-50' : ''}>
                       <TableCell className="font-mono text-sm">{produto.cod}</TableCell>
                       <TableCell>{produto.produto}</TableCell>
@@ -292,13 +292,6 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
                       </TableCell>
                     </TableRow>
                   ))}
-                  {produtos.length > 20 && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground text-sm">
-                        ... e mais {produtos.length - 20} produtos
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
             </div>
