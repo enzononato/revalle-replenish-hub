@@ -19,6 +19,62 @@ export interface ImportResult {
 export function usePdvsDB() {
   const [isImporting, setIsImporting] = useState(false);
 
+  const importPdvsNovos = async (pdvs: PdvImport[], unidade: string): Promise<ImportResult & { inseridos?: number; ignorados?: number }> => {
+    setIsImporting(true);
+    try {
+      const unidadeUpper = unidade.toUpperCase();
+
+      // Buscar códigos já existentes para essa unidade
+      const { data: existentesData, error: fetchError } = await supabase
+        .from('pdvs')
+        .select('codigo')
+        .eq('unidade', unidadeUpper);
+
+      if (fetchError) throw fetchError;
+
+      const existentes = new Set((existentesData || []).map(p => String(p.codigo).trim()));
+      const novos = pdvs.filter(p => !existentes.has(String(p.codigo || '').replace(/\./g, '').trim()));
+      const ignorados = pdvs.length - novos.length;
+
+      if (novos.length === 0) {
+        return { success: true, total: pdvs.length, inseridos: 0, ignorados };
+      }
+
+      const pdvsFormatados = novos.map(p => ({
+        codigo: String(p.codigo || '').replace(/\./g, '').trim(),
+        nome: String(p.nome || '').trim() || 'SEM NOME',
+        bairro: p.bairro?.trim() || null,
+        cnpj: p.cnpj?.replace(/[^\d]/g, '').trim() || null,
+        endereco: p.endereco?.trim() || null,
+        cidade: p.cidade?.trim() || null,
+        unidade: unidadeUpper,
+      }));
+
+      const batchSize = 100;
+      let inserted = 0;
+
+      for (let i = 0; i < pdvsFormatados.length; i += batchSize) {
+        const batch = pdvsFormatados.slice(i, i + batchSize);
+        const { error } = await supabase.from('pdvs').insert(batch);
+        if (error) throw new Error(`Erro ao inserir lote ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+        inserted += batch.length;
+      }
+
+      return { success: true, total: pdvs.length, inseridos: inserted, ignorados };
+    } catch (error) {
+      console.error('Erro ao importar PDVs novos:', error);
+      return {
+        success: false,
+        total: 0,
+        inseridos: 0,
+        ignorados: 0,
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      };
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const importPdvs = async (pdvs: PdvImport[], unidade: string): Promise<ImportResult> => {
     setIsImporting(true);
     try {
@@ -121,5 +177,5 @@ export function usePdvsDB() {
     return contagem;
   };
 
-  return { importPdvs, getTotalPdvs, getTotalPdvsPorUnidade, isImporting };
+  return { importPdvs, importPdvsNovos, getTotalPdvs, getTotalPdvsPorUnidade, isImporting };
 }
