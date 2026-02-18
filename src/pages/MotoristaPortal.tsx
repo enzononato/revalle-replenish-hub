@@ -903,47 +903,68 @@ export default function MotoristaPortal() {
     const numeroLimpo = whatsappContatoCriado.replace(/\D/g, '');
     const telefone = numeroLimpo.startsWith('55') ? numeroLimpo : `55${numeroLimpo}`;
 
+    // Emojis via Unicode escape para evitar corrupção de encoding
+    const e = {
+      novo:      '\u{1F195}', // 🆕
+      id:        '\u{1F194}', // 🆔
+      tipo:      '\u{1F3F7}\uFE0F', // 🏷️
+      aviso:     '\u26A0\uFE0F', // ⚠️
+      data:      '\u{1F4C6}', // 📆
+      mapa:      '\u{1F4CB}', // 📋
+      pin:       '\u{1F4CC}', // 📌
+      caixa:     '\u{1F4E6}', // 📦
+      pessoa:    '\u{1F464}', // 👤
+      fabrica:   '\u{1F3ED}', // 🏭
+      tel:       '\u{1F4DE}', // 📞
+      email:     '\u{1F4E7}', // 📧
+      foto:      '\u{1F4F8}', // 📸
+      ferramenta:'\u{1F6E0}\uFE0F', // 🛠️
+      nota:      '\u{1F4DD}', // 📝
+      cal:       '\u{1F4C5}', // 📅
+      ponto:     '\u25AA\uFE0F', // ▪️
+    };
+
     const mensagem = [
-      `🆕 *NOVO PROTOCOLO ABERTO*`,
+      `${e.novo} *NOVO PROTOCOLO ABERTO*`,
       ``,
-      `🆔 *Protocolo:* ${numeroProtocolo}`,
+      `${e.id} *Protocolo:* ${numeroProtocolo}`,
       ``,
-      `🏷️ *Tipo:* ${tipoReposicaoCriado}`,
+      `${e.tipo} *Tipo:* ${tipoReposicaoCriado}`,
       ``,
-      `⚠️ *Causa:* ${causaCriada}`,
+      `${e.aviso} *Causa:* ${causaCriada}`,
       ``,
-      `📆 *Data:* ${dataProtocoloCriado} às ${horaProtocoloCriado}`,
+      `${e.data} *Data:* ${dataProtocoloCriado} \u00E0s ${horaProtocoloCriado}`,
       ``,
-      `📋 *MAPA:* ${mapaCriado}`,
+      `${e.mapa} *MAPA:* ${mapaCriado}`,
       ``,
-      `📌 *Cód. PDV:* ${codigoPdvCriado}`,
+      `${e.pin} *C\u00F3d. PDV:* ${codigoPdvCriado}`,
       ``,
-      `📦 *NF:* ${notaFiscalCriada}`,
+      `${e.caixa} *NF:* ${notaFiscalCriada}`,
       ``,
-      `👤 *Motorista:* ${motorista.nome}`,
+      `${e.pessoa} *Motorista:* ${motorista.nome}`,
       ``,
-      `🏭 *Unidade:* ${motorista.unidade || ''}`,
+      `${e.fabrica} *Unidade:* ${motorista.unidade || ''}`,
       ``,
-      `📞 ${whatsappContatoCriado}${emailContatoCriado ? '\n📧 ' + emailContatoCriado : ''}`,
+      `${e.tel} ${whatsappContatoCriado}${emailContatoCriado ? '\n' + e.email + ' ' + emailContatoCriado : ''}`,
       ``,
-      `📦 *ITENS SOLICITADOS:*`,
+      `${e.caixa} *ITENS SOLICITADOS:*`,
       ``,
       produtosProtocoloCriado.map(p =>
-        `▪️ *${p.nome}*\n   Cód: ${p.codigo} | Qtd: ${p.quantidade} ${p.unidade}${p.validade ? '\n   📅 Validade: ' + p.validade : ''}`
+        `${e.ponto} *${p.nome}*\n   C\u00F3d: ${p.codigo} | Qtd: ${p.quantidade} ${p.unidade}${p.validade ? '\n   ' + e.cal + ' Validade: ' + p.validade : ''}`
       ).join('\n\n'),
       ``,
-      `📝 *Obs:* ${observacaoCriada || 'Nenhuma'}`,
+      `${e.nota} *Obs:* ${observacaoCriada || 'Nenhuma'}`,
       ``,
-      `📸 *Foto Motorista:*`,
+      `${e.foto} *Foto Motorista:*`,
       ``,
       fotosProtocoloCriado?.fotoMotoristaPdv || '',
       ``,
-      `📦 *Foto Lote:*`,
+      `${e.caixa} *Foto Lote:*`,
       ``,
       fotosProtocoloCriado?.fotoLoteProduto || '',
-      ...(fotosProtocoloCriado?.fotoAvaria ? [``, `🛠️ *Foto Avaria:*`, ``, fotosProtocoloCriado.fotoAvaria] : []),
+      ...(fotosProtocoloCriado?.fotoAvaria ? [``, `${e.ferramenta} *Foto Avaria:*`, ``, fotosProtocoloCriado.fotoAvaria] : []),
       ``,
-      `_- Reposição Revalle_`
+      `_- Reposi\u00E7\u00E3o Revalle_`
     ].join('\n');
 
     return `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
