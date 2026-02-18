@@ -68,7 +68,7 @@ const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
 export default function Protocolos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, user } = useAuth();
+  const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, isControle, user } = useAuth();
   const { unidades } = useUnidadesDB();
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo, isLoading } = useProtocolos();
   
@@ -867,10 +867,11 @@ export default function Protocolos() {
         onUpdateProtocolo={handleUpdateProtocolo}
         user={user}
         canValidate={canValidate}
-        canEditMotorista={isAdmin || isDistribuicao}
+        canEditMotorista={isAdmin || isDistribuicao || isControle}
         isConferente={isConferente}
         isAdmin={isAdmin}
         isDistribuicao={isDistribuicao}
+        isControle={isControle}
       />
 
       {/* Create Protocol Modal */}

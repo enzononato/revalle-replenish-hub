@@ -60,6 +60,7 @@ interface ProtocoloDetailsProps {
   isConferente?: boolean;
   isAdmin?: boolean;
   isDistribuicao?: boolean;
+  isControle?: boolean;
 }
 
 export function ProtocoloDetails({ 
@@ -75,7 +76,8 @@ export function ProtocoloDetails({
   canEditMotorista,
   isConferente = false,
   isAdmin = false,
-  isDistribuicao = false
+  isDistribuicao = false,
+  isControle = false
 }: ProtocoloDetailsProps) {
   const [habilitarReenvio, setHabilitarReenvio] = useState(protocolo?.habilitarReenvio || false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -1300,7 +1302,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
               </h3>
               
               {protocolo.status !== 'encerrado' ? (
-                (isAdmin || isDistribuicao) && user && onUpdateProtocolo ? (
+                (isAdmin || isDistribuicao || isControle) && user && onUpdateProtocolo ? (
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Mensagem para o usuário</label>
@@ -1393,8 +1395,8 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                     </p>
                   )}
                   
-                  {/* Botão de Reabertura - apenas Admin e Distribuição */}
-                  {(isAdmin || isDistribuicao) && (
+                  {/* Botão de Reabertura - apenas Admin, Distribuição e Controle */}
+                  {(isAdmin || isDistribuicao || isControle) && (
                     <Button 
                       variant="outline"
                       onClick={() => setShowReabrirModal(true)}
