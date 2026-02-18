@@ -903,66 +903,45 @@ export default function MotoristaPortal() {
     const numeroLimpo = whatsappContatoCriado.replace(/\D/g, '');
     const telefone = numeroLimpo.startsWith('55') ? numeroLimpo : `55${numeroLimpo}`;
 
-    // Apenas emojis BMP (Basic Multilingual Plane, U+0000–U+FFFF) para máxima compatibilidade
-    const e = {
-      novo:       '\u2705',        // ✅
-      id:         '\u2139',        // ℹ
-      tipo:       '\u25B6\uFE0F',  // ▶️
-      aviso:      '\u26A0\uFE0F',  // ⚠️
-      data:       '\u25C6',        // ◆
-      mapa:       '\u25BA',        // ►
-      pin:        '\u25C6',        // ◆
-      caixa:      '\u25A0',        // ■
-      pessoa:     '\u25BA',        // ►
-      fabrica:    '\u25BA',        // ►
-      tel:        '\u260E',        // ☎
-      email:      '\u2709',        // ✉
-      foto:       '\u270E',        // ✎
-      ferramenta: '\u2699\uFE0F',  // ⚙️
-      nota:       '\u270F',        // ✏
-      cal:        '\u25C6',        // ◆
-      ponto:      '\u25AA\uFE0F',  // ▪️
-    };
-
     const mensagem = [
-      `${e.novo} *NOVO PROTOCOLO ABERTO*`,
+      `*NOVO PROTOCOLO ABERTO*`,
       ``,
-      `${e.id} *Protocolo:* ${numeroProtocolo}`,
+      `*Protocolo:* ${numeroProtocolo}`,
       ``,
-      `${e.tipo} *Tipo:* ${tipoReposicaoCriado}`,
+      `*Tipo:* ${tipoReposicaoCriado}`,
       ``,
-      `${e.aviso} *Causa:* ${causaCriada}`,
+      `*Causa:* ${causaCriada}`,
       ``,
-      `${e.data} *Data:* ${dataProtocoloCriado} \u00E0s ${horaProtocoloCriado}`,
+      `*Data:* ${dataProtocoloCriado} \u00E0s ${horaProtocoloCriado}`,
       ``,
-      `${e.mapa} *MAPA:* ${mapaCriado}`,
+      `*MAPA:* ${mapaCriado}`,
       ``,
-      `${e.pin} *C\u00F3d. PDV:* ${codigoPdvCriado}`,
+      `*C\u00F3d. PDV:* ${codigoPdvCriado}`,
       ``,
-      `${e.caixa} *NF:* ${notaFiscalCriada}`,
+      `*NF:* ${notaFiscalCriada}`,
       ``,
-      `${e.pessoa} *Motorista:* ${motorista.nome}`,
+      `*Motorista:* ${motorista.nome}`,
       ``,
-      `${e.fabrica} *Unidade:* ${motorista.unidade || ''}`,
+      `*Unidade:* ${motorista.unidade || ''}`,
       ``,
-      `${e.tel} ${whatsappContatoCriado}${emailContatoCriado ? '\n' + e.email + ' ' + emailContatoCriado : ''}`,
+      `${whatsappContatoCriado}${emailContatoCriado ? '\n' + emailContatoCriado : ''}`,
       ``,
-      `${e.caixa} *ITENS SOLICITADOS:*`,
+      `*ITENS SOLICITADOS:*`,
       ``,
       produtosProtocoloCriado.map(p =>
-        `${e.ponto} *${p.nome}*\n   C\u00F3d: ${p.codigo} | Qtd: ${p.quantidade} ${p.unidade}${p.validade ? '\n   ' + e.cal + ' Validade: ' + p.validade : ''}`
+        `- *${p.nome}*\n   C\u00F3d: ${p.codigo} | Qtd: ${p.quantidade} ${p.unidade}${p.validade ? '\n   Validade: ' + p.validade : ''}`
       ).join('\n\n'),
       ``,
-      `${e.nota} *Obs:* ${observacaoCriada || 'Nenhuma'}`,
+      `*Obs:* ${observacaoCriada || 'Nenhuma'}`,
       ``,
-      `${e.foto} *Foto Motorista:*`,
+      `*Foto Motorista:*`,
       ``,
       fotosProtocoloCriado?.fotoMotoristaPdv || '',
       ``,
-      `${e.caixa} *Foto Lote:*`,
+      `*Foto Lote:*`,
       ``,
       fotosProtocoloCriado?.fotoLoteProduto || '',
-      ...(fotosProtocoloCriado?.fotoAvaria ? [``, `${e.ferramenta} *Foto Avaria:*`, ``, fotosProtocoloCriado.fotoAvaria] : []),
+      ...(fotosProtocoloCriado?.fotoAvaria ? [``, `*Foto Avaria:*`, ``, fotosProtocoloCriado.fotoAvaria] : []),
       ``,
       `_- Reposi\u00E7\u00E3o Revalle_`
     ].join('\n');
