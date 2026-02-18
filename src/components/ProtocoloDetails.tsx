@@ -461,7 +461,7 @@ export function ProtocoloDetails({
     onClose();
   };
 
-  const handleConfirmarValidacao = () => {
+  const handleConfirmarValidacao = async () => {
     if (!onUpdateProtocolo) return;
     
     const protocoloAtualizado: Protocolo = {
@@ -481,8 +481,13 @@ export function ProtocoloDetails({
       ]
     };
     
-    onUpdateProtocolo(protocoloAtualizado);
-    toast.success(protocolo.validacao ? 'Validação removida!' : 'Protocolo validado!');
+    try {
+      await onUpdateProtocolo(protocoloAtualizado);
+      toast.success(protocolo.validacao ? 'Validação removida!' : 'Protocolo validado!');
+    } catch (error) {
+      console.error('Erro ao atualizar validação:', error);
+      toast.error('Erro ao atualizar validação. Tente novamente.');
+    }
   };
 
   const handleReenviarWhatsapp = async (tipo: 'lancar' | 'encerrar') => {
