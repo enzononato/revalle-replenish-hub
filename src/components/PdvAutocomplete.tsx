@@ -73,8 +73,9 @@ export function PdvAutocomplete({
 
   const handleBlur = () => {
     setTimeout(() => {
+      setIsOpen(false);
       onBlur?.();
-    }, 200);
+    }, 300);
   };
 
   return (
@@ -87,7 +88,7 @@ export function PdvAutocomplete({
           ref={inputRef}
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => inputValue.length > 0 && setIsOpen(true)}
           onBlur={handleBlur}
           placeholder={placeholder}
           className={cn('pl-9 pr-10', className)}
@@ -136,7 +137,7 @@ export function PdvAutocomplete({
         </div>
       )}
 
-      {isOpen && inputValue.length >= 2 && pdvs.length === 0 && !isLoading && (
+      {isOpen && (inputValue.length >= 2 || (inputValue.length === 1 && !isNaN(Number(inputValue)))) && pdvs.length === 0 && !isLoading && (
         <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg p-3 text-center text-sm text-muted-foreground">
           Nenhum PDV encontrado para "{inputValue}"
         </div>

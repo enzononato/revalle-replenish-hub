@@ -24,7 +24,7 @@ export function useProdutosBusca(termo: string) {
           .from('produtos')
           .select('cod, produto, embalagem')
           .or(`cod.ilike.%${termo}%,produto.ilike.%${termo}%`)
-          .limit(10);
+          .limit(30);
 
         if (error) throw error;
         setProdutos(data || []);
