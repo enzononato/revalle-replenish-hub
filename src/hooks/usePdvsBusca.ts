@@ -53,7 +53,7 @@ export function usePdvsBusca(termo: string, unidade: string) {
           .from('pdvs')
           .select('codigo, nome, bairro, cidade, endereco')
           .eq('unidade', unidadeCodigo)
-          .or(`codigo.ilike.%${termo}%,nome.ilike.%${termo}%`)
+          .or(`codigo.eq.${termo},codigo.ilike.%${termo}%,nome.ilike.%${termo}%`)
           .limit(20);
 
         if (error) throw error;
