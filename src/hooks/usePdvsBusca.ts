@@ -49,16 +49,32 @@ export function usePdvsBusca(termo: string, unidade: string) {
 
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('pdvs')
-          .select('codigo, nome, bairro, cidade, endereco')
-          .eq('unidade', unidadeCodigo)
-          .or(`codigo.eq.${termo},codigo.ilike.%${termo}%,nome.ilike.%${termo}%`)
-          .limit(20);
+        // Dois queries em paralelo: match exato + match parcial (sem o exato)
+        const [exactResult, partialResult] = await Promise.all([
+          supabase
+            .from('pdvs')
+            .select('codigo, nome, bairro, cidade, endereco')
+            .eq('unidade', unidadeCodigo)
+            .eq('codigo', termo)
+            .limit(1),
+          supabase
+            .from('pdvs')
+            .select('codigo, nome, bairro, cidade, endereco')
+            .eq('unidade', unidadeCodigo)
+            .or(`codigo.ilike.%${termo}%,nome.ilike.%${termo}%`)
+            .neq('codigo', termo)
+            .limit(19),
+        ]);
 
-        if (error) throw error;
+        if (exactResult.error) throw exactResult.error;
+        if (partialResult.error) throw partialResult.error;
 
-        const sorted = (data || []).sort((a, b) => {
+        const combined = [
+          ...(exactResult.data || []),
+          ...(partialResult.data || []),
+        ];
+
+        const sorted = combined.sort((a, b) => {
           const numA = parseInt(a.codigo, 10);
           const numB = parseInt(b.codigo, 10);
           if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
