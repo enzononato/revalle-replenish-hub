@@ -420,26 +420,39 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                 )}
 
                 {/* Botões de ação - WhatsApp e Copiar mensagem */}
-                {(protocolo.status === 'aberto' || protocolo.status === 'em_andamento') && protocolo.cliente_telefone && (
+                {(protocolo.status === 'aberto' || protocolo.status === 'em_andamento') && (
                   <div className="pt-2 mt-2 border-t border-border space-y-2">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="w-full"
-                      style={{ backgroundColor: '#22c55e', color: '#fff' }}
-                      onClick={(e) => e.stopPropagation()}
-                      asChild
-                    >
-                      <a
-                        href={buildWhatsAppLinkProtocolo(protocolo, { nome: motorista.nome, unidade: motorista.unidade })}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2"
+                    {protocolo.cliente_telefone ? (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="w-full"
+                        style={{ backgroundColor: '#22c55e', color: '#fff' }}
+                        onClick={(e) => e.stopPropagation()}
+                        asChild
                       >
-                        <MessageCircle className="w-4 h-4" />
-                        Enviar no WhatsApp do Cliente
-                      </a>
-                    </Button>
+                        <a
+                          href={buildWhatsAppLinkProtocolo(protocolo, { nome: motorista.nome, unidade: motorista.unidade })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Enviar no WhatsApp do Cliente
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        disabled
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Sem telefone do cliente
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -451,7 +464,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                     >
                       {copiadoId === protocolo.id ? (
                         <>
-                          <Check className="w-4 h-4 mr-2 text-green-600" />
+                          <Check className="w-4 h-4 mr-2" />
                           Mensagem copiada!
                         </>
                       ) : (
