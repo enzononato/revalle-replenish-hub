@@ -1,55 +1,58 @@
 
-## Add WhatsApp Closure Message Button to Closed Protocols
+## Melhorar Busca de PDVs e Produtos no Portal do Motorista
 
-### What's changing
+### Problemas identificados
 
-In `src/components/motorista/MeusProtocolos.tsx`, I'll add the same WhatsApp + Copy buttons pattern used for open/in-progress protocols — but now for **closed** (`encerrado`) protocols, using a closure message template.
-
-### The closure message template (no emojis)
-
+**1. PDVs com código de 1 dígito não aparecem**
+O hook `usePdvsBusca` tem esta condição:
+```typescript
+if (termo.length < 2 || !unidade) {
+  setPdvs([]);
+  return;
+}
 ```
-*PROTOCOLO ENCERRADO*
+Quando o motorista digita `5` ou `9` (códigos de 1 dígito, confirmados no banco), a busca é bloqueada antes mesmo de consultar o banco. A solução é tratar o caso especialmente: se o termo tiver apenas 1 caractere **e for numérico**, a busca deve acontecer normalmente buscando pelo código exato.
 
-*Protocolo:* {numero}
-*Status:* Encerrado com sucesso
-*Data:* {data} as {hora}
-*Tipo:* {tipo_reposicao}
-*Causa:* {causa}
-*MAPA:* {mapa}
-*Cod. PDV:* {codigo_pdv}
-*Assinatura do canhoto:* {foto_nota_fiscal_encerramento}
-*Motorista:* {motorista_nome}
-*Unidade:* {motorista_unidade}
-{contato_whatsapp}
-{contato_email}
+**2. PDVs não ordenados por código**
+A query não tem `.order()`, então os resultados vêm em ordem arbitrária. A ordenação pelo código deve ser numérica (1, 2, 5, 9, 11...) e não alfabética (1, 10, 11, 2, 5...). Isso é resolvido com `.order('codigo', { ascending: true })` — como o campo é texto, será ordenado como texto, então faremos ordenação no lado do cliente convertendo para número.
 
-*ITENS CONFERIDOS:*
+**3. Poucos produtos no resultado**
+O limite atual é `10` para produtos. Aumentar para `30` para o motorista ter mais opções visíveis no autocomplete.
 
-- *{nome}*
-   Cod: {codigo} | Qtd: {quantidade} {unidade}
-   Validade: {validade}
+---
 
-*Mensagem Final:* {mensagem_encerramento}
+### Mudanças técnicas
 
-_- Reposicao Revalle_
-```
+**Arquivo: `src/hooks/usePdvsBusca.ts`**
 
-### Technical changes
+1. Alterar a condição de guarda:
+   - Antes: `if (termo.length < 2 || !unidade)`
+   - Depois: `if ((termo.length < 1) || (termo.length < 2 && isNaN(Number(termo))) || !unidade)`
+   - Ou seja: termos numéricos de 1 dígito passam; termos de texto ainda exigem mínimo 2 caracteres.
 
-**File: `src/components/motorista/MeusProtocolos.tsx`**
+2. Adicionar ordenação no lado do cliente após receber os dados:
+   ```typescript
+   const sorted = (data || []).sort((a, b) => {
+     const numA = parseInt(a.codigo, 10);
+     const numB = parseInt(b.codigo, 10);
+     if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+     return a.codigo.localeCompare(b.codigo);
+   });
+   setPdvs(sorted);
+   ```
 
-1. **Expand the `ProtocoloSimples` interface** to include two fields that are already in the database but not yet selected:
-   - `mensagem_encerramento: string | null`
-   - `foto_nota_fiscal_encerramento: string | null`
+3. Aumentar o limite de `10` para `20` para PDVs.
 
-2. **Update the Supabase query** in `fetchProtocolos` to also select `mensagem_encerramento` and `foto_nota_fiscal_encerramento`.
+**Arquivo: `src/hooks/useProdutosBusca.ts`**
 
-3. **Add a new function** `buildMensagemEncerramento(protocolo, motoristaInfo)` that formats the closure message using the template above (plain text, no emojis, WhatsApp bold `*field*`).
+1. Aumentar o limite de `10` para `30` para produtos.
 
-4. **Add a new function** `buildWhatsAppLinkEncerramento(protocolo, motoristaInfo)` that uses `getTelefoneCliente` (which already checks both `cliente_telefone` and `contato_whatsapp`) to build the `wa.me` URL.
+---
 
-5. **Add a second `copiadoIdEncerramento` state** (or reuse `copiadoId` with a suffix) to independently track clipboard feedback for closure cards without interfering with the open-protocol copy button.
+### Resumo do impacto
 
-6. **Add the buttons block** inside `renderContent`, below the products list, gated by `protocolo.status === 'encerrado'` — mirroring the existing block for `aberto`/`em_andamento` (lines 427–481):
-   - Green WhatsApp button (enabled if phone exists, disabled if not)
-   - "Copiar mensagem" button with Check/Copy icon feedback
+| Problema | Causa | Solução |
+|---|---|---|
+| Código PDV de 1 dígito não aparece | Mínimo de 2 caracteres bloqueava a busca | Permitir 1 caractere se for numérico |
+| PDVs sem ordem | Nenhum `.order()` na query | Ordenação numérica no cliente |
+| Poucos produtos | Limite de 10 | Aumentar para 30 |
