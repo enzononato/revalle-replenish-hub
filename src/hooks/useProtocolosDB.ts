@@ -170,13 +170,32 @@ export function useProtocolosDB() {
   const { data: protocolos = [], isLoading, error } = useQuery({
     queryKey: ['protocolos'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('protocolos')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Buscar todos os protocolos em páginas de 1000 para contornar o limite do PostgREST
+      const PAGE_SIZE = 1000;
+      let allData: ProtocoloDB[] = [];
+      let from = 0;
+      let hasMore = true;
 
-      if (error) throw error;
-      return (data as unknown as ProtocoloDB[]).map(dbToProtocolo);
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('protocolos')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) throw error;
+        
+        const rows = (data || []) as unknown as ProtocoloDB[];
+        allData = [...allData, ...rows];
+        
+        if (rows.length < PAGE_SIZE) {
+          hasMore = false;
+        } else {
+          from += PAGE_SIZE;
+        }
+      }
+
+      return allData.map(dbToProtocolo);
     }
   });
 
