@@ -42,7 +42,7 @@ export function ProtocolosProvider({ children }: { children: ReactNode }) {
 
 export function useProtocolos() {
   const context = useContext(ProtocolosContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useProtocolos must be used within a ProtocolosProvider');
   }
   return context;

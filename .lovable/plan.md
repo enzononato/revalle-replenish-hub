@@ -1,58 +1,65 @@
 
-## Melhorar Busca de PDVs e Produtos no Portal do Motorista
 
-### Problemas identificados
+## Filtro Multi-Unidade no Dashboard e Protocolos
 
-**1. PDVs com código de 1 dígito não aparecem**
-O hook `usePdvsBusca` tem esta condição:
-```typescript
-if (termo.length < 2 || !unidade) {
-  setPdvs([]);
-  return;
-}
-```
-Quando o motorista digita `5` ou `9` (códigos de 1 dígito, confirmados no banco), a busca é bloqueada antes mesmo de consultar o banco. A solução é tratar o caso especialmente: se o termo tiver apenas 1 caractere **e for numérico**, a busca deve acontecer normalmente buscando pelo código exato.
+### O que muda
 
-**2. PDVs não ordenados por código**
-A query não tem `.order()`, então os resultados vêm em ordem arbitrária. A ordenação pelo código deve ser numérica (1, 2, 5, 9, 11...) e não alfabética (1, 10, 11, 2, 5...). Isso é resolvido com `.order('codigo', { ascending: true })` — como o campo é texto, será ordenado como texto, então faremos ordenação no lado do cliente convertendo para número.
+Atualmente, o filtro de unidade permite selecionar apenas **uma unidade por vez** (usando um Select simples). A mudanca substitui esse Select por um componente de **multi-selecao com checkboxes**, permitindo marcar varias unidades simultaneamente. Isso vale para:
 
-**3. Poucos produtos no resultado**
-O limite atual é `10` para produtos. Aumentar para `30` para o motorista ter mais opções visíveis no autocomplete.
+1. **Dashboard** (admin): trocar o Select de unidade por um dropdown com checkboxes
+2. **Protocolos** (admin): mesma troca
+3. **Usuarios com multiplas unidades** (nao-admin): ao inves de mostrar dados de todas as unidades automaticamente, permitir que filtrem/desmarquem unidades especificas dentro das que tem acesso
 
 ---
 
-### Mudanças técnicas
+### Como vai funcionar
 
-**Arquivo: `src/hooks/usePdvsBusca.ts`**
+- Um botao dropdown mostra "Todas as Unidades" ou os nomes das selecionadas (ex: "Juazeiro, Bonfim")
+- Ao clicar, abre um popover com checkboxes para cada unidade
+- Opcao "Selecionar Todas" / "Limpar" no topo
+- Para nao-admins com multiplas unidades, as opcoes sao apenas as unidades atribuidas ao usuario
+- A filtragem dos protocolos usa um array de unidades selecionadas ao inves de uma string unica
 
-1. Alterar a condição de guarda:
-   - Antes: `if (termo.length < 2 || !unidade)`
-   - Depois: `if ((termo.length < 1) || (termo.length < 2 && isNaN(Number(termo))) || !unidade)`
-   - Ou seja: termos numéricos de 1 dígito passam; termos de texto ainda exigem mínimo 2 caracteres.
+---
 
-2. Adicionar ordenação no lado do cliente após receber os dados:
-   ```typescript
-   const sorted = (data || []).sort((a, b) => {
-     const numA = parseInt(a.codigo, 10);
-     const numB = parseInt(b.codigo, 10);
-     if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-     return a.codigo.localeCompare(b.codigo);
-   });
-   setPdvs(sorted);
-   ```
+### Detalhes tecnicos
 
-3. Aumentar o limite de `10` para `20` para PDVs.
+**Novo componente: `src/components/ui/MultiSelectUnidade.tsx`**
+- Componente reutilizavel baseado em Popover + Checkbox
+- Props: `unidades` (lista), `selected` (array de nomes selecionados), `onChange` (callback), `placeholder`
+- Exibe um botao com os nomes selecionados (truncados) ou "Todas as Unidades"
+- Dentro do popover: checkbox "Todas", seguido de checkbox para cada unidade
 
-**Arquivo: `src/hooks/useProdutosBusca.ts`**
+**Arquivo: `src/pages/Dashboard.tsx`**
+- Trocar `useState<string>('todas')` por `useState<string[]>([])` (array vazio = todas)
+- Substituir o `<Select>` de unidade pelo novo `<MultiSelectUnidade>`
+- Atualizar a logica de `protocolosFiltrados`:
+  - Se `unidadesFiltro.length === 0`: mostrar todas (equivalente ao "todas" atual)
+  - Se `unidadesFiltro.length > 0`: filtrar por `unidadesFiltro.includes(p.unidadeNome)`
+- Para nao-admins com multiplas unidades: inicializar com todas as unidades do usuario, mas permitir desmarcar
+- Atualizar `totalMotoristasBase` com a mesma logica de array
+- Usar `useUnidadesDB()` em vez de `mockUnidades` (dados reais do banco)
 
-1. Aumentar o limite de `10` para `30` para produtos.
+**Arquivo: `src/pages/Protocolos.tsx`**
+- Trocar `unidadeFilter: string` por `unidadeFilters: string[]`
+- Substituir o `<Select>` de unidade pelo `<MultiSelectUnidade>`
+- Atualizar `filteredProtocolos`:
+  - Admin: se array vazio, mostra tudo; se com valores, filtra por includes
+  - Nao-admin: inicializar com as unidades do usuario, filtrar por interseccao
+- Atualizar `clearFilters` e `hasActiveFilters` para usar o array
+- Atualizar o `useEffect` de reset de pagina
+
+**Arquivo: `src/pages/Dashboard.tsx` (adicional)**
+- Remover import de `mockUnidades` e usar `useUnidadesDB()` para listar unidades reais do banco
 
 ---
 
 ### Resumo do impacto
 
-| Problema | Causa | Solução |
+| Pagina | Antes | Depois |
 |---|---|---|
-| Código PDV de 1 dígito não aparece | Mínimo de 2 caracteres bloqueava a busca | Permitir 1 caractere se for numérico |
-| PDVs sem ordem | Nenhum `.order()` na query | Ordenação numérica no cliente |
-| Poucos produtos | Limite de 10 | Aumentar para 30 |
+| Dashboard (admin) | Select com 1 unidade | Multi-select com checkboxes |
+| Dashboard (nao-admin multi-unidade) | Ve tudo, sem filtro | Multi-select com suas unidades |
+| Protocolos (admin) | Select com 1 unidade | Multi-select com checkboxes |
+| Protocolos (nao-admin multi-unidade) | Ve tudo, sem filtro | Multi-select com suas unidades |
+

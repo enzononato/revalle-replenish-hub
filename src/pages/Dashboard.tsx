@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
 import { AlertCard } from '@/components/ui/AlertCard';
-import { mockUnidades } from '@/data/mockData';
+import { useUnidadesDB } from '@/hooks/useUnidadesDB';
+import { MultiSelectUnidade } from '@/components/ui/MultiSelectUnidade';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
@@ -52,7 +53,8 @@ export default function Dashboard() {
   const { protocolos } = useProtocolos();
   const { isAdmin, user } = useAuth();
   const { motoristas } = useMotoristasDB();
-  const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
+  const { unidades } = useUnidadesDB();
+  const [unidadesFiltro, setUnidadesFiltro] = useState<string[]>([]);
   const [periodoFiltro, setPeriodoFiltro] = useState<PeriodoFiltro>('todos');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -63,9 +65,13 @@ export default function Dashboard() {
     
     if (!isAdmin) {
       const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
-      filtered = filtered.filter(p => userUnidades.includes(p.unidadeNome));
-    } else if (unidadeFiltro !== 'todas') {
-      filtered = filtered.filter(p => p.unidadeNome === unidadeFiltro);
+      if (unidadesFiltro.length > 0) {
+        filtered = filtered.filter(p => unidadesFiltro.includes(p.unidadeNome) && userUnidades.includes(p.unidadeNome));
+      } else {
+        filtered = filtered.filter(p => userUnidades.includes(p.unidadeNome));
+      }
+    } else if (unidadesFiltro.length > 0) {
+      filtered = filtered.filter(p => unidadesFiltro.includes(p.unidadeNome));
     }
 
     // Filtro por período
@@ -102,19 +108,22 @@ export default function Dashboard() {
     }
     
     return filtered;
-  }, [protocolos, isAdmin, user?.unidade, unidadeFiltro, periodoFiltro, dateRange]);
+  }, [protocolos, isAdmin, user?.unidade, unidadesFiltro, periodoFiltro, dateRange]);
 
   // Total de motoristas do banco de dados (filtrado por unidade)
   const totalMotoristasBase = useMemo(() => {
     if (!isAdmin) {
       const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
+      if (unidadesFiltro.length > 0) {
+        return motoristas.filter(m => unidadesFiltro.includes(m.unidade) && userUnidades.includes(m.unidade)).length;
+      }
       return motoristas.filter(m => userUnidades.includes(m.unidade)).length;
     }
-    if (unidadeFiltro !== 'todas') {
-      return motoristas.filter(m => m.unidade === unidadeFiltro).length;
+    if (unidadesFiltro.length > 0) {
+      return motoristas.filter(m => unidadesFiltro.includes(m.unidade)).length;
     }
     return motoristas.length;
-  }, [motoristas, isAdmin, user?.unidade, unidadeFiltro]);
+  }, [motoristas, isAdmin, user?.unidade, unidadesFiltro]);
 
   // Contador de motoristas por unidade (apenas para admin)
   const motoristasPorUnidade = useMemo(() => {
@@ -534,19 +543,23 @@ export default function Dashboard() {
               </Button>
             )}
 
-            {isAdmin && (
-              <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
-                <SelectTrigger className="w-[160px] h-8 text-xs bg-background/80 backdrop-blur-sm">
-                  <SelectValue placeholder="Todas as Unidades" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as Unidades</SelectItem>
-                  {mockUnidades.map(u => (
-                    <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            {/* Filtro Multi-Unidade */}
+            {(() => {
+              const unidadesDisponiveis = isAdmin 
+                ? unidades 
+                : unidades.filter(u => {
+                    const userUnidades = user?.unidade?.split(',').map(s => s.trim()) || [];
+                    return userUnidades.includes(u.nome);
+                  });
+              return unidadesDisponiveis.length > 1 ? (
+                <MultiSelectUnidade
+                  unidades={unidadesDisponiveis}
+                  selected={unidadesFiltro}
+                  onChange={setUnidadesFiltro}
+                  triggerClassName="w-[180px]"
+                />
+              ) : null;
+            })()}
             <Button variant="outline" size="sm" onClick={handleDownloadCSV} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
               <Download size={14} className="mr-1.5" />
               CSV
