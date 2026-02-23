@@ -4,10 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin, Store, Database, Loader2 } from 'lucide-react';
+import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin, Store, Database, Loader2, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import JSZip from 'jszip';
 import { supabase } from '@/integrations/supabase/client';
+import { Progress } from '@/components/ui/progress';
 import { ImportarProdutosCSV } from '@/components/ImportarProdutosCSV';
 import { ImportarPdvsCSV } from '@/components/ImportarPdvsCSV';
 import { useProdutosDB } from '@/hooks/useProdutosDB';
@@ -26,6 +28,8 @@ export default function Configuracoes() {
   const [totalProdutos, setTotalProdutos] = useState<number>(0);
   const [totalPdvs, setTotalPdvs] = useState<number>(0);
   const [pdvsRefreshKey, setPdvsRefreshKey] = useState(0);
+  const [isExportingFotos, setIsExportingFotos] = useState(false);
+  const [fotosProgress, setFotosProgress] = useState({ total: 0, done: 0 });
   const { getTotalProdutos } = useProdutosDB();
   const { getTotalPdvs } = usePdvsDB();
   const { motoristas } = useMotoristasDB();
@@ -185,6 +189,107 @@ export default function Configuracoes() {
       toast.error(`Erro ao exportar backup: ${message}`);
     } finally {
       setIsExportingBackup(false);
+    }
+  };
+
+  const handleExportFotos = async () => {
+    setIsExportingFotos(true);
+    setFotosProgress({ total: 0, done: 0 });
+    try {
+      const zip = new JSZip();
+      const BUCKET = 'fotos-protocolos';
+      const PAGE_SIZE = 100;
+
+      // List all folders (each protocol has a folder)
+      let allFolders: { name: string }[] = [];
+      let offset = 0;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await supabase.storage.from(BUCKET).list('', { limit: PAGE_SIZE, offset });
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allFolders = [...allFolders, ...data.filter(f => f.id === null || !f.name.includes('.'))];
+          // Also add root-level files
+          const rootFiles = data.filter(f => f.id !== null && f.name.includes('.'));
+          for (const file of rootFiles) {
+            allFolders.push({ name: `__root__/${file.name}` });
+          }
+          if (data.length < PAGE_SIZE) hasMore = false;
+          else offset += PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // List files inside each folder
+      type FileEntry = { folder: string; name: string };
+      const allFiles: FileEntry[] = [];
+      for (const folder of allFolders) {
+        if (folder.name.startsWith('__root__/')) continue;
+        let fOffset = 0;
+        let fMore = true;
+        while (fMore) {
+          const { data, error } = await supabase.storage.from(BUCKET).list(folder.name, { limit: PAGE_SIZE, offset: fOffset });
+          if (error) break;
+          if (data && data.length > 0) {
+            for (const file of data) {
+              if (file.name && file.id) {
+                allFiles.push({ folder: folder.name, name: file.name });
+              }
+            }
+            if (data.length < PAGE_SIZE) fMore = false;
+            else fOffset += PAGE_SIZE;
+          } else {
+            fMore = false;
+          }
+        }
+      }
+
+      if (allFiles.length === 0) {
+        toast.info('Nenhuma foto encontrada no sistema.');
+        setIsExportingFotos(false);
+        return;
+      }
+
+      setFotosProgress({ total: allFiles.length, done: 0 });
+
+      // Download in batches of 5
+      const BATCH = 5;
+      let done = 0;
+      for (let i = 0; i < allFiles.length; i += BATCH) {
+        const batch = allFiles.slice(i, i + BATCH);
+        const results = await Promise.allSettled(
+          batch.map(async (f) => {
+            const path = `${f.folder}/${f.name}`;
+            const { data, error } = await supabase.storage.from(BUCKET).download(path);
+            if (error || !data) return null;
+            return { path, blob: data };
+          })
+        );
+        for (const r of results) {
+          if (r.status === 'fulfilled' && r.value) {
+            zip.file(r.value.path, r.value.blob);
+          }
+        }
+        done += batch.length;
+        setFotosProgress({ total: allFiles.length, done });
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `backup_fotos_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`${done} foto(s) exportada(s) com sucesso!`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast.error(`Erro ao exportar fotos: ${message}`);
+    } finally {
+      setIsExportingFotos(false);
     }
   };
 
@@ -528,6 +633,48 @@ export default function Configuracoes() {
                   <>
                     <Database size={18} className="mr-2" />
                     Exportar Dados do Sistema
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="text-primary" />
+                Exportar Fotos do Sistema
+              </CardTitle>
+              <CardDescription>
+                Baixe todas as fotos dos protocolos em um arquivo ZIP
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isExportingFotos && fotosProgress.total > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Baixando fotos...</span>
+                    <span>{fotosProgress.done} de {fotosProgress.total}</span>
+                  </div>
+                  <Progress value={(fotosProgress.done / fotosProgress.total) * 100} className="h-3" />
+                </div>
+              )}
+
+              <Button
+                onClick={handleExportFotos}
+                disabled={isExportingFotos}
+                variant="outline"
+                size="lg"
+              >
+                {isExportingFotos ? (
+                  <>
+                    <Loader2 size={18} className="mr-2 animate-spin" />
+                    Exportando fotos...
+                  </>
+                ) : (
+                  <>
+                    <Camera size={18} className="mr-2" />
+                    Exportar Fotos (ZIP)
                   </>
                 )}
               </Button>
