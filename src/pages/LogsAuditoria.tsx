@@ -227,8 +227,10 @@ export default function LogsAuditoria() {
 
   // Filter logs
   const filteredLogs = logs.filter(log => {
+    const protocoloNum = log.tabela === 'protocolos' && log.registro_dados ? String((log.registro_dados as Record<string, unknown>).numero || '') : '';
     const matchesSearch = 
       log.usuario_nome.toLowerCase().includes(search.toLowerCase()) ||
+      protocoloNum.toLowerCase().includes(search.toLowerCase()) ||
       (log.registro_dados && JSON.stringify(log.registro_dados).toLowerCase().includes(search.toLowerCase()));
     
     const matchesTabela = tabelaFiltro === 'todas' || log.tabela === tabelaFiltro;
@@ -264,6 +266,14 @@ export default function LogsAuditoria() {
     if (dados.nome) return String(dados.nome);
     if (dados.codigo) return String(dados.codigo);
     return log.registro_id.substring(0, 8) + '...';
+  };
+
+  const getProtocoloNumero = (log: AuditLog): string | null => {
+    if (log.tabela === 'protocolos' && log.registro_dados) {
+      const dados = log.registro_dados;
+      if (dados.numero) return String(dados.numero);
+    }
+    return null;
   };
 
   return (
@@ -339,6 +349,7 @@ export default function LogsAuditoria() {
                   <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Data/Hora</th>
                   <th className="text-left p-2.5 text-[11px]">Ação</th>
                   <th className="text-left p-2.5 text-[11px]">Tabela</th>
+                  <th className="text-left p-2.5 text-[11px]">Protocolo</th>
                   <th className="text-left p-2.5 text-[11px]">Registro</th>
                   <th className="text-left p-2.5 text-[11px]">Usuário</th>
                   <th className="text-left p-2.5 text-[11px]">Perfil</th>
@@ -367,6 +378,20 @@ export default function LogsAuditoria() {
                     </td>
                     <td className="p-2.5 text-xs font-medium">
                       {getTabelaLabel(log.tabela)}
+                    </td>
+                    <td className="p-2.5 text-xs">
+                      {(() => {
+                        const numero = getProtocoloNumero(log);
+                        if (numero) {
+                          return (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-mono font-medium text-[10px]">
+                              <ClipboardList size={10} />
+                              {numero.replace('PROTOC-', '')}
+                            </span>
+                          );
+                        }
+                        return <span className="text-muted-foreground">-</span>;
+                      })()}
                     </td>
                     <td className="p-2.5 text-xs text-muted-foreground">
                       {getRegistroInfo(log)}
