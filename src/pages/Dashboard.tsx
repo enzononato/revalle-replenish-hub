@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
@@ -27,6 +27,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, isToday, parseISO, differenceInHours, differenceInDays, subDays, parse, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   BarChart, 
   Bar, 
@@ -281,6 +282,28 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [protocolosFiltrados]);
 
+  // Mapa de código PDV -> nome PDV
+  const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
+
+  // Buscar nomes dos PDVs do banco
+  useEffect(() => {
+    const codigos = [...new Set(protocolosFiltrados.map(p => p.codigoPdv).filter(Boolean))] as string[];
+    if (codigos.length === 0) return;
+
+    const fetchPdvNames = async () => {
+      const { data } = await supabase
+        .from('pdvs')
+        .select('codigo, nome')
+        .in('codigo', codigos);
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach(p => { map[p.codigo] = p.nome; });
+        setPdvNamesMap(map);
+      }
+    };
+    fetchPdvNames();
+  }, [protocolosFiltrados]);
+
   // TOP 5 Clientes PDVs (calculado dos protocolos reais)
   const topClientesReal = useMemo(() => {
     const contagem: Record<string, number> = {};
@@ -289,10 +312,14 @@ export default function Dashboard() {
       contagem[pdv] = (contagem[pdv] || 0) + 1;
     });
     return Object.entries(contagem)
-      .map(([nome, quantidade], index) => ({ id: `pdv-${index}`, nome, quantidade }))
+      .map(([codigo, quantidade], index) => ({
+        id: `pdv-${index}`,
+        nome: pdvNamesMap[codigo] || codigo,
+        quantidade
+      }))
       .sort((a, b) => b.quantidade - a.quantidade)
       .slice(0, 5);
-  }, [protocolosFiltrados]);
+  }, [protocolosFiltrados, pdvNamesMap]);
 
   // TOP 5 Produtos (calculado dos protocolos reais)
   const topProdutosReal = useMemo(() => {
