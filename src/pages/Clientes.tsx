@@ -385,6 +385,16 @@ export default function Clientes() {
 
       if (error) throw error;
       
+      await registrarLog({
+        acao: 'edicao',
+        tabela: 'pdvs',
+        registro_id: editingPdv.id,
+        registro_dados: { nome: formData.nome, codigo: formData.codigo, unidade: formData.unidade },
+        usuario_nome: user?.nome || 'Desconhecido',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+      
       toast.success('Cliente atualizado com sucesso!');
       setIsEditDialogOpen(false);
       setEditingPdv(null);
@@ -459,7 +469,7 @@ export default function Clientes() {
 
     setIsCreating(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('pdvs')
         .insert({
           codigo: createFormData.codigo.trim(),
@@ -469,9 +479,21 @@ export default function Clientes() {
           endereco: createFormData.endereco.trim() || null,
           cnpj: createFormData.cnpj.trim() || null,
           unidade: createFormData.unidade,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+      
+      await registrarLog({
+        acao: 'criacao',
+        tabela: 'pdvs',
+        registro_id: data?.id || createFormData.codigo.trim(),
+        registro_dados: { nome: createFormData.nome.trim(), codigo: createFormData.codigo.trim(), unidade: createFormData.unidade },
+        usuario_nome: user?.nome || 'Desconhecido',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
       
       toast.success('Cliente criado com sucesso!');
       setIsCreateDialogOpen(false);

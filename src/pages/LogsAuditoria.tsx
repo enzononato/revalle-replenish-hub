@@ -167,6 +167,8 @@ const getTabelaLabel = (tabela: string): string => {
       return 'Protocolo';
     case 'unidades':
       return 'Unidade';
+    case 'gestores':
+      return 'Gestor';
     case 'sessao':
       return 'Sessão';
     case 'chat':
@@ -307,6 +309,8 @@ export default function LogsAuditoria() {
             <SelectItem value="pdvs">Clientes</SelectItem>
             <SelectItem value="protocolos">Protocolos</SelectItem>
             <SelectItem value="unidades">Unidades</SelectItem>
+            <SelectItem value="gestores">Gestores</SelectItem>
+            <SelectItem value="sessao">Sessão</SelectItem>
           </SelectContent>
         </Select>
 

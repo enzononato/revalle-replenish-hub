@@ -25,10 +25,12 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuditLog } from '@/hooks/useAuditLog';
 
 export default function Unidades() {
   const { isAdmin, isDistribuicao, user } = useAuth();
   const { unidades, isLoading, addUnidade, updateUnidade, deleteUnidade } = useUnidadesDB();
+  const { registrarLog } = useAuditLog();
   const { motoristas, isLoading: isLoadingMotoristas } = useMotoristasDB();
   const [clientesPorUnidade, setClientesPorUnidade] = useState<Record<string, number>>({});
   const [protocolosPorUnidade, setProtocolosPorUnidade] = useState<Record<string, number>>({});
@@ -172,8 +174,26 @@ export default function Unidades() {
     try {
       if (editingUnidade) {
         await updateUnidade(editingUnidade.id, formData);
+        await registrarLog({
+          acao: 'edicao',
+          tabela: 'unidades',
+          registro_id: editingUnidade.id,
+          registro_dados: { nome: formData.nome, codigo: formData.codigo, antes: { nome: editingUnidade.nome, codigo: editingUnidade.codigo } },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
       } else {
         await addUnidade(formData);
+        await registrarLog({
+          acao: 'criacao',
+          tabela: 'unidades',
+          registro_id: formData.codigo,
+          registro_dados: { nome: formData.nome, codigo: formData.codigo },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
       }
       setIsDialogOpen(false);
       resetForm();
@@ -186,7 +206,19 @@ export default function Unidades() {
 
   const handleDelete = async (id: string) => {
     try {
+      const unidadeExcluida = unidades.find(u => u.id === id);
       await deleteUnidade(id);
+      if (unidadeExcluida) {
+        await registrarLog({
+          acao: 'exclusao',
+          tabela: 'unidades',
+          registro_id: id,
+          registro_dados: { nome: unidadeExcluida.nome, codigo: unidadeExcluida.codigo },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
+      }
     } catch (error) {
       // Error handled in hook
     }

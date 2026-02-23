@@ -26,11 +26,15 @@ import { Plus, Pencil, Trash2, Phone, Building2, Loader2, UserCog } from 'lucide
 import { cn } from '@/lib/utils';
 import { useGestoresDB, Gestor } from '@/hooks/useGestoresDB';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuditLog } from '@/hooks/useAuditLog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 
 export default function Numeros() {
+  const { user } = useAuth();
+  const { registrarLog } = useAuditLog();
   const { gestores, isLoading, addGestor, updateGestor, deleteGestor, isAdding, isUpdating, isDeleting, refetch } = useGestoresDB();
   const { unidades, isLoading: isLoadingUnidades } = useUnidadesDB();
   const [search, setSearch] = useState('');
@@ -126,11 +130,29 @@ export default function Numeros() {
             unidades: formData.unidades,
           },
         });
+        await registrarLog({
+          acao: 'edicao',
+          tabela: 'gestores',
+          registro_id: editingGestor.id,
+          registro_dados: { nome: formData.nome.trim().toUpperCase(), whatsapp: formData.whatsapp.trim() },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
       } else {
         await addGestor({
           nome: formData.nome.trim().toUpperCase(),
           whatsapp: formData.whatsapp.trim(),
           unidades: formData.unidades,
+        });
+        await registrarLog({
+          acao: 'criacao',
+          tabela: 'gestores',
+          registro_id: formData.nome.trim().toUpperCase(),
+          registro_dados: { nome: formData.nome.trim().toUpperCase(), whatsapp: formData.whatsapp.trim() },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
         });
       }
       
@@ -151,6 +173,15 @@ export default function Numeros() {
     
     try {
       await deleteGestor(gestorToDelete.id);
+      await registrarLog({
+        acao: 'exclusao',
+        tabela: 'gestores',
+        registro_id: gestorToDelete.id,
+        registro_dados: { nome: gestorToDelete.nome, whatsapp: gestorToDelete.whatsapp },
+        usuario_nome: user?.nome || 'Desconhecido',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
       await refetch();
     } catch (error) {
       // Error handled by mutation

@@ -329,9 +329,21 @@ export default function Protocolos() {
     toast.success('Protocolo ocultado!');
   };
 
-  const handleExcluir = (id: string) => {
+  const handleExcluir = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este protocolo?')) {
+      const protocolo = protocolos.find(p => p.id === id);
       deleteProtocolo(id);
+      if (protocolo) {
+        await registrarLog({
+          acao: 'exclusao',
+          tabela: 'protocolos',
+          registro_id: id,
+          registro_dados: { numero: protocolo.numero, motorista: protocolo.motorista?.nome },
+          usuario_nome: user?.nome || 'Desconhecido',
+          usuario_role: user?.nivel || undefined,
+          usuario_unidade: user?.unidade || undefined,
+        });
+      }
       toast.success('Protocolo excluído!');
     }
   };

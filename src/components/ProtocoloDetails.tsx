@@ -618,6 +618,15 @@ export function ProtocoloDetails({
         };
         
         onUpdateProtocolo(protocoloAtualizado);
+        await registrarLog({
+          acao: 'reenvio',
+          tabela: 'protocolos',
+          registro_id: protocolo.id,
+          registro_dados: { numero: protocolo.numero, tipo_reenvio: tipo, telefone: clienteTelefone || protocolo.clienteTelefone },
+          usuario_nome: user?.nome || '',
+          usuario_role: user?.nivel,
+          usuario_unidade: user?.unidade,
+        });
         setHabilitarReenvio(false);
         toast.success(`Mensagem de ${tipo === 'lancar' ? 'lançamento' : 'encerramento'} reenviada com sucesso!`);
       } else {
