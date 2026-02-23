@@ -285,21 +285,25 @@ export default function Dashboard() {
   // Mapa de código PDV -> nome PDV
   const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
 
-  // Buscar nomes dos PDVs do banco
+  // Buscar nomes dos PDVs do banco (em lotes para evitar limite)
   useEffect(() => {
     const codigos = [...new Set(protocolosFiltrados.map(p => p.codigoPdv).filter(Boolean))] as string[];
     if (codigos.length === 0) return;
 
     const fetchPdvNames = async () => {
-      const { data } = await supabase
-        .from('pdvs')
-        .select('codigo, nome')
-        .in('codigo', codigos);
-      if (data) {
-        const map: Record<string, string> = {};
-        data.forEach(p => { map[p.codigo] = p.nome; });
-        setPdvNamesMap(map);
+      const map: Record<string, string> = {};
+      const batchSize = 200;
+      for (let i = 0; i < codigos.length; i += batchSize) {
+        const batch = codigos.slice(i, i + batchSize);
+        const { data } = await supabase
+          .from('pdvs')
+          .select('codigo, nome')
+          .in('codigo', batch);
+        if (data) {
+          data.forEach(p => { map[p.codigo] = p.nome; });
+        }
       }
+      setPdvNamesMap(map);
     };
     fetchPdvNames();
   }, [protocolosFiltrados]);
