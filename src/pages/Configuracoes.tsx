@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin, Store } from 'lucide-react';
+import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin, Store, Database, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 import { ImportarProdutosCSV } from '@/components/ImportarProdutosCSV';
 import { ImportarPdvsCSV } from '@/components/ImportarPdvsCSV';
 import { useProdutosDB } from '@/hooks/useProdutosDB';
@@ -21,6 +22,7 @@ export default function Configuracoes() {
   const [webhookToken, setWebhookToken] = useState('');
   const [slaDefault, setSlaDefault] = useState('4');
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingBackup, setIsExportingBackup] = useState(false);
   const [totalProdutos, setTotalProdutos] = useState<number>(0);
   const [totalPdvs, setTotalPdvs] = useState<number>(0);
   const [pdvsRefreshKey, setPdvsRefreshKey] = useState(0);
@@ -132,6 +134,60 @@ export default function Configuracoes() {
     toast.success(`${rows.length} protocolo(s) exportado(s)!`);
   };
 
+  const fetchAllRows = async (table: string) => {
+    const PAGE_SIZE = 1000;
+    let allData: Record<string, unknown>[] = [];
+    let from = 0;
+    let hasMore = true;
+    while (hasMore) {
+      const { data, error } = await (supabase as any).from(table).select('*').range(from, from + PAGE_SIZE - 1);
+      if (error) throw new Error(`Erro ao buscar ${table}: ${error.message}`);
+      if (data && data.length > 0) {
+        allData = [...allData, ...data];
+        if (data.length < PAGE_SIZE) hasMore = false;
+        else from += PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
+    }
+    return allData;
+  };
+
+  const handleExportBackup = async () => {
+    setIsExportingBackup(true);
+    try {
+      const tables = ['protocolos', 'motoristas', 'pdvs', 'produtos', 'unidades', 'gestores', 'user_profiles', 'audit_logs', 'chat_conversations', 'chat_messages', 'chat_participants'] as const;
+      const backup: Record<string, unknown[]> = {};
+      
+      await Promise.all(
+        tables.map(async (table) => {
+          backup[table] = await fetchAllRows(table);
+        })
+      );
+
+      const json = JSON.stringify({
+        exportado_em: new Date().toISOString(),
+        tabelas: backup,
+      }, null, 2);
+
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `backup_sistema_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Backup exportado com sucesso!');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      toast.error(`Erro ao exportar backup: ${message}`);
+    } finally {
+      setIsExportingBackup(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -164,6 +220,10 @@ export default function Configuracoes() {
           <TabsTrigger value="exportar" className="gap-1.5 text-xs">
             <Download size={14} />
             Exportar
+          </TabsTrigger>
+          <TabsTrigger value="backup" className="gap-1.5 text-xs">
+            <Database size={14} />
+            Backup
           </TabsTrigger>
         </TabsList>
 
@@ -422,6 +482,55 @@ export default function Configuracoes() {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="backup">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="text-primary" />
+                Backup Completo do Sistema
+              </CardTitle>
+              <CardDescription>
+                Exporte todos os dados do sistema em um único arquivo JSON para backup ou migração
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 bg-muted/50 rounded-lg border space-y-2">
+                <p className="text-sm font-medium">O backup inclui:</p>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Protocolos</li>
+                  <li>Motoristas</li>
+                  <li>Clientes (PDVs)</li>
+                  <li>Produtos</li>
+                  <li>Unidades</li>
+                  <li>Gestores</li>
+                  <li>Perfis de Usuários</li>
+                  <li>Logs de Auditoria</li>
+                  <li>Conversas e Mensagens do Chat</li>
+                </ul>
+              </div>
+
+              <Button
+                onClick={handleExportBackup}
+                disabled={isExportingBackup}
+                className="btn-primary-gradient"
+                size="lg"
+              >
+                {isExportingBackup ? (
+                  <>
+                    <Loader2 size={18} className="mr-2 animate-spin" />
+                    Exportando...
+                  </>
+                ) : (
+                  <>
+                    <Database size={18} className="mr-2" />
+                    Exportar Dados do Sistema
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
