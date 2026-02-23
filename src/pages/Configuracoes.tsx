@@ -199,50 +199,53 @@ export default function Configuracoes() {
       const zip = new JSZip();
       const BUCKET = 'fotos-protocolos';
       const PAGE_SIZE = 100;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const storageBase = `${supabaseUrl}/storage/v1/object/public/${BUCKET}`;
 
-      // List all folders (each protocol has a folder)
-      let allFolders: { name: string }[] = [];
+      // 1. List all folders with pagination
+      const allFolders: string[] = [];
       let offset = 0;
       let hasMore = true;
       while (hasMore) {
         const { data, error } = await supabase.storage.from(BUCKET).list('', { limit: PAGE_SIZE, offset });
         if (error) throw error;
-        if (data && data.length > 0) {
-          allFolders = [...allFolders, ...data.filter(f => f.id === null || !f.name.includes('.'))];
-          // Also add root-level files
-          const rootFiles = data.filter(f => f.id !== null && f.name.includes('.'));
-          for (const file of rootFiles) {
-            allFolders.push({ name: `__root__/${file.name}` });
+        if (!data || data.length === 0) { hasMore = false; break; }
+        for (const item of data) {
+          // Folders have id === null in Supabase storage
+          if (item.id === null || !item.name.includes('.')) {
+            allFolders.push(item.name);
           }
-          if (data.length < PAGE_SIZE) hasMore = false;
-          else offset += PAGE_SIZE;
-        } else {
-          hasMore = false;
         }
+        if (data.length < PAGE_SIZE) hasMore = false;
+        else offset += PAGE_SIZE;
       }
 
-      // List files inside each folder
+      // 2. List files inside each folder IN PARALLEL (much faster)
       type FileEntry = { folder: string; name: string };
-      const allFiles: FileEntry[] = [];
-      for (const folder of allFolders) {
-        if (folder.name.startsWith('__root__/')) continue;
+      const listFolderFiles = async (folder: string): Promise<FileEntry[]> => {
+        const files: FileEntry[] = [];
         let fOffset = 0;
         let fMore = true;
         while (fMore) {
-          const { data, error } = await supabase.storage.from(BUCKET).list(folder.name, { limit: PAGE_SIZE, offset: fOffset });
-          if (error) break;
-          if (data && data.length > 0) {
-            for (const file of data) {
-              if (file.name && file.id) {
-                allFiles.push({ folder: folder.name, name: file.name });
-              }
+          const { data, error } = await supabase.storage.from(BUCKET).list(folder, { limit: PAGE_SIZE, offset: fOffset });
+          if (error || !data || data.length === 0) break;
+          for (const file of data) {
+            if (file.name && file.id) {
+              files.push({ folder, name: file.name });
             }
-            if (data.length < PAGE_SIZE) fMore = false;
-            else fOffset += PAGE_SIZE;
-          } else {
-            fMore = false;
           }
+          fMore = data.length >= PAGE_SIZE;
+          fOffset += PAGE_SIZE;
         }
+        return files;
+      };
+
+      // List all folders in parallel batches of 10
+      const allFiles: FileEntry[] = [];
+      for (let i = 0; i < allFolders.length; i += 10) {
+        const batch = allFolders.slice(i, i + 10);
+        const results = await Promise.all(batch.map(f => listFolderFiles(f)));
+        results.forEach(files => allFiles.push(...files));
       }
 
       if (allFiles.length === 0) {
@@ -253,28 +256,35 @@ export default function Configuracoes() {
 
       setFotosProgress({ total: allFiles.length, done: 0 });
 
-      // Download in batches of 5
-      const BATCH = 5;
+      // 3. Download via public URL (fetch) in batches of 10 — much faster than SDK
+      const BATCH = 10;
       let done = 0;
+      let errors = 0;
       for (let i = 0; i < allFiles.length; i += BATCH) {
         const batch = allFiles.slice(i, i + BATCH);
         const results = await Promise.allSettled(
           batch.map(async (f) => {
             const path = `${f.folder}/${f.name}`;
-            const { data, error } = await supabase.storage.from(BUCKET).download(path);
-            if (error || !data) return null;
-            return { path, blob: data };
+            const resp = await fetch(`${storageBase}/${encodeURIComponent(f.folder)}/${encodeURIComponent(f.name)}`);
+            if (!resp.ok) return null;
+            const blob = await resp.blob();
+            return { path, blob };
           })
         );
         for (const r of results) {
           if (r.status === 'fulfilled' && r.value) {
             zip.file(r.value.path, r.value.blob);
+          } else {
+            errors++;
           }
         }
         done += batch.length;
-        setFotosProgress({ total: allFiles.length, done });
+        setFotosProgress({ total: allFiles.length, done: Math.min(done, allFiles.length) });
+        // Yield to UI thread
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
 
+      toast.info('Gerando arquivo ZIP...');
       const content = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(content);
       const link = document.createElement('a');
@@ -284,7 +294,10 @@ export default function Configuracoes() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success(`${done} foto(s) exportada(s) com sucesso!`);
+      const msg = errors > 0
+        ? `${done - errors} foto(s) exportada(s). ${errors} falha(s) ignorada(s).`
+        : `${done} foto(s) exportada(s) com sucesso!`;
+      toast.success(msg);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
       toast.error(`Erro ao exportar fotos: ${message}`);
