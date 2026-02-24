@@ -1,49 +1,38 @@
 
 
-## Exportar Fotos no Backup
+## Fix: Unidade Filter Style Consistency on Protocolos Page
 
-### Situacao atual
-As fotos dos protocolos ficam armazenadas no bucket de arquivos (`fotos-protocolos`), separadas dos dados do banco. O backup atual exporta apenas os dados em JSON, sem incluir as imagens.
+The Unidade filter currently uses the `MultiSelectUnidade` component (Popover + Checkboxes), which has a different visual style compared to all the other filters (Status, Lancado, Validado, Tipo) that use the standard `Select` component. This creates a visual inconsistency as seen in the screenshot.
 
-### Proposta
+### Solution
 
-Adicionar um botao separado na aba Backup chamado **"Exportar Fotos do Sistema"** que:
+Replace the `MultiSelectUnidade` component with a standard `Select` dropdown on the Protocolos page, matching the style of the other filters. Since filtering by a single unit at a time is sufficient for this page, we'll use a simple `Select` with options for "Todas" plus each available unit.
 
-1. Lista todos os arquivos no bucket de armazenamento `fotos-protocolos`
-2. Baixa cada foto
-3. Empacota tudo em um arquivo ZIP com a estrutura de pastas original (ex: `REP-001/foto.jpg`)
-4. Dispara o download automatico do ZIP
+### Technical Details
 
-Tambem sera adicionada a opcao de **"Exportar Backup Completo"** que combina dados JSON + fotos em um unico ZIP.
+**File: `src/pages/Protocolos.tsx`**
 
-### Como vai funcionar para o usuario
+1. Remove the `MultiSelectUnidade` import
+2. Replace the multi-select component (lines 621-640) with a standard `Select` component styled like the other filters (Lancado, Validado, Tipo)
+3. Change state from `unidadeFilters: string[]` to `unidadeFilter: string` (single value, default `'todas'`)
+4. Update the filtering logic (lines 144-153) to work with a single string value instead of an array
+5. Update `clearFilters` and `hasActiveFilters` to use the new single-value state
+6. Update the `useEffect` dependency array for page reset
 
-- Na aba Backup, alem do botao existente de exportar dados, aparece um novo botao **"Exportar Fotos"**
-- Ao clicar, uma barra de progresso mostra quantas fotos ja foram baixadas (ex: "Baixando 45 de 120 fotos...")
-- O download do ZIP e disparado automaticamente ao concluir
-- Se houver muitas fotos, o processo pode levar alguns minutos
+The new Unidade filter will look like:
+```
+<Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
+  <SelectTrigger className="h-8 text-xs">
+    <SelectValue placeholder="Todas" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="todas">Todas</SelectItem>
+    {unidadesDisponiveis.map(u => (
+      <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+```
 
-### Detalhes tecnicos
-
-**Dependencia nova:** `jszip` - biblioteca para criar arquivos ZIP no navegador
-
-**Arquivo: `src/pages/Configuracoes.tsx`**
-- Adicionar funcao `handleExportFotos` que:
-  - Usa `supabase.storage.from('fotos-protocolos').list()` para listar pastas (cada protocolo tem uma pasta)
-  - Para cada pasta, lista os arquivos dentro dela
-  - Baixa cada arquivo usando `supabase.storage.from('fotos-protocolos').download(path)`
-  - Adiciona ao ZIP mantendo a estrutura de pastas
-  - Gera o ZIP e dispara download
-- Adicionar estado de progresso (`totalFotos`, `fotosProcessadas`)
-- Novo botao com icone de camera/imagem na secao de Backup
-
-**Tratamento de limites:**
-- A listagem do storage retorna no maximo 100 itens por chamada, entao sera feita paginacao
-- Downloads em lote de 5 fotos simultaneas para nao sobrecarregar o navegador
-- Tratamento de erro individual por foto (se uma falhar, continua com as outras)
-
-**UI na aba Backup:**
-- Card separado para "Exportar Fotos" com contagem de fotos armazenadas
-- Barra de progresso visual durante o download
-- Botao desabilitado durante o processo com spinner
+This ensures visual consistency across all filter dropdowns on the Protocolos page.
 
