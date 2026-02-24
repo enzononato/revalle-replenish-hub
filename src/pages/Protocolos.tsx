@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Protocolo, ObservacaoLog } from '@/types';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { supabase } from '@/integrations/supabase/client';
-import { MultiSelectUnidade } from '@/components/ui/MultiSelectUnidade';
+
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,7 +87,7 @@ export default function Protocolos() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [periodoFilter, setPeriodoFilter] = useState<string>('todos');
-  const [unidadeFilters, setUnidadeFilters] = useState<string[]>([]);
+  const [unidadeFilter, setUnidadeFilter] = useState<string>('todas');
   
   // Inicializar filtro de unidade com a unidade do usuário (para não-admins)
   // Não precisa mais inicializar filtro - array vazio = todas as unidades do usuário
@@ -143,13 +143,13 @@ export default function Protocolos() {
       // Se é admin e tem filtro selecionado, aplica o filtro
       if (!isAdmin) {
         const userUnidades = (user?.unidade || '').split(',').map(u => u.trim());
-        if (unidadeFilters.length > 0) {
-          if (!unidadeFilters.includes(p.unidadeNome) || !userUnidades.includes(p.unidadeNome)) return false;
+        if (unidadeFilter !== 'todas') {
+          if (unidadeFilter !== p.unidadeNome || !userUnidades.includes(p.unidadeNome)) return false;
         } else {
           if (!userUnidades.includes(p.unidadeNome)) return false;
         }
-      } else if (unidadeFilters.length > 0) {
-        if (!unidadeFilters.includes(p.unidadeNome)) return false;
+      } else if (unidadeFilter !== 'todas') {
+        if (unidadeFilter !== p.unidadeNome) return false;
       }
       
       const searchMatch = 
@@ -223,7 +223,7 @@ export default function Protocolos() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, unidadeFilters, pageSize]);
+  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, unidadeFilter, pageSize]);
 
   // Envio WhatsApp é feito via webhook n8n
 
@@ -449,11 +449,11 @@ export default function Protocolos() {
     setValidadoFilter('todos');
     setTipoFilter('todos');
     if (isAdmin) {
-      setUnidadeFilters([]);
+      setUnidadeFilter('todas');
     }
   };
 
-  const hasActiveFilters = activeTab === 'todos' || dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos' || tipoFilter !== 'todos' || unidadeFilters.length > 0;
+  const hasActiveFilters = activeTab === 'todos' || dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos' || tipoFilter !== 'todos' || unidadeFilter !== 'todas';
 
   return (
     <div className="space-y-4">
@@ -618,7 +618,7 @@ export default function Protocolos() {
               </Select>
             </div>
             
-            {/* Filtro de Unidade - Multi-select */}
+            {/* Filtro de Unidade */}
             {(() => {
               const unidadesDisponiveis = isAdmin 
                 ? unidades 
@@ -629,12 +629,17 @@ export default function Protocolos() {
               return unidadesDisponiveis.length > 1 ? (
                 <div className="space-y-1 min-w-[130px]">
                   <label className="text-xs font-medium text-muted-foreground">Unidade</label>
-                  <MultiSelectUnidade
-                    unidades={unidadesDisponiveis}
-                    selected={unidadeFilters}
-                    onChange={setUnidadeFilters}
-                    placeholder="Todas"
-                  />
+                  <Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas</SelectItem>
+                      {unidadesDisponiveis.map(u => (
+                        <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               ) : null;
             })()}
