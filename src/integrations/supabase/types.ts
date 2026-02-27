@@ -196,6 +196,45 @@ export type Database = {
         }
         Relationships: []
       }
+      motorista_login_logs: {
+        Row: {
+          created_at: string
+          erro: string | null
+          id: string
+          identificador: string
+          identificador_tipo: string
+          ip_info: string | null
+          motorista_id: string | null
+          motorista_nome: string | null
+          sucesso: boolean
+          unidade: string | null
+        }
+        Insert: {
+          created_at?: string
+          erro?: string | null
+          id?: string
+          identificador: string
+          identificador_tipo?: string
+          ip_info?: string | null
+          motorista_id?: string | null
+          motorista_nome?: string | null
+          sucesso?: boolean
+          unidade?: string | null
+        }
+        Update: {
+          created_at?: string
+          erro?: string | null
+          id?: string
+          identificador?: string
+          identificador_tipo?: string
+          ip_info?: string | null
+          motorista_id?: string | null
+          motorista_nome?: string | null
+          sucesso?: boolean
+          unidade?: string | null
+        }
+        Relationships: []
+      }
       motoristas: {
         Row: {
           codigo: string

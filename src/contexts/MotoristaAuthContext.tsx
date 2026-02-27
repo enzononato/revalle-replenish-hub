@@ -60,12 +60,34 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const logLoginAttempt = async (
+    identificadorLog: string,
+    tipo: string,
+    sucesso: boolean,
+    erro?: string,
+    motoristaData?: { id: string; nome: string; unidade: string }
+  ) => {
+    try {
+      await supabase.from('motorista_login_logs').insert({
+        identificador: identificadorLog,
+        identificador_tipo: tipo,
+        sucesso,
+        erro: erro || null,
+        motorista_id: motoristaData?.id || null,
+        motorista_nome: motoristaData?.nome || null,
+        unidade: motoristaData?.unidade || null,
+      });
+    } catch (e) {
+      console.error('Erro ao registrar log de login:', e);
+    }
+  };
+
   const login = async (identificador: string, senha: string): Promise<{ success: boolean; error?: string }> => {
     // Limpar o identificador (remover formatação de CPF se houver)
     const identificadorLimpo = identificador.replace(/[.\-]/g, '').trim();
     
     // Primeiro, tentar buscar por CPF (para unidades diferentes de Petrolina)
-    const { data: porCpf } = await supabase
+    const { data: porCpf, error: cpfError } = await supabase
       .from('motoristas')
       .select('*')
       .eq('cpf', identificadorLimpo)
@@ -77,12 +99,20 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
       const foundMotorista = dbToMotorista(porCpf as MotoristaDB);
       
       if (foundMotorista.senha !== senha) {
+        await logLoginAttempt(identificadorLimpo, 'cpf', false, 'Senha incorreta', { id: foundMotorista.id, nome: foundMotorista.nome, unidade: foundMotorista.unidade });
         return { success: false, error: 'Senha incorreta' };
       }
 
+      await logLoginAttempt(identificadorLimpo, 'cpf', true, undefined, { id: foundMotorista.id, nome: foundMotorista.nome, unidade: foundMotorista.unidade });
       setMotorista(foundMotorista);
       localStorage.setItem(MOTORISTA_STORAGE_KEY, JSON.stringify(foundMotorista));
       return { success: true };
+    }
+
+    // Se a busca por CPF deu erro (ex: múltiplos resultados)
+    if (cpfError) {
+      await logLoginAttempt(identificadorLimpo, 'cpf', false, `Erro na busca: ${cpfError.message}`);
+      return { success: false, error: 'Erro ao buscar motorista. Contate o suporte.' };
     }
 
     // Se não encontrou por CPF, buscar por código promax (apenas para Petrolina)
@@ -94,15 +124,18 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
 
     if (error || !porCodigo) {
+      await logLoginAttempt(identificadorLimpo, 'codigo', false, error ? `Erro: ${error.message}` : 'Motorista não encontrado');
       return { success: false, error: 'CPF ou código de motorista não encontrado' };
     }
 
     const foundMotorista = dbToMotorista(porCodigo as MotoristaDB);
 
     if (foundMotorista.senha !== senha) {
+      await logLoginAttempt(identificador, 'codigo', false, 'Senha incorreta', { id: foundMotorista.id, nome: foundMotorista.nome, unidade: foundMotorista.unidade });
       return { success: false, error: 'Senha incorreta' };
     }
 
+    await logLoginAttempt(identificador, 'codigo', true, undefined, { id: foundMotorista.id, nome: foundMotorista.nome, unidade: foundMotorista.unidade });
     setMotorista(foundMotorista);
     localStorage.setItem(MOTORISTA_STORAGE_KEY, JSON.stringify(foundMotorista));
     return { success: true };
