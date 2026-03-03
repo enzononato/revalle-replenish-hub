@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Select,
   SelectContent,
@@ -27,7 +28,10 @@ import {
   RefreshCw,
   CheckCircle,
   Mail,
-  Phone
+  Phone,
+  Truck,
+  XCircle,
+  ShieldAlert
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -42,6 +46,18 @@ interface AuditLog {
   usuario_role: string | null;
   usuario_unidade: string | null;
   created_at: string;
+}
+
+interface MotoristaLoginLog {
+  id: string;
+  created_at: string;
+  identificador: string;
+  identificador_tipo: string;
+  sucesso: boolean;
+  erro: string | null;
+  motorista_id: string | null;
+  motorista_nome: string | null;
+  unidade: string | null;
 }
 
 const getAcaoLabel = (acao: string): string => {
@@ -196,15 +212,23 @@ const getRoleLabel = (role: string | null): string => {
 };
 
 export default function LogsAuditoria() {
+  const [activeTab, setActiveTab] = useState('auditoria');
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loginLogs, setLoginLogs] = useState<MotoristaLoginLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [search, setSearch] = useState('');
+  const [loginSearch, setLoginSearch] = useState('');
   const [tabelaFiltro, setTabelaFiltro] = useState<string>('todas');
   const [acaoFiltro, setAcaoFiltro] = useState<string>('todas');
+  const [loginStatusFiltro, setLoginStatusFiltro] = useState<string>('todos');
+  const [loginTipoFiltro, setLoginTipoFiltro] = useState<string>('todos');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [loginCurrentPage, setLoginCurrentPage] = useState(1);
+  const [loginPageSize, setLoginPageSize] = useState(20);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -227,7 +251,29 @@ export default function LogsAuditoria() {
     fetchLogs();
   }, []);
 
-  // Filter logs
+  useEffect(() => {
+    if (activeTab === 'login-motorista' && loginLogs.length === 0) {
+      const fetchLoginLogs = async () => {
+        setIsLoadingLogin(true);
+        try {
+          const { data, error } = await supabase
+            .from('motorista_login_logs')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          setLoginLogs((data as MotoristaLoginLog[]) || []);
+        } catch (error) {
+          console.error('Erro ao carregar logs de login:', error);
+        } finally {
+          setIsLoadingLogin(false);
+        }
+      };
+      fetchLoginLogs();
+    }
+  }, [activeTab, loginLogs.length]);
+
+  // Filter audit logs
   const filteredLogs = logs.filter(log => {
     const protocoloNum = log.tabela === 'protocolos' && log.registro_dados ? String((log.registro_dados as Record<string, unknown>).numero || '') : '';
     const matchesSearch = 
@@ -241,6 +287,23 @@ export default function LogsAuditoria() {
     return matchesSearch && matchesTabela && matchesAcao;
   });
 
+  // Filter login logs
+  const filteredLoginLogs = loginLogs.filter(log => {
+    const matchesSearch = 
+      log.identificador.toLowerCase().includes(loginSearch.toLowerCase()) ||
+      (log.motorista_nome && log.motorista_nome.toLowerCase().includes(loginSearch.toLowerCase())) ||
+      (log.unidade && log.unidade.toLowerCase().includes(loginSearch.toLowerCase())) ||
+      (log.erro && log.erro.toLowerCase().includes(loginSearch.toLowerCase()));
+    
+    const matchesStatus = loginStatusFiltro === 'todos' || 
+      (loginStatusFiltro === 'sucesso' && log.sucesso) || 
+      (loginStatusFiltro === 'falha' && !log.sucesso);
+    
+    const matchesTipo = loginTipoFiltro === 'todos' || log.identificador_tipo === loginTipoFiltro;
+
+    return matchesSearch && matchesStatus && matchesTipo;
+  });
+
   // Pagination calculations
   const totalPages = Math.ceil(filteredLogs.length / pageSize);
   const paginatedLogs = filteredLogs.slice(
@@ -248,10 +311,20 @@ export default function LogsAuditoria() {
     currentPage * pageSize
   );
 
+  const loginTotalPages = Math.ceil(filteredLoginLogs.length / loginPageSize);
+  const paginatedLoginLogs = filteredLoginLogs.slice(
+    (loginCurrentPage - 1) * loginPageSize,
+    loginCurrentPage * loginPageSize
+  );
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [search, tabelaFiltro, acaoFiltro, pageSize]);
+
+  useEffect(() => {
+    setLoginCurrentPage(1);
+  }, [loginSearch, loginStatusFiltro, loginTipoFiltro, loginPageSize]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -290,154 +363,307 @@ export default function LogsAuditoria() {
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Buscar por usuário ou dados..."
-          className="flex-1 max-w-md"
-        />
-        
-        <Select value={tabelaFiltro} onValueChange={setTabelaFiltro}>
-          <SelectTrigger className="w-[160px] h-8 text-xs">
-            <SelectValue placeholder="Todas as Tabelas" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as Tabelas</SelectItem>
-            <SelectItem value="motoristas">Motoristas</SelectItem>
-            <SelectItem value="pdvs">Clientes</SelectItem>
-            <SelectItem value="protocolos">Protocolos</SelectItem>
-            <SelectItem value="unidades">Unidades</SelectItem>
-            <SelectItem value="gestores">Gestores</SelectItem>
-            <SelectItem value="sessao">Sessão</SelectItem>
-          </SelectContent>
-        </Select>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="auditoria" className="gap-1.5">
+            <ClipboardList size={14} />
+            Auditoria
+          </TabsTrigger>
+          <TabsTrigger value="login-motorista" className="gap-1.5">
+            <Truck size={14} />
+            Login Motoristas
+          </TabsTrigger>
+        </TabsList>
 
-        <Select value={acaoFiltro} onValueChange={setAcaoFiltro}>
-          <SelectTrigger className="w-[160px] h-8 text-xs">
-            <SelectValue placeholder="Todas as Ações" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas as Ações</SelectItem>
-            <SelectItem value="login">Login</SelectItem>
-            <SelectItem value="logout">Logout</SelectItem>
-            <SelectItem value="criacao">Criação</SelectItem>
-            <SelectItem value="edicao">Edição</SelectItem>
-            <SelectItem value="exclusao">Exclusão</SelectItem>
-            <SelectItem value="importacao">Importação</SelectItem>
-            <SelectItem value="visualizacao">Visualização</SelectItem>
-            <SelectItem value="envio_mensagem">Mensagem Chat</SelectItem>
-            <SelectItem value="alteracao_status">Status Alterado</SelectItem>
-            <SelectItem value="upload_foto">Upload Foto</SelectItem>
-            <SelectItem value="envio_whatsapp">WhatsApp</SelectItem>
-            <SelectItem value="envio_email">E-mail</SelectItem>
-            <SelectItem value="validacao">Validação</SelectItem>
-            <SelectItem value="lancamento">Lançamento</SelectItem>
-            <SelectItem value="reabertura">Reabertura</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Table */}
-      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : (
-          <>
-            <table className="w-full">
-              <thead>
-                <tr className="table-header">
-                  <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Data/Hora</th>
-                  <th className="text-left p-2.5 text-[11px]">Ação</th>
-                  <th className="text-left p-2.5 text-[11px]">Tabela</th>
-                  <th className="text-left p-2.5 text-[11px]">Protocolo</th>
-                  <th className="text-left p-2.5 text-[11px]">Registro</th>
-                  <th className="text-left p-2.5 text-[11px]">Usuário</th>
-                  <th className="text-left p-2.5 text-[11px]">Perfil</th>
-                  <th className="text-left p-2.5 text-[11px] rounded-tr-lg">Unidade</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedLogs.map((log) => (
-                  <tr key={log.id} className="border-b border-border hover:bg-muted/30">
-                    <td className="p-2.5">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-                        <Calendar size={12} />
-                        {formatDate(log.created_at)}
-                      </span>
-                    </td>
-                    <td className="p-2.5">
-                      {(() => {
-                        const Icon = getAcaoIcon(log.acao);
-                        return (
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getAcaoColor(log.acao)}`}>
-                            <Icon size={10} />
-                            {getAcaoLabel(log.acao)}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="p-2.5 text-xs font-medium">
-                      {getTabelaLabel(log.tabela)}
-                    </td>
-                    <td className="p-2.5 text-xs">
-                      {(() => {
-                        const numero = getProtocoloNumero(log);
-                        if (numero) {
-                          return (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-mono font-medium text-[10px]">
-                              <ClipboardList size={10} />
-                              {numero.replace('PROTOC-', '')}
-                            </span>
-                          );
-                        }
-                        return <span className="text-muted-foreground">-</span>;
-                      })()}
-                    </td>
-                    <td className="p-2.5 text-xs text-muted-foreground">
-                      {getRegistroInfo(log)}
-                    </td>
-                    <td className="p-2.5">
-                      <span className="inline-flex items-center gap-1 text-xs">
-                        <User size={12} className="text-muted-foreground" />
-                        {log.usuario_nome}
-                      </span>
-                    </td>
-                    <td className="p-2.5 text-xs text-muted-foreground">
-                      {getRoleLabel(log.usuario_role)}
-                    </td>
-                    <td className="p-2.5">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-                        <MapPin size={12} />
-                        {log.usuario_unidade || '-'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            {filteredLogs.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                Nenhum log encontrado
-              </div>
-            )}
-
-            {/* Pagination */}
-            <TablePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              totalItems={filteredLogs.length}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
+        {/* Aba Auditoria */}
+        <TabsContent value="auditoria" className="space-y-3 mt-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar por usuário ou dados..."
+              className="flex-1 max-w-md"
             />
-          </>
-        )}
-      </div>
+            
+            <Select value={tabelaFiltro} onValueChange={setTabelaFiltro}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="Todas as Tabelas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as Tabelas</SelectItem>
+                <SelectItem value="motoristas">Motoristas</SelectItem>
+                <SelectItem value="pdvs">Clientes</SelectItem>
+                <SelectItem value="protocolos">Protocolos</SelectItem>
+                <SelectItem value="unidades">Unidades</SelectItem>
+                <SelectItem value="gestores">Gestores</SelectItem>
+                <SelectItem value="sessao">Sessão</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={acaoFiltro} onValueChange={setAcaoFiltro}>
+              <SelectTrigger className="w-[160px] h-8 text-xs">
+                <SelectValue placeholder="Todas as Ações" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as Ações</SelectItem>
+                <SelectItem value="login">Login</SelectItem>
+                <SelectItem value="logout">Logout</SelectItem>
+                <SelectItem value="criacao">Criação</SelectItem>
+                <SelectItem value="edicao">Edição</SelectItem>
+                <SelectItem value="exclusao">Exclusão</SelectItem>
+                <SelectItem value="importacao">Importação</SelectItem>
+                <SelectItem value="visualizacao">Visualização</SelectItem>
+                <SelectItem value="envio_mensagem">Mensagem Chat</SelectItem>
+                <SelectItem value="alteracao_status">Status Alterado</SelectItem>
+                <SelectItem value="upload_foto">Upload Foto</SelectItem>
+                <SelectItem value="envio_whatsapp">WhatsApp</SelectItem>
+                <SelectItem value="envio_email">E-mail</SelectItem>
+                <SelectItem value="validacao">Validação</SelectItem>
+                <SelectItem value="lancamento">Lançamento</SelectItem>
+                <SelectItem value="reabertura">Reabertura</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                <table className="w-full">
+                  <thead>
+                    <tr className="table-header">
+                      <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Data/Hora</th>
+                      <th className="text-left p-2.5 text-[11px]">Ação</th>
+                      <th className="text-left p-2.5 text-[11px]">Tabela</th>
+                      <th className="text-left p-2.5 text-[11px]">Protocolo</th>
+                      <th className="text-left p-2.5 text-[11px]">Registro</th>
+                      <th className="text-left p-2.5 text-[11px]">Usuário</th>
+                      <th className="text-left p-2.5 text-[11px]">Perfil</th>
+                      <th className="text-left p-2.5 text-[11px] rounded-tr-lg">Unidade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedLogs.map((log) => (
+                      <tr key={log.id} className="border-b border-border hover:bg-muted/30">
+                        <td className="p-2.5">
+                          <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                            <Calendar size={12} />
+                            {formatDate(log.created_at)}
+                          </span>
+                        </td>
+                        <td className="p-2.5">
+                          {(() => {
+                            const Icon = getAcaoIcon(log.acao);
+                            return (
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getAcaoColor(log.acao)}`}>
+                                <Icon size={10} />
+                                {getAcaoLabel(log.acao)}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="p-2.5 text-xs font-medium">
+                          {getTabelaLabel(log.tabela)}
+                        </td>
+                        <td className="p-2.5 text-xs">
+                          {(() => {
+                            const numero = getProtocoloNumero(log);
+                            if (numero) {
+                              return (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-mono font-medium text-[10px]">
+                                  <ClipboardList size={10} />
+                                  {numero.replace('PROTOC-', '')}
+                                </span>
+                              );
+                            }
+                            return <span className="text-muted-foreground">-</span>;
+                          })()}
+                        </td>
+                        <td className="p-2.5 text-xs text-muted-foreground">
+                          {getRegistroInfo(log)}
+                        </td>
+                        <td className="p-2.5">
+                          <span className="inline-flex items-center gap-1 text-xs">
+                            <User size={12} className="text-muted-foreground" />
+                            {log.usuario_nome}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-xs text-muted-foreground">
+                          {getRoleLabel(log.usuario_role)}
+                        </td>
+                        <td className="p-2.5">
+                          <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                            <MapPin size={12} />
+                            {log.usuario_unidade || '-'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {filteredLogs.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    Nenhum log encontrado
+                  </div>
+                )}
+
+                <TablePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredLogs.length}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Aba Login Motoristas */}
+        <TabsContent value="login-motorista" className="space-y-3 mt-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <SearchInput
+              value={loginSearch}
+              onChange={setLoginSearch}
+              placeholder="Buscar por CPF, código, nome ou erro..."
+              className="flex-1 max-w-md"
+            />
+            
+            <Select value={loginStatusFiltro} onValueChange={setLoginStatusFiltro}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="sucesso">Sucesso</SelectItem>
+                <SelectItem value="falha">Falha</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={loginTipoFiltro} onValueChange={setLoginTipoFiltro}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="cpf">CPF</SelectItem>
+                <SelectItem value="codigo">Código</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
+            {isLoadingLogin ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <>
+                <table className="w-full">
+                  <thead>
+                    <tr className="table-header">
+                      <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Data/Hora</th>
+                      <th className="text-left p-2.5 text-[11px]">Status</th>
+                      <th className="text-left p-2.5 text-[11px]">Identificador</th>
+                      <th className="text-left p-2.5 text-[11px]">Tipo</th>
+                      <th className="text-left p-2.5 text-[11px]">Motorista</th>
+                      <th className="text-left p-2.5 text-[11px]">Unidade</th>
+                      <th className="text-left p-2.5 text-[11px] rounded-tr-lg">Erro</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedLoginLogs.map((log) => (
+                      <tr key={log.id} className="border-b border-border hover:bg-muted/30">
+                        <td className="p-2.5">
+                          <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                            <Calendar size={12} />
+                            {formatDate(log.created_at)}
+                          </span>
+                        </td>
+                        <td className="p-2.5">
+                          {log.sucesso ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle size={10} />
+                              Sucesso
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-destructive/20 text-destructive">
+                              <XCircle size={10} />
+                              Falha
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-2.5 text-xs font-mono font-medium">
+                          {log.identificador}
+                        </td>
+                        <td className="p-2.5">
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                            log.identificador_tipo === 'cpf' 
+                              ? 'bg-blue-500/20 text-blue-700 dark:text-blue-400' 
+                              : 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                          }`}>
+                            {log.identificador_tipo === 'cpf' ? 'CPF' : 'Código'}
+                          </span>
+                        </td>
+                        <td className="p-2.5">
+                          {log.motorista_nome ? (
+                            <span className="inline-flex items-center gap-1 text-xs">
+                              <User size={12} className="text-muted-foreground" />
+                              {log.motorista_nome}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="p-2.5">
+                          {log.unidade ? (
+                            <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                              <MapPin size={12} />
+                              {log.unidade}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="p-2.5">
+                          {log.erro ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-destructive">
+                              <ShieldAlert size={12} />
+                              {log.erro}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {filteredLoginLogs.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground">
+                    Nenhum log de login encontrado
+                  </div>
+                )}
+
+                <TablePagination
+                  currentPage={loginCurrentPage}
+                  totalPages={loginTotalPages}
+                  pageSize={loginPageSize}
+                  totalItems={filteredLoginLogs.length}
+                  onPageChange={setLoginCurrentPage}
+                  onPageSizeChange={setLoginPageSize}
+                />
+              </>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
