@@ -68,7 +68,7 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
     motoristaData?: { id: string; nome: string; unidade: string }
   ) => {
     try {
-      await supabase.from('motorista_login_logs').insert({
+      const { error } = await supabase.from('motorista_login_logs').insert({
         identificador: identificadorLog,
         identificador_tipo: tipo,
         sucesso,
@@ -77,8 +77,11 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
         motorista_nome: motoristaData?.nome || null,
         unidade: motoristaData?.unidade || null,
       });
+      if (error) {
+        console.error('Erro ao registrar log de login:', error.message, error);
+      }
     } catch (e) {
-      console.error('Erro ao registrar log de login:', e);
+      console.error('Exceção ao registrar log de login:', e);
     }
   };
 

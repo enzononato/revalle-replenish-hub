@@ -252,7 +252,7 @@ export default function LogsAuditoria() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'login-motorista' && loginLogs.length === 0) {
+    if (activeTab === 'login-motorista') {
       const fetchLoginLogs = async () => {
         setIsLoadingLogin(true);
         try {
@@ -271,7 +271,7 @@ export default function LogsAuditoria() {
       };
       fetchLoginLogs();
     }
-  }, [activeTab, loginLogs.length]);
+  }, [activeTab]);
 
   // Filter audit logs
   const filteredLogs = logs.filter(log => {
