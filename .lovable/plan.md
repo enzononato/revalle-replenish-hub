@@ -1,38 +1,40 @@
 
 
-## Fix: Unidade Filter Style Consistency on Protocolos Page
+## Correção: Logs de falha de login do motorista não são salvos
 
-The Unidade filter currently uses the `MultiSelectUnidade` component (Popover + Checkboxes), which has a different visual style compared to all the other filters (Status, Lancado, Validado, Tipo) that use the standard `Select` component. This creates a visual inconsistency as seen in the screenshot.
+### Problema identificado
+A função `logLoginAttempt` em `MotoristaAuthContext.tsx` não verifica o retorno da inserção no banco. O client retorna `{ data, error }` sem lançar exceção, então o `try/catch` nunca captura erros de inserção. Isso faz com que falhas de login não sejam registradas silenciosamente.
 
-### Solution
-
-Replace the `MultiSelectUnidade` component with a standard `Select` dropdown on the Protocolos page, matching the style of the other filters. Since filtering by a single unit at a time is sufficient for this page, we'll use a simple `Select` with options for "Todas" plus each available unit.
-
-### Technical Details
-
-**File: `src/pages/Protocolos.tsx`**
-
-1. Remove the `MultiSelectUnidade` import
-2. Replace the multi-select component (lines 621-640) with a standard `Select` component styled like the other filters (Lancado, Validado, Tipo)
-3. Change state from `unidadeFilters: string[]` to `unidadeFilter: string` (single value, default `'todas'`)
-4. Update the filtering logic (lines 144-153) to work with a single string value instead of an array
-5. Update `clearFilters` and `hasActiveFilters` to use the new single-value state
-6. Update the `useEffect` dependency array for page reset
-
-The new Unidade filter will look like:
-```
-<Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
-  <SelectTrigger className="h-8 text-xs">
-    <SelectValue placeholder="Todas" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="todas">Todas</SelectItem>
-    {unidadesDisponiveis.map(u => (
-      <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>
-    ))}
-  </SelectContent>
-</Select>
+### Causa raiz
+```typescript
+// Código atual - NÃO verifica o erro retornado
+try {
+  await supabase.from('motorista_login_logs').insert({...});
+} catch (e) {
+  console.error('Erro ao registrar log de login:', e);
+}
 ```
 
-This ensures visual consistency across all filter dropdowns on the Protocolos page.
+### Solução
+Alterar `logLoginAttempt` em **`src/contexts/MotoristaAuthContext.tsx`** para:
+
+1. Capturar o objeto `{ error }` retornado pela inserção
+2. Se houver erro, logar no console com detalhes para diagnóstico
+3. Garantir que a falha no log não interrompa o fluxo de login
+
+```typescript
+const logLoginAttempt = async (...) => {
+  try {
+    const { error } = await supabase.from('motorista_login_logs').insert({...});
+    if (error) {
+      console.error('Erro ao registrar log de login:', error.message, error);
+    }
+  } catch (e) {
+    console.error('Exceção ao registrar log de login:', e);
+  }
+};
+```
+
+### Arquivo alterado
+- `src/contexts/MotoristaAuthContext.tsx` — única mudança, na função `logLoginAttempt`
 
