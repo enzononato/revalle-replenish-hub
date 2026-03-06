@@ -129,21 +129,27 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
 
   const toggleCamera = useCallback(async () => {
     const newMode = facingMode === 'environment' ? 'user' : 'environment';
-    setFacingMode(newMode);
     setError(null);
     setIsLoading(true);
-    
+
+    // IMPORTANT: Request the NEW stream FIRST (within user gesture context),
+    // then stop the old one. This avoids losing the gesture context after async stopCamera.
     try {
-      stopCamera();
-      
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const newStream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: newMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false
       });
-      streamRef.current = stream;
-      
+
+      // Only stop old stream AFTER successfully getting the new one
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
+      streamRef.current = newStream;
+      setFacingMode(newMode);
+
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        videoRef.current.srcObject = newStream;
         await videoRef.current.play();
       }
       setIsLoading(false);
@@ -151,6 +157,9 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
       console.error('Camera toggle error:', err);
       // Fallback: try without specific facingMode
       try {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
         const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         streamRef.current = fallbackStream;
         if (videoRef.current) {
@@ -163,7 +172,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
         setError('Não foi possível alternar a câmera.');
       }
     }
-  }, [facingMode, stopCamera]);
+  }, [facingMode]);
 
   const handleClose = useCallback(() => {
     stopCamera();
