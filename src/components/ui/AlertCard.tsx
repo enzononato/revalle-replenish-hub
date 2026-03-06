@@ -108,7 +108,7 @@ export function AlertCard({ items, className, delay = 0 }: AlertCardProps) {
 
   return (
     <div 
-      className={cn('card-stats animate-slide-up flex flex-col overflow-hidden max-h-[460px]', className)}
+      className={cn('card-stats animate-slide-up flex flex-col overflow-hidden max-h-[400px]', className)}
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-center justify-between mb-3">
