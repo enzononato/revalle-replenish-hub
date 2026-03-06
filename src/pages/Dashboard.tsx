@@ -148,7 +148,8 @@ export default function Dashboard() {
     
     const totalHoje = protocolosFiltrados.filter(p => {
       try {
-        return isToday(parseISO(p.createdAt));
+        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        return isToday(dataProtocolo);
       } catch {
         return false;
       }
@@ -158,8 +159,8 @@ export default function Dashboard() {
     const ontem = subDays(new Date(), 1);
     const totalOntem = protocolosFiltrados.filter(p => {
       try {
-        const date = parseISO(p.createdAt);
-        return format(date, 'yyyy-MM-dd') === format(ontem, 'yyyy-MM-dd');
+        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        return format(dataProtocolo, 'yyyy-MM-dd') === format(ontem, 'yyyy-MM-dd');
       } catch {
         return false;
       }
