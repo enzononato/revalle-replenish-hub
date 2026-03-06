@@ -724,9 +724,9 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground">Estes protocolos atingirão 16 dias em breve e dispararão alerta automático</p>
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[400px]">
             <table className="w-full">
-              <thead>
+              <thead className="sticky top-0 z-10">
                 <tr className="table-header bg-amber-500/10">
                   <th className="text-left p-2 text-[10px] rounded-tl-lg">Protocolo</th>
                   <th className="text-left p-2 text-[10px]">Motorista</th>
