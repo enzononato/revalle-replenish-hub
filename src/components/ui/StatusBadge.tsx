@@ -16,7 +16,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   const config = statusConfig[status];
   
   return (
-    <span className={cn("badge-status", config.className)}>
+    <span className={cn("badge-status whitespace-nowrap", config.className)}>
       {config.label}
     </span>
   );
