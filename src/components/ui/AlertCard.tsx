@@ -137,7 +137,7 @@ export function AlertCard({ items, className, delay = 0 }: AlertCardProps) {
         </div>
       </div>
       
-      <div className="space-y-2 max-h-[240px] overflow-y-auto">
+      <div className="space-y-2 max-h-[240px] overflow-y-auto pb-1">
         {visibleItems.map((item) => {
           const styles = getAlertStyles(item.tipo);
           const Icon = getAlertIcon(item.tipo);
