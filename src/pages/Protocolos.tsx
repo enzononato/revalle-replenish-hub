@@ -35,7 +35,7 @@ import CreateProtocoloModal from '@/components/CreateProtocoloModal';
 
 // Função para extrair data de encerramento do log
 const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | null => {
-  const logEncerramento = observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+  const logEncerramento = observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
   return logEncerramento?.data || null;
 };
 
@@ -850,7 +850,7 @@ export default function Protocolos() {
                   {activeTab === 'encerrado' && (
                     <td className="p-2.5 border-r border-border">
                       {(() => {
-                        const logEnc = protocolo.observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+                        const logEnc = protocolo.observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
                         if (logEnc) {
                           return (
                             <div className="text-[12px] text-foreground">
