@@ -131,25 +131,48 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
     setError(null);
     setIsLoading(true);
 
-    // Detect actual current facing mode from the active track
-    const currentTrack = streamRef.current?.getVideoTracks()[0];
-    const currentFacing = currentTrack?.getSettings()?.facingMode || facingMode;
-    const newMode = currentFacing === 'environment' ? 'user' : 'environment';
-
     try {
-      // Use { exact } to force the specific camera direction
+      // Get all video input devices
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+      if (videoDevices.length < 2) {
+        setIsLoading(false);
+        setError('Apenas uma câmera disponível neste dispositivo.');
+        return;
+      }
+
+      // Find the current device ID
+      const currentTrack = streamRef.current?.getVideoTracks()[0];
+      const currentDeviceId = currentTrack?.getSettings()?.deviceId;
+
+      // Pick the next device in the list (cycle through)
+      const currentIndex = videoDevices.findIndex(d => d.deviceId === currentDeviceId);
+      const nextIndex = (currentIndex + 1) % videoDevices.length;
+      const nextDeviceId = videoDevices[nextIndex].deviceId;
+
+      // Stop the old stream BEFORE requesting new one by deviceId
+      // (deviceId selection is reliable and doesn't conflict)
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
       const newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: newMode }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: { deviceId: { exact: nextDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false
       });
 
-      // Stop old stream AFTER successfully getting the new one
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-
       streamRef.current = newStream;
-      setFacingMode(newMode);
+
+      // Update facingMode state based on the new track's settings
+      const newFacing = newStream.getVideoTracks()[0]?.getSettings()?.facingMode;
+      if (newFacing === 'environment' || newFacing === 'user') {
+        setFacingMode(newFacing);
+      } else {
+        // Toggle the state manually if the browser doesn't report facingMode
+        setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
+      }
 
       if (videoRef.current) {
         videoRef.current.srcObject = newStream;
@@ -157,32 +180,11 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
       }
       setIsLoading(false);
     } catch (err) {
-      console.error('Camera toggle error (exact):', err);
-      // Fallback: try without exact constraint
-      try {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: newMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
-          audio: false
-        });
-
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-        }
-
-        streamRef.current = fallbackStream;
-        setFacingMode(newMode);
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = fallbackStream;
-          await videoRef.current.play();
-        }
-        setIsLoading(false);
-      } catch {
-        setIsLoading(false);
-        setError('Não foi possível alternar a câmera.');
-      }
+      console.error('Camera toggle error:', err);
+      setIsLoading(false);
+      setError('Não foi possível alternar a câmera.');
     }
-  }, [facingMode]);
+  }, []);
 
   const handleClose = useCallback(() => {
     stopCamera();
