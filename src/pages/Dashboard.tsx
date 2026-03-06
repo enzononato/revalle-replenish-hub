@@ -4,6 +4,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
 import { AlertCard } from '@/components/ui/AlertCard';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
+import { useGestoresDB } from '@/hooks/useGestoresDB';
 import { MultiSelectUnidade } from '@/components/ui/MultiSelectUnidade';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,6 +56,7 @@ export default function Dashboard() {
   const { isAdmin, user } = useAuth();
   const { motoristas } = useMotoristasDB();
   const { unidades } = useUnidadesDB();
+  const { gestores } = useGestoresDB();
   const [unidadesFiltro, setUnidadesFiltro] = useState<string[]>([]);
   const [periodoFiltro, setPeriodoFiltro] = useState<PeriodoFiltro>('todos');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -728,6 +730,8 @@ export default function Dashboard() {
                 <tr className="table-header bg-amber-500/10">
                   <th className="text-left p-2 text-[10px] rounded-tl-lg">Protocolo</th>
                   <th className="text-left p-2 text-[10px]">Motorista</th>
+                  <th className="text-left p-2 text-[10px]">Unidade</th>
+                  <th className="text-left p-2 text-[10px]">Gestor</th>
                   <th className="text-left p-2 text-[10px]">Data</th>
                   <th className="text-left p-2 text-[10px]">Dias SLA</th>
                   <th className="text-left p-2 text-[10px]">Faltam</th>
@@ -738,6 +742,10 @@ export default function Dashboard() {
               <tbody>
                 {protocolosProximosSLA.map((protocolo) => {
                   const diasFaltando = 16 - protocolo.slaDias;
+                  const unidadeProtocolo = protocolo.motorista?.unidade || '—';
+                  const gestorResponsavel = gestores.find(g => 
+                    g.unidades.some(u => u.toUpperCase().trim() === unidadeProtocolo.toUpperCase().trim())
+                  );
                   
                   return (
                     <tr 
@@ -754,6 +762,14 @@ export default function Dashboard() {
                           </div>
                           <span className="font-medium text-[11px]">{protocolo.motorista.nome}</span>
                         </div>
+                      </td>
+                      <td className="p-2">
+                        <span className="text-[11px] font-medium">{unidadeProtocolo}</span>
+                      </td>
+                      <td className="p-2">
+                        <span className="text-[11px] text-muted-foreground">
+                          {gestorResponsavel ? gestorResponsavel.nome : '—'}
+                        </span>
                       </td>
                       <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
                       <td className="p-2">
