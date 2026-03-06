@@ -614,7 +614,14 @@ export default function Dashboard() {
         <StatCard
           title="Encerrados Hoje"
           value={protocolosFiltrados.filter(p => p.status === 'encerrado' && (() => {
-            try { return isToday(parseISO(p.createdAt)); } catch { return false; }
+            try {
+              const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
+              if (dataEnc) {
+                const parsed = parse(dataEnc, 'dd/MM/yyyy', new Date());
+                return isToday(parsed);
+              }
+              return false;
+            } catch { return false; }
           })()).length}
           icon={CheckCircle}
           variant="success"
