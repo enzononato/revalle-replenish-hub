@@ -399,7 +399,7 @@ export default function Dashboard() {
 
   // Função para extrair data de encerramento do log
   const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | null => {
-    const logEncerramento = observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+    const logEncerramento = observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
     return logEncerramento?.data || null;
   };
 
