@@ -128,19 +128,22 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
   }, [capturedImage, onCapture, onClose]);
 
   const toggleCamera = useCallback(async () => {
-    const newMode = facingMode === 'environment' ? 'user' : 'environment';
     setError(null);
     setIsLoading(true);
 
-    // IMPORTANT: Request the NEW stream FIRST (within user gesture context),
-    // then stop the old one. This avoids losing the gesture context after async stopCamera.
+    // Detect actual current facing mode from the active track
+    const currentTrack = streamRef.current?.getVideoTracks()[0];
+    const currentFacing = currentTrack?.getSettings()?.facingMode || facingMode;
+    const newMode = currentFacing === 'environment' ? 'user' : 'environment';
+
     try {
+      // Use { exact } to force the specific camera direction
       const newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: newMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: { facingMode: { exact: newMode }, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false
       });
 
-      // Only stop old stream AFTER successfully getting the new one
+      // Stop old stream AFTER successfully getting the new one
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
@@ -154,14 +157,21 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
       }
       setIsLoading(false);
     } catch (err) {
-      console.error('Camera toggle error:', err);
-      // Fallback: try without specific facingMode
+      console.error('Camera toggle error (exact):', err);
+      // Fallback: try without exact constraint
       try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: newMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false
+        });
+
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());
         }
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+
         streamRef.current = fallbackStream;
+        setFacingMode(newMode);
+
         if (videoRef.current) {
           videoRef.current.srcObject = fallbackStream;
           await videoRef.current.play();
