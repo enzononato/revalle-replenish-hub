@@ -127,16 +127,43 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
     }
   }, [capturedImage, onCapture, onClose]);
 
-  const toggleCamera = useCallback(() => {
-    setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
-  }, []);
-
-  // Effect to restart camera when facing mode changes
-  useEffect(() => {
-    if (isOpen && !capturedImage && !error) {
-      startCamera();
+  const toggleCamera = useCallback(async () => {
+    const newMode = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(newMode);
+    setError(null);
+    setIsLoading(true);
+    
+    try {
+      stopCamera();
+      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: newMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Camera toggle error:', err);
+      // Fallback: try without specific facingMode
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        streamRef.current = fallbackStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = fallbackStream;
+          await videoRef.current.play();
+        }
+        setIsLoading(false);
+      } catch {
+        setIsLoading(false);
+        setError('Não foi possível alternar a câmera.');
+      }
     }
-  }, [facingMode]);
+  }, [facingMode, stopCamera]);
 
   const handleClose = useCallback(() => {
     stopCamera();
