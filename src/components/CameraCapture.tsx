@@ -19,6 +19,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const videoDevicesRef = useRef<MediaDeviceInfo[]>([]);
   
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
     setCapturedImage(null);
     
     try {
-      // Stop existing stream
       stopCamera();
       
       const constraints: MediaStreamConstraints = {
@@ -56,6 +56,14 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
+      }
+      
+      // Cache available video devices after getting permission
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        videoDevicesRef.current = devices.filter(d => d.kind === 'videoinput');
+      } catch {
+        // Non-critical, toggle just won't work
       }
       
       setIsLoading(false);
@@ -131,33 +139,31 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
     setError(null);
     setIsLoading(true);
 
+    const videoDevices = videoDevicesRef.current;
+
+    if (videoDevices.length < 2) {
+      setIsLoading(false);
+      setError('Apenas uma câmera disponível neste dispositivo.');
+      return;
+    }
+
+    // Find the current device ID from the active track
+    const currentTrack = streamRef.current?.getVideoTracks()[0];
+    const currentDeviceId = currentTrack?.getSettings()?.deviceId;
+
+    // Pick the next device in the list (cycle through)
+    const currentIndex = videoDevices.findIndex(d => d.deviceId === currentDeviceId);
+    const nextIndex = (currentIndex + 1) % videoDevices.length;
+    const nextDeviceId = videoDevices[nextIndex].deviceId;
+
+    // Stop old stream before requesting new one
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
     try {
-      // Get all video input devices
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(d => d.kind === 'videoinput');
-
-      if (videoDevices.length < 2) {
-        setIsLoading(false);
-        setError('Apenas uma câmera disponível neste dispositivo.');
-        return;
-      }
-
-      // Find the current device ID
-      const currentTrack = streamRef.current?.getVideoTracks()[0];
-      const currentDeviceId = currentTrack?.getSettings()?.deviceId;
-
-      // Pick the next device in the list (cycle through)
-      const currentIndex = videoDevices.findIndex(d => d.deviceId === currentDeviceId);
-      const nextIndex = (currentIndex + 1) % videoDevices.length;
-      const nextDeviceId = videoDevices[nextIndex].deviceId;
-
-      // Stop the old stream BEFORE requesting new one by deviceId
-      // (deviceId selection is reliable and doesn't conflict)
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-
+      // CRITICAL: getUserMedia called directly in click handler, no prior awaits
       const newStream = await navigator.mediaDevices.getUserMedia({
         video: { deviceId: { exact: nextDeviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false
@@ -170,7 +176,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
       if (newFacing === 'environment' || newFacing === 'user') {
         setFacingMode(newFacing);
       } else {
-        // Toggle the state manually if the browser doesn't report facingMode
         setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
       }
 
