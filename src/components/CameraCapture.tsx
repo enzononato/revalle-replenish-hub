@@ -39,7 +39,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
     setCapturedImage(null);
     
     try {
-      // Stop existing stream
       stopCamera();
       
       const constraints: MediaStreamConstraints = {
@@ -57,6 +56,14 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
+      }
+      
+      // Cache available video devices after getting permission
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        videoDevicesRef.current = devices.filter(d => d.kind === 'videoinput');
+      } catch {
+        // Non-critical, toggle just won't work
       }
       
       setIsLoading(false);
