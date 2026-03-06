@@ -247,20 +247,22 @@ export default function Dashboard() {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dayName = days[date.getDay()];
-      const dateStr = format(date, 'yyyy-MM-dd');
+      const dateStr = format(date, 'dd/MM/yyyy');
       
-      const dayProtocolos = protocolosFiltrados.filter(p => {
-        try {
-          return format(parseISO(p.createdAt), 'yyyy-MM-dd') === dateStr;
-        } catch {
-          return false;
-        }
-      });
+      // Abertos: protocolos cuja data (dd/MM/yyyy) é desse dia
+      const abertosNoDia = protocolosFiltrados.filter(p => p.data === dateStr).length;
+      
+      // Encerrados: protocolos encerrados nesse dia (pela data do log)
+      const encerradosNoDia = protocolosFiltrados.filter(p => {
+        if (p.status !== 'encerrado') return false;
+        const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
+        return dataEnc === dateStr;
+      }).length;
       
       result.push({
         name: dayName,
-        abertos: dayProtocolos.filter(p => p.status === 'aberto').length,
-        encerrados: dayProtocolos.filter(p => p.status === 'encerrado').length,
+        abertos: abertosNoDia,
+        encerrados: encerradosNoDia,
       });
     }
     
