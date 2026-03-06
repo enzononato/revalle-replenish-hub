@@ -692,7 +692,7 @@ export default function Dashboard() {
       </div>
 
       {/* Rankings + Alertas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <RankingCard
           title="Top 5 Motoristas"
           icon={<Users className="text-primary" size={18} />}
@@ -717,7 +717,6 @@ export default function Dashboard() {
         <AlertCard
           items={alertas}
           delay={800}
-          className="self-start"
         />
       </div>
 
