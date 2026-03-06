@@ -717,7 +717,7 @@ export default function Dashboard() {
         <AlertCard
           items={alertas}
           delay={800}
-          className="self-start"
+          className="flex flex-col"
         />
       </div>
 
