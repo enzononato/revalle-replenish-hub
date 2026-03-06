@@ -4,6 +4,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
 import { AlertCard } from '@/components/ui/AlertCard';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
+import { useGestoresDB } from '@/hooks/useGestoresDB';
 import { MultiSelectUnidade } from '@/components/ui/MultiSelectUnidade';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,6 +56,7 @@ export default function Dashboard() {
   const { isAdmin, user } = useAuth();
   const { motoristas } = useMotoristasDB();
   const { unidades } = useUnidadesDB();
+  const { gestores } = useGestoresDB();
   const [unidadesFiltro, setUnidadesFiltro] = useState<string[]>([]);
   const [periodoFiltro, setPeriodoFiltro] = useState<PeriodoFiltro>('todos');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -146,7 +148,8 @@ export default function Dashboard() {
     
     const totalHoje = protocolosFiltrados.filter(p => {
       try {
-        return isToday(parseISO(p.createdAt));
+        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        return isToday(dataProtocolo);
       } catch {
         return false;
       }
@@ -156,8 +159,8 @@ export default function Dashboard() {
     const ontem = subDays(new Date(), 1);
     const totalOntem = protocolosFiltrados.filter(p => {
       try {
-        const date = parseISO(p.createdAt);
-        return format(date, 'yyyy-MM-dd') === format(ontem, 'yyyy-MM-dd');
+        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        return format(dataProtocolo, 'yyyy-MM-dd') === format(ontem, 'yyyy-MM-dd');
       } catch {
         return false;
       }
@@ -244,20 +247,23 @@ export default function Dashboard() {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dayName = days[date.getDay()];
-      const dateStr = format(date, 'yyyy-MM-dd');
+      const dateStr = format(date, 'dd/MM/yyyy');
       
-      const dayProtocolos = protocolosFiltrados.filter(p => {
-        try {
-          return format(parseISO(p.createdAt), 'yyyy-MM-dd') === dateStr;
-        } catch {
-          return false;
-        }
-      });
+      // Abertos: protocolos cuja data (dd/MM/yyyy) é desse dia
+      const abertosNoDia = protocolosFiltrados.filter(p => p.data === dateStr).length;
+      
+      // Encerrados: protocolos encerrados nesse dia (pela data do log)
+      const encerradosNoDia = protocolosFiltrados.filter(p => {
+        if (p.status !== 'encerrado') return false;
+        const logEnc = (p.observacoesLog as ObservacaoLog[] | undefined)?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
+        const dataEnc = logEnc?.data || null;
+        return dataEnc === dateStr;
+      }).length;
       
       result.push({
         name: dayName,
-        abertos: dayProtocolos.filter(p => p.status === 'aberto').length,
-        encerrados: dayProtocolos.filter(p => p.status === 'encerrado').length,
+        abertos: abertosNoDia,
+        encerrados: encerradosNoDia,
       });
     }
     
@@ -397,7 +403,7 @@ export default function Dashboard() {
 
   // Função para extrair data de encerramento do log
   const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | null => {
-    const logEncerramento = observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+    const logEncerramento = observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
     return logEncerramento?.data || null;
   };
 
@@ -612,7 +618,14 @@ export default function Dashboard() {
         <StatCard
           title="Encerrados Hoje"
           value={protocolosFiltrados.filter(p => p.status === 'encerrado' && (() => {
-            try { return isToday(parseISO(p.createdAt)); } catch { return false; }
+            try {
+              const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
+              if (dataEnc) {
+                const parsed = parse(dataEnc, 'dd/MM/yyyy', new Date());
+                return isToday(parsed);
+              }
+              return false;
+            } catch { return false; }
           })()).length}
           icon={CheckCircle}
           variant="success"
@@ -722,12 +735,14 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground">Estes protocolos atingirão 16 dias em breve e dispararão alerta automático</p>
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[500px]">
             <table className="w-full">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-card">
                 <tr className="table-header bg-amber-500/10">
                   <th className="text-left p-2 text-[10px] rounded-tl-lg">Protocolo</th>
                   <th className="text-left p-2 text-[10px]">Motorista</th>
+                  <th className="text-left p-2 text-[10px]">Unidade</th>
+                  <th className="text-left p-2 text-[10px]">Gestor</th>
                   <th className="text-left p-2 text-[10px]">Data</th>
                   <th className="text-left p-2 text-[10px]">Dias SLA</th>
                   <th className="text-left p-2 text-[10px]">Faltam</th>
@@ -738,6 +753,10 @@ export default function Dashboard() {
               <tbody>
                 {protocolosProximosSLA.map((protocolo) => {
                   const diasFaltando = 16 - protocolo.slaDias;
+                  const unidadeProtocolo = protocolo.motorista?.unidade || '—';
+                  const gestorResponsavel = gestores.find(g => 
+                    g.unidades.some(u => u.toUpperCase().trim() === unidadeProtocolo.toUpperCase().trim())
+                  );
                   
                   return (
                     <tr 
@@ -754,6 +773,14 @@ export default function Dashboard() {
                           </div>
                           <span className="font-medium text-[11px]">{protocolo.motorista.nome}</span>
                         </div>
+                      </td>
+                      <td className="p-2">
+                        <span className="text-[11px] font-medium">{unidadeProtocolo}</span>
+                      </td>
+                      <td className="p-2">
+                        <span className="text-[11px] text-muted-foreground">
+                          {gestorResponsavel ? gestorResponsavel.nome : '—'}
+                        </span>
                       </td>
                       <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
                       <td className="p-2">
