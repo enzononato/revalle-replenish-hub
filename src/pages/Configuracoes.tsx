@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Progress } from '@/components/ui/progress';
 import { ImportarProdutosCSV } from '@/components/ImportarProdutosCSV';
 import { ImportarPdvsCSV } from '@/components/ImportarPdvsCSV';
-import { AlteracaoPedidosTab } from '@/components/AlteracaoPedidosTab';
+
 import { useProdutosDB } from '@/hooks/useProdutosDB';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 import { useUnidadesDB } from '@/hooks/useUnidadesDB';
