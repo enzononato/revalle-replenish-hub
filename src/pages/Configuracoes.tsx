@@ -344,6 +344,10 @@ export default function Configuracoes() {
             <Database size={14} />
             Backup
           </TabsTrigger>
+          <TabsTrigger value="alteracao-pedidos" className="gap-1.5 text-xs">
+            <Send size={14} />
+            Alteração nos Pedidos
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="whatsapp">
