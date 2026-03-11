@@ -696,9 +696,6 @@ export default function Configuracoes() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="alteracao-pedidos">
-          <AlteracaoPedidosTab />
-        </TabsContent>
       </Tabs>
     </div>
   );
