@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin, Store, Database, Loader2, Camera, Send } from 'lucide-react';
+import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin, Store, Database, Loader2, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import JSZip from 'jszip';
