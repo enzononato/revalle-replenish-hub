@@ -1,40 +1,63 @@
 
 
-## Correção: Logs de falha de login do motorista não são salvos
+## Plano: Tabela de log de envios + exibição de erros na página Alteração Pedidos
 
-### Problema identificado
-A função `logLoginAttempt` em `MotoristaAuthContext.tsx` não verifica o retorno da inserção no banco. O client retorna `{ data, error }` sem lançar exceção, então o `try/catch` nunca captura erros de inserção. Isso faz com que falhas de login não sejam registradas silenciosamente.
+### Resumo
 
-### Causa raiz
-```typescript
-// Código atual - NÃO verifica o erro retornado
-try {
-  await supabase.from('motorista_login_logs').insert({...});
-} catch (e) {
-  console.error('Erro ao registrar log de login:', e);
-}
+Criar uma tabela no banco para registrar cada envio ao webhook. O frontend insere um registro antes de enviar e, se o n8n detectar erro, ele atualiza a coluna `sucesso` para `false` via nó Supabase. A página então consulta essa tabela para mostrar quais linhas deram erro.
+
+### 1. Criar tabela `alteracao_pedidos_log`
+
+```sql
+CREATE TABLE public.alteracao_pedidos_log (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  cod_pdv text NOT NULL,
+  nome_pdv text,
+  telefone_pdv text,
+  status_pedido text,
+  mensagem_cliente text,
+  sucesso boolean NOT NULL DEFAULT true,
+  erro_mensagem text,
+  enviado_por text
+);
+
+ALTER TABLE public.alteracao_pedidos_log ENABLE ROW LEVEL SECURITY;
+
+-- Leitura para autenticados
+CREATE POLICY "Autenticados podem ler alteracao_pedidos_log"
+  ON public.alteracao_pedidos_log FOR SELECT TO authenticated
+  USING (true);
+
+-- Inserção para autenticados (frontend)
+CREATE POLICY "Autenticados podem inserir alteracao_pedidos_log"
+  ON public.alteracao_pedidos_log FOR INSERT TO authenticated
+  WITH CHECK (true);
+
+-- Update público (para o n8n atualizar via anon key)
+CREATE POLICY "Update público alteracao_pedidos_log"
+  ON public.alteracao_pedidos_log FOR UPDATE TO anon, authenticated
+  USING (true) WITH CHECK (true);
 ```
 
-### Solução
-Alterar `logLoginAttempt` em **`src/contexts/MotoristaAuthContext.tsx`** para:
+### 2. Fluxo de envio (frontend)
 
-1. Capturar o objeto `{ error }` retornado pela inserção
-2. Se houver erro, logar no console com detalhes para diagnóstico
-3. Garantir que a falha no log não interrompa o fluxo de login
+Em `src/pages/AlteracaoPedidos.tsx`:
 
-```typescript
-const logLoginAttempt = async (...) => {
-  try {
-    const { error } = await supabase.from('motorista_login_logs').insert({...});
-    if (error) {
-      console.error('Erro ao registrar log de login:', error.message, error);
-    }
-  } catch (e) {
-    console.error('Exceção ao registrar log de login:', e);
-  }
-};
+1. Antes de chamar o webhook, inserir registro na tabela com `sucesso = true` (otimista)
+2. Enviar ao webhook incluindo o `id` do registro no payload para o n8n poder referenciar
+3. Após o loop, buscar os registros do lote e mostrar os que têm `sucesso = false`
+4. Adicionar um card de resumo abaixo mostrando linhas com erro (cod_pdv, nome, erro_mensagem)
+5. Adicionar botão "Atualizar status" para re-consultar a tabela e verificar atualizações do n8n
+
+### 3. Lado do n8n
+
+O n8n recebe o payload com o `id` do registro. Se houver erro no processamento, o n8n usa o nó Supabase para:
+```sql
+UPDATE alteracao_pedidos_log SET sucesso = false, erro_mensagem = '...' WHERE id = '...'
 ```
 
-### Arquivo alterado
-- `src/contexts/MotoristaAuthContext.tsx` — única mudança, na função `logLoginAttempt`
+### Arquivos alterados
+- **Migration SQL** — criar tabela `alteracao_pedidos_log`
+- **`src/pages/AlteracaoPedidos.tsx`** — inserir registros, incluir `id` no payload do webhook, exibir card de erros com consulta à tabela
 
