@@ -327,7 +327,7 @@ export default function AlteracaoPedidos() {
             Upload do Arquivo CSV
           </CardTitle>
           <CardDescription>
-            Selecione um arquivo .csv com separador ponto e vírgula (;)
+            Selecione um arquivo .csv com separador vírgula e campos entre aspas
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
