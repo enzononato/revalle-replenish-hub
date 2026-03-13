@@ -478,6 +478,9 @@ export default function AlteracaoPedidos() {
           </CardContent>
         </Card>
       )}
+
+      {/* Histórico completo */}
+      <HistoricoEnvios />
     </div>
   );
 }
