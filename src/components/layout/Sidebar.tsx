@@ -43,7 +43,7 @@ const navItems: NavItem[] = [
   { icon: Phone, label: 'Números', path: '/numeros', roles: ['admin'] },
   { icon: ClipboardList, label: 'Logs de Auditoria', path: '/logs-auditoria', roles: ['admin'] },
   { icon: MessageSquare, label: 'Logs de Chat', path: '/logs-chat', roles: ['admin'] },
-  { icon: Send, label: 'Alteração Pedidos', path: '/alteracao-pedidos', roles: ['admin', 'distribuicao'] },
+  { icon: Send, label: 'Alteração Pedidos', path: '/alteracao-pedidos', roles: ['admin', 'distribuicao', 'controle'] },
   { icon: Settings, label: 'Configurações', path: '/configuracoes', roles: ['admin'] },
 ];
 
