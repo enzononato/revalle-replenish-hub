@@ -1,8 +1,11 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, FileText, Loader2, Send, StopCircle } from 'lucide-react';
+import { Upload, FileText, Loader2, Send, StopCircle, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface PedidoRow {
   cod_pdv: string;
@@ -10,6 +13,15 @@ interface PedidoRow {
   telefone_pdv: string;
   status_pedido: string;
   mensagem_cliente: string;
+}
+
+interface LogRow {
+  id: string;
+  cod_pdv: string;
+  nome_pdv: string | null;
+  sucesso: boolean;
+  erro_mensagem: string | null;
+  created_at: string;
 }
 
 const WEBHOOK_URL = 'https://n8n.revalle.com.br/webhook/alteracao_pedidos';
@@ -40,8 +52,7 @@ function parseCSV(text: string): PedidoRow[] {
   const rows: PedidoRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(';').map(c => c.trim());
-    const allEmpty = cols.every(c => c === '');
-    if (allEmpty) continue;
+    if (cols.every(c => c === '')) continue;
 
     rows.push({
       cod_pdv: cols[colMap.cod_pdv] || '',
@@ -58,6 +69,9 @@ export default function AlteracaoPedidos() {
   const [file, setFile] = useState<File | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [batchIds, setBatchIds] = useState<string[]>([]);
+  const [logRows, setLogRows] = useState<LogRow[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -92,11 +106,32 @@ export default function AlteracaoPedidos() {
     abortRef.current?.abort();
   };
 
+  const fetchLogs = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    setIsLoadingLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('alteracao_pedidos_log')
+        .select('id, cod_pdv, nome_pdv, sucesso, erro_mensagem, created_at')
+        .in('id', ids);
+
+      if (error) {
+        console.error('Erro ao buscar logs:', error);
+        return;
+      }
+      setLogRows((data as LogRow[]) || []);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!file) return;
     const controller = new AbortController();
     abortRef.current = controller;
     setIsSending(true);
+    setLogRows([]);
+    setBatchIds([]);
 
     try {
       const text = await file.text();
@@ -109,16 +144,41 @@ export default function AlteracaoPedidos() {
       }
 
       setProgress({ current: 0, total: rows.length });
+      const ids: string[] = [];
 
       for (let i = 0; i < rows.length; i++) {
         if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
 
         setProgress({ current: i + 1, total: rows.length });
 
+        // 1. Inserir registro no banco
+        const { data: logData, error: logError } = await supabase
+          .from('alteracao_pedidos_log')
+          .insert({
+            cod_pdv: rows[i].cod_pdv,
+            nome_pdv: rows[i].nome_pdv,
+            telefone_pdv: rows[i].telefone_pdv,
+            status_pedido: rows[i].status_pedido,
+            mensagem_cliente: rows[i].mensagem_cliente,
+            sucesso: true,
+          })
+          .select('id')
+          .single();
+
+        if (logError) {
+          console.error('Erro ao inserir log:', logError);
+          toast.error(`Erro ao registrar linha ${i + 1} no banco.`);
+          continue;
+        }
+
+        const logId = logData.id;
+        ids.push(logId);
+
+        // 2. Enviar ao webhook com o id do registro
         await fetch(WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(rows[i]),
+          body: JSON.stringify({ ...rows[i], log_id: logId }),
           signal: controller.signal,
         });
 
@@ -127,10 +187,14 @@ export default function AlteracaoPedidos() {
         }
       }
 
-      toast.success('Todos os dados foram enviados com sucesso!');
+      setBatchIds(ids);
+      toast.success('Todos os dados foram enviados! Consulte o status abaixo.');
       setFile(null);
       setProgress({ current: 0, total: 0 });
       if (fileInputRef.current) fileInputRef.current.value = '';
+
+      // 3. Buscar logs após envio
+      await fetchLogs(ids);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         toast.warning(`Envio interrompido. ${progress.current} de ${progress.total} enviado(s).`);
@@ -148,6 +212,9 @@ export default function AlteracaoPedidos() {
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  const failedRows = logRows.filter(r => !r.sucesso);
+  const successRows = logRows.filter(r => r.sucesso);
 
   return (
     <div className="space-y-4">
@@ -263,6 +330,74 @@ export default function AlteracaoPedidos() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Resumo de status */}
+      {batchIds.length > 0 && !isSending && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                {failedRows.length > 0 ? (
+                  <AlertTriangle size={18} className="text-destructive" />
+                ) : (
+                  <CheckCircle2 size={18} className="text-green-500" />
+                )}
+                Resultado do Envio
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchLogs(batchIds)}
+                disabled={isLoadingLogs}
+              >
+                {isLoadingLogs ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Atualizar Status
+              </Button>
+            </div>
+            <CardDescription>
+              {successRows.length} sucesso(s) · {failedRows.length} erro(s) · {logRows.length} total
+            </CardDescription>
+          </CardHeader>
+
+          {failedRows.length > 0 && (
+            <CardContent>
+              <ScrollArea className="max-h-64">
+                <div className="space-y-2">
+                  {failedRows.map((row) => (
+                    <div
+                      key={row.id}
+                      className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20"
+                    >
+                      <AlertTriangle size={16} className="text-destructive mt-0.5 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          PDV: {row.cod_pdv} {row.nome_pdv ? `— ${row.nome_pdv}` : ''}
+                        </p>
+                        {row.erro_mensagem && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{row.erro_mensagem}</p>
+                        )}
+                      </div>
+                      <Badge variant="destructive" className="shrink-0">Erro</Badge>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          )}
+
+          {failedRows.length === 0 && (
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Todos os registros foram processados com sucesso. Clique em "Atualizar Status" para verificar se o n8n reportou algum erro.
+              </p>
+            </CardContent>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
