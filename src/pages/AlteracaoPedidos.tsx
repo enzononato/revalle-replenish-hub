@@ -1,11 +1,12 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, FileText, Loader2, Send, StopCircle, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Upload, FileText, Loader2, Send, StopCircle, RefreshCw, AlertTriangle, CheckCircle2, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 interface PedidoRow {
   cod_pdv: string;
@@ -19,6 +20,9 @@ interface LogRow {
   id: string;
   cod_pdv: string;
   nome_pdv: string | null;
+  telefone_pdv: string | null;
+  status_pedido: string | null;
+  mensagem_cliente: string | null;
   sucesso: boolean;
   erro_mensagem: string | null;
   created_at: string;
@@ -72,6 +76,8 @@ export default function AlteracaoPedidos() {
   const [batchIds, setBatchIds] = useState<string[]>([]);
   const [logRows, setLogRows] = useState<LogRow[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [editingPhone, setEditingPhone] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -112,7 +118,7 @@ export default function AlteracaoPedidos() {
     try {
       const { data, error } = await supabase
         .from('alteracao_pedidos_log')
-        .select('id, cod_pdv, nome_pdv, sucesso, erro_mensagem, created_at')
+        .select('id, cod_pdv, nome_pdv, telefone_pdv, status_pedido, mensagem_cliente, sucesso, erro_mensagem, created_at')
         .in('id', ids);
 
       if (error) {
@@ -125,6 +131,52 @@ export default function AlteracaoPedidos() {
     }
   };
 
+  const handleResend = async (row: LogRow) => {
+    setResendingId(row.id);
+    try {
+      const telefone = editingPhone[row.id] ?? row.telefone_pdv ?? '';
+
+      // Update phone in DB if changed
+      if (editingPhone[row.id] && editingPhone[row.id] !== row.telefone_pdv) {
+        await supabase
+          .from('alteracao_pedidos_log')
+          .update({ telefone_pdv: telefone, sucesso: true, erro_mensagem: null })
+          .eq('id', row.id);
+      } else {
+        // Reset status for retry
+        await supabase
+          .from('alteracao_pedidos_log')
+          .update({ sucesso: true, erro_mensagem: null })
+          .eq('id', row.id);
+      }
+
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cod_pdv: row.cod_pdv,
+          nome_pdv: row.nome_pdv,
+          telefone_pdv: telefone,
+          status_pedido: row.status_pedido,
+          mensagem_cliente: row.mensagem_cliente,
+          log_id: row.id,
+        }),
+      });
+
+      toast.success(`Reenvio do PDV ${row.cod_pdv} realizado!`);
+
+      // Refresh this row
+      if (batchIds.length > 0) {
+        await fetchLogs(batchIds);
+      }
+    } catch (err) {
+      console.error('Erro ao reenviar:', err);
+      toast.error(`Erro ao reenviar PDV ${row.cod_pdv}`);
+    } finally {
+      setResendingId(null);
+    }
+  };
+
   const handleSend = async () => {
     if (!file) return;
     const controller = new AbortController();
@@ -132,6 +184,7 @@ export default function AlteracaoPedidos() {
     setIsSending(true);
     setLogRows([]);
     setBatchIds([]);
+    setEditingPhone({});
 
     try {
       const text = await file.text();
@@ -151,7 +204,6 @@ export default function AlteracaoPedidos() {
 
         setProgress({ current: i + 1, total: rows.length });
 
-        // 1. Inserir registro no banco
         const { data: logData, error: logError } = await supabase
           .from('alteracao_pedidos_log')
           .insert({
@@ -174,7 +226,6 @@ export default function AlteracaoPedidos() {
         const logId = logData.id;
         ids.push(logId);
 
-        // 2. Enviar ao webhook com o id do registro
         await fetch(WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -193,7 +244,6 @@ export default function AlteracaoPedidos() {
       setProgress({ current: 0, total: 0 });
       if (fileInputRef.current) fileInputRef.current.value = '';
 
-      // 3. Buscar logs após envio
       await fetchLogs(ids);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -239,7 +289,6 @@ export default function AlteracaoPedidos() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Drop zone */}
           <div
             ref={dragRef}
             onDrop={handleDrop}
@@ -282,7 +331,6 @@ export default function AlteracaoPedidos() {
             )}
           </div>
 
-          {/* Progress */}
           {isSending && progress.total > 0 && (
             <div className="bg-muted/50 rounded-lg p-4 text-center">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary mb-2" />
@@ -295,7 +343,6 @@ export default function AlteracaoPedidos() {
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex gap-3">
             <Button
               onClick={handleSend}
@@ -331,17 +378,12 @@ export default function AlteracaoPedidos() {
         </CardContent>
       </Card>
 
-      {/* Resumo de status */}
+      {/* Resultado do envio */}
       {batchIds.length > 0 && !isSending && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-lg">
-                {failedRows.length > 0 ? (
-                  <AlertTriangle size={18} className="text-destructive" />
-                ) : (
-                  <CheckCircle2 size={18} className="text-green-500" />
-                )}
                 Resultado do Envio
               </CardTitle>
               <Button
@@ -359,43 +401,80 @@ export default function AlteracaoPedidos() {
               </Button>
             </div>
             <CardDescription>
-              {successRows.length} sucesso(s) · {failedRows.length} erro(s) · {logRows.length} total
+              <span className="text-green-600 font-medium">{successRows.length} sucesso(s)</span>
+              {' · '}
+              <span className="text-destructive font-medium">{failedRows.length} erro(s)</span>
+              {' · '}
+              {logRows.length} total
             </CardDescription>
           </CardHeader>
 
-          {failedRows.length > 0 && (
-            <CardContent>
-              <ScrollArea className="max-h-64">
-                <div className="space-y-2">
-                  {failedRows.map((row) => (
-                    <div
-                      key={row.id}
-                      className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20"
-                    >
-                      <AlertTriangle size={16} className="text-destructive mt-0.5 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
+          <CardContent>
+            <ScrollArea className="max-h-[500px]">
+              <div className="space-y-2">
+                {/* Erros primeiro */}
+                {failedRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex flex-col gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <AlertTriangle size={16} className="text-destructive shrink-0" />
+                        <p className="text-sm font-medium text-foreground truncate">
                           PDV: {row.cod_pdv} {row.nome_pdv ? `— ${row.nome_pdv}` : ''}
                         </p>
-                        {row.erro_mensagem && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{row.erro_mensagem}</p>
-                        )}
+                        <Badge variant="destructive" className="shrink-0">Erro</Badge>
                       </div>
-                      <Badge variant="destructive" className="shrink-0">Erro</Badge>
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          )}
+                    {row.erro_mensagem && (
+                      <p className="text-xs text-muted-foreground ml-6">{row.erro_mensagem}</p>
+                    )}
+                    <div className="flex items-center gap-2 ml-6">
+                      <Input
+                        placeholder="Telefone"
+                        className="h-8 text-xs w-44"
+                        value={editingPhone[row.id] ?? row.telefone_pdv ?? ''}
+                        onChange={(e) =>
+                          setEditingPhone((prev) => ({ ...prev, [row.id]: e.target.value }))
+                        }
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs"
+                        disabled={resendingId === row.id}
+                        onClick={() => handleResend(row)}
+                      >
+                        {resendingId === row.id ? (
+                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="mr-1 h-3 w-3" />
+                        )}
+                        Reenviar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
 
-          {failedRows.length === 0 && (
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Todos os registros foram processados com sucesso. Clique em "Atualizar Status" para verificar se o n8n reportou algum erro.
-              </p>
-            </CardContent>
-          )}
+                {/* Sucessos */}
+                {successRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className="flex items-center justify-between gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CheckCircle2 size={16} className="text-green-600 shrink-0" />
+                      <p className="text-sm font-medium text-foreground truncate">
+                        PDV: {row.cod_pdv} {row.nome_pdv ? `— ${row.nome_pdv}` : ''}
+                      </p>
+                      <Badge className="shrink-0 bg-green-600 hover:bg-green-700 text-white">OK</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
         </Card>
       )}
     </div>
