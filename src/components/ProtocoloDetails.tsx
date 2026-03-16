@@ -1646,20 +1646,6 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
         </DialogContent>
       </Dialog>
 
-      {/* Chat Bubble Expanded */}
-      {showChat && (
-        <ChatBubbleExpanded 
-          onClose={() => {
-            setShowChat(false);
-            setChatTargetUser(null);
-            setChatInitialMessage(undefined);
-          }} 
-          protocoloId={protocolo.id}
-          protocoloNumero={protocolo.numero}
-          initialMessage={chatInitialMessage}
-          targetUser={chatTargetUser}
-        />
-      )}
 
       {/* Modal de Reabertura */}
       <Dialog open={showReabrirModal} onOpenChange={setShowReabrirModal}>
