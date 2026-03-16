@@ -26,8 +26,6 @@ import MotoristaLogin from "./pages/MotoristaLogin";
 import MotoristaPortal from "./pages/MotoristaPortal";
 
 import LogsAuditoria from "./pages/LogsAuditoria";
-import Chat from "./pages/Chat";
-import LogsChat from "./pages/LogsChat";
 import NotFound from "./pages/NotFound";
 import PhotoProxyRedirect from "./pages/PhotoProxyRedirect";
 
