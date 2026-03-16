@@ -72,6 +72,30 @@ const getHistoricoMotorista = (observacoesLog?: ObservacaoLog[], status?: Protoc
   });
 };
 
+const formatarTextoHistoricoMotorista = (log: ObservacaoLog) => {
+  const texto = (log.texto || '').trim();
+
+  if (log.acao !== 'Alterou produtos do protocolo' && log.acao !== 'Alterou produtos') {
+    return {
+      titulo: log.acao,
+      detalhes: texto ? [texto] : [],
+    };
+  }
+
+  const linhas = texto
+    .split(/\r?\n/)
+    .map((linha) => linha.trim())
+    .filter(Boolean);
+
+  const titulo = linhas[0]?.replace(/[:\-]+$/, '') || 'Produtos alterados';
+  const detalhes = linhas.slice(1);
+
+  return {
+    titulo,
+    detalhes: detalhes.length > 0 ? detalhes : (texto ? [texto] : []),
+  };
+};
+
 // Constrói a mensagem de texto para o protocolo
 const buildMensagemProtocolo = (protocolo: ProtocoloSimples, motoristaInfo: { nome: string; unidade?: string | null }): string => {
   const fotos = protocolo.fotos_protocolo as Record<string, string> | null;
