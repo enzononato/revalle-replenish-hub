@@ -172,6 +172,18 @@ export function ProtocoloDetails({
     setProdutosEditados((prev) => prev.map((produto, i) => i === index ? { ...produto, [field]: value } : produto));
   };
 
+  const handleProdutoSelecionado = (index: number, value: string, embalagem?: string) => {
+    const [codigo, ...nomeParts] = value.split(' - ');
+    const nome = nomeParts.join(' - ');
+
+    setProdutosEditados((prev) => prev.map((produto, i) => i === index ? {
+      ...produto,
+      codigo: (nome ? codigo : produto.codigo) || '',
+      nome: nome || value,
+      unidade: embalagem || produto.unidade || 'UND',
+    } : produto));
+  };
+
   const addProdutoEditado = () => {
     setProdutosEditados((prev) => ([
       ...prev,
