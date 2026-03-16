@@ -918,15 +918,12 @@ export default function Dashboard() {
                 <th className="text-left p-2 text-[10px] rounded-tl-lg">Protocolo</th>
                 <th className="text-left p-2 text-[10px]">Motorista</th>
                 <th className="text-left p-2 text-[10px]">Data</th>
-                <th className="text-left p-2 text-[10px]">SLA</th>
                 <th className="text-left p-2 text-[10px]">Status</th>
                 <th className="text-right p-2 text-[10px] rounded-tr-lg">Ações</th>
               </tr>
             </thead>
             <tbody>
               {recentProtocolos.map((protocolo) => {
-                const slaDias = calcularSlaDias(protocolo.data, protocolo.status, protocolo.observacoesLog);
-                
                 return (
                   <tr 
                     key={protocolo.id} 
@@ -955,17 +952,6 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
-                    <td className="p-2">
-                      {protocolo.status === 'encerrado' ? (
-                        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
-                          ✓ {slaDias} {slaDias === 1 ? 'dia' : 'dias'}
-                        </span>
-                      ) : (
-                        <span className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getSlaColor(slaDias)}`}>
-                          {slaDias} {slaDias === 1 ? 'dia' : 'dias'}
-                        </span>
-                      )}
-                    </td>
                     <td className="p-2">
                       <StatusBadge status={protocolo.status} />
                     </td>
