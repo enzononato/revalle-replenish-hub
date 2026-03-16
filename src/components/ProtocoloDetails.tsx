@@ -154,7 +154,103 @@ export function ProtocoloDetails({
     }
   }, [open, protocolo, user, registrarLog]);
 
+  useEffect(() => {
+    setProdutosEditados(protocolo?.produtos || []);
+    setEditandoProdutos(false);
+  }, [protocolo]);
+
   if (!protocolo) return null;
+
+  const canEditProdutos = !!user && !!onUpdateProtocolo && (isAdmin || isDistribuicao || isControle);
+
+  const formatarProdutoHistorico = (produto: Produto) => (
+    `${produto.codigo || '-'} | ${produto.nome || '-'} | ${produto.quantidade || 0} ${produto.unidade || '-'} | validade: ${produto.validade || '-'}${produto.observacao ? ` | obs: ${produto.observacao}` : ''}`
+  );
+
+  const updateProdutoEditado = (index: number, field: keyof Produto, value: string | number | boolean | undefined) => {
+    setProdutosEditados((prev) => prev.map((produto, i) => i === index ? { ...produto, [field]: value } : produto));
+  };
+
+  const addProdutoEditado = () => {
+    setProdutosEditados((prev) => ([
+      ...prev,
+      {
+        codigo: '',
+        nome: '',
+        unidade: 'UND',
+        quantidade: 1,
+        validade: '',
+        observacao: ''
+      }
+    ]));
+  };
+
+  const removeProdutoEditado = (index: number) => {
+    setProdutosEditados((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCancelarEdicaoProdutos = () => {
+    setProdutosEditados(protocolo.produtos || []);
+    setEditandoProdutos(false);
+  };
+
+  const handleSalvarProdutos = async () => {
+    if (!user || !onUpdateProtocolo) return;
+
+    const produtosSanitizados = produtosEditados.map((produto) => ({
+      ...produto,
+      codigo: String(produto.codigo || '').trim(),
+      nome: String(produto.nome || '').trim(),
+      unidade: String(produto.unidade || '').trim(),
+      quantidade: Number(produto.quantidade) || 1,
+      validade: String(produto.validade || '').trim(),
+      observacao: String(produto.observacao || '').trim() || undefined,
+    }));
+
+    const possuiInvalido = produtosSanitizados.some((produto) => !produto.nome || !produto.unidade || produto.quantidade <= 0);
+    if (possuiInvalido) {
+      toast.error('Preencha produto, unidade e quantidade válida em todos os itens.');
+      return;
+    }
+
+    const antes = (protocolo.produtos || []).map(formatarProdutoHistorico);
+    const depois = produtosSanitizados.map(formatarProdutoHistorico);
+
+    const logEntry: ObservacaoLog = {
+      id: Date.now().toString(),
+      usuarioNome: user.nome,
+      usuarioId: user.id,
+      data: format(new Date(), 'dd/MM/yyyy'),
+      hora: format(new Date(), 'HH:mm'),
+      acao: 'Alterou produtos do protocolo',
+      texto: `Alteração de produtos realizada por ${user.nome}. Antes: ${antes.length ? antes.join(' || ') : 'sem produtos'}. Depois: ${depois.length ? depois.join(' || ') : 'sem produtos'}.`
+    };
+
+    const protocoloAtualizado: Protocolo = {
+      ...protocolo,
+      produtos: produtosSanitizados,
+      observacoesLog: [...(protocolo.observacoesLog || []), logEntry]
+    };
+
+    await registrarLog({
+      acao: 'edicao',
+      tabela: 'protocolos',
+      registro_id: protocolo.id,
+      registro_dados: {
+        numero: protocolo.numero,
+        campo: 'produtos',
+        antes: protocolo.produtos || [],
+        depois: produtosSanitizados,
+      },
+      usuario_nome: user.nome,
+      usuario_role: user.nivel,
+      usuario_unidade: user.unidade,
+    });
+
+    onUpdateProtocolo(protocoloAtualizado);
+    setEditandoProdutos(false);
+    toast.success('Produtos atualizados com sucesso!');
+  };
 
   // Extrair validador do log de observações
   const getValidadorFromLog = (): { nome: string; id: string } | null => {
