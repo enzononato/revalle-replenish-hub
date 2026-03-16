@@ -109,7 +109,12 @@ export function BuscarProtocoloPdv({
   };
 
   const handleSelectProtocolo = (protocolo: ProtocoloEncontrado) => {
-    onSelectProtocolo(protocolo);
+    if (selectionMode === 'view') {
+      setProtocoloExpandidoId((current) => current === protocolo.id ? null : protocolo.id);
+      return;
+    }
+
+    onSelectProtocolo?.(protocolo);
     handleClose();
   };
 
@@ -117,6 +122,7 @@ export function BuscarProtocoloPdv({
     setCodigoPdv('');
     setResultados([]);
     setBuscaRealizada(false);
+    setProtocoloExpandidoId(null);
     onClose();
   };
 
