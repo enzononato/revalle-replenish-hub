@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   CheckCircle,
   XCircle,
@@ -221,9 +222,13 @@ export function ProtocoloDetails({
       observacao: String(produto.observacao || '').trim() || undefined,
     }));
 
-    const possuiInvalido = produtosSanitizados.some((produto) => !produto.nome || !produto.unidade || produto.quantidade <= 0);
+    const possuiInvalido = produtosSanitizados.some((produto) => (
+      !produto.nome ||
+      !['UN', 'CX', 'PCT'].includes(produto.unidade) ||
+      produto.quantidade <= 0
+    ));
     if (possuiInvalido) {
-      toast.error('Preencha produto, unidade e quantidade válida em todos os itens.');
+      toast.error('Preencha produto, unidade válida (UN, CX ou PCT) e quantidade válida em todos os itens.');
       return;
     }
 
@@ -1261,11 +1266,19 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                             </td>
                             <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">
                               {editandoProdutos ? (
-                                <Input
-                                  value={produto.unidade}
-                                  onChange={(e) => updateProdutoEditado(index, 'unidade', e.target.value)}
-                                  className="h-8 min-w-20"
-                                />
+                                <Select
+                                  value={['UN', 'CX', 'PCT'].includes(produto.unidade) ? produto.unidade : 'UN'}
+                                  onValueChange={(value) => updateProdutoEditado(index, 'unidade', value)}
+                                >
+                                  <SelectTrigger className="h-8 min-w-20">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="UN">UN</SelectItem>
+                                    <SelectItem value="CX">CX</SelectItem>
+                                    <SelectItem value="PCT">PCT</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               ) : produto.unidade}
                             </td>
                             <td className="px-2.5 py-1.5 text-center text-foreground border-r border-slate-200 dark:border-slate-700">
