@@ -90,10 +90,8 @@ export function ProtocoloDetails({
   const [clienteTelefone, setClienteTelefone] = useState(protocolo?.clienteTelefone || '');
   const [clienteTelefoneErro, setClienteTelefoneErro] = useState('');
   const [enviandoWhatsapp, setEnviandoWhatsapp] = useState(false);
-  const [showChat, setShowChat] = useState(false);
   const [showReabrirModal, setShowReabrirModal] = useState(false);
   const [motivoReabertura, setMotivoReabertura] = useState('');
-  const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>();
   const [editandoProdutos, setEditandoProdutos] = useState(false);
   const [produtosEditados, setProdutosEditados] = useState<Produto[]>(protocolo?.produtos || []);
 
@@ -128,9 +126,7 @@ export function ProtocoloDetails({
 
   // Verifica se o telefone é válido para habilitar envio
   const telefoneValido = clienteTelefone.trim() && validarTelefone(clienteTelefone);
-  const [chatTargetUser, setChatTargetUser] = useState<{ id: string; nome: string; nivel: string; unidade: string } | null>(null);
 
-  const { getOrCreateConversation, getOrCreateUnitGroup, sendMessage } = useChatDB();
   const { registrarLog } = useAuditLog();
   const hasLoggedView = useRef(false);
 
