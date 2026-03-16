@@ -33,10 +33,15 @@ import { useUnidadesDB } from '@/hooks/useUnidadesDB';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import CreateProtocoloModal from '@/components/CreateProtocoloModal';
 
+// Função para extrair log de encerramento do histórico
+const getLogEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): ObservacaoLog | null => {
+  const logEncerramento = observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
+  return logEncerramento || null;
+};
+
 // Função para extrair data de encerramento do log
 const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | null => {
-  const logEncerramento = observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
-  return logEncerramento?.data || null;
+  return getLogEncerramentoFromLog(observacoesLog)?.data || null;
 };
 
 const calcularSlaDias = (dataStr: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
@@ -685,7 +690,10 @@ export default function Protocolos() {
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Msg. Envio</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Msg. Encerramento</th>
               {activeTab === 'encerrado' && (
-                <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Encerrado em</th>
+                <>
+                  <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Lead Time</th>
+                  <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Encerrado em</th>
+                </>
               )}
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
             </tr>
@@ -729,9 +737,14 @@ export default function Protocolos() {
                     <Skeleton className="h-5 w-5 mx-auto rounded-full" />
                   </td>
                   {activeTab === 'encerrado' && (
-                    <td className="p-2.5 border-r border-border">
-                      <Skeleton className="h-3 w-20" />
-                    </td>
+                    <>
+                      <td className="p-2.5 border-r border-border">
+                        <Skeleton className="h-5 w-16 mx-auto rounded-full" />
+                      </td>
+                      <td className="p-2.5 border-r border-border">
+                        <Skeleton className="h-3 w-20" />
+                      </td>
+                    </>
                   )}
                   <td className="p-2.5 text-center">
                     <Skeleton className="h-7 w-7 mx-auto rounded-md" />
@@ -858,20 +871,32 @@ export default function Protocolos() {
                     )}
                   </td>
                   {activeTab === 'encerrado' && (
-                    <td className="p-2.5 border-r border-border">
-                      {(() => {
-                        const logEnc = protocolo.observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
-                        if (logEnc) {
+                    <>
+                      <td className="p-2.5 text-center border-r border-border">
+                        {(() => {
+                          const dias = calcularSlaDias(protocolo.data, protocolo.status, protocolo.observacoesLog);
                           return (
-                            <div className="text-[12px] text-foreground">
-                              <p className="font-bold">{logEnc.data}</p>
-                              <p className="text-muted-foreground">{logEnc.hora}</p>
-                            </div>
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">
+                              {dias} {dias === 1 ? 'dia' : 'dias'}
+                            </span>
                           );
-                        }
-                        return <span className="text-[11px] text-muted-foreground">—</span>;
-                      })()}
-                    </td>
+                        })()}
+                      </td>
+                      <td className="p-2.5 border-r border-border">
+                        {(() => {
+                          const logEnc = getLogEncerramentoFromLog(protocolo.observacoesLog);
+                          if (logEnc) {
+                            return (
+                              <div className="text-[12px] text-foreground">
+                                <p className="font-bold">{logEnc.data}</p>
+                                <p className="text-muted-foreground">{logEnc.hora}</p>
+                              </div>
+                            );
+                          }
+                          return <span className="text-[11px] text-muted-foreground">—</span>;
+                        })()}
+                      </td>
+                    </>
                   )}
                   <td className="p-2.5">
                     <div className="flex justify-center items-center gap-1">
