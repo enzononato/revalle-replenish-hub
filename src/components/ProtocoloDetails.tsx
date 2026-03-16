@@ -1373,10 +1373,10 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 <div className="space-y-3">
                   <p className="text-xs text-muted-foreground italic">Nenhum produto registrado</p>
                   {canEditProdutos && (
-                    <Button type="button" variant="outline" size="sm" onClick={() => {
-                      setProdutosEditados([{ codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: '', observacao: '' }]);
-                      setEditandoProdutos(true);
-                    }}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAdicionarPrimeiroProduto} disabled={isProtocoloEncerrado}> 
+                      <Plus size={14} className="mr-1" />
+                      Adicionar primeiro produto
+                    </Button>
                       <Plus size={14} className="mr-1" />
                       Adicionar primeiro produto
                     </Button>
