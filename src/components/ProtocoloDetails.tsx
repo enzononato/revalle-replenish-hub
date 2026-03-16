@@ -44,6 +44,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { ChatBubbleExpanded } from '@/components/chat/ChatBubbleExpanded';
+import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 import { useChatDB } from '@/hooks/useChatDB';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { getCustomPhotoUrl, getDirectStorageUrl } from '@/utils/urlHelpers';
@@ -169,6 +170,18 @@ export function ProtocoloDetails({
 
   const updateProdutoEditado = (index: number, field: keyof Produto, value: string | number | boolean | undefined) => {
     setProdutosEditados((prev) => prev.map((produto, i) => i === index ? { ...produto, [field]: value } : produto));
+  };
+
+  const handleProdutoSelecionado = (index: number, value: string, embalagem?: string) => {
+    const [codigo, ...nomeParts] = value.split(' - ');
+    const nome = nomeParts.join(' - ');
+
+    setProdutosEditados((prev) => prev.map((produto, i) => i === index ? {
+      ...produto,
+      codigo: (nome ? codigo : produto.codigo) || '',
+      nome: nome || value,
+      unidade: embalagem || produto.unidade || 'UND',
+    } : produto));
   };
 
   const addProdutoEditado = () => {
@@ -1231,20 +1244,18 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                           <tr key={index} className="border-b border-slate-200 dark:border-slate-700 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-800/30 align-top">
                             <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">
                               {editandoProdutos ? (
-                                <Input
-                                  value={produto.codigo}
-                                  onChange={(e) => updateProdutoEditado(index, 'codigo', e.target.value)}
-                                  className="h-8 min-w-24"
-                                />
+                                <div className="min-w-40">
+                                  <ProdutoAutocomplete
+                                    value={produto.codigo && produto.nome ? `${produto.codigo} - ${produto.nome}` : produto.nome}
+                                    onChange={(value, embalagem) => handleProdutoSelecionado(index, value, embalagem)}
+                                    className="h-8 text-sm"
+                                  />
+                                </div>
                               ) : produto.codigo}
                             </td>
                             <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">
                               {editandoProdutos ? (
-                                <Input
-                                  value={produto.nome}
-                                  onChange={(e) => updateProdutoEditado(index, 'nome', e.target.value)}
-                                  className="h-8 min-w-40"
-                                />
+                                <span className="text-xs text-muted-foreground">{produto.nome || 'Selecione um produto na lista'}</span>
                               ) : produto.nome}
                             </td>
                             <td className="px-2.5 py-1.5 text-foreground border-r border-slate-200 dark:border-slate-700">
