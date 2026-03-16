@@ -716,8 +716,9 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
       <BuscarProtocoloPdv
         isOpen={showBuscaPdv}
         onClose={() => setShowBuscaPdv(false)}
-        onSelectProtocolo={handleProtocoloEncontrado as any}
+        onSelectProtocolo={handleProtocoloEncontrado}
         motorista={motorista}
+        selectionMode={modoBuscaPdv}
       />
 
       {/* Modal de Encerramento */}
