@@ -264,60 +264,6 @@ export function ProtocoloDetails({
     toast.success('Produtos atualizados com sucesso!');
   };
 
-  // Extrair validador do log de observações
-  const getValidadorFromLog = (): { nome: string; id: string } | null => {
-    const logValidacao = protocolo.observacoesLog?.find(l => l.acao === 'Confirmou validação');
-    if (logValidacao) {
-      return { nome: logValidacao.usuarioNome, id: logValidacao.usuarioId };
-    }
-    return null;
-  };
-
-  // Função para abrir chat de discussão do protocolo - fecha o dialog e navega para o chat
-  const handleDiscutirProtocolo = async () => {
-    // Fecha o dialog primeiro
-    onClose();
-    
-    // Navega para a página de chat com parâmetros do protocolo
-    const validador = getValidadorFromLog();
-    const params = new URLSearchParams({
-      protocolo_id: protocolo.id,
-      protocolo_numero: protocolo.numero,
-    });
-    
-    if (validador) {
-      params.set('target_user_id', validador.id);
-      params.set('target_user_nome', validador.nome);
-    }
-    
-    // Usar window.location para garantir navegação (o navigate do react-router não está no escopo)
-    window.location.href = `/chat?${params.toString()}`;
-  };
-
-  // Função para alertar distribuição (apenas conferentes)
-  const handleAlertarDistribuicao = async () => {
-    if (!user) return;
-    
-    try {
-      // Buscar ou criar grupo da unidade
-      const unidade = protocolo.unidadeNome || protocolo.motorista.unidade || user.unidade;
-      const conversationId = await getOrCreateUnitGroup(unidade);
-      
-      // Enviar mensagem de alerta
-      await sendMessage({
-        conversationId,
-        content: `⚠️ ATENÇÃO! Protocolo ${protocolo.numero} precisa de revisão urgente.\n\nMotorista: ${protocolo.motorista.nome}\nData: ${protocolo.data}\n\nPor favor verificar!`,
-        protocoloId: protocolo.id,
-        protocoloNumero: protocolo.numero
-      });
-      
-      toast.success('Alerta enviado para o grupo da distribuição!');
-    } catch (error) {
-      console.error('Erro ao alertar distribuição:', error);
-      toast.error('Erro ao enviar alerta');
-    }
-  };
-
   const canGoPrevious = currentIndex > 0;
   const canGoNext = currentIndex < protocolos.length - 1;
 
