@@ -157,6 +157,11 @@ export function ProtocoloDetails({
   if (!protocolo) return null;
 
   const canEditProdutos = !!user && !!onUpdateProtocolo && (isAdmin || isDistribuicao || isControle);
+  const isProtocoloEncerrado = protocolo.status === 'encerrado';
+
+  const mostrarAvisoProtocoloEncerrado = () => {
+    toast.error('Não é possível alterar produtos de um protocolo encerrado. Reabra o protocolo para editar.');
+  };
 
   const formatarProdutoHistorico = (produto: Produto) => (
     `${produto.codigo || '-'} | ${produto.nome || '-'} | ${produto.quantidade || 0} ${produto.unidade || '-'} | validade: ${produto.validade || '-'}${produto.observacao ? ` | obs: ${produto.observacao}` : ''}`
@@ -197,6 +202,25 @@ export function ProtocoloDetails({
     setProdutosEditados((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleIniciarEdicaoProdutos = () => {
+    if (isProtocoloEncerrado) {
+      mostrarAvisoProtocoloEncerrado();
+      return;
+    }
+
+    setEditandoProdutos(true);
+  };
+
+  const handleAdicionarPrimeiroProduto = () => {
+    if (isProtocoloEncerrado) {
+      mostrarAvisoProtocoloEncerrado();
+      return;
+    }
+
+    setProdutosEditados([{ codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: '', observacao: '' }]);
+    setEditandoProdutos(true);
+  };
+
   const handleCancelarEdicaoProdutos = () => {
     setProdutosEditados(protocolo.produtos || []);
     setEditandoProdutos(false);
@@ -204,6 +228,10 @@ export function ProtocoloDetails({
 
   const handleSalvarProdutos = async () => {
     if (!user || !onUpdateProtocolo) return;
+    if (isProtocoloEncerrado) {
+      mostrarAvisoProtocoloEncerrado();
+      return;
+    }
 
     const produtosSanitizados = produtosEditados.map((produto) => ({
       ...produto,
@@ -1126,7 +1154,11 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                   })()}
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                     <p className="text-xs text-muted-foreground">
-                      {canEditProdutos ? 'Perfis de controle, distribuição e admin podem editar todos os campos dos produtos.' : 'Lista de produtos registrada no protocolo.'}
+                      {canEditProdutos
+                        ? isProtocoloEncerrado
+                          ? 'Protocolo encerrado: para alterar produtos, reabra o protocolo primeiro.'
+                          : 'Perfis de controle, distribuição e admin podem editar todos os campos dos produtos.'
+                        : 'Lista de produtos registrada no protocolo.'}
                     </p>
                     {canEditProdutos && (
                       <div className="flex flex-wrap items-center gap-2">
@@ -1135,13 +1167,13 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                             <Button type="button" variant="outline" size="sm" onClick={handleCancelarEdicaoProdutos}>
                               Cancelar
                             </Button>
-                            <Button type="button" size="sm" onClick={handleSalvarProdutos}>
+                            <Button type="button" size="sm" onClick={handleSalvarProdutos} disabled={isProtocoloEncerrado}>
                               <Check size={14} className="mr-1" />
                               Salvar produtos
                             </Button>
                           </>
                         ) : (
-                          <Button type="button" variant="outline" size="sm" onClick={() => setEditandoProdutos(true)}>
+                          <Button type="button" variant="outline" size="sm" onClick={handleIniciarEdicaoProdutos} disabled={isProtocoloEncerrado}>
                             <Pencil size={14} className="mr-1" />
                             Editar produtos
                           </Button>
@@ -1326,7 +1358,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         {editandoProdutos && (
                           <tr>
                             <td colSpan={8} className="px-2.5 py-2 text-left">
-                              <Button type="button" variant="outline" size="sm" onClick={addProdutoEditado}>
+                              <Button type="button" variant="outline" size="sm" onClick={addProdutoEditado} disabled={isProtocoloEncerrado}>
                                 <Plus size={14} className="mr-1" />
                                 Adicionar produto
                               </Button>
@@ -1341,10 +1373,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                 <div className="space-y-3">
                   <p className="text-xs text-muted-foreground italic">Nenhum produto registrado</p>
                   {canEditProdutos && (
-                    <Button type="button" variant="outline" size="sm" onClick={() => {
-                      setProdutosEditados([{ codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: '', observacao: '' }]);
-                      setEditandoProdutos(true);
-                    }}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleAdicionarPrimeiroProduto} disabled={isProtocoloEncerrado}>
                       <Plus size={14} className="mr-1" />
                       Adicionar primeiro produto
                     </Button>
