@@ -95,6 +95,8 @@ export function ProtocoloDetails({
   const [showReabrirModal, setShowReabrirModal] = useState(false);
   const [motivoReabertura, setMotivoReabertura] = useState('');
   const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>();
+  const [editandoProdutos, setEditandoProdutos] = useState(false);
+  const [produtosEditados, setProdutosEditados] = useState<Produto[]>(protocolo?.produtos || []);
 
   // Função para validar formato de telefone brasileiro
   const validarTelefone = (telefone: string): boolean => {
