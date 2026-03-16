@@ -174,12 +174,13 @@ export function ProtocoloDetails({
 
   const handleProdutoSelecionado = (index: number, value: string, embalagem?: string) => {
     const [codigo, ...nomeParts] = value.split(' - ');
-    const nome = nomeParts.join(' - ');
+    const nome = nomeParts.join(' - ').trim();
+    const digitandoLivre = !nomeParts.length;
 
     setProdutosEditados((prev) => prev.map((produto, i) => i === index ? {
       ...produto,
-      codigo: (nome ? codigo : produto.codigo) || '',
-      nome: nome || value,
+      codigo: digitandoLivre ? '' : codigo.trim(),
+      nome: digitandoLivre ? value : nome,
       unidade: embalagem || produto.unidade || 'UND',
     } : produto));
   };
@@ -1246,7 +1247,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                               {editandoProdutos ? (
                                 <div className="min-w-40">
                                   <ProdutoAutocomplete
-                                    value={produto.codigo && produto.nome ? `${produto.codigo} - ${produto.nome}` : produto.nome}
+                                    value={produto.codigo && produto.nome ? `${produto.codigo} - ${produto.nome}` : produto.nome || ''}
                                     onChange={(value, embalagem) => handleProdutoSelecionado(index, value, embalagem)}
                                     className="h-8 text-sm"
                                   />
