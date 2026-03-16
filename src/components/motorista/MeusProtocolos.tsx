@@ -72,6 +72,30 @@ const getHistoricoMotorista = (observacoesLog?: ObservacaoLog[], status?: Protoc
   });
 };
 
+const formatarTextoHistoricoMotorista = (log: ObservacaoLog) => {
+  const texto = (log.texto || '').trim();
+
+  if (log.acao !== 'Alterou produtos do protocolo' && log.acao !== 'Alterou produtos') {
+    return {
+      titulo: log.acao,
+      detalhes: texto ? [texto] : [],
+    };
+  }
+
+  const linhas = texto
+    .split(/\r?\n/)
+    .map((linha) => linha.trim())
+    .filter(Boolean);
+
+  const titulo = linhas[0]?.replace(/[:\-]+$/, '') || 'Produtos alterados';
+  const detalhes = linhas.slice(1);
+
+  return {
+    titulo,
+    detalhes: detalhes.length > 0 ? detalhes : (texto ? [texto] : []),
+  };
+};
+
 // Constrói a mensagem de texto para o protocolo
 const buildMensagemProtocolo = (protocolo: ProtocoloSimples, motoristaInfo: { nome: string; unidade?: string | null }): string => {
   const fotos = protocolo.fotos_protocolo as Record<string, string> | null;
@@ -505,17 +529,30 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                       <span>Histórico da reposição</span>
                     </div>
                     <div className="bg-muted/50 rounded-md p-2 space-y-2">
-                      {historicoFiltrado.map((log) => (
-                        <div key={log.id} className="border-l-2 border-border pl-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-medium text-foreground">{log.acao}</p>
-                            <span className="text-[10px] text-muted-foreground shrink-0">
-                              {log.data} às {log.hora}
-                            </span>
+                      {historicoFiltrado.map((log) => {
+                        const historicoFormatado = formatarTextoHistoricoMotorista(log);
+
+                        return (
+                          <div key={log.id} className="border-l-2 border-border pl-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-[11px] font-medium text-foreground">{historicoFormatado.titulo}</p>
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {log.data} às {log.hora}
+                              </span>
+                            </div>
+
+                            {historicoFormatado.detalhes.length > 0 && (
+                              <div className="mt-1 space-y-1">
+                                {historicoFormatado.detalhes.map((detalhe, index) => (
+                                  <p key={`${log.id}-${index}`} className="text-[11px] leading-relaxed text-muted-foreground">
+                                    {/^[-•]/.test(detalhe) ? detalhe : `• ${detalhe}`}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground">{log.texto}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
