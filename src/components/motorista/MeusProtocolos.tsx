@@ -53,6 +53,7 @@ const HISTORICO_MOTORISTA_ACOES = [
   'Abriu protocolo',
   'Criou protocolo',
   'Alterou produtos',
+  'Alterou produtos do protocolo',
   'Entrega parcial',
   'Encerrou o protocolo (entrega final)',
 ] as const;
