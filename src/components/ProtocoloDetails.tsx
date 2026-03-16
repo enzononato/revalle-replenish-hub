@@ -1,25 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
-import { Protocolo, ObservacaoLog, User } from '@/types';
+import { Protocolo, ObservacaoLog, Produto, User } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
-import { 
-  CheckCircle, 
-  XCircle, 
-  Download, 
-  User as UserIcon, 
-  Building2, 
-  Package, 
-  Image, 
+import {
+  CheckCircle,
+  XCircle,
+  Download,
+  User as UserIcon,
+  Building2,
+  Package,
+  Image,
   MessageSquare,
   FileText,
   Clock,
@@ -36,7 +36,9 @@ import {
   Send,
   RefreshCw,
   MessageCircle,
-  AlertTriangle
+  AlertTriangle,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
