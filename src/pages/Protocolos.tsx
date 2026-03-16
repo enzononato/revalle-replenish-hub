@@ -737,9 +737,14 @@ export default function Protocolos() {
                     <Skeleton className="h-5 w-5 mx-auto rounded-full" />
                   </td>
                   {activeTab === 'encerrado' && (
-                    <td className="p-2.5 border-r border-border">
-                      <Skeleton className="h-3 w-20" />
-                    </td>
+                    <>
+                      <td className="p-2.5 border-r border-border">
+                        <Skeleton className="h-5 w-16 mx-auto rounded-full" />
+                      </td>
+                      <td className="p-2.5 border-r border-border">
+                        <Skeleton className="h-3 w-20" />
+                      </td>
+                    </>
                   )}
                   <td className="p-2.5 text-center">
                     <Skeleton className="h-7 w-7 mx-auto rounded-md" />
