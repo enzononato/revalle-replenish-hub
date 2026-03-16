@@ -36,7 +36,6 @@ import {
   Camera,
   Send,
   RefreshCw,
-  MessageCircle,
   AlertTriangle,
   Plus,
   Trash2
@@ -44,9 +43,7 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { ChatBubbleExpanded } from '@/components/chat/ChatBubbleExpanded';
 import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
-import { useChatDB } from '@/hooks/useChatDB';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { getCustomPhotoUrl, getDirectStorageUrl } from '@/utils/urlHelpers';
 
