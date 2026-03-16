@@ -1358,7 +1358,7 @@ Lançado: ${protocolo.lancado ? 'Sim' : 'Não'}
                         {editandoProdutos && (
                           <tr>
                             <td colSpan={8} className="px-2.5 py-2 text-left">
-                              <Button type="button" variant="outline" size="sm" onClick={addProdutoEditado}>
+                              <Button type="button" variant="outline" size="sm" onClick={addProdutoEditado} disabled={isProtocoloEncerrado}>
                                 <Plus size={14} className="mr-1" />
                                 Adicionar produto
                               </Button>
