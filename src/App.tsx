@@ -109,22 +109,8 @@ const App = () => (
                         </ProtectedRoute>
                       } 
                     />
-                    <Route 
-                      path="/chat" 
-                      element={
-                        <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'conferente', 'controle']}>
-                          <Chat />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="/logs-chat" 
-                      element={
-                        <ProtectedRoute allowedRoles={['admin']}>
-                          <LogsChat />
-                        </ProtectedRoute>
-                      } 
-                    />
+                    <Route path="/chat" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/logs-chat" element={<Navigate to="/dashboard" replace />} />
                     <Route 
                       path="/alteracao-pedidos" 
                       element={
