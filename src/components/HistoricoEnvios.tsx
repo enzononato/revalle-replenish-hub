@@ -313,12 +313,12 @@ export default function HistoricoEnvios() {
             </CardContent>
           </Card>
 
-          <Card className="border-green-500/30">
+          <Card className="border-primary/30">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-green-600" />
+                <CheckCircle2 size={14} className="text-primary" />
                 Enviados com Sucesso
-                <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{successLogs.length}</Badge>
+                <Badge variant="secondary" className="text-xs">{successLogs.length}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-2">
