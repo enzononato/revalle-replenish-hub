@@ -28,6 +28,25 @@ interface HistoryLogRow {
 
 const WEBHOOK_URL = 'https://n8n.revalle.com.br/webhook/alteracao_pedidos';
 
+const getWebhookErrorMessage = async (response: Response) => {
+  const responseText = await response.text();
+  const trimmedText = responseText.trim();
+
+  if (!trimmedText) {
+    return `Webhook respondeu com status ${response.status}`;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmedText);
+    if (typeof parsed === 'string') return parsed;
+    if (parsed?.message) return String(parsed.message);
+    if (parsed?.error) return String(parsed.error);
+    return trimmedText;
+  } catch {
+    return trimmedText;
+  }
+};
+
 export default function HistoricoEnvios() {
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -62,8 +81,8 @@ export default function HistoricoEnvios() {
       }
 
       const rows = (data as HistoryLogRow[]) || [];
-      setSuccessLogs(rows.filter(r => r.sucesso));
-      setErrorLogs(rows.filter(r => !r.sucesso));
+      setSuccessLogs(rows.filter((r) => r.sucesso));
+      setErrorLogs(rows.filter((r) => !r.sucesso));
     } finally {
       setIsLoading(false);
     }
@@ -77,34 +96,61 @@ export default function HistoricoEnvios() {
     setResendingId(row.id);
     try {
       const telefone = editingPhone[row.id] ?? row.telefone_pdv ?? '';
+      const payload = {
+        cod_pdv: row.cod_pdv,
+        nome_pdv: row.nome_pdv,
+        telefone_pdv: telefone,
+        status_pedido: row.status_pedido,
+        mensagem_cliente: row.mensagem_cliente,
+        log_id: row.id,
+      };
+
+      const updatePayload = editingPhone[row.id] && editingPhone[row.id] !== row.telefone_pdv
+        ? { telefone_pdv: telefone, sucesso: true, erro_mensagem: null }
+        : { sucesso: true, erro_mensagem: null };
+
+      const { error: updateError } = await supabase
+        .from('alteracao_pedidos_log')
+        .update(updatePayload)
+        .eq('id', row.id);
+
+      if (updateError) {
+        console.error('Erro ao preparar reenvio no log:', updateError);
+        toast.error(`Erro ao atualizar log do PDV ${row.cod_pdv}`);
+        return;
+      }
+
+      const response = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorMessage = await getWebhookErrorMessage(response);
+        await supabase
+          .from('alteracao_pedidos_log')
+          .update({ sucesso: false, erro_mensagem: errorMessage })
+          .eq('id', row.id);
+
+        console.error('Webhook retornou erro no reenvio:', row.id, response.status, errorMessage);
+        toast.error(`Falha no reenvio do PDV ${row.cod_pdv}`);
+      } else {
+        toast.success(`Reenvio do PDV ${row.cod_pdv} realizado!`);
+      }
+
+      await fetchHistory();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro inesperado no reenvio';
 
       await supabase
         .from('alteracao_pedidos_log')
-        .update({
-          telefone_pdv: telefone,
-          sucesso: true,
-          erro_mensagem: null,
-        })
+        .update({ sucesso: false, erro_mensagem: errorMessage })
         .eq('id', row.id);
 
-      await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cod_pdv: row.cod_pdv,
-          nome_pdv: row.nome_pdv,
-          telefone_pdv: telefone,
-          status_pedido: row.status_pedido,
-          mensagem_cliente: row.mensagem_cliente,
-          log_id: row.id,
-        }),
-      });
-
-      toast.success(`Reenvio do PDV ${row.cod_pdv} realizado!`);
-      await fetchHistory();
-    } catch (err) {
       console.error('Erro ao reenviar:', err);
       toast.error(`Erro ao reenviar PDV ${row.cod_pdv}`);
+      await fetchHistory();
     } finally {
       setResendingId(null);
     }
@@ -127,7 +173,6 @@ export default function HistoricoEnvios() {
             Histórico de Envios
           </CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Date From */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -153,7 +198,6 @@ export default function HistoricoEnvios() {
               </PopoverContent>
             </Popover>
 
-            {/* Date To */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -203,7 +247,6 @@ export default function HistoricoEnvios() {
 
       <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Tabela de Erros */}
           <Card className="border-destructive/30">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm flex items-center gap-2">
@@ -270,7 +313,6 @@ export default function HistoricoEnvios() {
             </CardContent>
           </Card>
 
-          {/* Tabela de Sucessos */}
           <Card className="border-green-500/30">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm flex items-center gap-2">
