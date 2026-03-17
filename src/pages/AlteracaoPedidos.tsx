@@ -40,6 +40,25 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     });
   });
 
+const getWebhookErrorMessage = async (response: Response) => {
+  const responseText = await response.text();
+  const trimmedText = responseText.trim();
+
+  if (!trimmedText) {
+    return `Webhook respondeu com status ${response.status}`;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmedText);
+    if (typeof parsed === 'string') return parsed;
+    if (parsed?.message) return String(parsed.message);
+    if (parsed?.error) return String(parsed.error);
+    return trimmedText;
+  } catch {
+    return trimmedText;
+  }
+};
+
 function parseCSVLine(line: string): string[] {
   const fields: string[] = [];
   let current = '';
@@ -185,21 +204,19 @@ export default function AlteracaoPedidos() {
     try {
       const telefone = editingPhone[row.id] ?? row.telefone_pdv ?? '';
 
-      // Update phone in DB if changed
       if (editingPhone[row.id] && editingPhone[row.id] !== row.telefone_pdv) {
         await supabase
           .from('alteracao_pedidos_log')
           .update({ telefone_pdv: telefone, sucesso: true, erro_mensagem: null })
           .eq('id', row.id);
       } else {
-        // Reset status for retry
         await supabase
           .from('alteracao_pedidos_log')
           .update({ sucesso: true, erro_mensagem: null })
           .eq('id', row.id);
       }
 
-      await fetch(WEBHOOK_URL, {
+      const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -212,15 +229,36 @@ export default function AlteracaoPedidos() {
         }),
       });
 
-      toast.success(`Reenvio do PDV ${row.cod_pdv} realizado!`);
+      if (!response.ok) {
+        const errorMessage = await getWebhookErrorMessage(response);
+        await supabase
+          .from('alteracao_pedidos_log')
+          .update({ sucesso: false, erro_mensagem: errorMessage })
+          .eq('id', row.id);
 
-      // Refresh this row
+        console.error('Webhook retornou erro no reenvio:', row.id, response.status, errorMessage);
+        toast.error(`Falha no reenvio do PDV ${row.cod_pdv}`);
+      } else {
+        toast.success(`Reenvio do PDV ${row.cod_pdv} realizado!`);
+      }
+
       if (batchIds.length > 0) {
         await fetchLogs(batchIds);
       }
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro inesperado no reenvio';
+
+      await supabase
+        .from('alteracao_pedidos_log')
+        .update({ sucesso: false, erro_mensagem: errorMessage })
+        .eq('id', row.id);
+
       console.error('Erro ao reenviar:', err);
       toast.error(`Erro ao reenviar PDV ${row.cod_pdv}`);
+
+      if (batchIds.length > 0) {
+        await fetchLogs(batchIds);
+      }
     } finally {
       setResendingId(null);
     }
@@ -274,13 +312,38 @@ export default function AlteracaoPedidos() {
 
         const logId = logData.id;
         ids.push(logId);
+        console.info('Log de alteração criado:', { logId, row: rows[i] });
 
-        await fetch(WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...rows[i], log_id: logId }),
-          signal: controller.signal,
-        });
+        try {
+          const response = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...rows[i], log_id: logId }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            const errorMessage = await getWebhookErrorMessage(response);
+
+            await supabase
+              .from('alteracao_pedidos_log')
+              .update({ sucesso: false, erro_mensagem: errorMessage })
+              .eq('id', logId);
+
+            console.error('Webhook retornou erro:', { logId, status: response.status, errorMessage });
+          } else {
+            console.info('Webhook enviado com sucesso:', { logId, status: response.status });
+          }
+        } catch (webhookError) {
+          const errorMessage = webhookError instanceof Error ? webhookError.message : 'Erro inesperado ao enviar webhook';
+
+          await supabase
+            .from('alteracao_pedidos_log')
+            .update({ sucesso: false, erro_mensagem: errorMessage })
+            .eq('id', logId);
+
+          console.error('Falha ao enviar webhook:', { logId, errorMessage, webhookError });
+        }
 
         if (i < rows.length - 1) {
           await sleep(10000, controller.signal);
