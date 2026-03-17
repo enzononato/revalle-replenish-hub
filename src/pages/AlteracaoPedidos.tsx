@@ -204,21 +204,19 @@ export default function AlteracaoPedidos() {
     try {
       const telefone = editingPhone[row.id] ?? row.telefone_pdv ?? '';
 
-      // Update phone in DB if changed
       if (editingPhone[row.id] && editingPhone[row.id] !== row.telefone_pdv) {
         await supabase
           .from('alteracao_pedidos_log')
           .update({ telefone_pdv: telefone, sucesso: true, erro_mensagem: null })
           .eq('id', row.id);
       } else {
-        // Reset status for retry
         await supabase
           .from('alteracao_pedidos_log')
           .update({ sucesso: true, erro_mensagem: null })
           .eq('id', row.id);
       }
 
-      await fetch(WEBHOOK_URL, {
+      const response = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -231,15 +229,36 @@ export default function AlteracaoPedidos() {
         }),
       });
 
-      toast.success(`Reenvio do PDV ${row.cod_pdv} realizado!`);
+      if (!response.ok) {
+        const errorMessage = await getWebhookErrorMessage(response);
+        await supabase
+          .from('alteracao_pedidos_log')
+          .update({ sucesso: false, erro_mensagem: errorMessage })
+          .eq('id', row.id);
 
-      // Refresh this row
+        console.error('Webhook retornou erro no reenvio:', row.id, response.status, errorMessage);
+        toast.error(`Falha no reenvio do PDV ${row.cod_pdv}`);
+      } else {
+        toast.success(`Reenvio do PDV ${row.cod_pdv} realizado!`);
+      }
+
       if (batchIds.length > 0) {
         await fetchLogs(batchIds);
       }
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro inesperado no reenvio';
+
+      await supabase
+        .from('alteracao_pedidos_log')
+        .update({ sucesso: false, erro_mensagem: errorMessage })
+        .eq('id', row.id);
+
       console.error('Erro ao reenviar:', err);
       toast.error(`Erro ao reenviar PDV ${row.cod_pdv}`);
+
+      if (batchIds.length > 0) {
+        await fetchLogs(batchIds);
+      }
     } finally {
       setResendingId(null);
     }
