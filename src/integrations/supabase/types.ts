@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      alteracao_pedidos_envios: {
+        Row: {
+          cod_pdv: string
+          created_at: string
+          envio_ok: number
+          erro_mensagem: string | null
+          id: string
+          log_id: string | null
+          mensagem_cliente: string | null
+          nome_pdv: string | null
+          payload: Json | null
+          retorno_n8n: Json | null
+          status_pedido: string | null
+          telefone_pdv: string | null
+          updated_at: string
+        }
+        Insert: {
+          cod_pdv: string
+          created_at?: string
+          envio_ok?: number
+          erro_mensagem?: string | null
+          id?: string
+          log_id?: string | null
+          mensagem_cliente?: string | null
+          nome_pdv?: string | null
+          payload?: Json | null
+          retorno_n8n?: Json | null
+          status_pedido?: string | null
+          telefone_pdv?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cod_pdv?: string
+          created_at?: string
+          envio_ok?: number
+          erro_mensagem?: string | null
+          id?: string
+          log_id?: string | null
+          mensagem_cliente?: string | null
+          nome_pdv?: string | null
+          payload?: Json | null
+          retorno_n8n?: Json | null
+          status_pedido?: string | null
+          telefone_pdv?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alteracao_pedidos_envios_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "alteracao_pedidos_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alteracao_pedidos_log: {
         Row: {
           cod_pdv: string
