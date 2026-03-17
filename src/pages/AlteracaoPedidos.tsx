@@ -40,6 +40,25 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     });
   });
 
+const getWebhookErrorMessage = async (response: Response) => {
+  const responseText = await response.text();
+  const trimmedText = responseText.trim();
+
+  if (!trimmedText) {
+    return `Webhook respondeu com status ${response.status}`;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmedText);
+    if (typeof parsed === 'string') return parsed;
+    if (parsed?.message) return String(parsed.message);
+    if (parsed?.error) return String(parsed.error);
+    return trimmedText;
+  } catch {
+    return trimmedText;
+  }
+};
+
 function parseCSVLine(line: string): string[] {
   const fields: string[] = [];
   let current = '';
