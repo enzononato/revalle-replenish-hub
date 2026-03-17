@@ -312,13 +312,38 @@ export default function AlteracaoPedidos() {
 
         const logId = logData.id;
         ids.push(logId);
+        console.info('Log de alteração criado:', { logId, row: rows[i] });
 
-        await fetch(WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...rows[i], log_id: logId }),
-          signal: controller.signal,
-        });
+        try {
+          const response = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...rows[i], log_id: logId }),
+            signal: controller.signal,
+          });
+
+          if (!response.ok) {
+            const errorMessage = await getWebhookErrorMessage(response);
+
+            await supabase
+              .from('alteracao_pedidos_log')
+              .update({ sucesso: false, erro_mensagem: errorMessage })
+              .eq('id', logId);
+
+            console.error('Webhook retornou erro:', { logId, status: response.status, errorMessage });
+          } else {
+            console.info('Webhook enviado com sucesso:', { logId, status: response.status });
+          }
+        } catch (webhookError) {
+          const errorMessage = webhookError instanceof Error ? webhookError.message : 'Erro inesperado ao enviar webhook';
+
+          await supabase
+            .from('alteracao_pedidos_log')
+            .update({ sucesso: false, erro_mensagem: errorMessage })
+            .eq('id', logId);
+
+          console.error('Falha ao enviar webhook:', { logId, errorMessage, webhookError });
+        }
 
         if (i < rows.length - 1) {
           await sleep(10000, controller.signal);
