@@ -119,6 +119,34 @@ export default function HistoricoEnvios() {
     }
   };
 
+  const handleDownloadErrorsCsv = () => {
+    if (errorLogs.length === 0) {
+      toast.error('Nenhum erro para exportar');
+      return;
+    }
+    const headers = ['Data', 'Cod. PDV', 'Nome PDV', 'Telefone PDV', 'Status Pedido', 'Mensagem Cliente', 'Erro'];
+    const rows = errorLogs.map(r => [
+      formatDate(r.created_at),
+      r.cod_pdv,
+      r.nome_pdv || '',
+      r.telefone_pdv || '',
+      r.status_pedido || '',
+      r.mensagem_cliente || '',
+      r.erro_mensagem || '',
+    ]);
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `erros_envio_${format(new Date(), 'yyyy-MM-dd_HHmm')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV de erros baixado!');
+  };
+
   return (
     <Card>
       <CardHeader>
