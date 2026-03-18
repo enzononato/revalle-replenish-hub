@@ -808,25 +808,27 @@ export default function Protocolos() {
                       {protocolo.codigoPdv || '-'}
                     </span>
                   </td>
-                  <td className="p-2.5 text-center border-r border-border">
-                    {(() => {
-                      const dias = calcularSlaDias(protocolo.data, protocolo.status, protocolo.observacoesLog);
-                      
-                      if (protocolo.status === 'encerrado') {
+                  {activeTab !== 'encerrado' && (
+                    <td className="p-2.5 text-center border-r border-border">
+                      {(() => {
+                        const dias = calcularSlaDias(protocolo.data, protocolo.status, protocolo.observacoesLog);
+                        
+                        if (protocolo.status === 'encerrado') {
+                          return (
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">
+                              ✓ {dias} {dias === 1 ? 'dia' : 'dias'}
+                            </span>
+                          );
+                        }
+                        
                         return (
-                          <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground">
-                            ✓ {dias} {dias === 1 ? 'dia' : 'dias'}
+                          <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(dias)}`}>
+                            {dias} {dias === 1 ? 'dia' : 'dias'}
                           </span>
                         );
-                      }
-                      
-                      return (
-                        <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getSlaColor(dias)}`}>
-                          {dias} {dias === 1 ? 'dia' : 'dias'}
-                        </span>
-                      );
-                    })()}
-                  </td>
+                      })()}
+                    </td>
+                  )}
                   <td className="p-2.5 text-center border-r border-border">
                     <button
                       onClick={() => handleToggleValidacao(protocolo.id)}
