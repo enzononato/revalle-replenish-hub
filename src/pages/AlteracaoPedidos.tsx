@@ -323,12 +323,14 @@ export default function AlteracaoPedidos() {
       }
 
       setBatchIds(ids);
-      toast.success('Todos os dados foram enviados! Consulte o status abaixo.');
+      toast.success('Envio concluído! Atualizando status automaticamente...');
       setFile(null);
       setProgress({ current: 0, total: 0 });
       if (fileInputRef.current) fileInputRef.current.value = '';
 
       await fetchLogs(ids);
+      // Start auto-polling to catch async webhook results
+      startPolling(ids);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         toast.warning(`Envio interrompido. ${progress.current} de ${progress.total} enviado(s).`);
