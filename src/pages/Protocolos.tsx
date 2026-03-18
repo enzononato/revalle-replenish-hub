@@ -684,7 +684,9 @@ export default function Protocolos() {
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Tipo</th>
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Motorista</th>
               <th className="text-left p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Cód. PDV</th>
-              <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">SLA</th>
+              {activeTab !== 'encerrado' && (
+                <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">SLA</th>
+              )}
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Validação</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Lançado</th>
               <th className="text-center p-2.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-r border-border">Msg. Envio</th>
