@@ -130,6 +130,40 @@ export default function AlteracaoPedidos() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isPolling, setIsPolling] = useState(false);
+
+  // Auto-polling: after send completes, poll every 5s for 60s to catch async n8n updates
+  const startPolling = useCallback((ids: string[]) => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    setIsPolling(true);
+    let elapsed = 0;
+    const interval = setInterval(async () => {
+      elapsed += 5000;
+      if (elapsed > 60000) {
+        clearInterval(interval);
+        pollIntervalRef.current = null;
+        setIsPolling(false);
+        return;
+      }
+      try {
+        const { data } = await supabase
+          .from('alteracao_pedidos_log')
+          .select('id, cod_pdv, nome_pdv, telefone_pdv, status_pedido, mensagem_cliente, sucesso, erro_mensagem, created_at')
+          .in('id', ids);
+        if (data) setLogRows(data as LogRow[]);
+      } catch (e) {
+        console.error('Erro no polling:', e);
+      }
+    }, 5000);
+    pollIntervalRef.current = interval;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
 
   const handleFile = (f: File) => {
     if (!f.name.endsWith('.csv')) {
