@@ -485,6 +485,12 @@ export default function AlteracaoPedidos() {
                 )}
                 Atualizar Status
               </Button>
+              {isPolling && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Atualizando automaticamente...
+                </span>
+              )}
             </div>
             <CardDescription>
               <span className="text-green-600 font-medium">{successRows.length} sucesso(s)</span>
