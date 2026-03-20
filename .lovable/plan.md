@@ -1,40 +1,31 @@
 
 
-## Correção: Logs de falha de login do motorista não são salvos
+## Problema identificado
 
-### Problema identificado
-A função `logLoginAttempt` em `MotoristaAuthContext.tsx` não verifica o retorno da inserção no banco. O client retorna `{ data, error }` sem lançar exceção, então o `try/catch` nunca captura erros de inserção. Isso faz com que falhas de login não sejam registradas silenciosamente.
+No `BuscarProtocoloPdv.tsx`, quando aberto da aba "Em Atendimento" com `selectionMode='select'`, clicar num resultado pula direto para o modal de encerramento sem mostrar os detalhes. O motorista não consegue ver as informações antes de encerrar.
 
-### Causa raiz
-```typescript
-// Código atual - NÃO verifica o erro retornado
-try {
-  await supabase.from('motorista_login_logs').insert({...});
-} catch (e) {
-  console.error('Erro ao registrar log de login:', e);
-}
+O comportamento desejado e um fluxo em duas etapas:
+1. Clicar no resultado expande os detalhes do protocolo (produtos, observacao, NF, causa, etc.)
+2. Dentro dos detalhes expandidos, aparece um botao "Encerrar Reposicao" que abre o modal de encerramento
+
+## Mudanca
+
+**Arquivo:** `src/components/motorista/BuscarProtocoloPdv.tsx`
+
+- Alterar `handleSelectProtocolo` para que no modo `select` tambem faca toggle de expansao (igual ao modo `view`), em vez de fechar o dialog imediatamente
+- No card expandido (quando `selectionMode === 'select'`), renderizar um botao "Encerrar Reposicao" que chama `onSelectProtocolo` e fecha o dialog
+- Manter o modo `view` como somente leitura (sem botao de encerrar)
+
+Resultado: o motorista clica no resultado, ve os detalhes do protocolo expandidos, e entao clica no botao "Encerrar Reposicao" para prosseguir para o modal de encerramento.
+
+## Detalhes tecnicos
+
+```text
+BuscarProtocoloPdv (select mode)
+  Card click → toggle protocoloExpandidoId (igual view)
+  Card expandido:
+    - mostra detalhes (produtos, obs, NF, causa, mapa)
+    - renderiza botão "Encerrar Reposição" 
+      → chama onSelectProtocolo(protocolo) + handleClose()
 ```
-
-### Solução
-Alterar `logLoginAttempt` em **`src/contexts/MotoristaAuthContext.tsx`** para:
-
-1. Capturar o objeto `{ error }` retornado pela inserção
-2. Se houver erro, logar no console com detalhes para diagnóstico
-3. Garantir que a falha no log não interrompa o fluxo de login
-
-```typescript
-const logLoginAttempt = async (...) => {
-  try {
-    const { error } = await supabase.from('motorista_login_logs').insert({...});
-    if (error) {
-      console.error('Erro ao registrar log de login:', error.message, error);
-    }
-  } catch (e) {
-    console.error('Exceção ao registrar log de login:', e);
-  }
-};
-```
-
-### Arquivo alterado
-- `src/contexts/MotoristaAuthContext.tsx` — única mudança, na função `logLoginAttempt`
 
