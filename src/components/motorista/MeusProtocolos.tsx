@@ -700,7 +700,6 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
   };
 
   const handleProtocoloEncontrado = (protocolo: ProtocoloEncontrado) => {
-    if (modoBuscaPdv === 'view') return;
 
     setProtocoloParaEncerrar(protocolo as unknown as ProtocoloSimples);
     setShowEncerrarModal(true);
