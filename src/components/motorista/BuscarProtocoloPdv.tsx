@@ -47,6 +47,7 @@ interface BuscarProtocoloPdvProps {
   onSelectProtocolo?: (protocolo: ProtocoloEncontrado) => void;
   motorista: Motorista;
   selectionMode?: 'select' | 'view';
+  statusFilter?: 'aberto' | 'em_andamento';
 }
 
 export function BuscarProtocoloPdv({
@@ -55,6 +56,7 @@ export function BuscarProtocoloPdv({
   onSelectProtocolo,
   motorista,
   selectionMode = 'select',
+  statusFilter = 'em_andamento',
 }: BuscarProtocoloPdvProps) {
   const [codigoPdv, setCodigoPdv] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -73,7 +75,7 @@ export function BuscarProtocoloPdv({
       const { data, error } = await supabase
         .from('protocolos')
         .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, motorista_nome, motorista_codigo, motorista_whatsapp, motorista_email, motorista_unidade, produtos, observacao_geral, contato_whatsapp, contato_email, cliente_telefone, fotos_protocolo, observacoes_log, mapa')
-        .eq('status', 'em_andamento')
+        .eq('status', statusFilter)
         .eq('ativo', true)
         .ilike('codigo_pdv', `%${codigoPdv.trim()}%`)
         .or('oculto.is.null,oculto.eq.false')
@@ -173,7 +175,7 @@ export function BuscarProtocoloPdv({
           {!isSearching && buscaRealizada && resultados.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Nenhum protocolo em atendimento encontrado</p>
+              <p className="text-sm">Nenhum protocolo {statusFilter === 'aberto' ? 'aberto' : 'em atendimento'} encontrado</p>
               <p className="text-xs mt-1">para o PDV "{codigoPdv}"</p>
             </div>
           )}

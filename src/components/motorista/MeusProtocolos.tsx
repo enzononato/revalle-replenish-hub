@@ -880,6 +880,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         onSelectProtocolo={handleProtocoloEncontrado}
         motorista={motorista}
         selectionMode={modoBuscaPdv}
+        statusFilter={filtroStatus === 'abertos' ? 'aberto' : 'em_andamento'}
       />
 
       {/* Modal de Encerramento */}
