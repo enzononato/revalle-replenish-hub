@@ -105,6 +105,7 @@ export default function Protocolos() {
     const statusParam = searchParams.get('status');
     const periodoParam = searchParams.get('periodo');
     const tipoParam = searchParams.get('tipo');
+    const unidadeParam = searchParams.get('unidade');
     
     if (statusParam) {
       setActiveTab(statusParam);
@@ -118,7 +119,14 @@ export default function Protocolos() {
       setTipoFilter(tipoParam);
       setShowFilters(true);
     }
-  }, [searchParams]);
+
+    if (unidadeParam && isAdmin) {
+      // Suporta múltiplas unidades separadas por vírgula
+      const unidadesFromUrl = decodeURIComponent(unidadeParam).split(',').map(u => u.trim());
+      // Usar a primeira unidade para o filtro de seleção única
+      setUnidadeFilter(unidadesFromUrl[0] || 'todas');
+    }
+  }, [searchParams, isAdmin]);
 
   // Abrir protocolo por ID quando protocolos estiverem carregados (apenas uma vez)
   useEffect(() => {

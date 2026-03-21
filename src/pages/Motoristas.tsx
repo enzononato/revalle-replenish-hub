@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { unidades } from '@/data/mockData';
 import { Motorista, FuncaoMotorista, SetorMotorista } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -40,11 +41,18 @@ import { useAuditLog } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
 
 export default function Motoristas() {
+  const [searchParams] = useSearchParams();
   const { motoristas, isLoading, addMotorista, updateMotorista, deleteMotorista, importMotoristas } = useMotoristasDB();
   const { isAdmin, user } = useAuth();
   const { registrarLog } = useAuditLog();
   const [search, setSearch] = useState('');
-  const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
+  const [unidadeFiltro, setUnidadeFiltro] = useState<string>(() => {
+    const unidadeParam = searchParams.get('unidade');
+    if (unidadeParam) {
+      return decodeURIComponent(unidadeParam).split(',')[0] || 'todas';
+    }
+    return 'todas';
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMotorista, setEditingMotorista] = useState<Motorista | null>(null);
   const [formData, setFormData] = useState({

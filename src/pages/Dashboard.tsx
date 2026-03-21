@@ -471,6 +471,13 @@ export default function Dashboard() {
     return colors[index];
   };
 
+  // Helper para adicionar filtro de unidade nos links
+  const buildHref = (basePath: string) => {
+    if (unidadesFiltro.length === 0) return basePath;
+    const separator = basePath.includes('?') ? '&' : '?';
+    return `${basePath}${separator}unidade=${encodeURIComponent(unidadesFiltro.join(','))}`;
+  };
+
   return (
     <div className="space-y-4">
       {/* Header Personalizado */}
@@ -613,7 +620,7 @@ export default function Dashboard() {
           icon={Clock}
           variant="warning"
           delay={0}
-          href="/protocolos?status=aberto"
+          href={buildHref("/protocolos?status=aberto")}
         />
         <StatCard
           title="Encerrados Hoje"
@@ -630,7 +637,7 @@ export default function Dashboard() {
           icon={CheckCircle}
           variant="success"
           delay={100}
-          href="/protocolos?status=encerrado&periodo=hoje"
+          href={buildHref("/protocolos?status=encerrado&periodo=hoje")}
         />
         <StatCard
           title="Total de Protocolos"
@@ -638,7 +645,7 @@ export default function Dashboard() {
           icon={FileText}
           variant="primary"
           delay={200}
-          href="/protocolos"
+          href={buildHref("/protocolos")}
         />
         <StatCard
           title="Total de Motoristas"
@@ -646,7 +653,7 @@ export default function Dashboard() {
           icon={Truck}
           variant="info"
           delay={300}
-          href="/motoristas"
+          href={buildHref("/motoristas")}
         />
         <StatCard
           title="Total Hoje"
@@ -654,7 +661,7 @@ export default function Dashboard() {
           icon={Calendar}
           variant="info"
           delay={400}
-          href="/protocolos?periodo=hoje"
+          href={buildHref("/protocolos?periodo=hoje")}
         />
         <StatCard
           title="Lead Time"
@@ -674,7 +681,7 @@ export default function Dashboard() {
           icon={Repeat}
           variant="info"
           delay={450}
-          href="/protocolos?tipo=INVERSAO&status=todos"
+          href={buildHref("/protocolos?tipo=INVERSAO&status=todos")}
         />
         <StatCard
           title="Avaria"
@@ -682,7 +689,7 @@ export default function Dashboard() {
           icon={AlertTriangle}
           variant="warning"
           delay={475}
-          href="/protocolos?tipo=AVARIA&status=todos"
+          href={buildHref("/protocolos?tipo=AVARIA&status=todos")}
         />
         <StatCard
           title="Falta"
@@ -690,7 +697,7 @@ export default function Dashboard() {
           icon={PackageX}
           variant="primary"
           delay={500}
-          href="/protocolos?tipo=FALTA&status=todos"
+          href={buildHref("/protocolos?tipo=FALTA&status=todos")}
         />
       </div>
 
