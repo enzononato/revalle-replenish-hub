@@ -419,39 +419,38 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         <Card 
           key={protocolo.id} 
           className={cn(
-            "transition-all cursor-pointer hover:shadow-md",
-            isExpanded && "ring-2 ring-primary/20"
+            "transition-all cursor-pointer hover:shadow-md border-border/60",
+            isExpanded && "ring-2 ring-primary/20 shadow-md"
           )}
           onClick={() => setExpandedId(isExpanded ? null : protocolo.id)}
         >
           <CardContent className="p-4">
+            {/* Header do card */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex flex-col gap-0.5 mb-1">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-primary shrink-0" />
-                    <span className="font-mono text-sm font-medium truncate">
-                      {protocolo.numero}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-mono text-[13px] font-semibold truncate">
+                    {protocolo.numero}
+                  </span>
                   {foiReaberto(protocolo.observacoes_log as ObservacaoLog[]) && (
-                    <span 
-                      className="inline-flex items-center gap-0.5 text-[9px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-1.5 py-0.5 rounded-full w-fit ml-6"
-                      title="Protocolo reaberto"
-                    >
+                    <span className="inline-flex items-center gap-0.5 text-[9px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-1.5 py-0.5 rounded-full shrink-0">
                       <RefreshCw size={9} />
                       Reaberto
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground space-y-0.5">
+                <div className="text-[13px] text-muted-foreground space-y-0.5 ml-6">
                   <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>
                   {protocolo.tipo_reposicao && (
-                    <p className="capitalize">{protocolo.tipo_reposicao.toLowerCase()}</p>
+                    <p className="capitalize font-medium text-foreground/70">{protocolo.tipo_reposicao.toLowerCase()}</p>
+                  )}
+                  {protocolo.mapa && (
+                    <p>Mapa: <span className="font-medium text-foreground/70">{protocolo.mapa}</span></p>
                   )}
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-col items-end gap-2 shrink-0">
                 {getStatusBadge(protocolo.status)}
                 {isExpanded ? (
                   <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -461,42 +460,47 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
               </div>
             </div>
 
+            {/* Conteúdo expandido */}
             {isExpanded && (
-              <div className="mt-3 pt-3 border-t border-border space-y-2">
-                {protocolo.codigo_pdv && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">PDV:</span>
-                    <span className="font-medium">{protocolo.codigo_pdv}</span>
-                  </div>
-                )}
-                {protocolo.nota_fiscal && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Nota Fiscal:</span>
-                    <span className="font-medium">{protocolo.nota_fiscal}</span>
-                  </div>
-                )}
-                {protocolo.causa && (
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Causa:</span>
-                    <span className="font-medium">{protocolo.causa}</span>
-                  </div>
-                )}
+              <div className="mt-3 pt-3 border-t border-border/50 space-y-3">
+                {/* Dados do protocolo */}
+                <div className="grid grid-cols-2 gap-2">
+                  {protocolo.codigo_pdv && (
+                    <div className="bg-muted/40 rounded-lg px-3 py-2">
+                      <p className="text-[11px] text-muted-foreground">PDV</p>
+                      <p className="text-[13px] font-medium">{protocolo.codigo_pdv}</p>
+                    </div>
+                  )}
+                  {protocolo.nota_fiscal && (
+                    <div className="bg-muted/40 rounded-lg px-3 py-2">
+                      <p className="text-[11px] text-muted-foreground">Nota Fiscal</p>
+                      <p className="text-[13px] font-medium">{protocolo.nota_fiscal}</p>
+                    </div>
+                  )}
+                  {protocolo.causa && (
+                    <div className="bg-muted/40 rounded-lg px-3 py-2 col-span-2">
+                      <p className="text-[11px] text-muted-foreground">Causa</p>
+                      <p className="text-[13px] font-medium">{protocolo.causa}</p>
+                    </div>
+                  )}
+                </div>
                 
                 {protocolo.observacao_geral && (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mb-1">
                       <MessageSquare className="w-3.5 h-3.5" />
                       <span>Observação</span>
                     </div>
-                    <div className="bg-muted/50 rounded-md p-2">
-                      <p className="text-[11px] text-foreground">{protocolo.observacao_geral}</p>
+                    <div className="bg-muted/40 rounded-lg p-3">
+                      <p className="text-[13px] text-foreground leading-relaxed">{protocolo.observacao_geral}</p>
                     </div>
                   </div>
                 )}
 
+                {/* Produtos */}
                 {produtos && produtos.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mb-1">
                       <Package className="w-3.5 h-3.5" />
                       <span>Produtos ({produtos.length})</span>
                       {(() => {
@@ -509,21 +513,22 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                                 ? "bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
                                 : "bg-yellow-100 text-yellow-600 dark:bg-yellow-500/20 dark:text-yellow-400"
                             )}>
-                              {entregues} de {produtos.length} entregues
+                              {entregues}/{produtos.length} entregues
                             </span>
                           );
                         }
                         return null;
                       })()}
                     </div>
-                    <div className="bg-muted/50 rounded-md p-2 space-y-0.5">
+                    <div className="bg-muted/40 rounded-lg p-3 space-y-1.5">
                       {produtos.map((prod, idx) => (
-                        <div key={idx} className="text-[11px] flex justify-between items-center">
-                          <span className="truncate flex items-center gap-1">
-                            {prod.entregue && <CheckCircle className="w-3 h-3 text-green-500 shrink-0" />}
-                            {prod.codigo} - {prod.nome}
+                        <div key={idx} className="text-[13px] flex justify-between items-center">
+                          <span className="truncate flex items-center gap-1.5">
+                            {prod.entregue && <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
+                            <span className="font-mono text-[12px] text-muted-foreground">{prod.codigo}</span>
+                            <span className="truncate">{prod.nome}</span>
                           </span>
-                          <span className="text-muted-foreground shrink-0 ml-2">
+                          <span className="text-muted-foreground shrink-0 ml-2 text-[12px]">
                             {prod.quantidade} {prod.unidade}
                           </span>
                         </div>
@@ -532,29 +537,28 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                   </div>
                 )}
 
+                {/* Histórico */}
                 {(protocolo.status === 'aberto' || protocolo.status === 'em_andamento') && historicoFiltrado.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mb-1">
                       <History className="w-3.5 h-3.5" />
                       <span>Histórico da reposição</span>
                     </div>
-                    <div className="bg-muted/50 rounded-md p-2 space-y-2">
+                    <div className="bg-muted/40 rounded-lg p-3 space-y-2.5">
                       {historicoFiltrado.map((log) => {
                         const historicoFormatado = formatarTextoHistoricoMotorista(log);
-
                         return (
-                          <div key={log.id} className="border-l-2 border-border pl-2">
+                          <div key={log.id} className="border-l-2 border-primary/30 pl-2.5">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-[11px] font-medium text-foreground">{historicoFormatado.titulo}</p>
-                              <span className="text-[10px] text-muted-foreground shrink-0">
-                                {log.data} às {log.hora}
+                              <p className="text-[13px] font-medium text-foreground">{historicoFormatado.titulo}</p>
+                              <span className="text-[11px] text-muted-foreground shrink-0">
+                                {log.data} {log.hora}
                               </span>
                             </div>
-
                             {historicoFormatado.detalhes.length > 0 && (
-                              <div className="mt-1 space-y-1">
+                              <div className="mt-1 space-y-0.5">
                                 {historicoFormatado.detalhes.map((detalhe, index) => (
-                                  <p key={`${log.id}-${index}`} className="text-[11px] leading-relaxed text-muted-foreground">
+                                  <p key={`${log.id}-${index}`} className="text-[12px] leading-relaxed text-muted-foreground">
                                     {/^[-•]/.test(detalhe) ? detalhe : `• ${detalhe}`}
                                   </p>
                                 ))}
@@ -567,14 +571,14 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                   </div>
                 )}
 
-                {/* Botões de ação - WhatsApp e Copiar mensagem */}
+                {/* Botões WhatsApp/Copiar */}
                 {(protocolo.status === 'aberto' || protocolo.status === 'em_andamento') && (
-                  <div className="pt-2 mt-2 border-t border-border space-y-2">
+                  <div className="pt-2 mt-1 border-t border-border/50 space-y-2">
                     {getTelefoneCliente(protocolo) ? (
                       <Button
                         variant="default"
                         size="sm"
-                        className="w-full"
+                        className="w-full h-10 text-[13px]"
                         style={{ backgroundColor: '#22c55e', color: '#fff' }}
                         onClick={(e) => e.stopPropagation()}
                         asChild
@@ -590,13 +594,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                         </a>
                       </Button>
                     ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        disabled
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <Button variant="outline" size="sm" className="w-full h-10 text-[13px]" disabled onClick={(e) => e.stopPropagation()}>
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Sem telefone do cliente
                       </Button>
@@ -604,35 +602,26 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopiarMensagem(protocolo);
-                      }}
+                      className="w-full h-10 text-[13px]"
+                      onClick={(e) => { e.stopPropagation(); handleCopiarMensagem(protocolo); }}
                     >
                       {copiadoId === protocolo.id ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Mensagem copiada!
-                        </>
+                        <><Check className="w-4 h-4 mr-2" />Mensagem copiada!</>
                       ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copiar mensagem
-                        </>
+                        <><Copy className="w-4 h-4 mr-2" />Copiar mensagem</>
                       )}
                     </Button>
                   </div>
                 )}
 
-                {/* Botões de encerramento - WhatsApp e Copiar mensagem para protocolos encerrados */}
+                {/* Botões encerramento */}
                 {protocolo.status === 'encerrado' && (
-                  <div className="pt-2 mt-2 border-t border-border space-y-2">
+                  <div className="pt-2 mt-1 border-t border-border/50 space-y-2">
                     {getTelefoneCliente(protocolo) ? (
                       <Button
                         variant="default"
                         size="sm"
-                        className="w-full"
+                        className="w-full h-10 text-[13px]"
                         style={{ backgroundColor: '#22c55e', color: '#fff' }}
                         onClick={(e) => e.stopPropagation()}
                         asChild
@@ -648,13 +637,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                         </a>
                       </Button>
                     ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        disabled
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <Button variant="outline" size="sm" className="w-full h-10 text-[13px]" disabled onClick={(e) => e.stopPropagation()}>
                         <MessageCircle className="w-4 h-4 mr-2" />
                         Sem telefone do cliente
                       </Button>
@@ -662,34 +645,25 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopiarMensagemEncerramento(protocolo);
-                      }}
+                      className="w-full h-10 text-[13px]"
+                      onClick={(e) => { e.stopPropagation(); handleCopiarMensagemEncerramento(protocolo); }}
                     >
                       {copiadoIdEncerramento === protocolo.id ? (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Mensagem copiada!
-                        </>
+                        <><Check className="w-4 h-4 mr-2" />Mensagem copiada!</>
                       ) : (
-                        <>
-                          <Copy className="w-4 h-4 mr-2" />
-                          Copiar mensagem de encerramento
-                        </>
+                        <><Copy className="w-4 h-4 mr-2" />Copiar mensagem de encerramento</>
                       )}
                     </Button>
                   </div>
                 )}
 
-                {/* Botão Encerrar - apenas para protocolos em_andamento */}
+                {/* Botão Encerrar - apenas em_andamento */}
                 {protocolo.status === 'em_andamento' && (
-                  <div className="pt-2 mt-2 border-t border-border">
+                  <div className="pt-2 mt-1 border-t border-border/50">
                     <Button
                       variant="destructive"
                       size="sm"
-                      className="w-full"
+                      className="w-full h-10 text-[13px]"
                       onClick={(e) => {
                         e.stopPropagation();
                         setProtocoloParaEncerrar(protocolo);
