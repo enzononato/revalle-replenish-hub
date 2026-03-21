@@ -132,12 +132,12 @@ export default function Protocolos() {
     }
 
     if (unidadeParam && isAdmin) {
-      const primeiraUnidade = unidadeParam.split(',').map(u => u.trim())[0] || 'todas';
-      if (primeiraUnidade !== unidadeFilter) {
-        setUnidadeFilter(primeiraUnidade);
+      const unidadesFromUrl = unidadeParam.split(',').map(u => u.trim()).filter(Boolean);
+      if (JSON.stringify(unidadesFromUrl) !== JSON.stringify(unidadesFiltro)) {
+        setUnidadesFiltro(unidadesFromUrl);
       }
     }
-  }, [searchParams, isAdmin, activeTab, periodoFilter, tipoFilter, unidadeFilter, showFilters]);
+  }, [searchParams, isAdmin, activeTab, periodoFilter, tipoFilter, unidadesFiltro, showFilters]);
 
   // Abrir protocolo por ID quando protocolos estiverem carregados (apenas uma vez)
   useEffect(() => {
