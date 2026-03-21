@@ -91,7 +91,7 @@ export default function MotoristaLogin() {
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       {/* Header decorativo com curva */}
-      <div className="relative bg-primary pt-10 pb-14 px-6 shrink-0">
+      <div className="relative bg-primary pt-10 pb-10 px-6 shrink-0">
         {/* Círculos decorativos */}
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/5" />
         <div className="absolute bottom-4 -left-8 w-32 h-32 rounded-full bg-primary-foreground/5" />
@@ -117,7 +117,7 @@ export default function MotoristaLogin() {
       </div>
 
       {/* Card de login */}
-      <div className="flex-1 px-5 pb-4 max-w-md mx-auto w-full flex flex-col justify-center -mt-2">
+      <div className="flex-1 px-5 pb-4 max-w-md mx-auto w-full flex flex-col justify-center -mt-4">
         <div className="bg-card rounded-2xl shadow-xl border border-border/40 p-5">
           <p className="text-sm text-muted-foreground text-center mb-5">
             Faça login para registrar protocolos e acompanhar suas entregas
