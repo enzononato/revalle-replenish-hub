@@ -645,7 +645,7 @@ export default function Dashboard() {
           icon={FileText}
           variant="primary"
           delay={200}
-          href="/protocolos"
+          href={buildHref("/protocolos")}
         />
         <StatCard
           title="Total de Motoristas"
