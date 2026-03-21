@@ -367,36 +367,45 @@ export function EncerrarProtocoloModal({
       <Dialog open={isOpen && !cameraTarget} onOpenChange={handleClose}>
         <DialogContent className="w-[calc(100vw-16px)] max-w-md max-h-[95vh] overflow-hidden flex flex-col p-0 rounded-2xl gap-0">
           {/* Header fixo */}
-          <div className="px-4 pt-4 pb-3 border-b bg-background sticky top-0 z-10">
+          {/* Header sticky */}
+          <div className="px-4 pt-4 pb-3 border-b border-border/40 bg-background sticky top-0 z-10">
             <DialogHeader className="pb-0">
-              <DialogTitle className="flex items-center gap-2 text-base">
-                <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+              <DialogTitle className="flex items-center gap-2.5 text-base font-bold">
+                <div className="w-7 h-7 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                </div>
                 {isEntregaTotal ? 'Encerrar Reposição' : 'Entrega Parcial'}
               </DialogTitle>
             </DialogHeader>
           </div>
 
           {/* Conteúdo scrollável */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
             {/* Resumo do protocolo */}
-            <Card className="bg-muted/50 border-border/60">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2.5 mb-2">
-                  <FileText className="w-5 h-5 text-primary shrink-0" />
-                  <span className="font-mono text-sm font-bold truncate">{protocolo.numero}</span>
+            <div className="bg-muted/40 rounded-xl p-3.5 border border-border/40">
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileText className="w-3.5 h-3.5 text-primary" />
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <p>PDV: <span className="font-semibold text-foreground">{protocolo.codigo_pdv || 'N/A'}</span></p>
-                  <p className="truncate">Mot: <span className="font-semibold text-foreground">{protocolo.motorista_nome}</span></p>
+                <span className="font-mono text-[13px] font-bold truncate">{protocolo.numero}</span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground pl-9">
+                <div>
+                  <span className="text-muted-foreground/70">PDV:</span>{' '}
+                  <span className="font-semibold text-foreground">{protocolo.codigo_pdv || 'N/A'}</span>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="truncate">
+                  <span className="text-muted-foreground/70">Mot:</span>{' '}
+                  <span className="font-semibold text-foreground">{protocolo.motorista_nome}</span>
+                </div>
+              </div>
+            </div>
 
             {/* Seleção de produtos */}
             {produtos.length > 0 && (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-1.5 text-xs font-semibold">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                     <Package className="w-3.5 h-3.5" />
                     Produtos entregues *
                   </Label>
@@ -404,7 +413,7 @@ export function EncerrarProtocoloModal({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 text-xs px-2"
+                      className="h-7 text-[11px] px-2 text-muted-foreground hover:text-foreground"
                       onClick={toggleTodos}
                     >
                       {produtosSelecionados.size === produtosPendentes.length ? 'Desmarcar' : 'Selecionar todos'}
@@ -412,7 +421,7 @@ export function EncerrarProtocoloModal({
                   )}
                 </div>
 
-                <div className="border rounded-xl divide-y divide-border/50 overflow-hidden">
+                <div className="border border-border/50 rounded-xl divide-y divide-border/30 overflow-hidden">
                   {produtos.map((produto, index) => {
                     const jaEntregue = !!produto.entregue;
                     const selecionado = produtosSelecionados.has(index);
@@ -421,38 +430,38 @@ export function EncerrarProtocoloModal({
                       <div
                         key={index}
                         className={cn(
-                          "flex items-start gap-2.5 p-2.5 text-xs transition-colors min-h-[44px]",
-                          jaEntregue && "bg-muted/50 opacity-60",
-                          !jaEntregue && selecionado && "bg-green-50 dark:bg-green-500/10",
-                          !jaEntregue && "cursor-pointer active:bg-muted/40"
+                          "flex items-start gap-3 p-3 text-xs transition-colors",
+                          jaEntregue && "bg-muted/30 opacity-50",
+                          !jaEntregue && selecionado && "bg-emerald-50/50 dark:bg-emerald-500/5",
+                          !jaEntregue && "cursor-pointer active:bg-muted/30"
                         )}
                         onClick={() => !jaEntregue && toggleProduto(index)}
                       >
                         <div className="mt-0.5 shrink-0">
                           {jaEntregue ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <CheckCircle className="w-[18px] h-[18px] text-emerald-500" />
                           ) : (
                             <Checkbox
                               checked={selecionado}
                               onCheckedChange={() => toggleProduto(index)}
                               onClick={(e) => e.stopPropagation()}
-                              className="h-5 w-5"
+                              className="h-[18px] w-[18px]"
                             />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={cn("font-semibold leading-snug text-[13px]", jaEntregue && "line-through")}>
+                          <p className={cn("font-medium leading-snug text-[13px]", jaEntregue && "line-through text-muted-foreground")}>
                             {produto.nome}
                           </p>
-                          <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
+                          <p className="text-muted-foreground mt-0.5 text-[11px]">
                             <span className="font-bold text-primary">{produto.quantidade} {produto.unidade}</span>
                             {jaEntregue && produto.dataEntrega && (
-                              <span>• {produto.dataEntrega}</span>
+                              <span> • {produto.dataEntrega}</span>
                             )}
                           </p>
                         </div>
                         {jaEntregue && (
-                          <span className="text-[10px] bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400 px-2 py-0.5 rounded-full shrink-0 font-medium mt-1">
+                          <span className="text-[10px] bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 px-1.5 py-0.5 rounded-full shrink-0 font-medium mt-0.5">
                             ✓
                           </span>
                         )}
