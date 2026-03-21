@@ -366,7 +366,10 @@ export default function Sobras() {
         <TablePagination
           currentPage={currentPage}
           totalPages={totalPages}
+          pageSize={ITEMS_PER_PAGE}
+          totalItems={totalCount}
           onPageChange={setCurrentPage}
+          onPageSizeChange={() => {}}
         />
       )}
 
