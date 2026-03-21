@@ -620,19 +620,30 @@ export default function Usuarios() {
                   </td>
                 </tr>
               ) : (
-                paginatedUsuarios.map((usuario) => (
+                paginatedUsuarios.map((usuario) => {
+                  const initials = usuario.nome
+                    .split(' ')
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase();
+                  
+                  return (
                   <tr 
                     key={usuario.id} 
-                    className="border-b border-border hover:bg-muted/30 transition-colors"
+                    className="border-b border-border hover:bg-muted/40 transition-colors"
                   >
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <div className={cn(
-                          "p-2 rounded-full",
-                          usuario.nivel === 'admin' ? "bg-primary/10" : 
-                          usuario.nivel === 'distribuicao' ? "bg-info/10" : "bg-muted"
+                          "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                          usuario.nivel === 'admin' ? "bg-primary/15 text-primary" : 
+                          usuario.nivel === 'distribuicao' ? "bg-info/15 text-info" : 
+                          usuario.nivel === 'controle' ? "bg-warning/15 text-warning" :
+                          "bg-muted text-muted-foreground"
                         )}>
-                          {getNivelIcon(usuario.nivel)}
+                          {initials}
                         </div>
                         <span className="font-medium">{usuario.nome}</span>
                       </div>
