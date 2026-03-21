@@ -207,6 +207,55 @@ export default function Sobras() {
     }
   };
 
+  const isErroCarregamento = (causa: string | null) => {
+    return causa?.toUpperCase().includes('ERRO DE CARREGAMENTO') ?? false;
+  };
+
+  const handleDevolverEstoque = async (sobra: SobraProtocolo) => {
+    setUpdatingStatus(sobra.id);
+    try {
+      const logs = Array.isArray(sobra.observacoes_log) ? sobra.observacoes_log as ObservacaoLog[] : [];
+      const novoLog: ObservacaoLog = {
+        id: crypto.randomUUID(),
+        usuarioNome: user?.nome || user?.email || 'Admin',
+        usuarioId: user?.id || '',
+        data: format(new Date(), 'dd/MM/yyyy'),
+        hora: format(new Date(), 'HH:mm'),
+        acao: 'Produto devolvido ao estoque',
+        texto: 'Erro de carregamento — produto retornado ao armazém',
+      };
+
+      const { error } = await supabase
+        .from('protocolos')
+        .update({
+          status: 'encerrado',
+          observacoes_log: JSON.stringify([...logs, novoLog]),
+        })
+        .eq('id', sobra.id);
+
+      if (error) throw error;
+
+      await registrarLog({
+        acao: 'devolvido_estoque',
+        tabela: 'protocolos',
+        registro_id: sobra.numero,
+        registro_dados: { causa: sobra.causa, status_anterior: sobra.status },
+        usuario_nome: user?.nome || user?.email || 'Admin',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+
+      toast.success('Produto devolvido ao estoque com sucesso');
+      fetchSobras();
+      fetchContadores();
+    } catch (err) {
+      console.error('Erro ao devolver ao estoque:', err);
+      toast.error('Erro ao devolver ao estoque');
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
