@@ -1066,24 +1066,24 @@ export default function MotoristaPortal() {
       {/* Tabs */}
       <div className="px-4 pt-4 pb-2 max-w-lg mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
-          <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/50 p-1 rounded-full border border-border/40 gap-0.5">
+          <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/40 p-1 rounded-xl border border-border/30 gap-1">
             <TabsTrigger 
               value="novo" 
-              className="text-sm font-semibold gap-1.5 rounded-full data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+              className="text-sm font-semibold gap-1.5 rounded-lg data-[state=inactive]:bg-background data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
             >
               <PlusCircle className="w-4 h-4" />
               Novo
             </TabsTrigger>
             <TabsTrigger 
               value="meus" 
-              className="text-sm font-semibold gap-1.5 rounded-full data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+              className="text-sm font-semibold gap-1.5 rounded-lg data-[state=inactive]:bg-background data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
             >
               <FileText className="w-4 h-4" />
               Protocolos
             </TabsTrigger>
             <TabsTrigger 
               value="pos-rota" 
-              className="text-sm font-semibold gap-1.5 rounded-full data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+              className="text-sm font-semibold gap-1.5 rounded-lg data-[state=inactive]:bg-background data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
             >
               <Route className="w-4 h-4" />
               Pós-Rota

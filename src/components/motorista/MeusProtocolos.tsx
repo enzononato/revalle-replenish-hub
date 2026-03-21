@@ -719,12 +719,12 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           variant={filtroStatus === 'abertos' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('abertos')}
-          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-full"
+          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-lg"
         >
           <Clock className="w-4 h-4 shrink-0" />
           <span>Abertos</span>
           {!loadingContadores && (
-            <span className="bg-background/20 text-[11px] font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+            <span className="text-[11px] font-bold opacity-80">
               {contadores.abertos}
             </span>
           )}
@@ -733,12 +733,12 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           variant={filtroStatus === 'em_andamento' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('em_andamento')}
-          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-full"
+          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-lg"
         >
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>Atend.</span>
           {!loadingContadores && (
-            <span className="bg-background/20 text-[11px] font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+            <span className="text-[11px] font-bold opacity-80">
               {contadores.em_andamento}
             </span>
           )}
@@ -747,12 +747,12 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           variant={filtroStatus === 'encerrados' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('encerrados')}
-          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-full"
+          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-lg"
         >
           <CheckCircle className="w-4 h-4 shrink-0" />
           <span>Encerr.</span>
           {!loadingContadores && (
-            <span className="bg-background/20 text-[11px] font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">
+            <span className="text-[11px] font-bold opacity-80">
               {contadores.encerrados}
             </span>
           )}
