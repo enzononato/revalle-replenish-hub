@@ -1070,27 +1070,37 @@ export default function MotoristaPortal() {
       {/* Tabs */}
       <div className="px-3 pt-2 pb-2 max-w-xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
-          <TabsList className="grid w-full grid-cols-3 h-16 bg-muted/50 p-2 rounded-xl border border-border/40 gap-1.5">
-            <TabsTrigger 
-              value="novo" 
-              className="text-[14px] font-semibold gap-1.5 rounded-lg min-w-0 px-2 data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
+          {/* Botão Novo protocolo - destaque acima */}
+          <div className="mb-2.5">
+            <button
+              onClick={() => setActiveTab('novo')}
+              className={cn(
+                "w-full h-14 rounded-xl text-[15px] font-semibold flex items-center justify-center gap-2 transition-all duration-200 border",
+                activeTab === 'novo'
+                  ? "bg-primary text-primary-foreground shadow-md border-primary"
+                  : "bg-background text-muted-foreground border-border/40 hover:bg-muted/50"
+              )}
             >
-              <PlusCircle className="w-4.5 h-4.5 shrink-0" />
-              <span className="truncate">Novo</span>
-            </TabsTrigger>
+              <PlusCircle className="w-5 h-5 shrink-0" />
+              Novo protocolo
+            </button>
+          </div>
+
+          {/* Tabs Protocolos | Pós-Rota */}
+          <TabsList className="grid w-full grid-cols-2 h-14 bg-muted/50 p-1.5 rounded-xl border border-border/40 gap-1.5">
             <TabsTrigger 
               value="meus" 
               className="text-[14px] font-semibold gap-1.5 rounded-lg min-w-0 px-2 data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
             >
               <FileText className="w-4.5 h-4.5 shrink-0" />
-              <span className="truncate">Protocolos</span>
+              <span>Protocolos</span>
             </TabsTrigger>
             <TabsTrigger 
               value="pos-rota" 
               className="text-[14px] font-semibold gap-1.5 rounded-lg min-w-0 px-2 data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
             >
               <Route className="w-4.5 h-4.5 shrink-0" />
-              <span className="truncate">Pós-Rota</span>
+              <span>Pós-Rota</span>
             </TabsTrigger>
           </TabsList>
 
