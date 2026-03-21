@@ -47,6 +47,7 @@ interface BuscarProtocoloPdvProps {
   onSelectProtocolo?: (protocolo: ProtocoloEncontrado) => void;
   motorista: Motorista;
   selectionMode?: 'select' | 'view';
+  statusFilter?: 'aberto' | 'em_andamento';
 }
 
 export function BuscarProtocoloPdv({
