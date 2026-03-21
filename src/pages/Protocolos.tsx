@@ -255,7 +255,7 @@ export default function Protocolos() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, unidadeFilter, pageSize]);
+  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, unidadesFiltro, pageSize]);
 
   // Envio WhatsApp é feito via webhook n8n
 
