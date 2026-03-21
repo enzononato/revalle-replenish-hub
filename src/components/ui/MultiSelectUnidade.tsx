@@ -24,16 +24,12 @@ export function MultiSelectUnidade({
 }: MultiSelectUnidadeProps) {
   const [open, setOpen] = useState(false);
 
-  const allSelected = selected.length === 0 || selected.length === unidades.length;
+  const noneSelected = selected.length === 0;
+  const allSelected = selected.length === unidades.length;
 
   const handleToggleAll = () => {
-    if (allSelected) {
-      // Se todas estão selecionadas, não faz nada (ou limpa)
-      // Vazio = todas, então se clicar em "Todas" quando já está tudo, mantém
-      onChange([]);
-    } else {
-      onChange([]);
-    }
+    // Sempre limpa → volta para "Todas"
+    onChange([]);
   };
 
   const handleToggle = (nome: string) => {
@@ -42,17 +38,12 @@ export function MultiSelectUnidade({
       onChange(newSelected);
     } else {
       const newSelected = [...selected, nome];
-      // Se selecionou todas, volta para array vazio (= todas)
-      if (newSelected.length === unidades.length) {
-        onChange([]);
-      } else {
-        onChange(newSelected);
-      }
+      onChange(newSelected);
     }
   };
 
   const isChecked = (nome: string) => {
-    return selected.includes(nome);
+    return noneSelected || selected.includes(nome);
   };
 
   const displayText = () => {
@@ -84,7 +75,7 @@ export function MultiSelectUnidade({
           {/* Selecionar Todas */}
           <label className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer text-xs font-medium">
             <Checkbox
-              checked={allSelected}
+              checked={noneSelected || allSelected}
               onCheckedChange={handleToggleAll}
             />
             {placeholder}
