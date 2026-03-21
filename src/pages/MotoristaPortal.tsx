@@ -796,13 +796,13 @@ export default function MotoristaPortal() {
   };
 
   // Open camera for a specific field
-  const openCamera = useCallback((field: 'fotoMotoristaPdv' | 'fotoLoteProduto' | 'fotoAvaria') => {
+  const openCamera = (field: 'fotoMotoristaPdv' | 'fotoLoteProduto' | 'fotoAvaria') => {
     setCameraTarget(field);
     setCameraOpen(true);
-  }, []);
+  };
 
   // Handle camera capture
-  const handleCameraCapture = useCallback(async (imageDataUrl: string) => {
+  const handleCameraCapture = async (imageDataUrl: string) => {
     if (!cameraTarget) return;
     
     setIsCompressing(true);
@@ -838,7 +838,7 @@ export default function MotoristaPortal() {
       setIsCompressing(false);
       setCameraTarget(null);
     }
-  }, [cameraTarget]);
+  };
 
   // Photo upload card component
   const PhotoUploadCard = ({
