@@ -129,7 +129,7 @@ export default function MotoristaLogin() {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="off"
-                  placeholder="Digite seu CPF"
+                  placeholder="Digite seu CPF ou código Promax"
                   value={identificador}
                   onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, ''))}
                   onBlur={() => handleBlur('identificador')}
