@@ -653,7 +653,7 @@ export default function Dashboard() {
           icon={Truck}
           variant="info"
           delay={300}
-          href="/motoristas"
+          href={buildHref("/motoristas")}
         />
         <StatCard
           title="Total Hoje"
