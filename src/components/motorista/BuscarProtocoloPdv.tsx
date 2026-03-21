@@ -82,7 +82,15 @@ export function BuscarProtocoloPdv({
 
       if (error) throw error;
 
-      setResultados((data || []) as ProtocoloEncontrado[]);
+      const results = (data || []) as ProtocoloEncontrado[];
+      setResultados(results);
+      // Auto-expandir se houver apenas 1 resultado
+      if (results.length === 1) {
+        setProtocoloExpandidoId(results[0].id);
+      } else if (results.length > 1) {
+        // Expandir todos automaticamente - usar o primeiro como referência
+        setProtocoloExpandidoId('__all__');
+      }
     } catch (err) {
       console.error('Erro ao buscar protocolos:', err);
       setResultados([]);
