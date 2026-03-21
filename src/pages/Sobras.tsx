@@ -98,7 +98,7 @@ const ITEMS_PER_PAGE = 20;
 
 export default function Sobras() {
   const { user } = useAuth();
-  const { logAction } = useAuditLog();
+  const { registrarLog } = useAuditLog();
   const [sobras, setSobras] = useState<SobraProtocolo[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroStatus, setFiltroStatus] = useState('todos');
