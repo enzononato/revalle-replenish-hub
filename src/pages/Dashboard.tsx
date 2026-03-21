@@ -471,6 +471,13 @@ export default function Dashboard() {
     return colors[index];
   };
 
+  // Helper para adicionar filtro de unidade nos links
+  const buildHref = (basePath: string) => {
+    if (unidadesFiltro.length === 0) return basePath;
+    const separator = basePath.includes('?') ? '&' : '?';
+    return `${basePath}${separator}unidade=${encodeURIComponent(unidadesFiltro.join(','))}`;
+  };
+
   return (
     <div className="space-y-4">
       {/* Header Personalizado */}
