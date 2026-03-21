@@ -199,7 +199,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
   
   // Paginação para encerrados
   const [paginaEncerrados, setPaginaEncerrados] = useState(1);
-  const ITENS_POR_PAGINA = 10;
+  const ITENS_POR_PAGINA = 6;
   
   // Modal states
   const [showBuscaPdv, setShowBuscaPdv] = useState(false);
