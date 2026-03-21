@@ -308,3 +308,12 @@
   .stagger-4 { animation-delay: 200ms; }
   .stagger-5 { animation-delay: 250ms; }
 }
+
+/* Hide scrollbar on motorista portal during tab transitions */
+.safe-area-inset {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.safe-area-inset::-webkit-scrollbar {
+  display: none;
+}

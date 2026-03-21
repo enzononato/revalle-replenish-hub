@@ -1055,7 +1055,7 @@ export default function MotoristaPortal() {
         }
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 safe-area-inset">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 safe-area-inset overflow-x-hidden">
       {/* Header com nome, código e unidade */}
       <MotoristaHeader 
         motorista={motorista}
