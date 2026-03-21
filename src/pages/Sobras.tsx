@@ -162,7 +162,7 @@ export default function Sobras() {
     } finally {
       setLoading(false);
     }
-  }, [filtroStatus, busca, currentPage]);
+  }, [filtroStatus, filtroUnidade, busca, currentPage]);
 
   useEffect(() => {
     fetchSobras();
