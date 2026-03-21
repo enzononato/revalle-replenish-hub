@@ -243,14 +243,6 @@ export function BuscarProtocoloPdv({
                     </div>
                   )}
 
-                  {/* Detalhes expandidos */}
-                  {isExpanded && (protocolo.nota_fiscal || protocolo.causa || protocolo.mapa) && (
-                    <div className="mt-2.5 pt-2.5 border-t border-border/50 space-y-1.5 text-xs text-foreground">
-                      {protocolo.nota_fiscal && <p>NF: <span className="font-medium">{protocolo.nota_fiscal}</span></p>}
-                      {protocolo.causa && <p>Causa: <span className="font-medium">{protocolo.causa}</span></p>}
-                      {protocolo.mapa && <p>Mapa: <span className="font-medium">{protocolo.mapa}</span></p>}
-                    </div>
-                  )}
 
                   {/* Botão encerrar */}
                   {isExpanded && (
