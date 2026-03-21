@@ -1185,27 +1185,27 @@ export default function MotoristaPortal() {
 
             {/* Seção: Tipo e Causa */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-primary" />
                   Tipo e Causa
                 </h3>
               </div>
-              <div className="p-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" data-tour="campo-tipo-reposicao">
+              <div className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="campo-tipo-reposicao">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Label className="text-xs font-medium">Tipo *</Label>
-                      {touched.tipoReposicao && tipoReposicao && <Check size={12} className="text-green-500" />}
+                      <Label className="text-sm font-medium">Tipo *</Label>
+                      {touched.tipoReposicao && tipoReposicao && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Select 
                       value={tipoReposicao} 
                       onValueChange={handleTipoReposicaoChange}
                     >
                       <SelectTrigger className={cn(
-                        "h-10 text-sm",
-                        touched.tipoReposicao && tipoReposicao && 'border-green-500 focus:ring-green-500',
-                        touched.tipoReposicao && !tipoReposicao && 'border-red-500 focus:ring-red-500'
+                        "h-11 text-sm",
+                        touched.tipoReposicao && tipoReposicao && 'border-emerald-500 focus:ring-emerald-500',
+                        touched.tipoReposicao && !tipoReposicao && 'border-destructive focus:ring-destructive'
                       )}>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -1216,8 +1216,8 @@ export default function MotoristaPortal() {
                       </SelectContent>
                     </Select>
                     {touched.tipoReposicao && !tipoReposicao && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Selecione
                       </p>
                     )}
@@ -1225,8 +1225,8 @@ export default function MotoristaPortal() {
 
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Label className="text-xs font-medium">Causa *</Label>
-                      {touched.causa && causa && <Check size={12} className="text-green-500" />}
+                      <Label className="text-sm font-medium">Causa *</Label>
+                      {touched.causa && causa && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Select 
                       value={causa} 
@@ -1237,9 +1237,9 @@ export default function MotoristaPortal() {
                       disabled={!tipoReposicao}
                     >
                       <SelectTrigger className={cn(
-                        "h-10 text-sm",
-                        touched.causa && causa && 'border-green-500 focus:ring-green-500',
-                        touched.causa && !causa && tipoReposicao && 'border-red-500 focus:ring-red-500'
+                        "h-11 text-sm",
+                        touched.causa && causa && 'border-emerald-500 focus:ring-emerald-500',
+                        touched.causa && !causa && tipoReposicao && 'border-destructive focus:ring-destructive'
                       )}>
                         <SelectValue placeholder={tipoReposicao ? "Selecione" : "Escolha o tipo"} />
                       </SelectTrigger>
@@ -1250,8 +1250,8 @@ export default function MotoristaPortal() {
                       </SelectContent>
                     </Select>
                     {touched.causa && !causa && tipoReposicao && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Selecione
                       </p>
                     )}
