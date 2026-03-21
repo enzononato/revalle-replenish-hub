@@ -271,6 +271,50 @@ export default function Sobras() {
     }
   };
 
+  const handleAdicionarComentario = async () => {
+    if (!detalheSobra || !comentario.trim()) return;
+    setEnviandoComentario(true);
+    try {
+      const logs = Array.isArray(detalheSobra.observacoes_log) ? detalheSobra.observacoes_log as ObservacaoLog[] : [];
+      const novoLog: ObservacaoLog = {
+        id: crypto.randomUUID(),
+        usuarioNome: user?.nome || user?.email || 'Admin',
+        usuarioId: user?.id || '',
+        data: format(new Date(), 'dd/MM/yyyy'),
+        hora: format(new Date(), 'HH:mm'),
+        acao: 'Comentário',
+        texto: comentario.trim(),
+      };
+
+      const novoLogs = [...logs, novoLog];
+      const { error } = await supabase
+        .from('protocolos')
+        .update({ observacoes_log: JSON.stringify(novoLogs) })
+        .eq('id', detalheSobra.id);
+
+      if (error) throw error;
+
+      setDetalheSobra({ ...detalheSobra, observacoes_log: novoLogs });
+      setComentario('');
+      toast.success('Comentário adicionado');
+
+      await registrarLog({
+        acao: 'comentou_sobra',
+        tabela: 'protocolos',
+        registro_id: detalheSobra.numero,
+        registro_dados: { comentario: comentario.trim() },
+        usuario_nome: user?.nome || user?.email || 'Admin',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+    } catch (err) {
+      console.error('Erro ao adicionar comentário:', err);
+      toast.error('Erro ao adicionar comentário');
+    } finally {
+      setEnviandoComentario(false);
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
