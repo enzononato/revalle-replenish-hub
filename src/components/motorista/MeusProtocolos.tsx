@@ -729,36 +729,66 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           variant={filtroStatus === 'abertos' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('abertos')}
-          className="h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg"
+          className={cn(
+            "h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg transition-all duration-200",
+            filtroStatus === 'abertos' && "shadow-md"
+          )}
         >
           <Clock className="w-3.5 h-3.5 shrink-0" />
           Abertos
           {!loadingContadores && (
-            <span className="text-[10px] font-bold opacity-80">{contadores.abertos}</span>
+            <Badge variant="secondary" className={cn(
+              "h-4 min-w-[18px] px-1 text-[10px] font-bold rounded-full",
+              filtroStatus === 'abertos' 
+                ? "bg-primary-foreground/20 text-primary-foreground" 
+                : "bg-muted text-muted-foreground"
+            )}>
+              {contadores.abertos}
+            </Badge>
           )}
         </Button>
         <Button
           variant={filtroStatus === 'em_andamento' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('em_andamento')}
-          className="h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg"
+          className={cn(
+            "h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg transition-all duration-200",
+            filtroStatus === 'em_andamento' && "shadow-md"
+          )}
         >
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           Atend.
           {!loadingContadores && (
-            <span className="text-[10px] font-bold opacity-80">{contadores.em_andamento}</span>
+            <Badge variant="secondary" className={cn(
+              "h-4 min-w-[18px] px-1 text-[10px] font-bold rounded-full",
+              filtroStatus === 'em_andamento' 
+                ? "bg-primary-foreground/20 text-primary-foreground" 
+                : "bg-muted text-muted-foreground"
+            )}>
+              {contadores.em_andamento}
+            </Badge>
           )}
         </Button>
         <Button
           variant={filtroStatus === 'encerrados' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('encerrados')}
-          className="h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg"
+          className={cn(
+            "h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg transition-all duration-200",
+            filtroStatus === 'encerrados' && "shadow-md"
+          )}
         >
           <CheckCircle className="w-3.5 h-3.5 shrink-0" />
           Encerr.
           {!loadingContadores && (
-            <span className="text-[10px] font-bold opacity-80">{contadores.encerrados}</span>
+            <Badge variant="secondary" className={cn(
+              "h-4 min-w-[18px] px-1 text-[10px] font-bold rounded-full",
+              filtroStatus === 'encerrados' 
+                ? "bg-primary-foreground/20 text-primary-foreground" 
+                : "bg-muted text-muted-foreground"
+            )}>
+              {contadores.encerrados}
+            </Badge>
           )}
         </Button>
       </div>
