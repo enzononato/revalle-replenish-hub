@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon } from 'lucide-react';
+import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -207,6 +207,55 @@ export default function Sobras() {
     }
   };
 
+  const isErroCarregamento = (causa: string | null) => {
+    return causa?.toUpperCase().includes('ERRO DE CARREGAMENTO') ?? false;
+  };
+
+  const handleDevolverEstoque = async (sobra: SobraProtocolo) => {
+    setUpdatingStatus(sobra.id);
+    try {
+      const logs = Array.isArray(sobra.observacoes_log) ? sobra.observacoes_log as ObservacaoLog[] : [];
+      const novoLog: ObservacaoLog = {
+        id: crypto.randomUUID(),
+        usuarioNome: user?.nome || user?.email || 'Admin',
+        usuarioId: user?.id || '',
+        data: format(new Date(), 'dd/MM/yyyy'),
+        hora: format(new Date(), 'HH:mm'),
+        acao: 'Produto devolvido ao estoque',
+        texto: 'Erro de carregamento — produto retornado ao armazém',
+      };
+
+      const { error } = await supabase
+        .from('protocolos')
+        .update({
+          status: 'encerrado',
+          observacoes_log: JSON.stringify([...logs, novoLog]),
+        })
+        .eq('id', sobra.id);
+
+      if (error) throw error;
+
+      await registrarLog({
+        acao: 'devolvido_estoque',
+        tabela: 'protocolos',
+        registro_id: sobra.numero,
+        registro_dados: { causa: sobra.causa, status_anterior: sobra.status },
+        usuario_nome: user?.nome || user?.email || 'Admin',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+
+      toast.success('Produto devolvido ao estoque com sucesso');
+      fetchSobras();
+      fetchContadores();
+    } catch (err) {
+      console.error('Erro ao devolver ao estoque:', err);
+      toast.error('Erro ao devolver ao estoque');
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
@@ -361,6 +410,18 @@ export default function Sobras() {
                             Tratar
                           </Button>
                         )}
+                        {isErroCarregamento(sobra.causa) && sobra.status !== 'encerrado' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                            disabled={updatingStatus === sobra.id}
+                            onClick={() => handleDevolverEstoque(sobra)}
+                          >
+                            <Warehouse className="w-3.5 h-3.5 mr-1" />
+                            Estoque
+                          </Button>
+                        )}
                         {(sobra.status === 'aberto' || sobra.status === 'em_andamento') && (
                           <Button
                             size="sm"
@@ -508,32 +569,48 @@ export default function Sobras() {
 
               {/* Ações */}
               {detalheSobra.status !== 'encerrado' && (
-                <div className="flex gap-2 pt-2 border-t">
-                  {detalheSobra.status === 'aberto' && (
+                <div className="flex flex-col gap-2 pt-2 border-t">
+                  <div className="flex gap-2">
+                    {detalheSobra.status === 'aberto' && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        disabled={updatingStatus === detalheSobra.id}
+                        onClick={() => {
+                          handleStatusChange(detalheSobra, 'em_andamento');
+                          setDetalheSobra(null);
+                        }}
+                      >
+                        <AlertTriangle className="w-4 h-4 mr-1.5" />
+                        Iniciar Tratamento
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
-                      className="flex-1"
+                      className="flex-1 bg-green-600 hover:bg-green-700"
                       disabled={updatingStatus === detalheSobra.id}
                       onClick={() => {
-                        handleStatusChange(detalheSobra, 'em_andamento');
+                        handleStatusChange(detalheSobra, 'encerrado');
                         setDetalheSobra(null);
                       }}
                     >
-                      <AlertTriangle className="w-4 h-4 mr-1.5" />
-                      Iniciar Tratamento
+                      <CheckCircle className="w-4 h-4 mr-1.5" />
+                      Marcar como Resolvido
+                    </Button>
+                  </div>
+                  {isErroCarregamento(detalheSobra.causa) && (
+                    <Button
+                      variant="outline"
+                      className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                      disabled={updatingStatus === detalheSobra.id}
+                      onClick={() => {
+                        handleDevolverEstoque(detalheSobra);
+                        setDetalheSobra(null);
+                      }}
+                    >
+                      <Warehouse className="w-4 h-4 mr-1.5" />
+                      Enviar Produto p/ Estoque
                     </Button>
                   )}
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    disabled={updatingStatus === detalheSobra.id}
-                    onClick={() => {
-                      handleStatusChange(detalheSobra, 'encerrado');
-                      setDetalheSobra(null);
-                    }}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-1.5" />
-                    Marcar como Resolvido
-                  </Button>
                 </div>
               )}
             </div>
