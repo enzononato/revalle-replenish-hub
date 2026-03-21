@@ -316,7 +316,21 @@ export default function Sobras() {
                     <TableCell className="text-sm">
                       {sobra.created_at ? format(parseISO(sobra.created_at), 'dd/MM/yy HH:mm') : sobra.data}
                     </TableCell>
-                    <TableCell className="font-mono text-sm font-medium">{sobra.mapa || '-'}</TableCell>
+                    <TableCell className="font-mono text-sm font-medium">
+                      <span className="flex items-center gap-1.5">
+                        {sobra.mapa || '-'}
+                        {(() => {
+                          const fotos = sobra.fotos_protocolo as Record<string, unknown> | null;
+                          const fotosSobra = fotos?.fotosSobra as string[] | undefined;
+                          return fotosSobra && fotosSobra.length > 0 ? (
+                            <span className="inline-flex items-center gap-0.5 text-primary" title={`${fotosSobra.length} foto(s)`}>
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              <span className="text-xs">{fotosSobra.length}</span>
+                            </span>
+                          ) : null;
+                        })()}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getTipoBadgeColor(sobra.causa)}>
                         {getTipoFromCausa(sobra.causa)}
