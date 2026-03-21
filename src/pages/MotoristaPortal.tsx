@@ -1235,7 +1235,7 @@ export default function MotoristaPortal() {
 
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Label className="text-sm font-medium">Causa *</Label>
+                      <Label className="text-sm font-medium uppercase">CAUSA *</Label>
                       {touched.causa && causa && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Select 
