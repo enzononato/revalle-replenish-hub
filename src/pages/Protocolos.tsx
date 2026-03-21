@@ -659,19 +659,14 @@ export default function Protocolos() {
                     return userUnidades.includes(u.nome);
                   });
               return unidadesDisponiveis.length > 1 ? (
-                <div className="space-y-1 min-w-[130px]">
+                <div className="space-y-1 min-w-[180px]">
                   <label className="text-xs font-medium text-muted-foreground">Unidade</label>
-                  <Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todas">Todas</SelectItem>
-                      {unidadesDisponiveis.map(u => (
-                        <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectUnidade
+                    unidades={unidadesDisponiveis}
+                    selected={unidadesFiltro}
+                    onChange={setUnidadesFiltro}
+                    triggerClassName="h-8 text-xs w-full"
+                  />
                 </div>
               ) : null;
             })()}
