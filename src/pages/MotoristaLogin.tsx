@@ -65,10 +65,15 @@ export default function MotoristaLogin() {
       const result = await login(identificador.trim(), senha);
       
       if (result.success) {
-        toast({
-          title: "Login realizado!",
-          description: "Bem-vindo ao portal do motorista.",
-        });
+        const loginKey = `motorista_login_${identificador.trim()}`;
+        const hasLoggedBefore = localStorage.getItem(loginKey);
+        if (!hasLoggedBefore) {
+          toast({
+            title: "Login realizado!",
+            description: "Bem-vindo ao portal do motorista.",
+          });
+          localStorage.setItem(loginKey, 'true');
+        }
         navigate('/motorista/portal');
       } else {
         toast({
