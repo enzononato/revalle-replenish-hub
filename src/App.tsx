@@ -26,6 +26,7 @@ import MotoristaLogin from "./pages/MotoristaLogin";
 import MotoristaPortal from "./pages/MotoristaPortal";
 
 import LogsAuditoria from "./pages/LogsAuditoria";
+import Sobras from "./pages/Sobras";
 import NotFound from "./pages/NotFound";
 import PhotoProxyRedirect from "./pages/PhotoProxyRedirect";
 
