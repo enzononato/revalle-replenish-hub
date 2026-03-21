@@ -569,32 +569,48 @@ export default function Sobras() {
 
               {/* Ações */}
               {detalheSobra.status !== 'encerrado' && (
-                <div className="flex gap-2 pt-2 border-t">
-                  {detalheSobra.status === 'aberto' && (
+                <div className="flex flex-col gap-2 pt-2 border-t">
+                  <div className="flex gap-2">
+                    {detalheSobra.status === 'aberto' && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        disabled={updatingStatus === detalheSobra.id}
+                        onClick={() => {
+                          handleStatusChange(detalheSobra, 'em_andamento');
+                          setDetalheSobra(null);
+                        }}
+                      >
+                        <AlertTriangle className="w-4 h-4 mr-1.5" />
+                        Iniciar Tratamento
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
-                      className="flex-1"
+                      className="flex-1 bg-green-600 hover:bg-green-700"
                       disabled={updatingStatus === detalheSobra.id}
                       onClick={() => {
-                        handleStatusChange(detalheSobra, 'em_andamento');
+                        handleStatusChange(detalheSobra, 'encerrado');
                         setDetalheSobra(null);
                       }}
                     >
-                      <AlertTriangle className="w-4 h-4 mr-1.5" />
-                      Iniciar Tratamento
+                      <CheckCircle className="w-4 h-4 mr-1.5" />
+                      Marcar como Resolvido
+                    </Button>
+                  </div>
+                  {isErroCarregamento(detalheSobra.causa) && (
+                    <Button
+                      variant="outline"
+                      className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                      disabled={updatingStatus === detalheSobra.id}
+                      onClick={() => {
+                        handleDevolverEstoque(detalheSobra);
+                        setDetalheSobra(null);
+                      }}
+                    >
+                      <Warehouse className="w-4 h-4 mr-1.5" />
+                      Enviar Produto p/ Estoque
                     </Button>
                   )}
-                  <Button
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    disabled={updatingStatus === detalheSobra.id}
-                    onClick={() => {
-                      handleStatusChange(detalheSobra, 'encerrado');
-                      setDetalheSobra(null);
-                    }}
-                  >
-                    <CheckCircle className="w-4 h-4 mr-1.5" />
-                    Marcar como Resolvido
-                  </Button>
                 </div>
               )}
             </div>
