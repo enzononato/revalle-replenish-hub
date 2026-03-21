@@ -56,6 +56,7 @@ export function BuscarProtocoloPdv({
   onSelectProtocolo,
   motorista,
   selectionMode = 'select',
+  statusFilter = 'em_andamento',
 }: BuscarProtocoloPdvProps) {
   const [codigoPdv, setCodigoPdv] = useState('');
   const [isSearching, setIsSearching] = useState(false);
