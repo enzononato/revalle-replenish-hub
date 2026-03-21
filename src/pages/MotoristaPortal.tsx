@@ -1066,19 +1066,26 @@ export default function MotoristaPortal() {
       {/* Tabs */}
       <div className="px-4 pt-4 pb-2 max-w-lg mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
-          <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60 p-1 rounded-lg border border-border/50">
+          <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/60 p-1 rounded-lg border border-border/50">
             <TabsTrigger 
               value="novo" 
-              className="text-sm gap-2 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
+              className="text-xs gap-1.5 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-2"
             >
-              <PlusCircle className="w-4 h-4" />
+              <PlusCircle className="w-3.5 h-3.5" />
               Novo Protocolo
             </TabsTrigger>
             <TabsTrigger 
-              value="meus" 
-              className="text-sm gap-2 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
+              value="pos-rota" 
+              className="text-xs gap-1.5 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-2"
             >
-              <FileText className="w-4 h-4" />
+              <Route className="w-3.5 h-3.5" />
+              Pós-Rota
+            </TabsTrigger>
+            <TabsTrigger 
+              value="meus" 
+              className="text-xs gap-1.5 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-2"
+            >
+              <FileText className="w-3.5 h-3.5" />
               Meus Protocolos
             </TabsTrigger>
           </TabsList>
