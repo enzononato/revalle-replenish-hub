@@ -1118,7 +1118,7 @@ export default function MotoristaPortal() {
                 <div className="space-y-4">
                   <div className="space-y-1.5" data-tour="campo-mapa">
                     <div className="flex items-center gap-1.5">
-                      <Label htmlFor="mapa" className="text-sm font-medium uppercase">MAPA *</Label>
+                      <Label htmlFor="mapa" className="text-sm font-medium">Mapa *</Label>
                       {touched.mapa && mapa.trim() && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Input
