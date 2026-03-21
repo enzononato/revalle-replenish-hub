@@ -463,7 +463,7 @@ export function EncerrarProtocoloModal({
             )}
 
             {/* Fotos */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3">
               {/* Foto do Canhoto */}
               <div className="space-y-1.5">
                 <Label className="flex items-center gap-1 text-xs">
