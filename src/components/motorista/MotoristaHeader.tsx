@@ -63,13 +63,13 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
         {/* Nota informativa */}
         <div className="mt-4 bg-white/10 rounded-lg px-4 py-3">
           <p className="text-sm text-primary-foreground font-semibold mb-1">
-            Protocolo de Reposição:
+            Gestão de Reposição e Pós-Rota:
           </p>
           <p className="text-sm text-primary-foreground/90 leading-relaxed mb-1">
-            Utilize este protocolo para registrar <strong>Falta</strong>, <strong>Inversão</strong> ou <strong>Avaria</strong> de produtos.
+            Registre protocolos, acompanhe entregas e informe <strong>sobras em rota</strong> de forma rápida e organizada.
           </p>
           <p className="text-sm text-primary-foreground/80">
-            É possível adicionar vários produtos no mesmo protocolo.
+            Tudo em um só lugar para facilitar o seu dia a dia.
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
           <div className="w-6 h-6 bg-white/20 rounded-md flex items-center justify-center">
             <PackageCheck className="w-4 h-4" />
           </div>
-          <span className="text-xs font-medium">Reposição v2.1.2</span>
+          <span className="text-xs font-medium">Reposição v3.1.2</span>
         </div>
       </div>
     </div>
