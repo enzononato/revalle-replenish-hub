@@ -1373,8 +1373,8 @@ export default function MotoristaPortal() {
                                 </Button>
                               </div>
                             </div>
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-muted-foreground">Und</Label>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-medium text-muted-foreground">Und</Label>
                               <Select
                                 value={produto.unidade}
                                 onValueChange={(value) => updateProduto(index, 'unidade', value)}
