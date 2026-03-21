@@ -89,43 +89,42 @@ export default function MotoristaLogin() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       {/* Header decorativo com curva */}
-      <div className="relative bg-primary pt-14 pb-16 px-6">
+      <div className="relative bg-primary pt-10 pb-14 px-6 shrink-0">
         {/* Círculos decorativos */}
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/5" />
         <div className="absolute bottom-4 -left-8 w-32 h-32 rounded-full bg-primary-foreground/5" />
-        <div className="absolute top-6 right-6 w-16 h-16 rounded-full bg-primary-foreground/8" />
         
         <div className="relative z-10 max-w-md mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary-foreground/15 backdrop-blur-sm mb-4 shadow-lg">
-            <Truck className="w-10 h-10 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-foreground/15 backdrop-blur-sm mb-3 shadow-lg">
+            <Truck className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">
+          <h1 className="text-xl font-bold text-primary-foreground tracking-tight">
             Portal do Motorista
           </h1>
-          <p className="text-sm text-primary-foreground/70 mt-1">
+          <p className="text-xs text-primary-foreground/70 mt-0.5">
             Reposição Revalle
           </p>
         </div>
 
         {/* Curva suave na base */}
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10" preserveAspectRatio="none">
-            <path d="M0 80V30C240 0 480 0 720 30C960 60 1200 60 1440 30V80H0Z" fill="hsl(var(--background))" />
+          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-8" preserveAspectRatio="none">
+            <path d="M0 60V20C360 0 720 0 1080 20C1260 30 1380 30 1440 20V60H0Z" fill="hsl(var(--background))" />
           </svg>
         </div>
       </div>
 
       {/* Card de login */}
-      <div className="flex-1 px-5 -mt-2 pb-8 max-w-md mx-auto w-full">
-        <div className="bg-card rounded-2xl shadow-xl border border-border/40 p-6">
-          <p className="text-sm text-muted-foreground text-center mb-6">
+      <div className="flex-1 px-5 pb-4 max-w-md mx-auto w-full flex flex-col justify-center -mt-2">
+        <div className="bg-card rounded-2xl shadow-xl border border-border/40 p-5">
+          <p className="text-sm text-muted-foreground text-center mb-5">
             Faça login para registrar protocolos e acompanhar suas entregas
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
               <Label htmlFor="identificador" className="text-sm font-semibold text-foreground">
                 CPF ou Código
               </Label>
@@ -158,7 +157,7 @@ export default function MotoristaLogin() {
               </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="senha" className="text-sm font-semibold text-foreground">
                 Senha
               </Label>
@@ -194,7 +193,7 @@ export default function MotoristaLogin() {
 
             <Button 
               type="submit" 
-              className="w-full h-14 text-base font-semibold rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
+              className="w-full h-13 text-base font-semibold rounded-xl shadow-md shadow-primary/20 transition-all"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -210,7 +209,7 @@ export default function MotoristaLogin() {
         </div>
 
         {/* Footer info */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-muted-foreground">
+        <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
           <ShieldCheck className="w-4 h-4" />
           <span className="text-xs">Acesso seguro • Reposição v3.1.2</span>
         </div>
