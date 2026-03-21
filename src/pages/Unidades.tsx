@@ -238,14 +238,15 @@ export default function Unidades() {
   const totalSolicitacoes = Object.values(protocolosPorUnidade).reduce((acc, val) => acc + val, 0);
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-            <Building2 className="text-primary" size={24} />
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+            <Building2 className="text-primary" size={32} />
             Unidades
           </h1>
-          <p className="text-muted-foreground mt-0.5 text-sm">Gerencie as unidades cadastradas</p>
+          <p className="text-muted-foreground mt-1">Gerencie as unidades, motoristas e clientes cadastrados</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -315,27 +316,27 @@ export default function Unidades() {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border hover:shadow-md hover:border-primary/30 transition-all duration-200 animate-fade-in" style={{ animationDelay: '50ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Building2 size={18} className="text-primary" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <Building2 size={20} className="text-primary" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Unidades</p>
-              <p className="text-lg font-bold text-foreground">{unidades.length}</p>
+              <p className="text-muted-foreground text-xs font-medium">Unidades</p>
+              <p className="text-2xl font-bold text-foreground">{unidades.length}</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border hover:shadow-md hover:border-blue-500/30 transition-all duration-200 animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <Users size={18} className="text-blue-500" />
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-info/10">
+              <Users size={20} className="text-info" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Motoristas</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Motoristas</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoadingMotoristas ? <Loader2 className="h-4 w-4 animate-spin" /> : totalMotoristas}
               </p>
             </div>
@@ -343,14 +344,14 @@ export default function Unidades() {
         </div>
         
         {canViewClientes && (
-          <div className="bg-card rounded-xl p-3 shadow-sm border border-border hover:shadow-md hover:border-emerald-500/30 transition-all duration-200 animate-fade-in" style={{ animationDelay: '150ms' }}>
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-emerald-500/10">
-                <Store size={18} className="text-emerald-500" />
+          <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '150ms' }}>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10">
+                <Store size={20} className="text-emerald-500" />
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Clientes</p>
-                <p className="text-lg font-bold text-foreground">
+                <p className="text-muted-foreground text-xs font-medium">Clientes</p>
+                <p className="text-2xl font-bold text-foreground">
                   {isLoadingCounts ? <Loader2 className="h-4 w-4 animate-spin" /> : totalClientes}
                 </p>
               </div>
@@ -358,14 +359,14 @@ export default function Unidades() {
           </div>
         )}
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border hover:shadow-md hover:border-amber-500/30 transition-all duration-200 animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-amber-500/10">
-              <FileText size={18} className="text-amber-500" />
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10">
+              <FileText size={20} className="text-amber-500" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Solicitações</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Solicitações</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoadingCounts ? <Loader2 className="h-4 w-4 animate-spin" /> : totalSolicitacoes}
               </p>
             </div>
@@ -374,12 +375,12 @@ export default function Unidades() {
       </div>
 
       {/* Search and Date Filter */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Buscar por nome, código ou CNPJ..."
-          className="max-w-md"
+          className="flex-1"
         />
         
         <div className="flex items-center gap-2 flex-wrap">
@@ -391,7 +392,7 @@ export default function Unidades() {
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "h-8 text-xs justify-start text-left font-normal",
+                  "h-9 text-xs justify-start text-left font-normal",
                   !dataInicio && "text-muted-foreground"
                 )}
               >
@@ -417,7 +418,7 @@ export default function Unidades() {
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "h-8 text-xs justify-start text-left font-normal",
+                  "h-9 text-xs justify-start text-left font-normal",
                   !dataFim && "text-muted-foreground"
                 )}
               >
@@ -442,7 +443,7 @@ export default function Unidades() {
               variant="ghost"
               size="sm"
               onClick={limparFiltro}
-              className="h-8 px-2 text-xs text-muted-foreground hover:text-destructive"
+              className="h-9 px-2 text-xs text-muted-foreground hover:text-destructive"
             >
               <X size={14} className="mr-1" />
               Limpar
@@ -452,145 +453,147 @@ export default function Unidades() {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="table-header">
-              <th className="text-left p-2.5 text-[11px] rounded-tl-lg">Nome</th>
-              <th className="text-left p-2.5 text-[11px]">Código</th>
-              <th className="text-left p-2.5 text-[11px]">CNPJ</th>
-              <th className="text-center p-2.5 text-[11px]">Motoristas</th>
-              {canViewClientes && <th className="text-center p-2.5 text-[11px]">Clientes</th>}
-              <th className="text-center p-2.5 text-[11px]">Solicitações</th>
-              <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUnidades.map((unidade, index) => (
-              <tr 
-                key={unidade.id} 
-                className="border-b border-border hover:bg-muted/50 transition-colors animate-fade-in"
-                style={{ animationDelay: `${index * 30}ms` }}
-              >
-                <td className="p-2.5 font-medium text-xs">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Building2 size={14} className="text-muted-foreground" />
-                    {unidade.nome}
-                  </span>
+      <div className="bg-card rounded-xl shadow-md animate-fade-in overflow-hidden border">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nome</th>
+                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Código</th>
+                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">CNPJ</th>
+                <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Motoristas</th>
+                {canViewClientes && <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Clientes</th>}
+                <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Solicitações</th>
+                <th className="text-right p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUnidades.map((unidade, index) => (
+                <tr 
+                  key={unidade.id} 
+                  className="border-b border-border hover:bg-muted/40 transition-colors"
+                >
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Building2 size={16} className="text-primary" />
+                      </div>
+                      <span className="font-medium text-sm">{unidade.nome}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm font-mono">
+                      <Hash size={13} />
+                      {unidade.codigo}
+                    </span>
+                  </td>
+                  <td className="p-4 text-muted-foreground font-mono text-sm">
+                    {unidade.cnpj || '-'}
+                  </td>
+                  <td className="p-4 text-center">
+                    {isLoadingMotoristas ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground inline" />
+                    ) : (
+                      <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-medium">
+                        <Users size={13} />
+                        {getMotoristaCount(unidade.nome)}
+                      </span>
+                    )}
+                  </td>
+                  {canViewClientes && (
+                    <td className="p-4 text-center">
+                      {isLoadingCounts ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground inline" />
+                      ) : (
+                        (isAdmin || unidade.nome === user?.unidade) ? (
+                          <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full text-xs font-medium">
+                            <Store size={13} />
+                            {clientesPorUnidade[unidade.nome] || 0}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">-</span>
+                        )
+                      )}
+                    </td>
+                  )}
+                  <td className="p-4 text-center">
+                    {isLoadingCounts ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground inline" />
+                    ) : (
+                      <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-full text-xs font-medium">
+                        <FileText size={13} />
+                        {protocolosPorUnidade[unidade.nome] || 0}
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(unidade)}
+                        className="text-primary hover:text-primary/80 hover:bg-primary/10 h-8 w-8 p-0"
+                      >
+                        <Pencil size={15} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(unidade.id)}
+                        className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-8 w-8 p-0"
+                      >
+                        <Trash2 size={15} />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-muted/50 font-semibold border-t-2 border-border">
+                <td colSpan={3} className="p-4 text-sm font-bold">
+                  TOTAL
                 </td>
-                <td className="p-2.5">
-                  <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-                    <Hash size={12} />
-                    {unidade.codigo}
-                  </span>
-                </td>
-                <td className="p-2.5 text-muted-foreground font-mono text-xs">
-                  {unidade.cnpj || '-'}
-                </td>
-                <td className="p-2.5 text-center">
+                <td className="p-4 text-center">
                   {isLoadingMotoristas ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground inline" />
                   ) : (
-                    <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                      <Users size={12} />
-                      {getMotoristaCount(unidade.nome)}
+                    <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-medium">
+                      <Users size={13} />
+                      {motoristas.length}
                     </span>
                   )}
                 </td>
                 {canViewClientes && (
-                  <td className="p-2.5 text-center">
+                  <td className="p-4 text-center">
                     {isLoadingCounts ? (
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground inline" />
                     ) : (
-                      // Para distribuição, só mostra clientes da sua unidade
-                      (isAdmin || unidade.nome === user?.unidade) ? (
-                        <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                          <Store size={12} />
-                          {clientesPorUnidade[unidade.nome] || 0}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-[10px]">-</span>
-                      )
+                      <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full text-xs font-medium">
+                        <Store size={13} />
+                        {isAdmin 
+                          ? Object.values(clientesPorUnidade).reduce((acc, val) => acc + val, 0)
+                          : clientesPorUnidade[user?.unidade || ''] || 0
+                        }
+                      </span>
                     )}
                   </td>
                 )}
-                <td className="p-2.5 text-center">
+                <td className="p-4 text-center">
                   {isLoadingCounts ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground inline" />
                   ) : (
-                    <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                      <FileText size={12} />
-                      {protocolosPorUnidade[unidade.nome] || 0}
+                    <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-full text-xs font-medium">
+                      <FileText size={13} />
+                      {Object.values(protocolosPorUnidade).reduce((acc, val) => acc + val, 0)}
                     </span>
                   )}
                 </td>
-                <td className="p-2.5">
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(unidade)}
-                      className="text-primary hover:text-primary/80 hover:bg-primary/10 h-7 w-7 p-0"
-                    >
-                      <Pencil size={14} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(unidade.id)}
-                      className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-7 w-7 p-0"
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
-                </td>
+                <td></td>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="bg-muted/50 font-semibold border-t-2 border-border">
-              <td colSpan={3} className="p-2.5 text-xs font-bold">
-                TOTAL
-              </td>
-              <td className="p-2.5 text-center">
-                {isLoadingMotoristas ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
-                ) : (
-                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                    <Users size={12} />
-                    {motoristas.length}
-                  </span>
-                )}
-              </td>
-              {canViewClientes && (
-                <td className="p-2.5 text-center">
-                  {isLoadingCounts ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
-                  ) : (
-                    <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                      <Store size={12} />
-                      {isAdmin 
-                        ? Object.values(clientesPorUnidade).reduce((acc, val) => acc + val, 0)
-                        : clientesPorUnidade[user?.unidade || ''] || 0
-                      }
-                    </span>
-                  )}
-                </td>
-              )}
-              <td className="p-2.5 text-center">
-                {isLoadingCounts ? (
-                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground inline" />
-                ) : (
-                  <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
-                    <FileText size={12} />
-                    {Object.values(protocolosPorUnidade).reduce((acc, val) => acc + val, 0)}
-                  </span>
-                )}
-              </td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
+            </tfoot>
+          </table>
+        </div>
         
         {filteredUnidades.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
