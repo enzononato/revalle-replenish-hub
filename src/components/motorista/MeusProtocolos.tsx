@@ -419,46 +419,73 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         <Card 
           key={protocolo.id} 
           className={cn(
-            "transition-all cursor-pointer hover:shadow-md border-border/60",
+            "transition-all cursor-pointer hover:shadow-md border-border/60 overflow-hidden",
             isExpanded && "ring-2 ring-primary/20 shadow-md"
           )}
           onClick={() => setExpandedId(isExpanded ? null : protocolo.id)}
         >
-          <CardContent className="p-4">
-            {/* Header do card */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <FileText className="w-4 h-4 text-primary shrink-0" />
-                  <span className="font-mono text-[13px] font-semibold truncate">
-                    {protocolo.numero}
-                  </span>
-                  {foiReaberto(protocolo.observacoes_log as ObservacaoLog[]) && (
-                    <span className="inline-flex items-center gap-0.5 text-[9px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-1.5 py-0.5 rounded-full shrink-0">
-                      <RefreshCw size={9} />
-                      Reaberto
+          {/* Barra lateral colorida por status */}
+          <div className={cn(
+            "flex",
+          )}>
+            <div className={cn(
+              "w-1 shrink-0 rounded-l-xl",
+              protocolo.status === 'aberto' && "bg-yellow-500",
+              protocolo.status === 'em_andamento' && "bg-blue-500",
+              protocolo.status === 'encerrado' && "bg-green-500",
+            )} />
+            <CardContent className="p-4 flex-1 min-w-0">
+              {/* Header do card */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                      protocolo.status === 'aberto' && "bg-yellow-500/10",
+                      protocolo.status === 'em_andamento' && "bg-blue-500/10",
+                      protocolo.status === 'encerrado' && "bg-green-500/10",
+                    )}>
+                      <FileText className={cn(
+                        "w-4 h-4",
+                        protocolo.status === 'aberto' && "text-yellow-600",
+                        protocolo.status === 'em_andamento' && "text-blue-600",
+                        protocolo.status === 'encerrado' && "text-green-600",
+                      )} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-mono text-sm font-bold text-foreground block truncate">
+                        {protocolo.numero}
+                      </span>
+                      {foiReaberto(protocolo.observacoes_log as ObservacaoLog[]) && (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-1.5 py-0.5 rounded-full mt-0.5">
+                          <RefreshCw size={9} />
+                          Reaberto
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground ml-10">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatDate(protocolo.data)} às {protocolo.hora}
                     </span>
-                  )}
+                    {protocolo.tipo_reposicao && (
+                      <span className="capitalize font-medium text-foreground/70 bg-muted/60 px-2 py-0.5 rounded text-[12px]">{protocolo.tipo_reposicao.toLowerCase()}</span>
+                    )}
+                    {protocolo.mapa && (
+                      <span className="font-medium text-foreground/70 bg-muted/60 px-2 py-0.5 rounded text-[12px]">Mapa {protocolo.mapa}</span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-[13px] text-muted-foreground space-y-0.5 ml-6">
-                  <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>
-                  {protocolo.tipo_reposicao && (
-                    <p className="capitalize font-medium text-foreground/70">{protocolo.tipo_reposicao.toLowerCase()}</p>
-                  )}
-                  {protocolo.mapa && (
-                    <p>Mapa: <span className="font-medium text-foreground/70">{protocolo.mapa}</span></p>
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  {getStatusBadge(protocolo.status)}
+                  {isExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   )}
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                {getStatusBadge(protocolo.status)}
-                {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                )}
-              </div>
-            </div>
 
             {/* Conteúdo expandido */}
             {isExpanded && (
