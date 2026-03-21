@@ -42,6 +42,11 @@ export function PosRota({ motorista }: PosRotaProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
+  const [mensagemCopiada, setMensagemCopiada] = useState(false);
+  const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
+  const [dadosProtocoloCriado, setDadosProtocoloCriado] = useState<{
+    tipo: string; mapa: string; codigoPdv: string; notaFiscal: string; observacao: string; fotosCount: number; data: string; hora: string;
+  } | null>(null);
   
   // Fotos
   const [fotos, setFotos] = useState<string[]>([]);
