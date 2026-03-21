@@ -5,6 +5,7 @@ import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { supabase } from '@/integrations/supabase/client';
 
 import { MultiSelectUnidade } from '@/components/ui/MultiSelectUnidade';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
