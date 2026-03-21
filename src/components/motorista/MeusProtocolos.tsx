@@ -265,10 +265,12 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
     setError(null);
 
     try {
+      console.log('[MeusProtocolos] Buscando protocolos para motorista:', motorista.codigo, 'filtro:', filtroStatus);
       let query = supabase
         .from('protocolos')
         .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, produtos, created_at, observacoes_log, mapa, motorista_nome, motorista_codigo, motorista_whatsapp, motorista_email, motorista_unidade, observacao_geral, contato_whatsapp, contato_email, cliente_telefone, fotos_protocolo, mensagem_encerramento, foto_nota_fiscal_encerramento')
         .eq('motorista_codigo', motorista.codigo)
+        .eq('ativo', true)
         .or('oculto.is.null,oculto.eq.false');
       
       // Aplicar filtro de status
@@ -283,6 +285,8 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
       const { data, error: fetchError } = await query
         .order('created_at', { ascending: false })
         .limit(50);
+
+      console.log('[MeusProtocolos] Resultado:', { data: data?.length, error: fetchError });
 
       if (fetchError) throw fetchError;
 
