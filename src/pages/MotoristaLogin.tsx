@@ -90,11 +90,11 @@ export default function MotoristaLogin() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header decorativo */}
-      <div className="relative bg-primary pt-14 pb-28 px-6 overflow-hidden">
+      {/* Header decorativo com curva */}
+      <div className="relative bg-primary pt-14 pb-16 px-6">
         {/* Círculos decorativos */}
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/5" />
-        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary-foreground/5" />
+        <div className="absolute bottom-4 -left-8 w-32 h-32 rounded-full bg-primary-foreground/5" />
         <div className="absolute top-6 right-6 w-16 h-16 rounded-full bg-primary-foreground/8" />
         
         <div className="relative z-10 max-w-md mx-auto text-center">
@@ -108,10 +108,17 @@ export default function MotoristaLogin() {
             Reposição Revalle
           </p>
         </div>
+
+        {/* Curva suave na base */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-10" preserveAspectRatio="none">
+            <path d="M0 80V30C240 0 480 0 720 30C960 60 1200 60 1440 30V80H0Z" fill="hsl(var(--background))" />
+          </svg>
+        </div>
       </div>
 
-      {/* Card de login sobrepondo o header */}
-      <div className="flex-1 px-5 -mt-16 pb-8 max-w-md mx-auto w-full">
+      {/* Card de login */}
+      <div className="flex-1 px-5 -mt-2 pb-8 max-w-md mx-auto w-full">
         <div className="bg-card rounded-2xl shadow-xl border border-border/40 p-6">
           <p className="text-sm text-muted-foreground text-center mb-6">
             Faça login para registrar protocolos e acompanhar suas entregas
