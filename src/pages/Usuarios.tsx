@@ -537,41 +537,55 @@ export default function Usuarios() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-card rounded-lg p-4 border">
-          <p className="text-muted-foreground text-sm">Total</p>
-          <p className="text-2xl font-bold">{usuarios.length}</p>
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-muted">
+              <Users size={20} className="text-foreground" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">Total</p>
+              <p className="text-2xl font-bold text-foreground">{usuarios.length}</p>
+            </div>
+          </div>
         </div>
-        <div className="bg-card rounded-lg p-4 border">
-          <p className="text-muted-foreground text-sm flex items-center gap-1">
-            <Shield size={14} className="text-primary" /> Admins
-          </p>
-          <p className="text-2xl font-bold text-primary">
-            {usuarios.filter(u => u.nivel === 'admin').length}
-          </p>
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <Shield size={20} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">Admins</p>
+              <p className="text-2xl font-bold text-primary">
+                {usuarios.filter(u => u.nivel === 'admin').length}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="bg-card rounded-lg p-4 border">
-          <p className="text-muted-foreground text-sm flex items-center gap-1">
-            <Truck size={14} className="text-info" /> Distribuição
-          </p>
-          <p className="text-2xl font-bold text-info">
-            {usuarios.filter(u => u.nivel === 'distribuicao').length}
-          </p>
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-info/10">
+              <Truck size={20} className="text-info" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">Operacional</p>
+              <p className="text-2xl font-bold text-info">
+                {usuarios.filter(u => u.nivel === 'distribuicao' || u.nivel === 'controle').length}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="bg-card rounded-lg p-4 border">
-          <p className="text-muted-foreground text-sm flex items-center gap-1">
-            <UserCircle size={14} /> Conferentes
-          </p>
-          <p className="text-2xl font-bold">
-            {usuarios.filter(u => u.nivel === 'conferente').length}
-          </p>
-        </div>
-        <div className="bg-card rounded-lg p-4 border">
-          <p className="text-muted-foreground text-sm flex items-center gap-1">
-            <ClipboardList size={14} className="text-warning" /> Controle
-          </p>
-          <p className="text-2xl font-bold text-warning">
-            {usuarios.filter(u => u.nivel === 'controle').length}
-          </p>
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '150ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-muted">
+              <UserCircle size={20} className="text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">Conferentes</p>
+              <p className="text-2xl font-bold">
+                {usuarios.filter(u => u.nivel === 'conferente').length}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
