@@ -351,7 +351,7 @@ export default function Motoristas() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-2">
             <Truck className="text-primary" size={32} />
             Motoristas
           </h1>
@@ -493,7 +493,7 @@ export default function Motoristas() {
                   </div>
                 </div>
                 
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancelar
                   </Button>
@@ -510,7 +510,7 @@ export default function Motoristas() {
       {/* Cards de Resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '50ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-primary/10">
               <Users size={20} className="text-primary" />
             </div>
@@ -524,7 +524,7 @@ export default function Motoristas() {
         </div>
         
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-emerald-500/10">
               <Truck size={20} className="text-emerald-500" />
             </div>
@@ -538,7 +538,7 @@ export default function Motoristas() {
         </div>
         
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '150ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-amber-500/10">
               <Users size={20} className="text-amber-500" />
             </div>
@@ -552,7 +552,7 @@ export default function Motoristas() {
         </div>
         
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-info/10">
               <Building size={20} className="text-info" />
             </div>
@@ -672,9 +672,9 @@ export default function Motoristas() {
                           />
                         </td>
                         <td className="p-2.5">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
                             <div className={cn(
-                              "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                              "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
                               motorista.funcao === 'motorista' 
                                 ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" 
                                 : "bg-amber-500/15 text-amber-600 dark:text-amber-400"

@@ -278,7 +278,7 @@ export default function Usuarios() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-2">
             <Users className="text-primary" size={32} />
             Usuários
           </h1>
@@ -494,7 +494,7 @@ export default function Usuarios() {
               </div>
               
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -538,7 +538,7 @@ export default function Usuarios() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-muted">
               <Users size={20} className="text-foreground" />
             </div>
@@ -549,7 +549,7 @@ export default function Usuarios() {
           </div>
         </div>
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '50ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-primary/10">
               <Shield size={20} className="text-primary" />
             </div>
@@ -562,7 +562,7 @@ export default function Usuarios() {
           </div>
         </div>
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-info/10">
               <Truck size={20} className="text-info" />
             </div>
@@ -575,7 +575,7 @@ export default function Usuarios() {
           </div>
         </div>
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '150ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-muted">
               <UserCircle size={20} className="text-muted-foreground" />
             </div>
@@ -635,9 +635,9 @@ export default function Usuarios() {
                     className="border-b border-border hover:bg-muted/40 transition-colors"
                   >
                     <td className="p-2.5">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <div className={cn(
-                          "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                          "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
                           usuario.nivel === 'admin' ? "bg-primary/15 text-primary" : 
                           usuario.nivel === 'distribuicao' ? "bg-info/15 text-info" : 
                           usuario.nivel === 'controle' ? "bg-warning/15 text-warning" :

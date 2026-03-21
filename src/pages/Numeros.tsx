@@ -227,7 +227,7 @@ export default function Numeros() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-2">
             <UserCog className="text-primary" size={32} />
             Números
           </h1>
@@ -396,7 +396,7 @@ export default function Numeros() {
               </div>
               
               {/* Botões */}
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-2 pt-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -479,7 +479,7 @@ export default function Numeros() {
                     className="border-b border-border hover:bg-primary/5 transition-colors"
                   >
                     <td className="p-2.5">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <UserCog className="text-primary" size={20} />
                         </div>
