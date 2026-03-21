@@ -716,7 +716,7 @@ export default function Dashboard() {
       </div>
 
       {/* Estatísticas por Tipo */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard
           title="Inversão"
           value={contagemPorTipo.inversao}
@@ -742,28 +742,12 @@ export default function Dashboard() {
           href={buildHref("/protocolos?tipo=FALTA&status=todos")}
         />
         <StatCard
-          title="Sobras Total"
+          title="Sobras"
           value={sobrasStats.total}
           icon={Warehouse}
           variant="default"
           delay={525}
           href={buildHref("/sobras")}
-        />
-        <StatCard
-          title="Sobras Pendentes"
-          value={sobrasStats.pendente}
-          icon={Clock}
-          variant="warning"
-          delay={550}
-          href={buildHref("/sobras?status=aberto")}
-        />
-        <StatCard
-          title="Sobras Resolvidas"
-          value={sobrasStats.resolvido}
-          icon={CheckCircle}
-          variant="success"
-          delay={575}
-          href={buildHref("/sobras?status=encerrado")}
         />
       </div>
 
