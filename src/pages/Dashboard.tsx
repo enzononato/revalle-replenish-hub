@@ -681,7 +681,7 @@ export default function Dashboard() {
           icon={Repeat}
           variant="info"
           delay={450}
-          href="/protocolos?tipo=INVERSAO&status=todos"
+          href={buildHref("/protocolos?tipo=INVERSAO&status=todos")}
         />
         <StatCard
           title="Avaria"
