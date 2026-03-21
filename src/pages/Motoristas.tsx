@@ -558,17 +558,17 @@ export default function Motoristas() {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-4">
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Buscar por nome ou código..."
-          className="flex-1 max-w-md"
+          className="flex-1"
         />
         
         {isAdmin && (
           <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
-            <SelectTrigger className="w-[180px] h-8 text-xs">
+            <SelectTrigger className="w-52">
               <MapPin size={14} className="mr-1.5 text-muted-foreground" />
               <SelectValue placeholder="Todas as Unidades" />
             </SelectTrigger>
