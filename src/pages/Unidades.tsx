@@ -458,13 +458,13 @@ export default function Unidades() {
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nome</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Código</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">CNPJ</th>
-                <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Motoristas</th>
-                {canViewClientes && <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Clientes</th>}
-                <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Solicitações</th>
-                <th className="text-right p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nome</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Código</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">CNPJ</th>
+                <th className="text-center p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Motoristas</th>
+                {canViewClientes && <th className="text-center p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Clientes</th>}
+                <th className="text-center p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Solicitações</th>
+                <th className="text-right p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody>

@@ -595,11 +595,11 @@ export default function Usuarios() {
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Usuário</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nível</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Unidades</th>
-                <th className="text-right p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Usuário</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nível</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Unidades</th>
+                <th className="text-right p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody>

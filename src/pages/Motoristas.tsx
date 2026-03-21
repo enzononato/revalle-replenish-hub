@@ -629,7 +629,7 @@ export default function Motoristas() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-muted/50 border-b border-border">
-                    <th className="text-left p-4 w-10">
+                    <th className="text-left p-2.5 w-10">
                       <Checkbox
                         checked={isAllSelected}
                         onCheckedChange={toggleSelectAll}
@@ -637,13 +637,13 @@ export default function Motoristas() {
                         className={isPartialSelected ? "data-[state=checked]:bg-primary/50" : ""}
                       />
                     </th>
-                    <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nome</th>
-                    <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Código</th>
-                    <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">CPF</th>
-                    <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Função</th>
-                    <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Setor</th>
-                    <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Unidade</th>
-                    <th className="text-right p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nome</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Código</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">CPF</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Função</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Setor</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Unidade</th>
+                    <th className="text-right p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody>

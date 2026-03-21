@@ -448,10 +448,10 @@ export default function Numeros() {
           <table className="w-full">
             <thead>
               <tr className="table-header">
-                <th className="text-left p-4 font-semibold">Nome</th>
-                <th className="text-left p-4 font-semibold">WhatsApp</th>
-                <th className="text-left p-4 font-semibold">Unidades</th>
-                <th className="text-right p-4 font-semibold">Ações</th>
+                <th className="text-left p-2.5 font-semibold">Nome</th>
+                <th className="text-left p-2.5 font-semibold">WhatsApp</th>
+                <th className="text-left p-2.5 font-semibold">Unidades</th>
+                <th className="text-right p-2.5 font-semibold">Ações</th>
               </tr>
             </thead>
             <tbody>
