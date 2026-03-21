@@ -1070,26 +1070,26 @@ export default function MotoristaPortal() {
       {/* Tabs */}
       <div className="px-4 pt-2 pb-2 max-w-lg mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
-          <TabsList className="grid w-full grid-cols-3 h-11 bg-muted/50 p-1 rounded-xl border border-border/40 gap-1">
+          <TabsList className="grid w-full grid-cols-3 h-14 bg-muted/50 p-1.5 rounded-xl border border-border/40 gap-1.5">
             <TabsTrigger 
               value="novo" 
-              className="text-[13px] font-semibold gap-1.5 rounded-lg data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
+              className="text-sm font-semibold gap-2 rounded-lg data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
             >
-              <PlusCircle className="w-3.5 h-3.5" />
+              <PlusCircle className="w-4 h-4" />
               Novo
             </TabsTrigger>
             <TabsTrigger 
               value="meus" 
-              className="text-[13px] font-semibold gap-1.5 rounded-lg data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
+              className="text-sm font-semibold gap-2 rounded-lg data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
             >
-              <FileText className="w-3.5 h-3.5" />
+              <FileText className="w-4 h-4" />
               Protocolos
             </TabsTrigger>
             <TabsTrigger 
               value="pos-rota" 
-              className="text-[13px] font-semibold gap-1.5 rounded-lg data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
+              className="text-sm font-semibold gap-2 rounded-lg data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
             >
-              <Route className="w-3.5 h-3.5" />
+              <Route className="w-4 h-4" />
               Pós-Rota
             </TabsTrigger>
           </TabsList>
