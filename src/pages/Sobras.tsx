@@ -184,9 +184,14 @@ export default function Sobras() {
 
       if (error) throw error;
 
-      await logAction('alterou_status_sobra', 'protocolos', sobra.numero, {
-        status_anterior: sobra.status,
-        novo_status: novoStatus,
+      await registrarLog({
+        acao: 'alterou_status_sobra',
+        tabela: 'protocolos',
+        registro_id: sobra.numero,
+        registro_dados: { status_anterior: sobra.status, novo_status: novoStatus },
+        usuario_nome: user?.nome || user?.email || 'Admin',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
       });
 
       toast.success(`Status atualizado para ${novoStatus === 'em_andamento' ? 'Em Tratamento' : 'Resolvido'}`);
