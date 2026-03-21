@@ -661,7 +661,7 @@ export default function Dashboard() {
           icon={Calendar}
           variant="info"
           delay={400}
-          href="/protocolos?periodo=hoje"
+          href={buildHref("/protocolos?periodo=hoje")}
         />
         <StatCard
           title="Lead Time"
