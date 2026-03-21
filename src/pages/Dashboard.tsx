@@ -637,7 +637,7 @@ export default function Dashboard() {
           icon={CheckCircle}
           variant="success"
           delay={100}
-          href="/protocolos?status=encerrado&periodo=hoje"
+          href={buildHref("/protocolos?status=encerrado&periodo=hoje")}
         />
         <StatCard
           title="Total de Protocolos"
