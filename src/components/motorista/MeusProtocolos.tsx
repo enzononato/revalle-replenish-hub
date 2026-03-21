@@ -704,7 +704,8 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                 )}
               </div>
             )}
-          </CardContent>
+            </CardContent>
+          </div>
         </Card>
       );
     });
