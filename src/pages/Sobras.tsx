@@ -35,6 +35,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { ObservacaoLog } from '@/types';
+import { getDirectStorageUrl } from '@/utils/urlHelpers';
 
 interface SobraProtocolo {
   id: string;
