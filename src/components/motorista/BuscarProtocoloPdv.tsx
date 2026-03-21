@@ -199,9 +199,15 @@ export function BuscarProtocoloPdv({
                         {protocolo.numero}
                       </span>
                     </div>
-                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] shrink-0 whitespace-nowrap">
-                      Em Atendimento
-                    </Badge>
+                    {statusFilter === 'aberto' ? (
+                      <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30 text-[10px] shrink-0 whitespace-nowrap">
+                        Aberto
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] shrink-0 whitespace-nowrap">
+                        Em Atendimento
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Info grid */}
