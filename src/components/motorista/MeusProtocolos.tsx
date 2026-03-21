@@ -111,7 +111,7 @@ const formatarTextoHistoricoMotorista = (log: ObservacaoLog) => {
     .map((linha) => linha.trim())
     .filter(Boolean);
 
-  const titulo = linhas[0]?.replace(/[:\-]+$/, '') || 'Produtos alterados';
+  const titulo = linhas[0]?.replace(/[:-]+$/, '') || 'Produtos alterados';
   const detalhes = linhas.slice(1);
 
   return {
