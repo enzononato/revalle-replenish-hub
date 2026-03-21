@@ -620,7 +620,7 @@ export default function Dashboard() {
           icon={Clock}
           variant="warning"
           delay={0}
-          href="/protocolos?status=aberto"
+          href={buildHref("/protocolos?status=aberto")}
         />
         <StatCard
           title="Encerrados Hoje"
