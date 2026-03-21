@@ -714,47 +714,41 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
   return (
     <div className="space-y-3">
       {/* Filtros de Status com contadores */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5">
         <Button
           variant={filtroStatus === 'abertos' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('abertos')}
-          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-lg"
+          className="h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg"
         >
-          <Clock className="w-4 h-4 shrink-0" />
-          <span>Abertos</span>
+          <Clock className="w-3.5 h-3.5 shrink-0" />
+          Abertos
           {!loadingContadores && (
-            <span className="text-[11px] font-bold opacity-80">
-              {contadores.abertos}
-            </span>
+            <span className="text-[10px] font-bold opacity-80">{contadores.abertos}</span>
           )}
         </Button>
         <Button
           variant={filtroStatus === 'em_andamento' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('em_andamento')}
-          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-lg"
+          className="h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg"
         >
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>Atend.</span>
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          Atend.
           {!loadingContadores && (
-            <span className="text-[11px] font-bold opacity-80">
-              {contadores.em_andamento}
-            </span>
+            <span className="text-[10px] font-bold opacity-80">{contadores.em_andamento}</span>
           )}
         </Button>
         <Button
           variant={filtroStatus === 'encerrados' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('encerrados')}
-          className="h-11 text-sm font-semibold px-2 flex items-center justify-center gap-1.5 rounded-lg"
+          className="h-9 text-xs font-semibold px-2 flex items-center justify-center gap-1 rounded-lg"
         >
-          <CheckCircle className="w-4 h-4 shrink-0" />
-          <span>Encerr.</span>
+          <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+          Encerr.
           {!loadingContadores && (
-            <span className="text-[11px] font-bold opacity-80">
-              {contadores.encerrados}
-            </span>
+            <span className="text-[10px] font-bold opacity-80">{contadores.encerrados}</span>
           )}
         </Button>
       </div>
