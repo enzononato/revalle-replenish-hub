@@ -32,12 +32,13 @@ import {
 } from '@/components/ui/dialog';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse } from 'lucide-react';
+import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { ObservacaoLog } from '@/types';
 import { getDirectStorageUrl } from '@/utils/urlHelpers';
+import { Textarea } from '@/components/ui/textarea';
 
 interface SobraProtocolo {
   id: string;
@@ -118,6 +119,8 @@ export default function Sobras() {
   const [contadores, setContadores] = useState({ pendente: 0, tratamento: 0, resolvido: 0 });
   const [detalheSobra, setDetalheSobra] = useState<SobraProtocolo | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [comentario, setComentario] = useState('');
+  const [enviandoComentario, setEnviandoComentario] = useState(false);
 
   const fetchContadores = useCallback(async () => {
     const [pRes, tRes, rRes] = await Promise.all([
@@ -265,6 +268,50 @@ export default function Sobras() {
       toast.error('Erro ao devolver ao estoque');
     } finally {
       setUpdatingStatus(null);
+    }
+  };
+
+  const handleAdicionarComentario = async () => {
+    if (!detalheSobra || !comentario.trim()) return;
+    setEnviandoComentario(true);
+    try {
+      const logs = Array.isArray(detalheSobra.observacoes_log) ? detalheSobra.observacoes_log as ObservacaoLog[] : [];
+      const novoLog: ObservacaoLog = {
+        id: crypto.randomUUID(),
+        usuarioNome: user?.nome || user?.email || 'Admin',
+        usuarioId: user?.id || '',
+        data: format(new Date(), 'dd/MM/yyyy'),
+        hora: format(new Date(), 'HH:mm'),
+        acao: 'Comentário',
+        texto: comentario.trim(),
+      };
+
+      const novoLogs = [...logs, novoLog];
+      const { error } = await supabase
+        .from('protocolos')
+        .update({ observacoes_log: JSON.stringify(novoLogs) })
+        .eq('id', detalheSobra.id);
+
+      if (error) throw error;
+
+      setDetalheSobra({ ...detalheSobra, observacoes_log: novoLogs });
+      setComentario('');
+      toast.success('Comentário adicionado');
+
+      await registrarLog({
+        acao: 'comentou_sobra',
+        tabela: 'protocolos',
+        registro_id: detalheSobra.numero,
+        registro_dados: { comentario: comentario.trim() },
+        usuario_nome: user?.nome || user?.email || 'Admin',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+    } catch (err) {
+      console.error('Erro ao adicionar comentário:', err);
+      toast.error('Erro ao adicionar comentário');
+    } finally {
+      setEnviandoComentario(false);
     }
   };
 
@@ -477,7 +524,7 @@ export default function Sobras() {
       )}
 
       {/* Modal de detalhes */}
-      <Dialog open={!!detalheSobra} onOpenChange={(open) => !open && setDetalheSobra(null)}>
+      <Dialog open={!!detalheSobra} onOpenChange={(open) => { if (!open) { setDetalheSobra(null); setComentario(''); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -589,6 +636,30 @@ export default function Sobras() {
                   </div>
                 </div>
               )}
+
+              {/* Adicionar comentário */}
+              <div className="border-t pt-3">
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Adicionar Comentário
+                </p>
+                <div className="flex gap-2">
+                  <Textarea
+                    value={comentario}
+                    onChange={(e) => setComentario(e.target.value)}
+                    placeholder="Escreva um comentário sobre esta sobra..."
+                    className="min-h-[60px] text-sm resize-none flex-1"
+                  />
+                  <Button
+                    size="icon"
+                    className="h-[60px] w-10 shrink-0"
+                    disabled={!comentario.trim() || enviandoComentario}
+                    onClick={handleAdicionarComentario}
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
 
               {/* Ações */}
               {detalheSobra.status !== 'encerrado' && (
