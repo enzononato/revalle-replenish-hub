@@ -67,16 +67,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Inicialização - verificar sessão existente
+  // Inicialização - verificar sessão existente sem flicker/redirect indevido
   useEffect(() => {
-    // Configurar listener de mudanças de auth PRIMEIRO
+    let isMounted = true;
+    let isInitializing = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!isMounted) return;
+
       setSession(newSession);
-      
+
+      // Durante bootstrap, quem decide estado final é getSession()
+      if (isInitializing && event === 'INITIAL_SESSION') return;
+
       if (newSession?.user) {
-        // Usar setTimeout para evitar deadlock
         setTimeout(() => {
           fetchUserProfile(newSession.user).then(profile => {
+            if (!isMounted) return;
             setUser(profile);
             setIsLoading(false);
           });
@@ -87,21 +94,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // DEPOIS verificar sessão existente
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      
-      if (existingSession?.user) {
-        fetchUserProfile(existingSession.user).then(profile => {
-          setUser(profile);
-          setIsLoading(false);
-        });
-      } else {
-        setIsLoading(false);
-      }
-    });
+    const initializeSession = async () => {
+      try {
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (!isMounted) return;
 
-    return () => subscription.unsubscribe();
+        setSession(existingSession);
+
+        if (existingSession?.user) {
+          const profile = await fetchUserProfile(existingSession.user);
+          if (!isMounted) return;
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+        isInitializing = false;
+      }
+    };
+
+    initializeSession();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [fetchUserProfile]);
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
