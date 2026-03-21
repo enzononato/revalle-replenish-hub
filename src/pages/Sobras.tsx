@@ -53,6 +53,7 @@ interface SobraProtocolo {
   observacao_geral: string | null;
   created_at: string | null;
   observacoes_log: unknown;
+  fotos_protocolo: unknown;
 }
 
 const STATUS_OPTIONS = [
