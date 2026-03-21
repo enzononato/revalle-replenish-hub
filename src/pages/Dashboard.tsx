@@ -697,7 +697,7 @@ export default function Dashboard() {
           icon={PackageX}
           variant="primary"
           delay={500}
-          href="/protocolos?tipo=FALTA&status=todos"
+          href={buildHref("/protocolos?tipo=FALTA&status=todos")}
         />
       </div>
 
