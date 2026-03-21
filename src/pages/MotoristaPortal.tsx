@@ -1404,14 +1404,14 @@ export default function MotoristaPortal() {
 
             {/* Seção: Fotos */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden" data-tour="secao-fotos">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <Camera className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-primary" />
                   Fotos
-                  <span className="text-[10px] text-destructive font-normal">*</span>
+                  <span className="text-[11px] text-destructive font-normal">*</span>
                 </h3>
               </div>
-              <div className="p-3">
+              <div className="p-4">
                 {tipoReposicao ? (
                   <div className="space-y-2">
                     
