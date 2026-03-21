@@ -91,7 +91,7 @@ export default function MotoristaLogin() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header decorativo */}
-      <div className="relative bg-primary pt-12 pb-20 px-6 overflow-hidden">
+      <div className="relative bg-primary pt-14 pb-24 px-6 overflow-hidden">
         {/* Círculos decorativos */}
         <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/5" />
         <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary-foreground/5" />
