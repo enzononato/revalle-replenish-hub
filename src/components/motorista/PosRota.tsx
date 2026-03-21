@@ -15,7 +15,7 @@ import { PdvAutocomplete } from '@/components/PdvAutocomplete';
 import { toast } from '@/hooks/use-toast';
 import { Motorista } from '@/types';
 import { cn } from '@/lib/utils';
-import { Loader2, CheckCircle, MapPin, FileText, Tag, AlertTriangle, Camera, X, ImageIcon } from 'lucide-react';
+import { Loader2, CheckCircle, MapPin, FileText, Tag, AlertTriangle, Camera, X, ImageIcon, MessageCircle, Copy, Check, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
@@ -42,6 +42,11 @@ export function PosRota({ motorista }: PosRotaProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
+  const [mensagemCopiada, setMensagemCopiada] = useState(false);
+  const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
+  const [dadosProtocoloCriado, setDadosProtocoloCriado] = useState<{
+    tipo: string; mapa: string; codigoPdv: string; notaFiscal: string; observacao: string; fotosCount: number; data: string; hora: string;
+  } | null>(null);
   
   // Fotos
   const [fotos, setFotos] = useState<string[]>([]);
@@ -97,6 +102,9 @@ export function PosRota({ motorista }: PosRotaProps) {
     setEnviado(false);
     setNumeroProtocolo('');
     setFotos([]);
+    setMensagemCopiada(false);
+    setMostrarDetalhes(false);
+    setDadosProtocoloCriado(null);
   };
 
   const handleSubmit = async () => {
@@ -166,6 +174,16 @@ export function PosRota({ motorista }: PosRotaProps) {
       });
 
       setNumeroProtocolo(numero);
+      setDadosProtocoloCriado({
+        tipo: tipoLabel,
+        mapa: mapa.trim(),
+        codigoPdv: precisaPdv ? codigoPdv.trim() : '',
+        notaFiscal: notaFiscal.trim(),
+        observacao: observacao.trim(),
+        fotosCount: fotosUrls.length,
+        data: format(agora, 'dd/MM/yyyy'),
+        hora: format(agora, 'HH:mm'),
+      });
       setEnviado(true);
 
       toast({
@@ -208,6 +226,46 @@ export function PosRota({ motorista }: PosRotaProps) {
     }
   };
 
+  const buildMensagemPosRota = () => {
+    if (!dadosProtocoloCriado) return '';
+    const d = dadosProtocoloCriado;
+    const lines = [
+      `*POS-ROTA REGISTRADO*`,
+      ``,
+      `*Protocolo:* ${numeroProtocolo}`,
+      ``,
+      `*Tipo:* ${d.tipo}`,
+      `*Causa:* SOBRA EM ROTA - ${d.tipo.toUpperCase()}`,
+      ``,
+      `*Data:* ${d.data} as ${d.hora}`,
+      `*Mapa:* ${d.mapa}`,
+      ...(d.codigoPdv ? [`*Cod. PDV:* ${d.codigoPdv}`] : []),
+      ...(d.notaFiscal ? [`*NF:* ${d.notaFiscal}`] : []),
+      ``,
+      `*Motorista:* ${motorista.nome}`,
+      `*Unidade:* ${motorista.unidade || ''}`,
+      ``,
+      `*Fotos:* ${d.fotosCount} foto(s)`,
+      ...(d.observacao ? [`*Obs:* ${d.observacao}`] : []),
+      ``,
+      `_- Reposicao Revalle_`
+    ];
+    return lines.join('\n');
+  };
+
+  const handleCopiarMensagemPosRota = () => {
+    navigator.clipboard.writeText(buildMensagemPosRota()).then(() => {
+      setMensagemCopiada(true);
+      setTimeout(() => setMensagemCopiada(false), 2500);
+    });
+  };
+
+  const buildWhatsAppLinkPosRota = () => {
+    const wpp = motorista.whatsapp?.replace(/\D/g, '') || '';
+    const telefone = wpp.startsWith('55') ? wpp : `55${wpp}`;
+    return `https://wa.me/${telefone}?text=${encodeURIComponent(buildMensagemPosRota())}`;
+  };
+
   // Tela de sucesso
   if (enviado) {
     return (
@@ -217,12 +275,101 @@ export function PosRota({ motorista }: PosRotaProps) {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
           <h3 className="text-lg font-semibold">Pós-Rota Registrado!</h3>
-          <p className="text-sm text-muted-foreground">
-            Registro <span className="font-mono font-medium text-foreground">{numeroProtocolo}</span> criado com sucesso.
-          </p>
-          <Button onClick={resetForm} className="w-full h-12 text-sm font-semibold rounded-xl">
-            Novo Registro
-          </Button>
+          
+          {/* Número do protocolo */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">Número do registro</p>
+            <p className="text-lg font-mono font-bold text-primary">{numeroProtocolo}</p>
+          </div>
+
+          {/* Detalhes expansíveis */}
+          {dadosProtocoloCriado && (
+            <div className="text-left">
+              <button
+                onClick={() => setMostrarDetalhes(!mostrarDetalhes)}
+                className="w-full flex items-center justify-between text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+              >
+                <span>Ver detalhes do registro</span>
+                {mostrarDetalhes ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {mostrarDetalhes && (
+                <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tipo</span>
+                    <span className="font-medium">{dadosProtocoloCriado.tipo}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mapa</span>
+                    <span className="font-medium">{dadosProtocoloCriado.mapa}</span>
+                  </div>
+                  {dadosProtocoloCriado.codigoPdv && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">PDV</span>
+                      <span className="font-medium">{dadosProtocoloCriado.codigoPdv}</span>
+                    </div>
+                  )}
+                  {dadosProtocoloCriado.notaFiscal && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Nota Fiscal</span>
+                      <span className="font-medium">{dadosProtocoloCriado.notaFiscal}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Data/Hora</span>
+                    <span className="font-medium">{dadosProtocoloCriado.data} às {dadosProtocoloCriado.hora}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Fotos</span>
+                    <span className="font-medium">{dadosProtocoloCriado.fotosCount} foto(s)</span>
+                  </div>
+                  {dadosProtocoloCriado.observacao && (
+                    <div className="pt-1 border-t border-border/50">
+                      <span className="text-muted-foreground">Obs:</span>
+                      <p className="font-medium mt-0.5">{dadosProtocoloCriado.observacao}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Ações */}
+          <div className="space-y-2.5 pt-2">
+            {motorista.whatsapp && (
+              <a
+                href={buildWhatsAppLinkPosRota()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full block"
+              >
+                <Button className="w-full h-11 text-sm bg-green-500 hover:bg-green-600 text-white rounded-xl">
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Compartilhar no WhatsApp
+                </Button>
+              </a>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleCopiarMensagemPosRota}
+              className="w-full h-11 text-sm rounded-xl"
+            >
+              {mensagemCopiada ? (
+                <>
+                  <Check className="mr-2 h-4 w-4 text-green-600" />
+                  Mensagem copiada!
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copiar mensagem
+                </>
+              )}
+            </Button>
+            <Button onClick={resetForm} className="w-full h-11 text-sm font-semibold rounded-xl">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo Registro
+            </Button>
+          </div>
         </div>
       </div>
     );
