@@ -1205,7 +1205,7 @@ export default function MotoristaPortal() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="campo-tipo-reposicao">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Label className="text-sm font-medium">Tipo *</Label>
+                      <Label className="text-sm font-medium uppercase">TIPO *</Label>
                       {touched.tipoReposicao && tipoReposicao && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Select 
