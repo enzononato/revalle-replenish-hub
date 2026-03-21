@@ -27,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Minus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2, MessageCircle, Copy } from 'lucide-react';
+import { Plus, Minus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2, MessageCircle, Copy, Route } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 import { PdvAutocomplete } from '@/components/PdvAutocomplete';
 import { MeusProtocolos } from '@/components/motorista/MeusProtocolos';
+import { PosRota } from '@/components/motorista/PosRota';
 import { MotoristaHeader } from '@/components/motorista/MotoristaHeader';
 import CameraCapture from '@/components/CameraCapture';
 
@@ -1065,19 +1066,26 @@ export default function MotoristaPortal() {
       {/* Tabs */}
       <div className="px-4 pt-4 pb-2 max-w-lg mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
-          <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60 p-1 rounded-lg border border-border/50">
+          <TabsList className="grid w-full grid-cols-3 h-12 bg-muted/60 p-1 rounded-lg border border-border/50">
             <TabsTrigger 
               value="novo" 
-              className="text-sm gap-2 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
+              className="text-xs gap-1.5 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-2"
             >
-              <PlusCircle className="w-4 h-4" />
+              <PlusCircle className="w-3.5 h-3.5" />
               Novo Protocolo
             </TabsTrigger>
             <TabsTrigger 
-              value="meus" 
-              className="text-sm gap-2 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
+              value="pos-rota" 
+              className="text-xs gap-1.5 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-2"
             >
-              <FileText className="w-4 h-4" />
+              <Route className="w-3.5 h-3.5" />
+              Pós-Rota
+            </TabsTrigger>
+            <TabsTrigger 
+              value="meus" 
+              className="text-xs gap-1.5 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-2"
+            >
+              <FileText className="w-3.5 h-3.5" />
               Meus Protocolos
             </TabsTrigger>
           </TabsList>
@@ -1521,6 +1529,11 @@ export default function MotoristaPortal() {
                 />
               </div>
             </div>
+          </TabsContent>
+
+          {/* Tab: Pós-Rota */}
+          <TabsContent value="pos-rota" className="mt-4 pb-6">
+            <PosRota motorista={motorista} />
           </TabsContent>
 
           {/* Tab: Meus Protocolos */}
