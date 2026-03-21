@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useMotoristaAuth } from '@/contexts/MotoristaAuthContext';
-import { Package, Eye, EyeOff, Loader2, Check, AlertCircle } from 'lucide-react';
+import { Truck, Eye, EyeOff, Loader2, Check, AlertCircle, ShieldCheck } from 'lucide-react';
 
 interface TouchedFields {
   identificador: boolean;
@@ -38,11 +37,11 @@ export default function MotoristaLogin() {
     return isFieldValid(field) ? 'valid' : 'invalid';
   };
 
-const getInputClassName = (field: 'identificador' | 'senha') => {
+  const getInputClassName = (field: 'identificador' | 'senha') => {
     const status = getFieldStatus(field);
-    const base = "h-12 text-base pr-10 transition-all";
-    if (status === 'valid') return `${base} border-green-500 focus-visible:ring-green-500`;
-    if (status === 'invalid') return `${base} border-destructive focus-visible:ring-destructive`;
+    const base = "h-14 text-base bg-secondary/50 border-border/60 rounded-xl pl-4 pr-12 transition-all focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary";
+    if (status === 'valid') return `${base} border-emerald-400 focus-visible:ring-emerald-300`;
+    if (status === 'invalid') return `${base} border-destructive focus-visible:ring-destructive/30`;
     return base;
   };
 
@@ -90,21 +89,39 @@ const getInputClassName = (field: 'identificador' | 'senha') => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center pb-6">
-          <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-            <Package className="w-10 h-10 text-primary" />
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Header decorativo */}
+      <div className="relative bg-primary pt-12 pb-20 px-6 overflow-hidden">
+        {/* Círculos decorativos */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-primary-foreground/5" />
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary-foreground/5" />
+        <div className="absolute top-6 right-6 w-16 h-16 rounded-full bg-primary-foreground/8" />
+        
+        <div className="relative z-10 max-w-md mx-auto text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary-foreground/15 backdrop-blur-sm mb-4 shadow-lg">
+            <Truck className="w-10 h-10 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl">Portal do Motorista</CardTitle>
-          <CardDescription className="mt-2">
-            Faça login para registrar protocolos de reposição
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          <h1 className="text-2xl font-bold text-primary-foreground tracking-tight">
+            Portal do Motorista
+          </h1>
+          <p className="text-sm text-primary-foreground/70 mt-1">
+            Reposição Revalle
+          </p>
+        </div>
+      </div>
+
+      {/* Card de login sobrepondo o header */}
+      <div className="flex-1 px-5 -mt-12 pb-8 max-w-md mx-auto w-full">
+        <div className="bg-card rounded-2xl shadow-xl border border-border/40 p-6">
+          <p className="text-sm text-muted-foreground text-center mb-6">
+            Faça login para registrar protocolos e acompanhar suas entregas
+          </p>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="identificador">CPF ou Código</Label>
+              <Label htmlFor="identificador" className="text-sm font-semibold text-foreground">
+                CPF
+              </Label>
               <div className="relative">
                 <Input
                   id="identificador"
@@ -112,7 +129,7 @@ const getInputClassName = (field: 'identificador' | 'senha') => {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="off"
-                  placeholder="Digite seu CPF ou código"
+                  placeholder="Digite seu CPF"
                   value={identificador}
                   onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, ''))}
                   onBlur={() => handleBlur('identificador')}
@@ -120,22 +137,24 @@ const getInputClassName = (field: 'identificador' | 'senha') => {
                   disabled={isLoading}
                 />
                 {touched.identificador && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
                     {isFieldValid('identificador') ? (
-                      <Check className="w-4 h-4 text-green-500" />
+                      <Check className="w-5 h-5 text-emerald-500" />
                     ) : (
-                      <AlertCircle className="w-4 h-4 text-destructive" />
+                      <AlertCircle className="w-5 h-5 text-destructive" />
                     )}
                   </div>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Petrolina: use o código Promax. Outras unidades: use o CPF.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="senha">Senha</Label>
+              <Label htmlFor="senha" className="text-sm font-semibold text-foreground">
+                Senha
+              </Label>
               <div className="relative">
                 <Input
                   id="senha"
@@ -147,20 +166,20 @@ const getInputClassName = (field: 'identificador' | 'senha') => {
                   className={getInputClassName('senha')}
                   disabled={isLoading}
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
                   {touched.senha && (
                     isFieldValid('senha') ? (
-                      <Check className="w-4 h-4 text-green-500" />
+                      <Check className="w-5 h-5 text-emerald-500" />
                     ) : (
-                      <AlertCircle className="w-4 h-4 text-destructive" />
+                      <AlertCircle className="w-5 h-5 text-destructive" />
                     )
                   )}
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-muted-foreground hover:text-foreground transition-colors ml-1"
+                    className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
@@ -168,12 +187,12 @@ const getInputClassName = (field: 'identificador' | 'senha') => {
 
             <Button 
               type="submit" 
-              className="w-full h-14 text-base"
+              className="w-full h-14 text-base font-semibold rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                   Entrando...
                 </>
               ) : (
@@ -181,9 +200,14 @@ const getInputClassName = (field: 'identificador' | 'senha') => {
               )}
             </Button>
           </form>
+        </div>
 
-        </CardContent>
-      </Card>
+        {/* Footer info */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-muted-foreground">
+          <ShieldCheck className="w-4 h-4" />
+          <span className="text-xs">Acesso seguro • Reposição v3.1.2</span>
+        </div>
+      </div>
     </div>
   );
 }
