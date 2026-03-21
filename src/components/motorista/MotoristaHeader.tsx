@@ -65,11 +65,8 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
           <p className="text-sm text-primary-foreground font-semibold mb-1">
             Gestão inteligente de Reposição e Pós-Rota:
           </p>
-          <p className="text-sm text-primary-foreground/90 leading-relaxed mb-1">
+          <p className="text-sm text-primary-foreground/90 leading-relaxed">
             Transforme sua operação com inovação, agilidade na entrega e ideias que geram resultado.
-          </p>
-          <p className="text-sm text-primary-foreground/80">
-            Registre, acompanhe e tome decisões em tempo real.
           </p>
         </div>
 
