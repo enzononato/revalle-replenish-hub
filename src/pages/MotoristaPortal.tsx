@@ -1099,18 +1099,17 @@ export default function MotoristaPortal() {
             {/* Seção: Dados Gerais */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
-                <h3 className="text-base font-medium text-foreground flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
                   Dados Gerais
                 </h3>
               </div>
               <div className="p-4 space-y-4">
-                {/* General Info */}
                 <div className="space-y-4">
-                  <div className="space-y-2" data-tour="campo-mapa">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1.5" data-tour="campo-mapa">
+                    <div className="flex items-center gap-1.5">
                       <Label htmlFor="mapa" className="text-sm font-medium">MAPA *</Label>
-                      {touched.mapa && mapa.trim() && <Check size={14} className="text-green-500" />}
+                      {touched.mapa && mapa.trim() && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Input
                       id="mapa"
@@ -1118,21 +1117,21 @@ export default function MotoristaPortal() {
                       onChange={(e) => setMapa(formatOnlyNumbers(e.target.value))}
                       onBlur={() => handleBlur('mapa')}
                       placeholder="Ex: 16431"
-                      className={getInputClassName('mapa', mapa)}
+                      className={cn("h-11 text-sm", getInputClassName('mapa', mapa))}
                       inputMode="numeric"
                       pattern="[0-9]*"
                     />
                     {touched.mapa && !mapa.trim() && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Campo obrigatório
                       </p>
                     )}
                   </div>
                   <div className="space-y-1.5" data-tour="campo-pdv">
                     <div className="flex items-center gap-1.5">
-                      <Label htmlFor="codigoPdv" className="text-xs font-medium">Código PDV *</Label>
-                      {touched.codigoPdv && codigoPdv.trim() && <Check size={12} className="text-green-500" />}
+                      <Label htmlFor="codigoPdv" className="text-sm font-medium">Código PDV *</Label>
+                      {touched.codigoPdv && codigoPdv.trim() && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <PdvAutocomplete
                       value={codigoPdv}
@@ -1146,22 +1145,22 @@ export default function MotoristaPortal() {
                       onBlur={() => handleBlur('codigoPdv')}
                     />
                     {touched.codigoPdv && !codigoPdv.trim() && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Campo obrigatório
                       </p>
                     )}
                     {touched.codigoPdv && codigoPdv.trim() && !pdvSelecionadoDaLista && (
-                      <p className="text-[10px] text-amber-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-amber-500 flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Selecione um PDV da lista
                       </p>
                     )}
                   </div>
                   <div className="space-y-1.5" data-tour="campo-nota-fiscal">
                     <div className="flex items-center gap-1.5">
-                      <Label htmlFor="notaFiscal" className="text-xs font-medium">Nota Fiscal *</Label>
-                      {touched.notaFiscal && notaFiscal.trim() && <Check size={12} className="text-green-500" />}
+                      <Label htmlFor="notaFiscal" className="text-sm font-medium">Nota Fiscal *</Label>
+                      {touched.notaFiscal && notaFiscal.trim() && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Input
                       id="notaFiscal"
@@ -1169,13 +1168,13 @@ export default function MotoristaPortal() {
                       onChange={(e) => setNotaFiscal(formatOnlyNumbers(e.target.value))}
                       onBlur={() => handleBlur('notaFiscal')}
                       placeholder="Ex: 243631"
-                      className={getInputClassName('notaFiscal', notaFiscal)}
+                      className={cn("h-11 text-sm", getInputClassName('notaFiscal', notaFiscal))}
                       inputMode="numeric"
                       pattern="[0-9]*"
                     />
                     {touched.notaFiscal && !notaFiscal.trim() && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Campo obrigatório
                       </p>
                     )}
