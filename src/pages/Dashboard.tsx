@@ -689,7 +689,7 @@ export default function Dashboard() {
           icon={AlertTriangle}
           variant="warning"
           delay={475}
-          href="/protocolos?tipo=AVARIA&status=todos"
+          href={buildHref("/protocolos?tipo=AVARIA&status=todos")}
         />
         <StatCard
           title="Falta"
