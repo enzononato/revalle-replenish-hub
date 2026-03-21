@@ -174,6 +174,16 @@ export function PosRota({ motorista }: PosRotaProps) {
       });
 
       setNumeroProtocolo(numero);
+      setDadosProtocoloCriado({
+        tipo: tipoLabel,
+        mapa: mapa.trim(),
+        codigoPdv: precisaPdv ? codigoPdv.trim() : '',
+        notaFiscal: notaFiscal.trim(),
+        observacao: observacao.trim(),
+        fotosCount: fotosUrls.length,
+        data: format(agora, 'dd/MM/yyyy'),
+        hora: format(agora, 'HH:mm'),
+      });
       setEnviado(true);
 
       toast({
