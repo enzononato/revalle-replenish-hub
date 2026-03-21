@@ -1531,6 +1531,11 @@ export default function MotoristaPortal() {
             </div>
           </TabsContent>
 
+          {/* Tab: Pós-Rota */}
+          <TabsContent value="pos-rota" className="mt-4 pb-6">
+            <PosRota motorista={motorista} />
+          </TabsContent>
+
           {/* Tab: Meus Protocolos */}
           <TabsContent value="meus" className="mt-3 pb-6">
             <MeusProtocolos motorista={motorista} />
