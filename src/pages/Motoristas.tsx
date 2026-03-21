@@ -664,14 +664,14 @@ export default function Motoristas() {
                           selectedIds.has(motorista.id) && "bg-primary/5"
                         )}
                       >
-                        <td className="p-4">
+                        <td className="p-2.5">
                           <Checkbox
                             checked={selectedIds.has(motorista.id)}
                             onCheckedChange={() => toggleSelect(motorista.id)}
                             aria-label={`Selecionar ${motorista.nome}`}
                           />
                         </td>
-                        <td className="p-4">
+                        <td className="p-2.5">
                           <div className="flex items-center gap-3">
                             <div className={cn(
                               "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
@@ -684,18 +684,18 @@ export default function Motoristas() {
                             <span className="font-medium text-sm">{motorista.nome}</span>
                           </div>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2.5">
                           <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm font-mono">
                             <Hash size={13} />
                             {motorista.codigo}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2.5">
                           <span className="text-muted-foreground text-sm font-mono">
                             {motorista.cpf || '-'}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2.5">
                           <span className={cn(
                             "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium",
                             motorista.funcao === 'ajudante_entrega' 
@@ -706,7 +706,7 @@ export default function Motoristas() {
                             {getFuncaoLabel(motorista.funcao)}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2.5">
                           <span className={cn(
                             "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium",
                             motorista.setor === 'interior' 
@@ -717,13 +717,13 @@ export default function Motoristas() {
                             {getSetorLabel(motorista.setor)}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2.5">
                           <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm">
                             <MapPin size={13} />
                             {motorista.unidade}
                           </span>
                         </td>
-                        <td className="p-4">
+                        <td className="p-2.5">
                           <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"

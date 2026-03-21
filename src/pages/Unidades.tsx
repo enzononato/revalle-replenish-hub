@@ -473,7 +473,7 @@ export default function Unidades() {
                   key={unidade.id} 
                   className="border-b border-border hover:bg-muted/40 transition-colors"
                 >
-                  <td className="p-4">
+                  <td className="p-2.5">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         <Building2 size={16} className="text-primary" />
@@ -481,7 +481,7 @@ export default function Unidades() {
                       <span className="font-medium text-sm">{unidade.nome}</span>
                     </div>
                   </td>
-                  <td className="p-4">
+                  <td className="p-2.5">
                     <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm font-mono">
                       <Hash size={13} />
                       {unidade.codigo}
@@ -526,7 +526,7 @@ export default function Unidades() {
                       </span>
                     )}
                   </td>
-                  <td className="p-4">
+                  <td className="p-2.5">
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"

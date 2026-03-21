@@ -458,10 +458,10 @@ export default function Numeros() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <tr key={i} className="border-b border-border">
-                    <td className="p-4"><Skeleton className="h-5 w-40" /></td>
-                    <td className="p-4"><Skeleton className="h-5 w-32" /></td>
-                    <td className="p-4"><Skeleton className="h-5 w-48" /></td>
-                    <td className="p-4"><Skeleton className="h-8 w-20 ml-auto" /></td>
+                    <td className="p-2.5"><Skeleton className="h-5 w-40" /></td>
+                    <td className="p-2.5"><Skeleton className="h-5 w-32" /></td>
+                    <td className="p-2.5"><Skeleton className="h-5 w-48" /></td>
+                    <td className="p-2.5"><Skeleton className="h-8 w-20 ml-auto" /></td>
                   </tr>
                 ))
               ) : paginatedGestores.length === 0 ? (
@@ -478,7 +478,7 @@ export default function Numeros() {
                     key={gestor.id} 
                     className="border-b border-border hover:bg-primary/5 transition-colors"
                   >
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                           <UserCog className="text-primary" size={20} />
@@ -486,13 +486,13 @@ export default function Numeros() {
                         <span className="font-medium">{gestor.nome}</span>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Phone size={16} />
                         <span>({gestor.whatsapp.slice(0, 2)}) {gestor.whatsapp.slice(2)}</span>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <div className="flex flex-wrap gap-1">
                         {gestor.unidades.slice(0, 3).map((unidade, idx) => (
                           <Badge 
