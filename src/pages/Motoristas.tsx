@@ -499,57 +499,57 @@ export default function Motoristas() {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '50ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Users size={18} className="text-primary" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <Users size={20} className="text-primary" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Total</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalMotoristas}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-green-500/10">
-              <Truck size={18} className="text-green-500" />
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10">
+              <Truck size={20} className="text-emerald-500" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Motoristas</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Motoristas</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalPorFuncao.motorista}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '150ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-orange-500/10">
-              <Users size={18} className="text-orange-500" />
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '150ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/10">
+              <Users size={20} className="text-amber-500" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Ajudantes</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Ajudantes</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalPorFuncao.ajudante}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <Building size={18} className="text-blue-500" />
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-info/10">
+              <Building size={20} className="text-info" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Unidades</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Unidades</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : unidadesAtivas}
               </p>
             </div>
