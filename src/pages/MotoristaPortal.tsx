@@ -1075,18 +1075,18 @@ export default function MotoristaPortal() {
               Novo
             </TabsTrigger>
             <TabsTrigger 
-              value="pos-rota" 
-              className="text-[13px] font-bold gap-1.5 rounded-lg border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-1.5"
-            >
-              <Route className="w-4 h-4" />
-              Pós-Rota
-            </TabsTrigger>
-            <TabsTrigger 
               value="meus" 
               className="text-[13px] font-bold gap-1.5 rounded-lg border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-1.5"
             >
               <FileText className="w-4 h-4" />
               Protocolos
+            </TabsTrigger>
+            <TabsTrigger 
+              value="pos-rota" 
+              className="text-[13px] font-bold gap-1.5 rounded-lg border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all px-1.5"
+            >
+              <Route className="w-4 h-4" />
+              Pós-Rota
             </TabsTrigger>
           </TabsList>
 
