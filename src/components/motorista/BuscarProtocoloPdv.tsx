@@ -137,9 +137,9 @@ export function BuscarProtocoloPdv({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-hidden flex flex-col p-4 sm:p-6 rounded-xl">
+        <DialogHeader className="pb-1">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Search className="w-5 h-5 text-primary" />
             {selectionMode === 'view' ? 'Consultar Reposição do PDV' : 'Buscar Reposição por PDV'}
           </DialogTitle>
@@ -151,10 +151,10 @@ export function BuscarProtocoloPdv({
             value={codigoPdv}
             onChange={(e) => setCodigoPdv(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1"
+            className="flex-1 h-11 text-base"
             autoFocus
           />
-          <Button onClick={handleBuscar} disabled={isSearching || !codigoPdv.trim()}>
+          <Button onClick={handleBuscar} disabled={isSearching || !codigoPdv.trim()} className="h-11 w-11 shrink-0">
             {isSearching ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -163,7 +163,7 @@ export function BuscarProtocoloPdv({
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-2 mt-2">
+        <div className="flex-1 overflow-y-auto space-y-3 mt-2 -mx-1 px-1">
           {isSearching && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -185,73 +185,77 @@ export function BuscarProtocoloPdv({
             return (
               <Card
                 key={protocolo.id}
-                className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all"
+                className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all border-border/80"
                 onClick={() => handleSelectProtocolo(protocolo)}
               >
-                <CardContent className="p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FileText className="w-4 h-4 text-primary shrink-0" />
-                        <span className="font-mono text-sm font-medium truncate">
-                          {protocolo.numero}
-                        </span>
-                      </div>
-                      <div className="text-xs text-muted-foreground space-y-0.5">
-                        <p>PDV: <span className="font-medium text-foreground">{protocolo.codigo_pdv}</span></p>
-                        <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>
-                        <p>Motorista: {protocolo.motorista_nome}</p>
-                        {protocolo.tipo_reposicao && (
-                          <p className="capitalize">{protocolo.tipo_reposicao.toLowerCase()}</p>
-                        )}
-                      </div>
-                      {protocolo.observacao_geral && (
-                        <div className="mt-2 pt-2 border-t border-border/50">
-                          <div className="flex items-start gap-1 text-xs">
-                            <MessageSquare className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
-                            <p className={selectionMode === 'view' && !isExpanded ? 'text-foreground line-clamp-2' : 'text-foreground line-clamp-3'}>{protocolo.observacao_geral}</p>
-                          </div>
-                        </div>
-                      )}
-                      {produtos.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-border/50">
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                            <Package className="w-3 h-3" />
-                            <span className="font-medium">{produtos.length} produto{produtos.length > 1 ? 's' : ''}:</span>
-                          </div>
-                          <ul className="text-xs text-foreground space-y-0.5 ml-4">
-                            {(selectionMode === 'view' && !isExpanded ? produtos.slice(0, 2) : produtos.slice(0, 5)).map((produto, idx) => (
-                              <li key={idx} className="flex items-center gap-1">
-                                <span className="truncate">• {produto.nome}</span>
-                                <span className="font-medium text-primary shrink-0">({produto.quantidade || 1} {produto.unidade || 'un'})</span>
-                              </li>
-                            ))}
-                            {((selectionMode === 'view' && !isExpanded) ? produtos.length > 2 : produtos.length > 5) && (
-                              <li className="text-muted-foreground italic">
-                                {selectionMode === 'view' && !isExpanded
-                                  ? `toque para ver mais ${produtos.length - 2} item(ns)`
-                                  : `... e mais ${produtos.length - 5} produto${produtos.length - 5 > 1 ? 's' : ''}`}
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-
-                      {isExpanded && (
-                        <div className="mt-2 pt-2 border-t border-border/50 space-y-2 text-xs text-foreground">
-                          {protocolo.nota_fiscal && <p>NF: <span className="font-medium">{protocolo.nota_fiscal}</span></p>}
-                          {protocolo.causa && <p>Causa: <span className="font-medium">{protocolo.causa}</span></p>}
-                          {protocolo.mapa && <p>Mapa: <span className="font-medium">{protocolo.mapa}</span></p>}
-                        </div>
-                      )}
+                <CardContent className="p-3 sm:p-4">
+                  {/* Header row */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-4 h-4 text-primary shrink-0" />
+                      <span className="font-mono text-xs sm:text-sm font-semibold truncate">
+                        {protocolo.numero}
+                      </span>
                     </div>
-                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] shrink-0">
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] shrink-0 whitespace-nowrap">
                       Em Atendimento
                     </Badge>
                   </div>
+
+                  {/* Info grid */}
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <p>PDV: <span className="font-medium text-foreground">{protocolo.codigo_pdv}</span></p>
+                    <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>
+                    <p className="col-span-2">Motorista: <span className="font-medium text-foreground">{protocolo.motorista_nome}</span></p>
+                    {protocolo.tipo_reposicao && (
+                      <p className="col-span-2 capitalize">{protocolo.tipo_reposicao.toLowerCase()}</p>
+                    )}
+                  </div>
+
+                  {/* Observação */}
+                  {protocolo.observacao_geral && (
+                    <div className="mt-2.5 pt-2.5 border-t border-border/50">
+                      <div className="flex items-start gap-1.5 text-xs">
+                        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                        <p className="text-foreground leading-relaxed">{protocolo.observacao_geral}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Produtos */}
+                  {produtos.length > 0 && (
+                    <div className="mt-2.5 pt-2.5 border-t border-border/50">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                        <Package className="w-3.5 h-3.5" />
+                        <span className="font-semibold">{produtos.length} produto{produtos.length > 1 ? 's' : ''}:</span>
+                      </div>
+                      <ul className="text-xs text-foreground space-y-1 ml-1">
+                        {produtos.map((produto, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5 py-0.5">
+                            <span className="text-muted-foreground mt-0.5 shrink-0">•</span>
+                            <span className="flex-1 min-w-0 leading-relaxed">{produto.nome}</span>
+                            <span className="font-semibold text-primary shrink-0 tabular-nums">
+                              {produto.quantidade || 1} {produto.unidade || 'un'}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Detalhes expandidos */}
+                  {isExpanded && (protocolo.nota_fiscal || protocolo.causa || protocolo.mapa) && (
+                    <div className="mt-2.5 pt-2.5 border-t border-border/50 space-y-1.5 text-xs text-foreground">
+                      {protocolo.nota_fiscal && <p>NF: <span className="font-medium">{protocolo.nota_fiscal}</span></p>}
+                      {protocolo.causa && <p>Causa: <span className="font-medium">{protocolo.causa}</span></p>}
+                      {protocolo.mapa && <p>Mapa: <span className="font-medium">{protocolo.mapa}</span></p>}
+                    </div>
+                  )}
+
+                  {/* Botão encerrar */}
                   {isExpanded && (
                     <Button
-                      className="w-full mt-3 flex items-center justify-center gap-2"
+                      className="w-full mt-4 h-11 text-sm font-semibold flex items-center justify-center gap-2"
                       onClick={(e) => handleConfirmSelect(e, protocolo)}
                     >
                       <CheckCircle2 className="h-4 w-4" />
@@ -264,8 +268,8 @@ export function BuscarProtocoloPdv({
           })}
         </div>
 
-        <div className="pt-2 border-t">
-          <Button variant="outline" onClick={handleClose} className="w-full">
+        <div className="pt-3 border-t">
+          <Button variant="outline" onClick={handleClose} className="w-full h-11">
             Cancelar
           </Button>
         </div>

@@ -365,41 +365,42 @@ export function EncerrarProtocoloModal({
   return (
     <>
       <Dialog open={isOpen && !cameraTarget} onOpenChange={handleClose}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="w-[95vw] max-w-md max-h-[92vh] overflow-y-auto p-4 sm:p-6 rounded-xl">
+          <DialogHeader className="pb-1">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
               <CheckCircle className="w-5 h-5 text-green-600" />
               {isEntregaTotal ? 'Encerrar Reposição' : 'Entrega Parcial'}
             </DialogTitle>
           </DialogHeader>
 
-          <Card className="bg-muted/50">
+          {/* Resumo do protocolo */}
+          <Card className="bg-muted/50 border-border/60">
             <CardContent className="p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <FileText className="w-4 h-4 text-primary" />
-                <span className="font-mono text-sm font-medium">{protocolo.numero}</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <FileText className="w-4 h-4 text-primary shrink-0" />
+                <span className="font-mono text-xs sm:text-sm font-semibold">{protocolo.numero}</span>
               </div>
-              <div className="text-xs text-muted-foreground">
-                <p>PDV: {protocolo.codigo_pdv || 'N/A'}</p>
-                <p>Motorista: {protocolo.motorista_nome}</p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                <p>PDV: <span className="font-medium text-foreground">{protocolo.codigo_pdv || 'N/A'}</span></p>
+                <p>Motorista: <span className="font-medium text-foreground">{protocolo.motorista_nome}</span></p>
               </div>
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Seleção de produtos */}
             {produtos.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-1">
+                  <Label className="flex items-center gap-1.5 text-sm">
                     <Package className="w-4 h-4" />
-                    Selecione os produtos entregues *
+                    Produtos entregues *
                   </Label>
                   {produtosPendentes.length > 1 && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-[10px] px-2"
+                      className="h-7 text-xs px-2"
                       onClick={toggleTodos}
                     >
                       {produtosSelecionados.size === produtosPendentes.length ? 'Desmarcar todos' : 'Selecionar todos'}
@@ -407,7 +408,7 @@ export function EncerrarProtocoloModal({
                   )}
                 </div>
 
-                <div className="border rounded-lg divide-y">
+                <div className="border rounded-lg divide-y divide-border/50 overflow-hidden">
                   {produtos.map((produto, index) => {
                     const jaEntregue = !!produto.entregue;
                     const selecionado = produtosSelecionados.has(index);
@@ -416,33 +417,34 @@ export function EncerrarProtocoloModal({
                       <div
                         key={index}
                         className={cn(
-                          "flex items-center gap-3 p-2.5 text-xs",
+                          "flex items-center gap-3 p-3 text-xs transition-colors",
                           jaEntregue && "bg-muted/50 opacity-60",
                           !jaEntregue && selecionado && "bg-green-50 dark:bg-green-500/10",
-                          !jaEntregue && "cursor-pointer hover:bg-muted/30"
+                          !jaEntregue && "cursor-pointer active:bg-muted/40"
                         )}
                         onClick={() => !jaEntregue && toggleProduto(index)}
                       >
                         {jaEntregue ? (
-                          <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                          <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />
                         ) : (
                           <Checkbox
                             checked={selecionado}
                             onCheckedChange={() => toggleProduto(index)}
                             onClick={(e) => e.stopPropagation()}
+                            className="h-5 w-5"
                           />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className={cn("font-medium truncate", jaEntregue && "line-through")}>
+                          <p className={cn("font-medium leading-snug", jaEntregue && "line-through")}>
                             {produto.codigo} - {produto.nome}
                           </p>
-                          <p className="text-muted-foreground">
+                          <p className="text-muted-foreground mt-0.5">
                             {produto.quantidade} {produto.unidade}
                             {jaEntregue && produto.dataEntrega && ` • Entregue em ${produto.dataEntrega}`}
                           </p>
                         </div>
                         {jaEntregue && (
-                          <span className="text-[9px] bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400 px-1.5 py-0.5 rounded-full shrink-0">
+                          <span className="text-[9px] bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400 px-2 py-0.5 rounded-full shrink-0 font-medium">
                             Entregue
                           </span>
                         )}
@@ -460,120 +462,125 @@ export function EncerrarProtocoloModal({
               </div>
             )}
 
-            {/* Foto do Canhoto Assinado */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                <Camera className="w-4 h-4" />
-                Foto do Canhoto Assinado *
-              </Label>
-              {fotoNotaFiscal ? (
-                <div className="relative">
-                  <img 
-                    src={fotoNotaFiscal} 
-                    alt="Canhoto Assinado" 
-                    className="w-full h-32 object-cover rounded-md border"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 h-6 w-6"
-                    onClick={() => setFotoNotaFiscal(null)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                  <div className="absolute bottom-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" />
-                    Capturada
+            {/* Fotos */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Foto do Canhoto */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1 text-xs">
+                  <Camera className="w-3.5 h-3.5" />
+                  Canhoto Assinado *
+                </Label>
+                {fotoNotaFiscal ? (
+                  <div className="relative rounded-lg overflow-hidden border">
+                    <img 
+                      src={fotoNotaFiscal} 
+                      alt="Canhoto Assinado" 
+                      className="w-full h-28 sm:h-32 object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                      onClick={() => setFotoNotaFiscal(null)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                    <div className="absolute bottom-1 left-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                      <CheckCircle className="w-2.5 h-2.5" />
+                      OK
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full h-24 flex flex-col gap-2"
-                  onClick={() => setCameraTarget('nota')}
-                >
-                  <Camera className="w-6 h-6" />
-                  <span className="text-xs">Tirar foto do Canhoto Assinado</span>
-                </Button>
-              )}
-            </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full h-28 sm:h-32 flex flex-col gap-1.5 border-dashed active:scale-[0.98] transition-transform"
+                    onClick={() => setCameraTarget('nota')}
+                  >
+                    <Camera className="w-6 h-6 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">Tirar foto do<br/>Canhoto</span>
+                  </Button>
+                )}
+              </div>
 
-            {/* Foto da Mercadoria */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1">
-                <ImageIcon className="w-4 h-4" />
-                Foto da Mercadoria Entregue *
-              </Label>
-              {fotoMercadoria ? (
-                <div className="relative">
-                  <img 
-                    src={fotoMercadoria} 
-                    alt="Mercadoria" 
-                    className="w-full h-32 object-cover rounded-md border"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 h-6 w-6"
-                    onClick={() => setFotoMercadoria(null)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                  <div className="absolute bottom-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" />
-                    Capturada
+              {/* Foto da Mercadoria */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1 text-xs">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  Mercadoria Entregue *
+                </Label>
+                {fotoMercadoria ? (
+                  <div className="relative rounded-lg overflow-hidden border">
+                    <img 
+                      src={fotoMercadoria} 
+                      alt="Mercadoria" 
+                      className="w-full h-28 sm:h-32 object-cover"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                      onClick={() => setFotoMercadoria(null)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                    <div className="absolute bottom-1 left-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                      <CheckCircle className="w-2.5 h-2.5" />
+                      OK
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full h-24 flex flex-col gap-2"
-                  onClick={() => setCameraTarget('mercadoria')}
-                >
-                  <Camera className="w-6 h-6" />
-                  <span className="text-xs">Tirar foto da Mercadoria</span>
-                </Button>
-              )}
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full h-28 sm:h-32 flex flex-col gap-1.5 border-dashed active:scale-[0.98] transition-transform"
+                    onClick={() => setCameraTarget('mercadoria')}
+                  >
+                    <Camera className="w-6 h-6 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">Tirar foto da<br/>Mercadoria</span>
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Observação */}
-            <div className="space-y-2">
-              <Label htmlFor="observacao">Observação (opcional)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="observacao" className="text-sm">Observação (opcional)</Label>
               <Textarea
                 id="observacao"
                 placeholder="Adicione uma observação sobre a entrega..."
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
-                rows={3}
+                rows={2}
+                className="text-base resize-none"
               />
             </div>
 
             {uploadProgress && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 {uploadProgress}
               </div>
             )}
           </div>
 
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={handleClose} className="flex-1" disabled={isSubmitting}>
+          {/* Botões de ação */}
+          <div className="flex gap-2 pt-3 border-t">
+            <Button variant="outline" onClick={handleClose} className="flex-1 h-11" disabled={isSubmitting}>
               Cancelar
             </Button>
             <Button 
               onClick={handleSubmit} 
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              className="flex-1 h-11 bg-green-600 hover:bg-green-700 font-semibold"
               disabled={!canSubmit || isSubmitting}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isEntregaTotal ? 'Encerrando...' : 'Registrando...'}
+                  <span className="text-sm">{isEntregaTotal ? 'Encerrando...' : 'Registrando...'}</span>
                 </>
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  {isEntregaTotal ? 'Confirmar Encerramento' : 'Confirmar Entrega'}
+                  <span className="text-sm">{isEntregaTotal ? 'Confirmar' : 'Confirmar Entrega'}</span>
                 </>
               )}
             </Button>
