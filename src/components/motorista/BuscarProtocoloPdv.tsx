@@ -237,35 +237,11 @@ export function BuscarProtocoloPdv({
                         </div>
                       )}
 
-                      {selectionMode === 'view' && isExpanded && (
+                      {isExpanded && (
                         <div className="mt-2 pt-2 border-t border-border/50 space-y-2 text-xs text-foreground">
                           {protocolo.nota_fiscal && <p>NF: <span className="font-medium">{protocolo.nota_fiscal}</span></p>}
                           {protocolo.causa && <p>Causa: <span className="font-medium">{protocolo.causa}</span></p>}
                           {protocolo.mapa && <p>Mapa: <span className="font-medium">{protocolo.mapa}</span></p>}
-                          <Button
-                            className="w-full mt-2 flex items-center justify-center gap-2"
-                            size="sm"
-                            onClick={(e) => handleConfirmSelect(e, protocolo)}
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Encerrar Reposição
-                          </Button>
-                        </div>
-                      )}
-
-                      {selectionMode === 'select' && isExpanded && (
-                        <div className="mt-2 pt-2 border-t border-border/50 space-y-2 text-xs text-foreground">
-                          {protocolo.nota_fiscal && <p>NF: <span className="font-medium">{protocolo.nota_fiscal}</span></p>}
-                          {protocolo.causa && <p>Causa: <span className="font-medium">{protocolo.causa}</span></p>}
-                          {protocolo.mapa && <p>Mapa: <span className="font-medium">{protocolo.mapa}</span></p>}
-                          <Button
-                            className="w-full mt-2 flex items-center justify-center gap-2"
-                            size="sm"
-                            onClick={(e) => handleConfirmSelect(e, protocolo)}
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Encerrar Reposição
-                          </Button>
                         </div>
                       )}
                     </div>
@@ -273,6 +249,15 @@ export function BuscarProtocoloPdv({
                       Em Atendimento
                     </Badge>
                   </div>
+                  {isExpanded && (
+                    <Button
+                      className="w-full mt-3 flex items-center justify-center gap-2"
+                      onClick={(e) => handleConfirmSelect(e, protocolo)}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      Encerrar Reposição
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
