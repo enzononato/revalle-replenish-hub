@@ -315,6 +315,47 @@ export default function Dashboard() {
     fetchPdvNames();
   }, [protocolosFiltrados]);
 
+  // Fetch sobras stats from database
+  useEffect(() => {
+    const fetchSobrasStats = async () => {
+      try {
+        let baseQuery = supabase
+          .from('protocolos')
+          .select('status, causa, motorista_unidade')
+          .eq('tipo_reposicao', 'pos_rota');
+
+        const { data, error } = await baseQuery;
+        if (error) throw error;
+
+        let filtered = data || [];
+        
+        // Apply unit filter
+        if (!isAdmin) {
+          const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
+          if (unidadesFiltro.length > 0) {
+            filtered = filtered.filter(s => s.motorista_unidade && unidadesFiltro.includes(s.motorista_unidade) && userUnidades.includes(s.motorista_unidade));
+          } else {
+            filtered = filtered.filter(s => s.motorista_unidade && userUnidades.includes(s.motorista_unidade));
+          }
+        } else if (unidadesFiltro.length > 0) {
+          filtered = filtered.filter(s => s.motorista_unidade && unidadesFiltro.includes(s.motorista_unidade));
+        }
+
+        setSobrasStats({
+          total: filtered.length,
+          pendente: filtered.filter(s => s.status === 'aberto').length,
+          tratamento: filtered.filter(s => s.status === 'em_andamento').length,
+          resolvido: filtered.filter(s => s.status === 'encerrado').length,
+          erroCarregamento: filtered.filter(s => s.causa?.toUpperCase().includes('ERRO DE CARREGAMENTO')).length,
+          erroEntrega: filtered.filter(s => s.causa?.toUpperCase().includes('ERRO DE ENTREGA')).length,
+        });
+      } catch (err) {
+        console.error('Erro ao buscar sobras stats:', err);
+      }
+    };
+    fetchSobrasStats();
+  }, [isAdmin, user?.unidade, unidadesFiltro]);
+
   // TOP 5 Clientes PDVs (calculado dos protocolos reais)
   const topClientesReal = useMemo(() => {
     const contagem: Record<string, number> = {};
