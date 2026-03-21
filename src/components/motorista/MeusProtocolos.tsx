@@ -719,14 +719,14 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           variant={filtroStatus === 'abertos' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('abertos')}
-          className="h-10 text-[11px] px-1 flex flex-col items-center gap-0.5 leading-none"
+          className="h-12 text-[13px] font-bold px-1 flex flex-col items-center gap-0.5 leading-none rounded-xl"
         >
           <div className="flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" />
+            <Clock className="w-4 h-4" />
             <span>Abertos</span>
           </div>
           {!loadingContadores && (
-            <span className="text-[10px] font-bold opacity-80">
+            <span className="text-xs font-extrabold opacity-90">
               {contadores.abertos}
             </span>
           )}
@@ -735,14 +735,14 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           variant={filtroStatus === 'em_andamento' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('em_andamento')}
-          className="h-10 text-[11px] px-1 flex flex-col items-center gap-0.5 leading-none"
+          className="h-12 text-[13px] font-bold px-1 flex flex-col items-center gap-0.5 leading-none rounded-xl"
         >
           <div className="flex items-center gap-1">
-            <AlertCircle className="w-3.5 h-3.5" />
+            <AlertCircle className="w-4 h-4" />
             <span>Atendimento</span>
           </div>
           {!loadingContadores && (
-            <span className="text-[10px] font-bold opacity-80">
+            <span className="text-xs font-extrabold opacity-90">
               {contadores.em_andamento}
             </span>
           )}
@@ -751,14 +751,14 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           variant={filtroStatus === 'encerrados' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setFiltroStatus('encerrados')}
-          className="h-10 text-[11px] px-1 flex flex-col items-center gap-0.5 leading-none"
+          className="h-12 text-[13px] font-bold px-1 flex flex-col items-center gap-0.5 leading-none rounded-xl"
         >
           <div className="flex items-center gap-1">
-            <CheckCircle className="w-3.5 h-3.5" />
+            <CheckCircle className="w-4 h-4" />
             <span>Encerrados</span>
           </div>
           {!loadingContadores && (
-            <span className="text-[10px] font-bold opacity-80">
+            <span className="text-xs font-extrabold opacity-90">
               {contadores.encerrados}
             </span>
           )}
