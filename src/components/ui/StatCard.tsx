@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface StatCardProps {
   title: string;
@@ -49,43 +49,66 @@ const TrendIcon = {
   neutral: Minus,
 };
 
-export function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  variant = 'default', 
+export function StatCard({
+  title,
+  value,
+  icon: Icon,
+  variant = 'default',
   delay = 0,
   trend,
   trendValue,
-  href
+  href,
 }: StatCardProps) {
-  const content = (
-    <div 
+  const navigate = useNavigate();
+  const isClickable = Boolean(href);
+
+  const handleClick = () => {
+    if (href) navigate(href);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!href) return;
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      navigate(href);
+    }
+  };
+
+  return (
+    <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border-2 p-4 transition-all duration-300 animate-slide-up",
-        "hover:shadow-xl dark:hover:shadow-md hover:-translate-y-1",
-        href && "cursor-pointer",
+        'group relative overflow-hidden rounded-xl border-2 p-4 transition-all duration-300 animate-slide-up',
+        'hover:shadow-xl dark:hover:shadow-md hover:-translate-y-1',
+        isClickable && 'cursor-pointer',
         variantStyles[variant]
       )}
       style={{ animationDelay: `${delay}ms` }}
+      onClick={isClickable ? handleClick : undefined}
+      onKeyDown={isClickable ? handleKeyDown : undefined}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      aria-label={isClickable ? `Abrir ${title}` : undefined}
     >
-      {/* Accent bar */}
-      <div className={cn(
-        "absolute left-0 top-0 bottom-0 w-1 rounded-l-xl",
-        accentBarStyles[variant]
-      )} />
-      
+      <div
+        className={cn(
+          'absolute left-0 top-0 bottom-0 w-1 rounded-l-xl',
+          accentBarStyles[variant]
+        )}
+      />
+
       <div className="flex items-start justify-between">
         <div className="pl-2">
           <p className="text-xs font-medium text-muted-foreground mb-0.5">{title}</p>
           <p className="text-2xl font-heading font-bold text-foreground">{value}</p>
-          
-          {/* Trend indicator */}
+
           {trend && trendValue && (
-            <div className={cn(
-              "flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-xs font-semibold w-fit",
-              trendStyles[trend]
-            )}>
+            <div
+              className={cn(
+                'flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-xs font-semibold w-fit',
+                trendStyles[trend]
+              )}
+            >
               {(() => {
                 const IconComponent = TrendIcon[trend];
                 return <IconComponent size={11} />;
@@ -94,20 +117,16 @@ export function StatCard({
             </div>
           )}
         </div>
-        <div className={cn(
-          "p-2.5 rounded-xl transition-all duration-300",
-          "group-hover:scale-110 group-hover:rotate-3",
-          iconStyles[variant]
-        )}>
+        <div
+          className={cn(
+            'p-2.5 rounded-xl transition-all duration-300',
+            'group-hover:scale-110 group-hover:rotate-3',
+            iconStyles[variant]
+          )}
+        >
           <Icon size={22} className="drop-shadow-sm" />
         </div>
       </div>
     </div>
   );
-
-  if (href) {
-    return <Link to={href}>{content}</Link>;
-  }
-
-  return content;
 }
