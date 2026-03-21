@@ -242,7 +242,7 @@ export default function Unidades() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-2">
             <Building2 className="text-primary" size={32} />
             Unidades
           </h1>
@@ -299,7 +299,7 @@ export default function Unidades() {
                 </div>
               </div>
               
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                   Cancelar
                 </Button>
@@ -318,7 +318,7 @@ export default function Unidades() {
       {/* Cards de Resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '50ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-primary/10">
               <Building2 size={20} className="text-primary" />
             </div>
@@ -330,7 +330,7 @@ export default function Unidades() {
         </div>
         
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-info/10">
               <Users size={20} className="text-info" />
             </div>
@@ -345,7 +345,7 @@ export default function Unidades() {
         
         {canViewClientes && (
           <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '150ms' }}>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="p-2.5 rounded-xl bg-emerald-500/10">
                 <Store size={20} className="text-emerald-500" />
               </div>
@@ -360,7 +360,7 @@ export default function Unidades() {
         )}
         
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-amber-500/10">
               <FileText size={20} className="text-amber-500" />
             </div>
@@ -458,13 +458,13 @@ export default function Unidades() {
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nome</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Código</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">CNPJ</th>
-                <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Motoristas</th>
-                {canViewClientes && <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Clientes</th>}
-                <th className="text-center p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Solicitações</th>
-                <th className="text-right p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nome</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Código</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">CNPJ</th>
+                <th className="text-center p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Motoristas</th>
+                {canViewClientes && <th className="text-center p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Clientes</th>}
+                <th className="text-center p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Solicitações</th>
+                <th className="text-right p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -473,15 +473,15 @@ export default function Unidades() {
                   key={unidade.id} 
                   className="border-b border-border hover:bg-muted/40 transition-colors"
                 >
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <td className="p-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         <Building2 size={16} className="text-primary" />
                       </div>
                       <span className="font-medium text-sm">{unidade.nome}</span>
                     </div>
                   </td>
-                  <td className="p-4">
+                  <td className="p-2.5">
                     <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm font-mono">
                       <Hash size={13} />
                       {unidade.codigo}
@@ -526,7 +526,7 @@ export default function Unidades() {
                       </span>
                     )}
                   </td>
-                  <td className="p-4">
+                  <td className="p-2.5">
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"

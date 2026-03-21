@@ -278,7 +278,7 @@ export default function Usuarios() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-3">
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-2">
             <Users className="text-primary" size={32} />
             Usuários
           </h1>
@@ -494,7 +494,7 @@ export default function Usuarios() {
               </div>
               
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -538,7 +538,7 @@ export default function Usuarios() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-muted">
               <Users size={20} className="text-foreground" />
             </div>
@@ -549,7 +549,7 @@ export default function Usuarios() {
           </div>
         </div>
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '50ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-primary/10">
               <Shield size={20} className="text-primary" />
             </div>
@@ -562,7 +562,7 @@ export default function Usuarios() {
           </div>
         </div>
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-info/10">
               <Truck size={20} className="text-info" />
             </div>
@@ -575,7 +575,7 @@ export default function Usuarios() {
           </div>
         </div>
         <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '150ms' }}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="p-2.5 rounded-xl bg-muted">
               <UserCircle size={20} className="text-muted-foreground" />
             </div>
@@ -595,22 +595,22 @@ export default function Usuarios() {
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Usuário</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nível</th>
-                <th className="text-left p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Unidades</th>
-                <th className="text-right p-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Usuário</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Email</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nível</th>
+                <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Unidades</th>
+                <th className="text-right p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-border">
-                    <td className="p-4"><Skeleton className="h-10 w-48" /></td>
-                    <td className="p-4"><Skeleton className="h-8 w-40" /></td>
-                    <td className="p-4"><Skeleton className="h-6 w-24" /></td>
-                    <td className="p-4"><Skeleton className="h-6 w-32" /></td>
-                    <td className="p-4"><Skeleton className="h-8 w-20 ml-auto" /></td>
+                    <td className="p-2.5"><Skeleton className="h-10 w-48" /></td>
+                    <td className="p-2.5"><Skeleton className="h-8 w-40" /></td>
+                    <td className="p-2.5"><Skeleton className="h-6 w-24" /></td>
+                    <td className="p-2.5"><Skeleton className="h-6 w-32" /></td>
+                    <td className="p-2.5"><Skeleton className="h-8 w-20 ml-auto" /></td>
                   </tr>
                 ))
               ) : paginatedUsuarios.length === 0 ? (
@@ -634,10 +634,10 @@ export default function Usuarios() {
                     key={usuario.id} 
                     className="border-b border-border hover:bg-muted/40 transition-colors"
                   >
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
+                    <td className="p-2.5">
+                      <div className="flex items-center gap-2">
                         <div className={cn(
-                          "w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                          "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
                           usuario.nivel === 'admin' ? "bg-primary/15 text-primary" : 
                           usuario.nivel === 'distribuicao' ? "bg-info/15 text-info" : 
                           usuario.nivel === 'controle' ? "bg-warning/15 text-warning" :
@@ -648,13 +648,13 @@ export default function Usuarios() {
                         <span className="font-medium">{usuario.nome}</span>
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Mail size={12} />
                         {usuario.email}
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <span className={cn(
                         "px-3 py-1 rounded-full text-xs font-medium border",
                         getNivelBadgeStyle(usuario.nivel)
@@ -662,7 +662,7 @@ export default function Usuarios() {
                         {nivelLabels[usuario.nivel]}
                       </span>
                     </td>
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <div className="flex flex-wrap gap-1 max-w-xs">
                         {usuario.unidades.length === 0 ? (
                           <span className="text-muted-foreground text-sm">-</span>
@@ -687,7 +687,7 @@ export default function Usuarios() {
                         )}
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-2.5">
                       <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
