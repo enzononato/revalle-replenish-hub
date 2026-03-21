@@ -1262,22 +1262,22 @@ export default function MotoristaPortal() {
 
             {/* Seção: Produtos */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50" data-tour="secao-produtos">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30 flex items-center justify-between">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <Package className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
                   Produtos
                   {tipoReposicao === 'inversao' && (
-                    <span className="text-[10px] text-muted-foreground font-normal ml-0.5">(apenas 1)</span>
+                    <span className="text-[11px] text-muted-foreground font-normal ml-0.5">(apenas 1)</span>
                   )}
                 </h3>
                 {podeAdicionarMultiplos && (
-                  <Button type="button" variant="ghost" size="sm" onClick={addProduto} className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10">
-                    <Plus className="mr-0.5 h-3.5 w-3.5" />
+                  <Button type="button" variant="ghost" size="sm" onClick={addProduto} className="h-8 text-xs text-primary hover:text-primary hover:bg-primary/10">
+                    <Plus className="mr-0.5 h-4 w-4" />
                     Adicionar
                   </Button>
                 )}
               </div>
-              <div className="p-3 space-y-2">
+              <div className="p-4 space-y-3">
                   
                   {produtos.map((produto, index) => {
                     const isTouched = touched.produtos[index];
