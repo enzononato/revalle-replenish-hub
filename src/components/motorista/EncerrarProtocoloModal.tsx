@@ -421,7 +421,7 @@ export function EncerrarProtocoloModal({
                       <div
                         key={index}
                         className={cn(
-                          "flex items-start gap-3 p-3.5 text-sm transition-colors min-h-[56px]",
+                          "flex items-start gap-2.5 p-2.5 text-xs transition-colors min-h-[44px]",
                           jaEntregue && "bg-muted/50 opacity-60",
                           !jaEntregue && selecionado && "bg-green-50 dark:bg-green-500/10",
                           !jaEntregue && "cursor-pointer active:bg-muted/40"
