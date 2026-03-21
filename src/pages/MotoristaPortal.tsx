@@ -1471,8 +1471,8 @@ export default function MotoristaPortal() {
               </div>
               <div className="p-4 space-y-4">
                     <div className="space-y-1.5" data-tour="campo-whatsapp">
-                      <Label htmlFor="whatsappContato" className="text-sm font-medium uppercase">
-                        WHATSAPP *
+                      <Label htmlFor="whatsappContato" className="text-sm font-medium">
+                        WhatsApp *
                       </Label>
                       <Input
                         id="whatsappContato"
