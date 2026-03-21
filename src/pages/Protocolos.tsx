@@ -80,53 +80,64 @@ export default function Protocolos() {
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo, isLoading } = useProtocolos();
   const { registrarLog } = useAuditLog();
   
+  const initialStatusParam = searchParams.get('status');
+  const initialPeriodoParam = searchParams.get('periodo');
+  const initialTipoParam = searchParams.get('tipo');
+  const initialUnidadeParam = searchParams.get('unidade');
+
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<string>('aberto');
+  const [activeTab, setActiveTab] = useState<string>(() => initialStatusParam || 'aberto');
   const [dataInicialFilter, setDataInicialFilter] = useState('');
   const [dataFinalFilter, setDataFinalFilter] = useState('');
   const [lancadoFilter, setLancadoFilter] = useState<string>('todos');
   const [validadoFilter, setValidadoFilter] = useState<string>('todos');
-  const [tipoFilter, setTipoFilter] = useState<string>('todos');
+  const [tipoFilter, setTipoFilter] = useState<string>(() => initialTipoParam || 'todos');
   const [selectedProtocolo, setSelectedProtocolo] = useState<Protocolo | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(() => Boolean(initialTipoParam));
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [periodoFilter, setPeriodoFilter] = useState<string>('todos');
-  const [unidadeFilter, setUnidadeFilter] = useState<string>('todas');
-  
-  // Inicializar filtro de unidade com a unidade do usuário (para não-admins)
-  // Não precisa mais inicializar filtro - array vazio = todas as unidades do usuário
+  const [periodoFilter, setPeriodoFilter] = useState<string>(() => initialPeriodoParam || 'todos');
+  const [unidadeFilter, setUnidadeFilter] = useState<string>(() => {
+    if (!initialUnidadeParam) return 'todas';
+    const unidade = initialUnidadeParam.split(',').map(u => u.trim())[0];
+    return unidade || 'todas';
+  });
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // Processar parâmetros da URL
+  // Processar parâmetros da URL (sem reprocessar estados já iguais)
   useEffect(() => {
     const statusParam = searchParams.get('status');
     const periodoParam = searchParams.get('periodo');
     const tipoParam = searchParams.get('tipo');
     const unidadeParam = searchParams.get('unidade');
-    
-    if (statusParam) {
+
+    if (statusParam && statusParam !== activeTab) {
       setActiveTab(statusParam);
     }
-    
-    if (periodoParam) {
+
+    if (periodoParam && periodoParam !== periodoFilter) {
       setPeriodoFilter(periodoParam);
     }
-    
+
     if (tipoParam) {
-      setTipoFilter(tipoParam);
-      setShowFilters(true);
+      if (tipoParam !== tipoFilter) {
+        setTipoFilter(tipoParam);
+      }
+      if (!showFilters) {
+        setShowFilters(true);
+      }
     }
 
     if (unidadeParam && isAdmin) {
-      // Suporta múltiplas unidades separadas por vírgula
-      const unidadesFromUrl = decodeURIComponent(unidadeParam).split(',').map(u => u.trim());
-      // Usar a primeira unidade para o filtro de seleção única
-      setUnidadeFilter(unidadesFromUrl[0] || 'todas');
+      const primeiraUnidade = unidadeParam.split(',').map(u => u.trim())[0] || 'todas';
+      if (primeiraUnidade !== unidadeFilter) {
+        setUnidadeFilter(primeiraUnidade);
+      }
     }
-  }, [searchParams, isAdmin]);
+  }, [searchParams, isAdmin, activeTab, periodoFilter, tipoFilter, unidadeFilter, showFilters]);
 
   // Abrir protocolo por ID quando protocolos estiverem carregados (apenas uma vez)
   useEffect(() => {
