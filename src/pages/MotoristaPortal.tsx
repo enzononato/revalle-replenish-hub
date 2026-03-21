@@ -1295,8 +1295,8 @@ export default function MotoristaPortal() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-medium text-foreground">Produto {index + 1}</span>
-                            {isTouched && isValid && <Check size={12} className="text-green-500" />}
+                            <span className="text-sm font-medium text-foreground">Produto {index + 1}</span>
+                            {isTouched && isValid && <Check size={14} className="text-emerald-500" />}
                           </div>
                           {produtos.length > 1 && (
                             <Button
