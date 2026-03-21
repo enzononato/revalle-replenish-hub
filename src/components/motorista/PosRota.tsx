@@ -102,6 +102,9 @@ export function PosRota({ motorista }: PosRotaProps) {
     setEnviado(false);
     setNumeroProtocolo('');
     setFotos([]);
+    setMensagemCopiada(false);
+    setMostrarDetalhes(false);
+    setDadosProtocoloCriado(null);
   };
 
   const handleSubmit = async () => {
