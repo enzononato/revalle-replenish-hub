@@ -1009,8 +1009,10 @@ export default function Dashboard() {
                         <span className="font-medium text-[11px]">{protocolo.motorista.nome}</span>
                       </div>
                     </td>
-                    <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
                     <td className="p-2">
+                      <span className="text-[11px] font-medium text-muted-foreground">{protocolo.unidadeNome || '—'}</span>
+                    </td>
+                    <td className="p-2 text-muted-foreground text-[11px]">{protocolo.data}</td>
                       <StatusBadge status={protocolo.status} />
                     </td>
                     <td className="p-2 text-right">
