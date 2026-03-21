@@ -63,13 +63,13 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
         {/* Nota informativa */}
         <div className="mt-4 bg-white/10 rounded-lg px-4 py-3">
           <p className="text-sm text-primary-foreground font-semibold mb-1">
-            Gestão de Reposição e Pós-Rota:
+            Gestão inteligente de Reposição e Pós-Rota:
           </p>
           <p className="text-sm text-primary-foreground/90 leading-relaxed mb-1">
-            Registre protocolos, acompanhe entregas e informe <strong>sobras em rota</strong> de forma rápida e organizada.
+            Transforme sua operação com inovação, agilidade na entrega e ideias que geram resultado.
           </p>
           <p className="text-sm text-primary-foreground/80">
-            Tudo em um só lugar para facilitar o seu dia a dia.
+            Registre, acompanhe e tome decisões em tempo real.
           </p>
         </div>
 
