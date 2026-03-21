@@ -1,31 +1,30 @@
 
 
-## Problema identificado
+## Plan: Ação "Enviar para Estoque" em Sobras de Erro de Carregamento
 
-No `BuscarProtocoloPdv.tsx`, quando aberto da aba "Em Atendimento" com `selectionMode='select'`, clicar num resultado pula direto para o modal de encerramento sem mostrar os detalhes. O motorista não consegue ver as informações antes de encerrar.
+### Context
+Quando a causa da sobra é "Erro de Carregamento", significa que o produto foi carregado a mais no caminhão. O perfil Controle precisa registrar o apontamento de que esse produto foi devolvido ao armazém/estoque. Atualmente, o fluxo só tem "Tratar" e "Resolver" — falta uma ação intermediária específica para esse tipo.
 
-O comportamento desejado e um fluxo em duas etapas:
-1. Clicar no resultado expande os detalhes do protocolo (produtos, observacao, NF, causa, etc.)
-2. Dentro dos detalhes expandidos, aparece um botao "Encerrar Reposicao" que abre o modal de encerramento
+### What will be built
 
-## Mudanca
+1. **Novo botão "Enviar p/ Estoque"** na tabela e no modal de detalhes da página Sobras, visível apenas quando a causa contém "ERRO DE CARREGAMENTO" e o status não é "encerrado".
 
-**Arquivo:** `src/components/motorista/BuscarProtocoloPdv.tsx`
+2. **Ao clicar**, o sistema:
+   - Altera o status para `encerrado`
+   - Registra no `observacoes_log` uma entrada específica: "Produto devolvido ao estoque"
+   - Registra no `audit_logs` a ação `devolvido_estoque`
+   - Exibe toast de confirmação
 
-- Alterar `handleSelectProtocolo` para que no modo `select` tambem faca toggle de expansao (igual ao modo `view`), em vez de fechar o dialog imediatamente
-- No card expandido (quando `selectionMode === 'select'`), renderizar um botao "Encerrar Reposicao" que chama `onSelectProtocolo` e fecha o dialog
-- Manter o modo `view` como somente leitura (sem botao de encerrar)
+3. **Badge visual** — Sobras resolvidas com essa ação ganham uma indicação diferenciada no histórico (ex: "Devolvido ao estoque" em vez de genérico "Resolvido").
 
-Resultado: o motorista clica no resultado, ve os detalhes do protocolo expandidos, e entao clica no botao "Encerrar Reposicao" para prosseguir para o modal de encerramento.
+### Technical Details
 
-## Detalhes tecnicos
+**File: `src/pages/Sobras.tsx`**
 
-```text
-BuscarProtocoloPdv (select mode)
-  Card click → toggle protocoloExpandidoId (igual view)
-  Card expandido:
-    - mostra detalhes (produtos, obs, NF, causa, mapa)
-    - renderiza botão "Encerrar Reposição" 
-      → chama onSelectProtocolo(protocolo) + handleClose()
-```
+- Add a new handler `handleDevolverEstoque(sobra)` similar to `handleStatusChange` but with specific log text: "Produto devolvido ao estoque — Erro de carregamento"
+- In the table actions column, add a conditional button with `Warehouse` icon (from lucide) when `causa` includes "ERRO DE CARREGAMENTO" and status is not `encerrado`
+- In the detail modal actions section, add the same button
+- The action sets status to `encerrado` and logs the specific action type
+
+**No database changes needed** — the existing `observacoes_log` JSONB and `audit_logs` table handle this.
 
