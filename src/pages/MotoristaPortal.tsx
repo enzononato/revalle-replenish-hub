@@ -1068,7 +1068,7 @@ export default function MotoristaPortal() {
       <DailySummary motorista={motorista} />
 
       {/* Tabs */}
-      <div className="px-4 pt-2 pb-2 max-w-lg mx-auto">
+      <div className="px-3 pt-2 pb-2 max-w-xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
           <TabsList className="grid w-full grid-cols-3 h-16 bg-muted/50 p-2 rounded-xl border border-border/40 gap-2">
             <TabsTrigger 
