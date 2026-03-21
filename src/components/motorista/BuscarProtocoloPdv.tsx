@@ -245,15 +245,13 @@ export function BuscarProtocoloPdv({
 
 
                   {/* Botão encerrar */}
-                  {isExpanded && (
-                    <Button
-                      className="w-full mt-4 h-11 text-sm font-semibold flex items-center justify-center gap-2"
-                      onClick={(e) => handleConfirmSelect(e, protocolo)}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      Encerrar Reposição
-                    </Button>
-                  )}
+                  <Button
+                    className="w-full mt-4 h-11 text-sm font-semibold flex items-center justify-center gap-2"
+                    onClick={(e) => handleConfirmSelect(e, protocolo)}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Encerrar Reposição
+                  </Button>
                 </CardContent>
               </Card>
             );
