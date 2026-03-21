@@ -1332,8 +1332,8 @@ export default function MotoristaPortal() {
                             )}
                           </div>
                           <div className="grid grid-cols-[auto_60px_1fr] gap-1.5">
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-muted-foreground">Qtd</Label>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-medium text-muted-foreground">Qtd</Label>
                               <div className="flex items-center gap-1">
                                 <Button
                                   type="button"
