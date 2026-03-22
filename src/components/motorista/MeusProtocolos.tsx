@@ -310,6 +310,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, produtos, created_at, observacoes_log, mapa, motorista_nome, motorista_codigo, motorista_whatsapp, motorista_email, motorista_unidade, observacao_geral, contato_whatsapp, contato_email, cliente_telefone, fotos_protocolo, mensagem_encerramento, foto_nota_fiscal_encerramento')
         .eq('motorista_codigo', motorista.codigo)
         .eq('ativo', true)
+        .neq('tipo_reposicao', 'pos_rota')
         .or('oculto.is.null,oculto.eq.false');
       
       // Aplicar filtro de status
