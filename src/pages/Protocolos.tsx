@@ -92,6 +92,7 @@ export default function Protocolos() {
   const { unidades } = useUnidadesDB();
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo, isLoading } = useProtocolos();
   const { registrarLog } = useAuditLog();
+  const [isPending, startTransition] = useTransition();
   
   const initialStatusParam = searchParams.get('status');
   const initialPeriodoParam = searchParams.get('periodo');
@@ -100,6 +101,12 @@ export default function Protocolos() {
 
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>(() => initialStatusParam || 'aberto');
+  
+  const handleTabChange = useCallback((value: string) => {
+    startTransition(() => {
+      setActiveTab(value);
+    });
+  }, []);
   const [dataInicialFilter, setDataInicialFilter] = useState('');
   const [dataFinalFilter, setDataFinalFilter] = useState('');
   const [lancadoFilter, setLancadoFilter] = useState<string>('todos');
