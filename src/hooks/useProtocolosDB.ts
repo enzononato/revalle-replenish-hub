@@ -176,27 +176,39 @@ export function useProtocolosDB() {
     queryFn: async () => {
       // Buscar todos os protocolos em páginas de 1000 para contornar o limite do PostgREST
       const PAGE_SIZE = 1000;
-      const allData: ProtocoloDB[] = [];
-      let from = 0;
-      let hasMore = true;
 
-      while (hasMore) {
-        const { data, error } = await supabase
+      const { count, error: countError } = await supabase
+        .from('protocolos')
+        .select('id', { count: 'exact', head: true })
+        .eq('ativo', true);
+
+      if (countError) throw countError;
+
+      const total = count ?? 0;
+      if (total === 0) {
+        return [];
+      }
+
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      const pageRequests = Array.from({ length: totalPages }, (_, pageIndex) => {
+        const from = pageIndex * PAGE_SIZE;
+        const to = from + PAGE_SIZE - 1;
+
+        return supabase
           .from('protocolos')
           .select('*')
           .eq('ativo', true)
           .order('created_at', { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
+          .range(from, to);
+      });
 
+      const responses = await Promise.all(pageRequests);
+      const allData: ProtocoloDB[] = [];
+
+      for (const { data, error } of responses) {
         if (error) throw error;
-
-        const rows = (data || []) as unknown as ProtocoloDB[];
-        allData.push(...rows);
-
-        if (rows.length < PAGE_SIZE) {
-          hasMore = false;
-        } else {
-          from += PAGE_SIZE;
+        if (data?.length) {
+          allData.push(...(data as unknown as ProtocoloDB[]));
         }
       }
 
