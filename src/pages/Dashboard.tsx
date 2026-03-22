@@ -548,6 +548,25 @@ export default function Dashboard() {
     return result;
   }, [protocolosFiltrados]);
 
+  // Helper genérico para exportar dados de gráfico como CSV
+  const exportChartCSV = (data: Record<string, unknown>[], headers: Record<string, string>, filename: string) => {
+    const keys = Object.keys(headers);
+    const csvContent = [
+      keys.map(k => headers[k]).join(';'),
+      ...data.map(row => keys.map(k => row[k] ?? '').join(';'))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exportado: ${filename}`);
+  };
+
 
   // Contagem por tipo de reposição
   const contagemPorTipo = useMemo(() => {
@@ -1182,7 +1201,12 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* 1. Tipo de Reposição × Unidade */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '1050ms' }}>
-          <h3 className="font-heading text-base font-semibold mb-4">Tipo de Reposição por Unidade</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-base font-semibold">Tipo de Reposição por Unidade</h3>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => exportChartCSV(tipoXUnidadeData as Record<string, unknown>[], { unidade: 'Unidade', inversao: 'Inversão', avaria: 'Avaria', falta: 'Falta' }, 'tipo_reposicao_unidade')}>
+              <Download size={12} className="mr-1" />CSV
+            </Button>
+          </div>
           <ResponsiveContainer width="100%" height={380}>
             <BarChart
               data={tipoXUnidadeData}
@@ -1211,7 +1235,12 @@ export default function Dashboard() {
 
         {/* 2. Motorista × Tipo de Reposição (Horizontal) */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '1100ms' }}>
-          <h3 className="font-heading text-base font-semibold mb-4">Top 10 Motoristas por Tipo</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-base font-semibold">Top 10 Motoristas por Tipo</h3>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => exportChartCSV(motoristaXTipoData as Record<string, unknown>[], { motorista: 'Motorista', inversao: 'Inversão', avaria: 'Avaria', falta: 'Falta', total: 'Total' }, 'motoristas_por_tipo')}>
+              <Download size={12} className="mr-1" />CSV
+            </Button>
+          </div>
           <ResponsiveContainer width="100%" height={380}>
             <BarChart data={motoristaXTipoData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
@@ -1228,7 +1257,12 @@ export default function Dashboard() {
 
         {/* 3. PDV × Frequência */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '1150ms' }}>
-          <h3 className="font-heading text-base font-semibold mb-4">Top 10 PDVs com Mais Ocorrências</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-base font-semibold">Top 10 PDVs com Mais Ocorrências</h3>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => exportChartCSV(pdvFrequenciaData as Record<string, unknown>[], { nome: 'PDV', codigo: 'Código', inversao: 'Inversão', avaria: 'Avaria', falta: 'Falta' }, 'pdvs_ocorrencias')}>
+              <Download size={12} className="mr-1" />CSV
+            </Button>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={pdvFrequenciaData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -1245,7 +1279,12 @@ export default function Dashboard() {
 
         {/* 4. Taxa de Resolução por Período */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '1200ms' }}>
-          <h3 className="font-heading text-base font-semibold mb-4">Taxa de Resolução (Últimos 6 Meses)</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-base font-semibold">Taxa de Resolução (Últimos 6 Meses)</h3>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => exportChartCSV(taxaResolucaoData as Record<string, unknown>[], { name: 'Mês', abertos: 'Abertos', encerrados: 'Encerrados' }, 'taxa_resolucao')}>
+              <Download size={12} className="mr-1" />CSV
+            </Button>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={taxaResolucaoData} margin={{ top: 20, right: 12, left: -8, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
