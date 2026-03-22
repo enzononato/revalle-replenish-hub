@@ -2,6 +2,7 @@ import { Motorista } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LogOut, WifiOff, Cloud, User, PackageCheck, Truck } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface MotoristaHeaderProps {
   motorista: Motorista;
