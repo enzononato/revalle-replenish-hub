@@ -29,19 +29,21 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
 
       <div className="max-w-xl mx-auto relative z-10">
         {/* Top bar */}
-        <div className="flex items-center justify-end gap-2 mb-5">
-          {!isOnline && (
-            <Badge variant="destructive" className="gap-1.5 bg-destructive/90 mr-auto">
-              <WifiOff className="w-3.5 h-3.5" />
-              Offline
-            </Badge>
-          )}
-          {pendingCount > 0 && (
-            <Badge className={cn("bg-orange-500 text-white border-0", isOnline && "mr-auto")}>
-              <Cloud className="w-3.5 h-3.5 mr-1" />
-              {pendingCount}
-            </Badge>
-          )}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            {!isOnline && (
+              <Badge variant="destructive" className="gap-1.5 bg-destructive/90">
+                <WifiOff className="w-3.5 h-3.5" />
+                Offline
+              </Badge>
+            )}
+            {pendingCount > 0 && (
+              <Badge className="bg-orange-500 text-white border-0">
+                <Cloud className="w-3.5 h-3.5 mr-1" />
+                {pendingCount}
+              </Badge>
+            )}
+          </div>
           <Button 
             variant="ghost" 
             size="sm" 
