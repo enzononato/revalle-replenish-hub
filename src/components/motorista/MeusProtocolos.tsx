@@ -422,6 +422,9 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
   }
 
   const renderContent = () => {
+    if (isLoading) {
+      return renderLoadingSkeleton();
+    }
     if (protocolos.length === 0) {
       return (
         <Card className="p-6 text-center">
