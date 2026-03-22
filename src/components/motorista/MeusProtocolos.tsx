@@ -448,9 +448,10 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
         <Card 
           key={protocolo.id} 
           className={cn(
-            "transition-all cursor-pointer hover:shadow-md border-border/60 overflow-hidden",
+            "transition-all cursor-pointer hover:shadow-md border-border/60 overflow-hidden animate-fade-in",
             isExpanded && "ring-2 ring-primary/20 shadow-md"
           )}
+          style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
           onClick={() => setExpandedId(isExpanded ? null : protocolo.id)}
         >
           {/* Barra lateral colorida por status */}
