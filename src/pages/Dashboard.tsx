@@ -47,6 +47,16 @@ import { ObservacaoLog } from '@/types';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 
+// Helper to safely get observacoesLog as array (handles JSON string or non-array)
+const safeObsLog = (logs: unknown): ObservacaoLog[] => {
+  if (Array.isArray(logs)) return logs;
+  if (typeof logs === 'string') {
+    try { const parsed = JSON.parse(logs); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+  }
+  return [];
+};
+
+
 const COLORS = ['hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(160, 84%, 39%)'];
 
 type PeriodoFiltro = 'hoje' | 'semana' | 'mes' | 'todos' | 'custom';
@@ -275,8 +285,8 @@ export default function Dashboard() {
         const abertosNoDia = protocolosFiltrados.filter(p => p.data === dateStr).length;
         const encerradosNoDia = protocolosFiltrados.filter(p => {
           if (p.status !== 'encerrado') return false;
-          const logEnc = (p.observacoesLog as ObservacaoLog[] | undefined)?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
-          return logEnc?.data === dateStr;
+           const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
+           return logEnc?.data === dateStr;
         }).length;
         
         result.push({ name: `${dayName} ${format(date, 'dd')}`, abertos: abertosNoDia, encerrados: encerradosNoDia });
@@ -297,7 +307,7 @@ export default function Dashboard() {
         
         const encerrados = protocolosFiltrados.filter(p => {
           if (p.status !== 'encerrado') return false;
-          const logEnc = (p.observacoesLog as ObservacaoLog[] | undefined)?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
+          const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
           if (!logEnc?.data) return false;
           try {
             const d = parse(logEnc.data, 'dd/MM/yyyy', new Date());
@@ -485,8 +495,9 @@ export default function Dashboard() {
   };
 
   // Função para extrair data de encerramento do log
-  const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | null => {
-    const logEncerramento = observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
+  const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[] | unknown): string | null => {
+    const logs = safeObsLog(observacoesLog);
+    const logEncerramento = logs.find(l => l.acao?.startsWith('Encerrou o protocolo'));
     return logEncerramento?.data || null;
   };
 
@@ -540,8 +551,8 @@ export default function Dashboard() {
   };
 
   // Verificar se protocolo foi reaberto
-  const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
-    return !!observacoesLog?.some(log => log.acao === 'Reabriu o protocolo');
+  const foiReaberto = (observacoesLog?: ObservacaoLog[] | unknown): boolean => {
+    return safeObsLog(observacoesLog).some(log => log.acao === 'Reabriu o protocolo');
   };
 
   // Cor para avatar baseado no nome
