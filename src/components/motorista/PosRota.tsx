@@ -487,8 +487,8 @@ export function PosRota({ motorista }: PosRotaProps) {
         title="Foto da Sobra"
       />
 
-      <div className="pb-6 space-y-4">
-        {/* Navigation: Novo + Status filter */}
+      <div className="pb-6 space-y-3">
+        {/* Navigation: Novo + Meus Registros */}
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant={abaAtiva === 'form' ? 'default' : 'outline'}
@@ -531,7 +531,7 @@ export function PosRota({ motorista }: PosRotaProps) {
 
         {/* Conteúdo das abas de listagem */}
         {abaAtiva === 'lista' && (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {loadingSobras ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -551,12 +551,12 @@ export function PosRota({ motorista }: PosRotaProps) {
               return (
                 <>
                   {paginadas.map((sobra) => (
-                    <div key={sobra.id} className="bg-card rounded-xl border border-border/50 p-4 space-y-2">
+                    <div key={sobra.id} className="bg-card rounded-xl border border-border/50 p-3.5 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-mono font-bold text-primary">{sobra.numero}</span>
                         {getStatusBadge(sobra.status)}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="grid grid-cols-2 gap-1.5 text-xs">
                         <div>
                           <span className="text-muted-foreground">Mapa: </span>
                           <span className="font-medium">{sobra.mapa || '-'}</span>
@@ -586,7 +586,7 @@ export function PosRota({ motorista }: PosRotaProps) {
                     </div>
                   ))}
                   {totalPages > 1 && (
-                    <div className="flex items-center justify-between pt-2">
+                    <div className="flex items-center justify-between pt-1">
                       <Button
                         variant="outline"
                         size="sm"
@@ -618,51 +618,50 @@ export function PosRota({ motorista }: PosRotaProps) {
 
         {/* Formulário de novo registro */}
         {abaAtiva === 'form' && (
-          <>
+          <div className="space-y-3">
             {/* Mapa */}
-            <div className="bg-card rounded-xl shadow-sm border border-border/50">
-              <div className="px-4 py-3 border-b border-border/50">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" />
+            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border/30 bg-muted/20">
+                <h3 className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
+                  <MapPin className="w-3.5 h-3.5 text-primary" />
                   Dados da Rota
                 </h3>
               </div>
-              <div className="p-4 space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Mapa *</Label>
+              <div className="p-3.5 space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Mapa *</Label>
                   <Input
                     placeholder="Número do mapa"
                     value={mapa}
                     onChange={(e) => setMapa(e.target.value)}
-                    className="h-12 text-base"
+                    className="h-11 text-sm"
                   />
                 </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Nota Fiscal</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal</Label>
                   <Input
                     placeholder="Número da nota fiscal (opcional)"
                     value={notaFiscal}
                     onChange={(e) => setNotaFiscal(e.target.value)}
-                    className="h-12 text-base"
+                    className="h-11 text-sm"
                   />
                 </div>
               </div>
             </div>
 
             {/* Tipo e Causa */}
-            <div className="bg-card rounded-xl shadow-sm border border-border/50">
-              <div className="px-4 py-3 border-b border-border/50">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-primary" />
-                  Tipo e Causa — Sobra em Rota
+            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border/30 bg-muted/20">
+                <h3 className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
+                  <Tag className="w-3.5 h-3.5 text-primary" />
+                  Tipo — Sobra em Rota
                 </h3>
               </div>
-              <div className="p-4 space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Tipo *</Label>
+              <div className="p-3.5 space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Tipo *</Label>
                   <Select value={tipo} onValueChange={handleTipoChange}>
-                    <SelectTrigger className="h-12 text-base truncate text-left gap-2">
+                    <SelectTrigger className="h-11 text-sm truncate text-left gap-2">
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -676,14 +675,14 @@ export function PosRota({ motorista }: PosRotaProps) {
                 </div>
 
                 {precisaPdv && (
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Código do PDV *</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-muted-foreground">Código do PDV *</Label>
                     <PdvAutocomplete
                       value={codigoPdv}
                       onChange={handlePdvChange}
                       unidade={motorista.unidade}
                       placeholder="Buscar PDV..."
-                      className="h-12 text-base"
+                      className="h-11 text-sm"
                     />
                     {codigoPdv && !pdvSelecionado && (
                       <p className="text-[11px] text-amber-600 flex items-center gap-1">
@@ -695,13 +694,13 @@ export function PosRota({ motorista }: PosRotaProps) {
                 )}
 
                 {precisaNF && (
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Nota Fiscal do PDV</Label>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal do PDV</Label>
                     <Input
                       placeholder="NF relacionada ao PDV"
                       value={notaFiscal}
                       onChange={(e) => setNotaFiscal(e.target.value)}
-                      className="h-12 text-base"
+                      className="h-11 text-sm"
                     />
                   </div>
                 )}
@@ -709,30 +708,30 @@ export function PosRota({ motorista }: PosRotaProps) {
             </div>
 
             {/* Fotos */}
-            <div className="bg-card rounded-xl shadow-sm border border-border/50">
-              <div className="px-4 py-3 border-b border-border/50">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-primary" />
+            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border/30 bg-muted/20">
+                <h3 className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
+                  <ImageIcon className="w-3.5 h-3.5 text-primary" />
                   Fotos das Sobras *
                 </h3>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   Tire pelo menos 1 foto. Pode adicionar várias.
                 </p>
               </div>
-              <div className="p-4 space-y-3">
+              <div className="p-3.5 space-y-2.5">
                 {fotos.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {fotos.map((foto, index) => (
-                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-border group">
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-border group">
                         <img src={foto} alt={`Sobra ${index + 1}`} className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => removeFoto(index)}
-                          className="absolute top-1 right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md opacity-90 hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md opacity-90 hover:opacity-100 transition-opacity"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3 h-3" />
                         </button>
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] text-center py-0.5">
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5">
                           Foto {index + 1}
                         </div>
                       </div>
@@ -745,23 +744,23 @@ export function PosRota({ motorista }: PosRotaProps) {
                   onClick={() => setCameraOpen(true)}
                   disabled={isCompressing}
                   className={cn(
-                    "w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 transition-colors",
+                    "w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-1.5 transition-colors",
                     "border-primary/40 bg-primary/5 hover:bg-primary/10 active:bg-primary/15",
                     "disabled:opacity-50",
-                    fotos.length === 0 ? "py-10" : "py-5"
+                    fotos.length === 0 ? "py-8" : "py-4"
                   )}
                 >
                   <div className={cn(
                     "rounded-full flex items-center justify-center bg-primary/10",
-                    fotos.length === 0 ? "w-14 h-14" : "w-10 h-10"
+                    fotos.length === 0 ? "w-12 h-12" : "w-9 h-9"
                   )}>
-                    <Camera className={cn("text-primary", fotos.length === 0 ? "w-7 h-7" : "w-5 h-5")} />
+                    <Camera className={cn("text-primary", fotos.length === 0 ? "w-6 h-6" : "w-4 h-4")} />
                   </div>
-                  <span className="text-sm font-medium text-primary">
+                  <span className="text-xs font-medium text-primary">
                     {isCompressing ? 'Processando...' : fotos.length === 0 ? 'Tirar Foto da Sobra' : 'Adicionar Mais Fotos'}
                   </span>
                   {fotos.length > 0 && (
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground">
                       {fotos.length} foto{fotos.length !== 1 ? 's' : ''} adicionada{fotos.length !== 1 ? 's' : ''}
                     </span>
                   )}
@@ -770,20 +769,20 @@ export function PosRota({ motorista }: PosRotaProps) {
             </div>
 
             {/* Observação */}
-            <div className="bg-card rounded-xl shadow-sm border border-border/50">
-              <div className="px-4 py-3 border-b border-border/50">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" />
+            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border/30 bg-muted/20">
+                <h3 className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
+                  <FileText className="w-3.5 h-3.5 text-primary" />
                   Observação
                 </h3>
               </div>
-              <div className="p-4">
+              <div className="p-3.5">
                 <Textarea
-                  placeholder="Informações adicionais sobre a sobra em rota..."
+                  placeholder="Informações adicionais sobre a sobra..."
                   value={observacao}
                   onChange={(e) => setObservacao(e.target.value)}
-                  rows={3}
-                  className="text-sm resize-none"
+                  rows={2}
+                  className="text-sm resize-none min-h-[60px]"
                 />
               </div>
             </div>
@@ -806,7 +805,7 @@ export function PosRota({ motorista }: PosRotaProps) {
                 </>
               )}
             </Button>
-          </>
+          </div>
         )}
       </div>
     </>
