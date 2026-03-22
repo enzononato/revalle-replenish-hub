@@ -79,7 +79,6 @@ const normalizarObservacoesLog = (observacoesLog?: unknown): ObservacaoLog[] => 
 
 const foiReaberto = (observacoesLog?: unknown): boolean => {
   const logs = normalizarObservacoesLog(observacoesLog);
-  if (!Array.isArray(logs)) return false;
   return logs.some((log) => log.acao === 'Reabriu o protocolo');
 };
 
