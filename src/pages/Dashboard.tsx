@@ -480,19 +480,24 @@ export default function Dashboard() {
     return Object.values(map).sort((a, b) => a.unidade.localeCompare(b.unidade));
   }, [protocolos, unidades]);
 
-  // 2. Motorista × Tipo de Reposição (Top 10)
+  // 2. Motorista × Tipo de Reposição (Top 10 - Horizontal)
   const motoristaXTipoData = useMemo(() => {
-    const map: Record<string, { motorista: string; inversao: number; avaria: number; falta: number }> = {};
+    const map: Record<string, { motorista: string; inversao: number; avaria: number; falta: number; total: number }> = {};
     protocolosFiltrados.forEach(p => {
       const nome = p.motorista.nome;
-      if (!map[nome]) map[nome] = { motorista: nome, inversao: 0, avaria: 0, falta: 0 };
-      if (p.tipoReposicao === 'INVERSAO') map[nome].inversao++;
-      else if (p.tipoReposicao === 'AVARIA') map[nome].avaria++;
-      else if (p.tipoReposicao === 'FALTA') map[nome].falta++;
+      if (!map[nome]) map[nome] = { motorista: nome, inversao: 0, avaria: 0, falta: 0, total: 0 };
+      if (p.tipoReposicao === 'INVERSAO') { map[nome].inversao++; map[nome].total++; }
+      else if (p.tipoReposicao === 'AVARIA') { map[nome].avaria++; map[nome].total++; }
+      else if (p.tipoReposicao === 'FALTA') { map[nome].falta++; map[nome].total++; }
     });
     return Object.values(map)
-      .sort((a, b) => (b.inversao + b.avaria + b.falta) - (a.inversao + a.avaria + a.falta))
-      .slice(0, 10);
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10)
+      .map(item => ({
+        ...item,
+        // Truncar nome para caber no eixo Y
+        motorista: item.motorista.length > 18 ? item.motorista.substring(0, 18) + '…' : item.motorista
+      }));
   }, [protocolosFiltrados]);
 
   // 3. PDV × Frequência (Top 10 - Barras Horizontais)
