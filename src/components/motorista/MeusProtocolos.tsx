@@ -343,7 +343,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
 
   useEffect(() => {
     fetchProtocolos();
-    setPaginaEncerrados(1);
+    setPaginaAtual(1);
   }, [motorista.codigo, filtroStatus]);
 
   const getStatusBadge = (status: string) => {
