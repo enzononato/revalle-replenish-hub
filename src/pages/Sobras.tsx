@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send, Hash, Calendar, Route } from 'lucide-react';
+import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send, Hash, Calendar, Route, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -121,6 +121,43 @@ export default function Sobras() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [comentario, setComentario] = useState('');
   const [enviandoComentario, setEnviandoComentario] = useState(false);
+  const [excluindoSobra, setExcluindoSobra] = useState<string | null>(null);
+
+  const isAdmin = user?.nivel === 'admin';
+
+  const handleExcluirSobra = async (sobra: SobraProtocolo) => {
+    if (!isAdmin) return;
+    const confirmar = window.confirm(`Tem certeza que deseja excluir a sobra ${sobra.numero}? Esta ação não pode ser desfeita.`);
+    if (!confirmar) return;
+
+    setExcluindoSobra(sobra.id);
+    try {
+      const { error } = await supabase
+        .from('protocolos')
+        .update({ ativo: false } as any)
+        .eq('id', sobra.id);
+      if (error) throw error;
+
+      await registrarLog({
+        acao: 'Excluiu sobra/pós-rota',
+        tabela: 'protocolos',
+        registro_id: sobra.numero,
+        registro_dados: { causa: sobra.causa, status: sobra.status, motorista: sobra.motorista_nome },
+        usuario_nome: user?.nome || user?.email || 'Admin',
+        usuario_role: user?.nivel || undefined,
+        usuario_unidade: user?.unidade || undefined,
+      });
+
+      toast.success(`Sobra ${sobra.numero} excluída`);
+      if (detalheSobra?.id === sobra.id) setDetalheSobra(null);
+      fetchSobras();
+      fetchContadores();
+    } catch (err) {
+      toast.error('Erro ao excluir sobra');
+    } finally {
+      setExcluindoSobra(null);
+    }
+  };
 
   const fetchContadores = useCallback(async () => {
     const [pRes, tRes, rRes] = await Promise.all([
@@ -558,6 +595,18 @@ export default function Sobras() {
                           onClick={() => handleStatusChange(sobra, 'encerrado')}
                         >
                           Resolver
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={excluindoSobra === sobra.id}
+                          onClick={() => handleExcluirSobra(sobra)}
+                          title="Excluir sobra (apenas admin)"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
