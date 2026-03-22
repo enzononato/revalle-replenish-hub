@@ -423,11 +423,11 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
 
   const renderContent = () => {
     if (isLoading) {
-      return renderLoadingSkeleton();
+      return <div className="animate-fade-in">{renderLoadingSkeleton()}</div>;
     }
     if (protocolos.length === 0) {
       return (
-        <Card className="p-6 text-center">
+        <Card className="p-6 text-center animate-fade-in">
           <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-base text-muted-foreground">
             Nenhum protocolo {filtroStatus === 'abertos' ? 'aberto' : filtroStatus === 'em_andamento' ? 'em atendimento' : 'encerrado'} encontrado
@@ -439,7 +439,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
     // Aplicar paginação para todas as abas
     const listaExibida = protocolos.slice((paginaAtual - 1) * ITENS_POR_PAGINA, paginaAtual * ITENS_POR_PAGINA);
 
-    return listaExibida.map((protocolo) => {
+    return listaExibida.map((protocolo, index) => {
       const isExpanded = expandedId === protocolo.id;
       const produtos = Array.isArray(protocolo.produtos) ? protocolo.produtos as Produto[] : null;
       const historicoFiltrado = getHistoricoMotorista(protocolo.observacoes_log, protocolo.status);
