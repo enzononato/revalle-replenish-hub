@@ -362,13 +362,7 @@ export function PosRota({ motorista }: PosRotaProps) {
     setAbaAtiva('pendentes');
   };
 
-  // Tabs navigation
-  const tabs: { key: AbaAtiva; label: string; count?: number }[] = [
-    { key: 'form', label: 'Novo' },
-    { key: 'pendentes', label: 'Pendentes', count: contadores.pendentes },
-    { key: 'em_tratamento', label: 'Em Tratamento', count: contadores.tratamento },
-    { key: 'resolvido', label: 'Resolvido', count: contadores.resolvido },
-  ];
+  const totalSobras = contadores.pendentes + contadores.tratamento + contadores.resolvido;
 
   // Tela de sucesso
   if (enviado) {
