@@ -310,16 +310,18 @@ export default function Dashboard() {
         result.push({ name: `${dayName} ${format(date, 'dd')}`, abertos: abertosNoDia, encerrados: encerradosNoDia });
       }
     } else {
-      // Últimas 4 semanas
+      // Últimos 4 meses
+      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       for (let i = 3; i >= 0; i--) {
-        const weekEnd = subDays(today, i * 7);
-        const weekStart = subDays(weekEnd, 6);
-        const label = `${format(weekStart, 'dd/MM')} - ${format(weekEnd, 'dd/MM')}`;
+        const monthDate = subMonths(today, i);
+        const monthStart = startOfMonth(monthDate);
+        const monthEnd = endOfMonth(monthDate);
+        const label = monthNames[monthDate.getMonth()];
         
         const abertos = protocolosFiltrados.filter(p => {
           try {
             const d = parseFlexDate(p.data);
-            return d >= startOfDay(weekStart) && d <= endOfDay(weekEnd);
+            return d >= monthStart && d <= monthEnd;
           } catch { return false; }
         }).length;
         
@@ -329,7 +331,7 @@ export default function Dashboard() {
           if (!logEnc?.data) return false;
           try {
             const d = parseFlexDate(logEnc.data);
-            return d >= startOfDay(weekStart) && d <= endOfDay(weekEnd);
+            return d >= monthStart && d <= monthEnd;
           } catch { return false; }
         }).length;
         
