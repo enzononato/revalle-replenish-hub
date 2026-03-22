@@ -38,6 +38,8 @@ import {
   Tooltip, 
   ResponsiveContainer,
   PieChart,
+  LineChart,
+  Line,
   Pie,
   Cell,
   Legend,
