@@ -1183,16 +1183,28 @@ export default function Dashboard() {
         {/* 1. Tipo de Reposição × Unidade */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '1050ms' }}>
           <h3 className="font-heading text-base font-semibold mb-4">Tipo de Reposição por Unidade</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={tipoXUnidadeData} margin={{ top: 20, right: 12, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="unidade" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} fontSize={11} />
+          <ResponsiveContainer width="100%" height={380}>
+            <BarChart
+              data={tipoXUnidadeData}
+              layout="vertical"
+              margin={{ top: 8, right: 20, left: 12, bottom: 8 }}
+              barCategoryGap="26%"
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+              <XAxis type="number" stroke="hsl(var(--muted-foreground))" allowDecimals={false} fontSize={11} />
+              <YAxis
+                type="category"
+                dataKey="unidade"
+                stroke="hsl(var(--muted-foreground))"
+                width={170}
+                interval={0}
+                tick={{ fontSize: 11 }}
+              />
               <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
               <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-xs text-muted-foreground capitalize">{value}</span>} />
-              <Bar dataKey="inversao" name="Inversão" fill="hsl(199, 89%, 48%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="avaria" name="Avaria" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="falta" name="Falta" fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="inversao" name="Inversão" fill="hsl(199, 89%, 48%)" radius={[0, 4, 4, 0]} barSize={10} />
+              <Bar dataKey="avaria" name="Avaria" fill="hsl(38, 92%, 50%)" radius={[0, 4, 4, 0]} barSize={10} />
+              <Bar dataKey="falta" name="Falta" fill="hsl(160, 84%, 39%)" radius={[0, 4, 4, 0]} barSize={10} />
             </BarChart>
           </ResponsiveContainer>
         </div>
