@@ -461,18 +461,24 @@ export default function Dashboard() {
 
   // ===== NOVOS GRÁFICOS DE CRUZAMENTO =====
 
-  // 1. Tipo de Reposição × Unidade (Barras Empilhadas)
+  // 1. Tipo de Reposição × Unidade (Barras Agrupadas - todas as unidades)
   const tipoXUnidadeData = useMemo(() => {
+    // Inicializar com todas as unidades do sistema
     const map: Record<string, { unidade: string; inversao: number; avaria: number; falta: number }> = {};
-    protocolosFiltrados.forEach(p => {
+    unidades.forEach(u => {
+      map[u.nome] = { unidade: u.nome, inversao: 0, avaria: 0, falta: 0 };
+    });
+    // Contar de TODOS protocolos (sem filtro de unidade selecionada)
+    const todosProtocolos = protocolos.filter(p => !p.oculto && p.tipoReposicao !== 'pos_rota');
+    todosProtocolos.forEach(p => {
       const unidade = p.unidadeNome || 'Sem Unidade';
       if (!map[unidade]) map[unidade] = { unidade, inversao: 0, avaria: 0, falta: 0 };
       if (p.tipoReposicao === 'INVERSAO') map[unidade].inversao++;
       else if (p.tipoReposicao === 'AVARIA') map[unidade].avaria++;
       else if (p.tipoReposicao === 'FALTA') map[unidade].falta++;
     });
-    return Object.values(map).sort((a, b) => (b.inversao + b.avaria + b.falta) - (a.inversao + a.avaria + a.falta));
-  }, [protocolosFiltrados]);
+    return Object.values(map).sort((a, b) => a.unidade.localeCompare(b.unidade));
+  }, [protocolos, unidades]);
 
   // 2. Motorista × Tipo de Reposição (Top 10)
   const motoristaXTipoData = useMemo(() => {
