@@ -994,7 +994,7 @@ export default function Dashboard() {
             <BarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, 'dataMax']} fontSize={11} />
+              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]} fontSize={11} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))',
