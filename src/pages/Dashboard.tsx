@@ -505,14 +505,22 @@ export default function Dashboard() {
   // Função para cor do SLA - usando campo data (DD/MM/YYYY) para consistência com backend
   const calcularSlaDias = (dataStr: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
     try {
-      const dataProtocolo = parse(dataStr, 'dd/MM/yyyy', new Date());
+      // Suporta dd/MM/yyyy e yyyy-MM-dd
+      const dataProtocolo = dataStr.includes('-') 
+        ? parse(dataStr, 'yyyy-MM-dd', new Date()) 
+        : parse(dataStr, 'dd/MM/yyyy', new Date());
+      if (isNaN(dataProtocolo.getTime())) return 0;
       
       // Se encerrado, calcular até a data de encerramento
       if (status === 'encerrado') {
         const dataEncerramentoStr = getDataEncerramentoFromLog(observacoesLog);
         if (dataEncerramentoStr) {
-          const dataEncerramento = parse(dataEncerramentoStr, 'dd/MM/yyyy', new Date());
-          return differenceInDays(dataEncerramento, dataProtocolo);
+          const dataEncerramento = dataEncerramentoStr.includes('-')
+            ? parse(dataEncerramentoStr, 'yyyy-MM-dd', new Date())
+            : parse(dataEncerramentoStr, 'dd/MM/yyyy', new Date());
+          if (!isNaN(dataEncerramento.getTime())) {
+            return differenceInDays(dataEncerramento, dataProtocolo);
+          }
         }
       }
       
