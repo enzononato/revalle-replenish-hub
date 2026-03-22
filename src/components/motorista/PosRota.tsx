@@ -48,6 +48,7 @@ interface SobraResumo {
 
 export function PosRota({ motorista }: PosRotaProps) {
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('form');
+  const [statusFiltro, setStatusFiltro] = useState<string>('aberto');
   const [mapa, setMapa] = useState('');
   const [notaFiscal, setNotaFiscal] = useState('');
   const [tipo, setTipo] = useState('');
