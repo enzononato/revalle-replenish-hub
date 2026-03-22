@@ -169,10 +169,14 @@ export function useProtocolosDB() {
 
   const { data: protocolos = [], isLoading, error } = useQuery({
     queryKey: ['protocolos'],
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       // Buscar todos os protocolos em páginas de 1000 para contornar o limite do PostgREST
       const PAGE_SIZE = 1000;
-      let allData: ProtocoloDB[] = [];
+      const allData: ProtocoloDB[] = [];
       let from = 0;
       let hasMore = true;
 
@@ -185,10 +189,10 @@ export function useProtocolosDB() {
           .range(from, from + PAGE_SIZE - 1);
 
         if (error) throw error;
-        
+
         const rows = (data || []) as unknown as ProtocoloDB[];
-        allData = [...allData, ...rows];
-        
+        allData.push(...rows);
+
         if (rows.length < PAGE_SIZE) {
           hasMore = false;
         } else {

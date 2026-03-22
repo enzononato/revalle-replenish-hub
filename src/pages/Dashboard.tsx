@@ -42,8 +42,7 @@ import {
   Line,
   Pie,
   Cell,
-  Legend,
-  LabelList
+  Legend
 } from 'recharts';
 import { ObservacaoLog } from '@/types';
 import { DateRange } from 'react-day-picker';
@@ -1127,12 +1126,20 @@ export default function Dashboard() {
                   <span className="text-xs text-muted-foreground capitalize">{value}</span>
                 )}
               />
-              <Bar dataKey="abertos" name="Abertos" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]}>
-                <LabelList dataKey="abertos" position="top" offset={10} className="fill-muted-foreground text-[10px]" />
-              </Bar>
-              <Bar dataKey="encerrados" name="Encerrados" fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]}>
-                <LabelList dataKey="encerrados" position="top" offset={10} className="fill-muted-foreground text-[10px]" />
-              </Bar>
+              <Bar
+                dataKey="abertos"
+                name="Abertos"
+                fill="hsl(38, 92%, 50%)"
+                radius={[4, 4, 0, 0]}
+                label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              />
+              <Bar
+                dataKey="encerrados"
+                name="Encerrados"
+                fill="hsl(160, 84%, 39%)"
+                radius={[4, 4, 0, 0]}
+                label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
