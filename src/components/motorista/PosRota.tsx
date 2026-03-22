@@ -33,7 +33,7 @@ const TIPOS_POS_ROTA = [
   { value: 'erro_entrega', label: 'Erro de Entrega' },
 ];
 
-type AbaAtiva = 'form' | 'pendentes' | 'em_tratamento' | 'resolvido';
+type AbaAtiva = 'form' | 'lista';
 
 interface SobraResumo {
   id: string;
@@ -48,6 +48,7 @@ interface SobraResumo {
 
 export function PosRota({ motorista }: PosRotaProps) {
   const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('form');
+  const [statusFiltro, setStatusFiltro] = useState<string>('aberto');
   const [mapa, setMapa] = useState('');
   const [notaFiscal, setNotaFiscal] = useState('');
   const [tipo, setTipo] = useState('');
@@ -125,10 +126,8 @@ export function PosRota({ motorista }: PosRotaProps) {
   }, [fetchContadores]);
 
   useEffect(() => {
-    if (abaAtiva === 'pendentes') fetchSobras('aberto');
-    else if (abaAtiva === 'em_tratamento') fetchSobras('em_andamento');
-    else if (abaAtiva === 'resolvido') fetchSobras('encerrado');
-  }, [abaAtiva, fetchSobras]);
+    if (abaAtiva === 'lista') fetchSobras(statusFiltro);
+  }, [abaAtiva, statusFiltro, fetchSobras]);
 
   const handlePdvChange = (value: string, pdv?: { codigo: string }) => {
     setCodigoPdv(value);
@@ -360,16 +359,11 @@ export function PosRota({ motorista }: PosRotaProps) {
 
   const handleVerPendentes = () => {
     resetForm();
-    setAbaAtiva('pendentes');
+    setStatusFiltro('aberto');
+    setAbaAtiva('lista');
   };
 
-  // Tabs navigation
-  const tabs: { key: AbaAtiva; label: string; count?: number }[] = [
-    { key: 'form', label: 'Novo' },
-    { key: 'pendentes', label: 'Pendentes', count: contadores.pendentes },
-    { key: 'em_tratamento', label: 'Em Tratamento', count: contadores.tratamento },
-    { key: 'resolvido', label: 'Resolvido', count: contadores.resolvido },
-  ];
+  const totalSobras = contadores.pendentes + contadores.tratamento + contadores.resolvido;
 
   // Tela de sucesso
   if (enviado) {
@@ -491,36 +485,47 @@ export function PosRota({ motorista }: PosRotaProps) {
       />
 
       <div className="pb-6 space-y-4">
-        {/* Tabs */}
-        <div className="flex rounded-xl overflow-hidden border border-border/50 bg-muted/30">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setAbaAtiva(tab.key)}
-              className={cn(
-                "flex-1 py-2.5 text-xs font-semibold text-center transition-all relative",
-                abaAtiva === tab.key
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
+        {/* Navigation: Novo + Status filter */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant={abaAtiva === 'form' ? 'default' : 'outline'}
+            onClick={() => setAbaAtiva('form')}
+            className="h-10 text-xs font-semibold rounded-xl px-4 shrink-0"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Novo
+          </Button>
+          <div className="flex-1">
+            <Select
+              value={abaAtiva === 'lista' ? statusFiltro : ''}
+              onValueChange={(val) => {
+                setStatusFiltro(val);
+                setAbaAtiva('lista');
+              }}
             >
-              {tab.label}
-              {tab.count !== undefined && tab.count > 0 && (
-                <span className={cn(
-                  "ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1",
-                  abaAtiva === tab.key
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-primary/10 text-primary"
-                )}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
+              <SelectTrigger className={cn(
+                "h-10 text-xs font-semibold rounded-xl",
+                abaAtiva === 'lista' ? "border-primary bg-primary/5" : ""
+              )}>
+                <SelectValue placeholder="Ver registros..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="aberto">
+                  Pendentes {contadores.pendentes > 0 ? `(${contadores.pendentes})` : ''}
+                </SelectItem>
+                <SelectItem value="em_andamento">
+                  Em Tratamento {contadores.tratamento > 0 ? `(${contadores.tratamento})` : ''}
+                </SelectItem>
+                <SelectItem value="encerrado">
+                  Resolvido {contadores.resolvido > 0 ? `(${contadores.resolvido})` : ''}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Conteúdo das abas de listagem */}
-        {abaAtiva !== 'form' && (
+        {abaAtiva === 'lista' && (
           <div className="space-y-3">
             {loadingSobras ? (
               <div className="flex items-center justify-center py-12">
@@ -530,9 +535,9 @@ export function PosRota({ motorista }: PosRotaProps) {
               <div className="bg-card rounded-xl border border-border/50 p-8 text-center">
                 <Package className="w-10 h-10 mx-auto mb-3 text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">
-                  {abaAtiva === 'pendentes' && 'Nenhuma sobra pendente'}
-                  {abaAtiva === 'em_tratamento' && 'Nenhuma sobra em tratamento'}
-                  {abaAtiva === 'resolvido' && 'Nenhuma sobra resolvida'}
+                  {statusFiltro === 'aberto' && 'Nenhuma sobra pendente'}
+                  {statusFiltro === 'em_andamento' && 'Nenhuma sobra em tratamento'}
+                  {statusFiltro === 'encerrado' && 'Nenhuma sobra resolvida'}
                 </p>
               </div>
             ) : (
