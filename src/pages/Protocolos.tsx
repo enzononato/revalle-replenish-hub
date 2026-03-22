@@ -570,7 +570,7 @@ export default function Protocolos() {
           <div className="flex flex-wrap gap-3 items-end">
             <div className="space-y-1 min-w-[110px]">
               <label className="text-xs font-medium text-muted-foreground">Status</label>
-              <Select value={activeTab} onValueChange={setActiveTab}>
+              <Select value={activeTab} onValueChange={handleTabChange}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
