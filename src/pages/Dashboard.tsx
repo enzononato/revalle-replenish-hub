@@ -551,8 +551,8 @@ export default function Dashboard() {
   };
 
   // Verificar se protocolo foi reaberto
-  const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
-    return !!observacoesLog?.some(log => log.acao === 'Reabriu o protocolo');
+  const foiReaberto = (observacoesLog?: ObservacaoLog[] | unknown): boolean => {
+    return safeObsLog(observacoesLog).some(log => log.acao === 'Reabriu o protocolo');
   };
 
   // Cor para avatar baseado no nome
