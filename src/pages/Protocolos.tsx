@@ -73,7 +73,6 @@ const calcularSlaDias = (dataStr: string, status?: string, observacoesLog?: Obse
     return 0;
   }
 };
-};
 
 const getSlaColor = (dias: number): string => {
   if (dias >= 15) return 'text-foreground bg-red-300 dark:bg-red-500/30 dark:text-red-300';
