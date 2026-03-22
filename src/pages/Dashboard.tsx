@@ -380,7 +380,8 @@ export default function Dashboard() {
         let baseQuery = supabase
           .from('protocolos')
           .select('status, causa, motorista_unidade')
-          .eq('tipo_reposicao', 'pos_rota');
+          .eq('tipo_reposicao', 'pos_rota')
+          .eq('ativo', true);
 
         const { data, error } = await baseQuery;
         if (error) throw error;
