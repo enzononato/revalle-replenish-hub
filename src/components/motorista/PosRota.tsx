@@ -359,7 +359,8 @@ export function PosRota({ motorista }: PosRotaProps) {
 
   const handleVerPendentes = () => {
     resetForm();
-    setAbaAtiva('pendentes');
+    setStatusFiltro('aberto');
+    setAbaAtiva('lista');
   };
 
   const totalSobras = contadores.pendentes + contadores.tratamento + contadores.resolvido;
