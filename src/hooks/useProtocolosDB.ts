@@ -179,8 +179,9 @@ export function useProtocolosDB() {
 
       const { count, error: countError } = await supabase
         .from('protocolos')
-        .select('id', { count: 'exact', head: true })
-        .eq('ativo', true);
+        .select('id', { count: 'exact' })
+        .eq('ativo', true)
+        .limit(1);
 
       if (countError) throw countError;
 
