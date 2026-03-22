@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.teste-webhook-sla]
 verify_jwt = false
+
+[functions.motorista-login]
+verify_jwt = false
