@@ -621,6 +621,7 @@ export default function Configuracoes() {
                 <p className="text-sm font-medium">O backup inclui:</p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                   <li>Protocolos</li>
+                  <li>Sobras (Pós-Rota)</li>
                   <li>Motoristas</li>
                   <li>Clientes (PDVs)</li>
                   <li>Produtos</li>
