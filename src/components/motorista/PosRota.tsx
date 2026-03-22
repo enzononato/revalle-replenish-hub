@@ -493,15 +493,15 @@ export function PosRota({ motorista }: PosRotaProps) {
           <Button
             variant={abaAtiva === 'form' ? 'default' : 'outline'}
             onClick={() => setAbaAtiva('form')}
-            className="h-11 text-xs font-semibold rounded-xl"
+            className="h-9 text-xs font-semibold rounded-lg"
           >
-            <Plus className="w-4 h-4 mr-1.5" />
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
             Novo
           </Button>
           <Button
             variant={abaAtiva === 'lista' ? 'default' : 'outline'}
             onClick={() => { setAbaAtiva('lista'); setPaginaAtual(1); }}
-            className="h-11 text-xs font-semibold rounded-xl"
+            className="h-9 text-xs font-semibold rounded-lg"
           >
             <Package className="w-4 h-4 mr-1.5" />
             Meus Registros
