@@ -285,8 +285,8 @@ export default function Dashboard() {
         const abertosNoDia = protocolosFiltrados.filter(p => p.data === dateStr).length;
         const encerradosNoDia = protocolosFiltrados.filter(p => {
           if (p.status !== 'encerrado') return false;
-          const logEnc = (p.observacoesLog as ObservacaoLog[] | undefined)?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
-          return logEnc?.data === dateStr;
+           const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
+           return logEnc?.data === dateStr;
         }).length;
         
         result.push({ name: `${dayName} ${format(date, 'dd')}`, abertos: abertosNoDia, encerrados: encerradosNoDia });
