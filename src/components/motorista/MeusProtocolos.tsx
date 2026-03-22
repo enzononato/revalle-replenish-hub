@@ -232,9 +232,9 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
   const [copiadoIdEncerramento, setCopiadoIdEncerramento] = useState<string | null>(null);
   
-  // Paginação para encerrados
-  const [paginaEncerrados, setPaginaEncerrados] = useState(1);
-  const ITENS_POR_PAGINA = 6;
+  // Paginação universal
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const ITENS_POR_PAGINA = 5;
   
   // Modal states
   const [showBuscaPdv, setShowBuscaPdv] = useState(false);
@@ -343,7 +343,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
 
   useEffect(() => {
     fetchProtocolos();
-    setPaginaEncerrados(1);
+    setPaginaAtual(1);
   }, [motorista.codigo, filtroStatus]);
 
   const getStatusBadge = (status: string) => {
@@ -436,10 +436,8 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
       );
     }
 
-    // Aplicar paginação para encerrados
-    const listaExibida = filtroStatus === 'encerrados' 
-      ? protocolos.slice((paginaEncerrados - 1) * ITENS_POR_PAGINA, paginaEncerrados * ITENS_POR_PAGINA)
-      : protocolos;
+    // Aplicar paginação para todas as abas
+    const listaExibida = protocolos.slice((paginaAtual - 1) * ITENS_POR_PAGINA, paginaAtual * ITENS_POR_PAGINA);
 
     return listaExibida.map((protocolo) => {
       const isExpanded = expandedId === protocolo.id;
@@ -867,31 +865,31 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
 
       {renderContent()}
 
-      {/* Paginação para encerrados */}
-      {filtroStatus === 'encerrados' && protocolos.length > ITENS_POR_PAGINA && (() => {
+      {/* Paginação universal */}
+      {protocolos.length > ITENS_POR_PAGINA && (() => {
         const totalPaginas = Math.ceil(protocolos.length / ITENS_POR_PAGINA);
         return (
           <div className="flex items-center justify-between pt-2">
             <p className="text-xs text-muted-foreground">
-              {(paginaEncerrados - 1) * ITENS_POR_PAGINA + 1}-{Math.min(paginaEncerrados * ITENS_POR_PAGINA, protocolos.length)} de {protocolos.length}
+              {(paginaAtual - 1) * ITENS_POR_PAGINA + 1}-{Math.min(paginaAtual * ITENS_POR_PAGINA, protocolos.length)} de {protocolos.length}
             </p>
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="sm"
                 className="h-8 w-8 p-0"
-                disabled={paginaEncerrados === 1}
-                onClick={() => setPaginaEncerrados(p => p - 1)}
+                disabled={paginaAtual === 1}
+                onClick={() => setPaginaAtual(p => p - 1)}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(pg => (
                 <Button
                   key={pg}
-                  variant={paginaEncerrados === pg ? 'default' : 'outline'}
+                  variant={paginaAtual === pg ? 'default' : 'outline'}
                   size="sm"
                   className="h-8 w-8 p-0 text-xs"
-                  onClick={() => setPaginaEncerrados(pg)}
+                  onClick={() => setPaginaAtual(pg)}
                 >
                   {pg}
                 </Button>
@@ -900,8 +898,8 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
                 variant="outline"
                 size="sm"
                 className="h-8 w-8 p-0"
-                disabled={paginaEncerrados === totalPaginas}
-                onClick={() => setPaginaEncerrados(p => p + 1)}
+                disabled={paginaAtual === totalPaginas}
+                onClick={() => setPaginaAtual(p => p + 1)}
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
