@@ -1279,7 +1279,12 @@ export default function Dashboard() {
 
         {/* 4. Taxa de Resolução por Período */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '1200ms' }}>
-          <h3 className="font-heading text-base font-semibold mb-4">Taxa de Resolução (Últimos 6 Meses)</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-base font-semibold">Taxa de Resolução (Últimos 6 Meses)</h3>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => exportChartCSV(taxaResolucaoData as Record<string, unknown>[], { name: 'Mês', abertos: 'Abertos', encerrados: 'Encerrados' }, 'taxa_resolucao')}>
+              <Download size={12} className="mr-1" />CSV
+            </Button>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={taxaResolucaoData} margin={{ top: 20, right: 12, left: -8, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
