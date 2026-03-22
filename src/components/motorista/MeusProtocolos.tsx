@@ -267,6 +267,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           .eq('motorista_codigo', motorista.codigo)
           .eq('status', 'aberto')
           .eq('ativo', true)
+          .neq('tipo_reposicao', 'pos_rota')
           .or('oculto.is.null,oculto.eq.false'),
         supabase
           .from('protocolos')
@@ -274,6 +275,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           .eq('motorista_codigo', motorista.codigo)
           .eq('status', 'em_andamento')
           .eq('ativo', true)
+          .neq('tipo_reposicao', 'pos_rota')
           .or('oculto.is.null,oculto.eq.false'),
         supabase
           .from('protocolos')
@@ -281,6 +283,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
           .eq('motorista_codigo', motorista.codigo)
           .eq('status', 'encerrado')
           .eq('ativo', true)
+          .neq('tipo_reposicao', 'pos_rota')
           .or('oculto.is.null,oculto.eq.false'),
       ]);
 
