@@ -47,6 +47,16 @@ import { ObservacaoLog } from '@/types';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 
+// Helper to safely get observacoesLog as array (handles JSON string or non-array)
+const safeObsLog = (logs: unknown): ObservacaoLog[] => {
+  if (Array.isArray(logs)) return logs;
+  if (typeof logs === 'string') {
+    try { const parsed = JSON.parse(logs); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+  }
+  return [];
+};
+
+
 const COLORS = ['hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(160, 84%, 39%)'];
 
 type PeriodoFiltro = 'hoje' | 'semana' | 'mes' | 'todos' | 'custom';
