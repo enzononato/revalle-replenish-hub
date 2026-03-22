@@ -78,7 +78,7 @@ export function MotoristaHeader({ motorista, isOnline, pendingCount, onLogout }:
           <div className="mt-3.5 pt-3 border-t border-white/10 flex items-start gap-2.5">
             <Truck className="w-4 h-4 text-primary-foreground/50 shrink-0 mt-0.5" />
             <p className="text-xs text-primary-foreground/60 leading-relaxed">
-              Gerencie suas reposições e pós-rota com agilidade e controle total.
+              Portal de reposições e pós-rota
             </p>
           </div>
         </div>
