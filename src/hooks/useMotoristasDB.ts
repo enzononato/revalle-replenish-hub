@@ -199,7 +199,7 @@ export function useMotoristasDB() {
       return null;
     }
 
-    return dbToMotorista(data as MotoristaPublicDB);
+    return dbToMotorista(data as unknown as MotoristaPublicDB);
   };
 
   return {
