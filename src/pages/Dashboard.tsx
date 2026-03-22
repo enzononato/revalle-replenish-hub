@@ -990,11 +990,11 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart data={barData} margin={{ top: 28, right: 12, left: -8, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.15)]} fontSize={11} />
+              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.2))]} fontSize={11} />
               <Tooltip 
                 contentStyle={{ 
                   backgroundColor: 'hsl(var(--card))',
@@ -1010,10 +1010,10 @@ export default function Dashboard() {
                 )}
               />
               <Bar dataKey="abertos" name="Abertos" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]}>
-                <LabelList dataKey="abertos" position="top" className="fill-muted-foreground text-[10px]" />
+                <LabelList dataKey="abertos" position="top" offset={10} className="fill-muted-foreground text-[10px]" />
               </Bar>
               <Bar dataKey="encerrados" name="Encerrados" fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]}>
-                <LabelList dataKey="encerrados" position="top" className="fill-muted-foreground text-[10px]" />
+                <LabelList dataKey="encerrados" position="top" offset={10} className="fill-muted-foreground text-[10px]" />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
