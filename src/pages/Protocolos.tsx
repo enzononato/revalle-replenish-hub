@@ -202,7 +202,7 @@ export default function Protocolos() {
       // Filtro de data final
       let dataFinalMatch = true;
       if (dataFinalFilter) {
-        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        const dataProtocolo = parseFlexDate(p.data);
         const dataFinal = parseISO(dataFinalFilter);
         dataFinalMatch = !isAfter(dataProtocolo, dataFinal);
       }
