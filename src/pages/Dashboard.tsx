@@ -1257,7 +1257,12 @@ export default function Dashboard() {
 
         {/* 3. PDV × Frequência */}
         <div className="card-stats animate-slide-up" style={{ animationDelay: '1150ms' }}>
-          <h3 className="font-heading text-base font-semibold mb-4">Top 10 PDVs com Mais Ocorrências</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-heading text-base font-semibold">Top 10 PDVs com Mais Ocorrências</h3>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => exportChartCSV(pdvFrequenciaData as Record<string, unknown>[], { nome: 'PDV', codigo: 'Código', inversao: 'Inversão', avaria: 'Avaria', falta: 'Falta' }, 'pdvs_ocorrencias')}>
+              <Download size={12} className="mr-1" />CSV
+            </Button>
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={pdvFrequenciaData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
