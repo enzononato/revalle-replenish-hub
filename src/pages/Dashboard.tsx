@@ -1185,9 +1185,9 @@ export default function Dashboard() {
               <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} fontSize={11} />
               <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
               <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-xs text-muted-foreground capitalize">{value}</span>} />
-              <Bar dataKey="inversao" name="Inversão" stackId="a" fill="hsl(199, 89%, 48%)" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="avaria" name="Avaria" stackId="a" fill="hsl(38, 92%, 50%)" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="falta" name="Falta" stackId="a" fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="inversao" name="Inversão" fill="hsl(199, 89%, 48%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="avaria" name="Avaria" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="falta" name="Falta" fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
