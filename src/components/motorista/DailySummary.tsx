@@ -17,17 +17,19 @@ export function DailySummary({ motorista }: DailySummaryProps) {
 
       const { data } = await supabase
         .from('protocolos')
-        .select('status')
+        .select('status, tipo_reposicao')
         .eq('motorista_codigo', motorista.codigo)
         .eq('data', hoje)
         .eq('ativo', true)
         .or('oculto.is.null,oculto.eq.false');
 
       if (data) {
+        // Excluir protocolos pos_rota do resumo diário
+        const filtered = data.filter(p => p.tipo_reposicao !== 'pos_rota');
         setStats({
-          abertos: data.filter(p => p.status === 'aberto').length,
-          emAndamento: data.filter(p => p.status === 'em_andamento').length,
-          encerrados: data.filter(p => p.status === 'encerrado').length,
+          abertos: filtered.filter(p => p.status === 'aberto').length,
+          emAndamento: filtered.filter(p => p.status === 'em_andamento').length,
+          encerrados: filtered.filter(p => p.status === 'encerrado').length,
         });
       }
     };
