@@ -3,18 +3,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Motorista, FuncaoMotorista, SetorMotorista } from '@/types';
 import { toast } from 'sonner';
 
-interface MotoristaDB {
+interface MotoristaPublicDB {
   id: string;
   nome: string;
   codigo: string;
-  cpf: string | null;
   data_nascimento: string | null;
   unidade: string;
   funcao: string;
   setor: string;
   whatsapp: string | null;
   email: string | null;
-  senha: string | null;
   created_at: string | null;
 }
 
