@@ -307,7 +307,7 @@ export default function Dashboard() {
         
         const encerrados = protocolosFiltrados.filter(p => {
           if (p.status !== 'encerrado') return false;
-          const logEnc = (p.observacoesLog as ObservacaoLog[] | undefined)?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
+          const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
           if (!logEnc?.data) return false;
           try {
             const d = parse(logEnc.data, 'dd/MM/yyyy', new Date());
