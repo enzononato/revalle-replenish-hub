@@ -36,7 +36,8 @@ import CreateProtocoloModal from '@/components/CreateProtocoloModal';
 
 // Função para extrair log de encerramento do histórico
 const getLogEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): ObservacaoLog | null => {
-  const logEncerramento = observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
+  if (!Array.isArray(observacoesLog)) return null;
+  const logEncerramento = observacoesLog.find(l => l.acao?.startsWith('Encerrou o protocolo'));
   return logEncerramento || null;
 };
 
