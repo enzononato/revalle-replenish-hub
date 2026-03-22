@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, useTransition } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Protocolo, ObservacaoLog } from '@/types';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
@@ -92,6 +92,7 @@ export default function Protocolos() {
   const { unidades } = useUnidadesDB();
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo, isLoading } = useProtocolos();
   const { registrarLog } = useAuditLog();
+  const [isPending, startTransition] = useTransition();
   
   const initialStatusParam = searchParams.get('status');
   const initialPeriodoParam = searchParams.get('periodo');
@@ -100,6 +101,12 @@ export default function Protocolos() {
 
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState<string>(() => initialStatusParam || 'aberto');
+  
+  const handleTabChange = useCallback((value: string) => {
+    startTransition(() => {
+      setActiveTab(value);
+    });
+  }, []);
   const [dataInicialFilter, setDataInicialFilter] = useState('');
   const [dataFinalFilter, setDataFinalFilter] = useState('');
   const [lancadoFilter, setLancadoFilter] = useState<string>('todos');
@@ -213,12 +220,12 @@ export default function Protocolos() {
 
         return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
       })
+      .map(p => ({ p, sla: calcularSlaDias(p.data, p.status, p.observacoesLog) }))
       .sort((a, b) => {
-        const slaA = calcularSlaDias(a.data, a.status, a.observacoesLog);
-        const slaB = calcularSlaDias(b.data, b.status, b.observacoesLog);
-        if (slaB !== slaA) return slaB - slaA;
-        return a.numero.localeCompare(b.numero);
-      });
+        if (b.sla !== a.sla) return b.sla - a.sla;
+        return a.p.numero.localeCompare(b.p.numero);
+      })
+      .map(({ p }) => p);
   }, [
     protocolos,
     isAdmin,
@@ -534,7 +541,7 @@ export default function Protocolos() {
       </div>
 
       {/* Status Tabs - SEM "Todos" */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="bg-transparent gap-1.5 h-auto p-0">
           <TabsTrigger 
             value="aberto" 
@@ -563,7 +570,7 @@ export default function Protocolos() {
           <div className="flex flex-wrap gap-3 items-end">
             <div className="space-y-1 min-w-[110px]">
               <label className="text-xs font-medium text-muted-foreground">Status</label>
-              <Select value={activeTab} onValueChange={setActiveTab}>
+              <Select value={activeTab} onValueChange={handleTabChange}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -676,7 +683,7 @@ export default function Protocolos() {
       </p>
 
       {/* Table */}
-      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto border border-border/50">
+      <div className={cn("bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto border border-border/50 transition-opacity", isPending && "opacity-50")}>
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-muted/50 border-b border-border">
