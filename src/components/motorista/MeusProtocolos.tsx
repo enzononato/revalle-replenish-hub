@@ -834,7 +834,7 @@ export function MeusProtocolos({ motorista }: MeusProtocolosProps) {
       
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm text-muted-foreground">
-          {protocolos.length} protocolo{protocolos.length !== 1 ? 's' : ''} encontrado{protocolos.length !== 1 ? 's' : ''}
+          {isLoading ? 'Carregando...' : `${protocolos.length} protocolo${protocolos.length !== 1 ? 's' : ''} encontrado${protocolos.length !== 1 ? 's' : ''}`}
         </p>
         <div className="flex items-center gap-1">
           {(filtroStatus === 'em_andamento' || filtroStatus === 'abertos') && (
