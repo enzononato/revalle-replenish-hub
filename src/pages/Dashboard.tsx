@@ -271,11 +271,11 @@ export default function Dashboard() {
         const hourEnd = new Date(hourStart);
         hourEnd.setHours(hourStart.getHours() + 4);
         const label = `${format(hourStart, 'HH')}h`;
-        const dateStr = format(today, 'dd/MM/yyyy');
         
         const abertos = protocolosFiltrados.filter(p => {
-          if (p.data !== dateStr) return false;
           try {
+            const dataProtocolo = parseFlexDate(p.data);
+            if (!isToday(dataProtocolo)) return false;
             const [h] = p.hora.split(':').map(Number);
             return h >= hourStart.getHours() && h < hourEnd.getHours();
           } catch { return false; }
