@@ -489,43 +489,45 @@ export function PosRota({ motorista }: PosRotaProps) {
 
       <div className="pb-6 space-y-4">
         {/* Navigation: Novo + Status filter */}
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             variant={abaAtiva === 'form' ? 'default' : 'outline'}
             onClick={() => setAbaAtiva('form')}
-            className="h-10 text-xs font-semibold rounded-xl px-4 shrink-0"
+            className="h-11 text-xs font-semibold rounded-xl"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             Novo
           </Button>
-          <div className="flex-1">
-            <Select
-              value={abaAtiva === 'lista' ? statusFiltro : ''}
-              onValueChange={(val) => {
-                setStatusFiltro(val);
-                setAbaAtiva('lista');
-              }}
-            >
-              <SelectTrigger className={cn(
-                "h-10 text-xs font-semibold rounded-xl",
-                abaAtiva === 'lista' ? "border-primary bg-primary/5" : ""
-              )}>
-                <SelectValue placeholder="Ver registros..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="aberto">
-                  Pendentes {contadores.pendentes > 0 ? `(${contadores.pendentes})` : ''}
-                </SelectItem>
-                <SelectItem value="em_andamento">
-                  Em Tratamento {contadores.tratamento > 0 ? `(${contadores.tratamento})` : ''}
-                </SelectItem>
-                <SelectItem value="encerrado">
-                  Resolvido {contadores.resolvido > 0 ? `(${contadores.resolvido})` : ''}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Button
+            variant={abaAtiva === 'lista' ? 'default' : 'outline'}
+            onClick={() => { setAbaAtiva('lista'); setPaginaAtual(1); }}
+            className="h-11 text-xs font-semibold rounded-xl"
+          >
+            <Package className="w-4 h-4 mr-1.5" />
+            Meus Registros
+          </Button>
         </div>
+
+        {/* Status filter tabs when in list mode */}
+        {abaAtiva === 'lista' && (
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { value: 'aberto', label: 'Pendentes', count: contadores.pendentes },
+              { value: 'em_andamento', label: 'Tratamento', count: contadores.tratamento },
+              { value: 'encerrado', label: 'Resolvido', count: contadores.resolvido },
+            ].map((s) => (
+              <Button
+                key={s.value}
+                variant={statusFiltro === s.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setStatusFiltro(s.value); setPaginaAtual(1); }}
+                className="h-9 text-[11px] font-medium rounded-lg"
+              >
+                {s.label} {s.count > 0 ? `(${s.count})` : ''}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {/* Conteúdo das abas de listagem */}
         {abaAtiva === 'lista' && (
