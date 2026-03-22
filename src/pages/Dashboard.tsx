@@ -83,7 +83,7 @@ export default function Dashboard() {
 
   // Protocolos filtrados por unidade e período
   const protocolosFiltrados = useMemo(() => {
-    let filtered = protocolos.filter(p => !p.oculto);
+    let filtered = protocolos.filter(p => !p.oculto && p.tipoReposicao !== 'pos_rota');
     
     if (!isAdmin) {
       const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
