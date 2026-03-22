@@ -16,24 +16,22 @@ interface MotoristaPublicDB {
   created_at: string | null;
 }
 
-// Converter do formato DB para o formato da aplicação
-const dbToMotorista = (db: MotoristaDB): Motorista => ({
+// Converter do formato DB (view pública) para o formato da aplicação
+const dbToMotorista = (db: MotoristaPublicDB): Motorista => ({
   id: db.id,
   nome: db.nome,
   codigo: db.codigo,
-  cpf: db.cpf || undefined,
   dataNascimento: db.data_nascimento || '',
   unidade: db.unidade,
   funcao: db.funcao as FuncaoMotorista,
   setor: db.setor as SetorMotorista,
   whatsapp: db.whatsapp || undefined,
   email: db.email || undefined,
-  senha: db.senha || undefined,
   createdAt: db.created_at || new Date().toISOString(),
 });
 
-// Converter do formato da aplicação para o formato DB
-const motoristaToDB = (m: Motorista): Omit<MotoristaDB, 'id' | 'created_at'> => ({
+// Converter do formato da aplicação para o formato DB (para INSERT/UPDATE na tabela base)
+const motoristaToDB = (m: Motorista) => ({
   nome: m.nome,
   codigo: m.codigo,
   cpf: m.cpf || null,
@@ -52,15 +50,16 @@ export function useMotoristasDB() {
   const { data: motoristas = [], isLoading, error } = useQuery({
     queryKey: ['motoristas'],
     queryFn: async () => {
+      // Usar a view pública que não expõe senha/cpf
       const { data, error: fetchError } = await supabase
-        .from('motoristas')
+        .from('motoristas_public' as any)
         .select('*')
         .order('nome', { ascending: true });
 
       if (fetchError) throw fetchError;
-      return (data as MotoristaDB[]).map(dbToMotorista);
+      return (data as MotoristaPublicDB[]).map(dbToMotorista);
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5,
   });
 
   const addMutation = useMutation({
@@ -131,7 +130,6 @@ export function useMotoristasDB() {
 
   const importMutation = useMutation({
     mutationFn: async (newMotoristas: Omit<Motorista, 'id' | 'createdAt'>[]) => {
-      // Deduplicar por código (manter o último registro de cada código)
       const uniqueMap = new Map<string, Omit<Motorista, 'id' | 'createdAt'>>();
       newMotoristas.forEach(m => uniqueMap.set(m.codigo, m));
       const uniqueMotoristas = Array.from(uniqueMap.values());
@@ -192,7 +190,7 @@ export function useMotoristasDB() {
 
   const getMotoristaByCode = async (codigo: string): Promise<Motorista | null> => {
     const { data, error: fetchError } = await supabase
-      .from('motoristas')
+      .from('motoristas_public' as any)
       .select('*')
       .eq('codigo', codigo)
       .single();
@@ -201,7 +199,7 @@ export function useMotoristasDB() {
       return null;
     }
 
-    return dbToMotorista(data as MotoristaDB);
+    return dbToMotorista(data as MotoristaPublicDB);
   };
 
   return {
