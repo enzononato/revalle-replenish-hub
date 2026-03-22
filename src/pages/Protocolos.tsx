@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Protocolo, ObservacaoLog } from '@/types';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
@@ -144,96 +144,95 @@ export default function Protocolos() {
     }
   }, [searchParams, protocolos, selectedProtocolo, setSearchParams]);
 
-  const filteredProtocolos = protocolos
-    .filter(p => {
-      // Não mostrar protocolos ocultos (exceto para admin que os ocultou)
-      if (p.oculto) return false;
-      
-      // Não mostrar protocolos de pós-rota (devem aparecer apenas em Sobras)
-      if (p.tipoReposicao === 'pos_rota') return false;
-      
-      // Filtrar por unidade do motorista
-      if (!isAdmin) {
-        const userUnidades = (user?.unidade || '').split(',').map(u => u.trim());
-        if (unidadesFiltro.length > 0) {
-          if (!unidadesFiltro.includes(p.unidadeNome || '') || !userUnidades.includes(p.unidadeNome || '')) return false;
-        } else {
-          if (!userUnidades.includes(p.unidadeNome || '')) return false;
-        }
-      } else if (unidadesFiltro.length > 0) {
-        if (!unidadesFiltro.includes(p.unidadeNome || '')) return false;
-      }
-      
-      const searchMatch = 
-        p.numero.toLowerCase().includes(search.toLowerCase()) ||
-        p.motorista.nome.toLowerCase().includes(search.toLowerCase()) ||
-        (p.contatoWhatsapp || '').includes(search) ||
-        (p.motorista.whatsapp || '').includes(search) ||
-        p.codigoPdv?.includes(search) ||
-        p.mapa?.includes(search);
-      
-      const statusMatch = activeTab === 'todos' || p.status === activeTab;
-      
-      // Filtro de período (hoje)
-      let periodoMatch = true;
-      if (periodoFilter === 'hoje') {
-        try {
-          if (p.status === 'encerrado') {
-            const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
-            if (dataEnc) {
-              const parsed = parseFlexDate(dataEnc);
-              periodoMatch = isToday(parsed);
-            } else {
-              periodoMatch = false;
-            }
+  const filteredProtocolos = useMemo(() => {
+    const searchLower = search.toLowerCase();
+    const userUnidades = (user?.unidade || '').split(',').map(u => u.trim());
+
+    return protocolos
+      .filter(p => {
+        if (p.oculto) return false;
+        if (p.tipoReposicao === 'pos_rota') return false;
+
+        if (!isAdmin) {
+          if (unidadesFiltro.length > 0) {
+            if (!unidadesFiltro.includes(p.unidadeNome || '') || !userUnidades.includes(p.unidadeNome || '')) return false;
           } else {
-            periodoMatch = isToday(parseISO(p.createdAt));
+            if (!userUnidades.includes(p.unidadeNome || '')) return false;
           }
-        } catch {
-          periodoMatch = false;
+        } else if (unidadesFiltro.length > 0) {
+          if (!unidadesFiltro.includes(p.unidadeNome || '')) return false;
         }
-      }
-      
-      // Filtro de data inicial
-      let dataInicialMatch = true;
-      if (dataInicialFilter) {
-        const dataProtocolo = parseFlexDate(p.data);
-        const dataInicial = parseISO(dataInicialFilter);
-        dataInicialMatch = !isBefore(dataProtocolo, dataInicial);
-      }
-      
-      // Filtro de data final
-      let dataFinalMatch = true;
-      if (dataFinalFilter) {
-        const dataProtocolo = parseFlexDate(p.data);
-        const dataFinal = parseISO(dataFinalFilter);
-        dataFinalMatch = !isAfter(dataProtocolo, dataFinal);
-      }
-      
-      // Filtro de lançado
-      const lancadoMatch = lancadoFilter === 'todos' || 
-        (lancadoFilter === 'sim' && p.lancado) || 
-        (lancadoFilter === 'nao' && !p.lancado);
-      
-      // Filtro de validado
-      const validadoMatch = validadoFilter === 'todos' || 
-        (validadoFilter === 'sim' && p.validacao) || 
-        (validadoFilter === 'nao' && !p.validacao);
-      
-      // Filtro de tipo
-      const tipoMatch = tipoFilter === 'todos' || p.tipoReposicao === tipoFilter;
-      
-      return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
-    })
-    // Ordenar por SLA: mais antigos primeiro (maior SLA = topo)
-    // Para protocolos com mesmo SLA, ordenar por número (mais antigo primeiro)
-    .sort((a, b) => {
-      const slaA = calcularSlaDias(a.data, a.status, a.observacoesLog);
-      const slaB = calcularSlaDias(b.data, b.status, b.observacoesLog);
-      if (slaB !== slaA) return slaB - slaA;
-      // Ordenação secundária: número do protocolo (mais antigo primeiro)
-      return a.numero.localeCompare(b.numero);
-    });
+
+        const searchMatch =
+          p.numero.toLowerCase().includes(searchLower) ||
+          p.motorista.nome.toLowerCase().includes(searchLower) ||
+          (p.contatoWhatsapp || '').includes(search) ||
+          (p.motorista.whatsapp || '').includes(search) ||
+          p.codigoPdv?.includes(search) ||
+          p.mapa?.includes(search);
+
+        const statusMatch = activeTab === 'todos' || p.status === activeTab;
+
+        let periodoMatch = true;
+        if (periodoFilter === 'hoje') {
+          try {
+            if (p.status === 'encerrado') {
+              const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
+              periodoMatch = dataEnc ? isToday(parseFlexDate(dataEnc)) : false;
+            } else {
+              periodoMatch = isToday(parseISO(p.createdAt));
+            }
+          } catch {
+            periodoMatch = false;
+          }
+        }
+
+        let dataInicialMatch = true;
+        if (dataInicialFilter) {
+          const dataProtocolo = parseFlexDate(p.data);
+          const dataInicial = parseISO(dataInicialFilter);
+          dataInicialMatch = !isBefore(dataProtocolo, dataInicial);
+        }
+
+        let dataFinalMatch = true;
+        if (dataFinalFilter) {
+          const dataProtocolo = parseFlexDate(p.data);
+          const dataFinal = parseISO(dataFinalFilter);
+          dataFinalMatch = !isAfter(dataProtocolo, dataFinal);
+        }
+
+        const lancadoMatch = lancadoFilter === 'todos' ||
+          (lancadoFilter === 'sim' && p.lancado) ||
+          (lancadoFilter === 'nao' && !p.lancado);
+
+        const validadoMatch = validadoFilter === 'todos' ||
+          (validadoFilter === 'sim' && p.validacao) ||
+          (validadoFilter === 'nao' && !p.validacao);
+
+        const tipoMatch = tipoFilter === 'todos' || p.tipoReposicao === tipoFilter;
+
+        return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
+      })
+      .sort((a, b) => {
+        const slaA = calcularSlaDias(a.data, a.status, a.observacoesLog);
+        const slaB = calcularSlaDias(b.data, b.status, b.observacoesLog);
+        if (slaB !== slaA) return slaB - slaA;
+        return a.numero.localeCompare(b.numero);
+      });
+  }, [
+    protocolos,
+    isAdmin,
+    user?.unidade,
+    unidadesFiltro,
+    search,
+    activeTab,
+    periodoFilter,
+    dataInicialFilter,
+    dataFinalFilter,
+    lancadoFilter,
+    validadoFilter,
+    tipoFilter,
+  ]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredProtocolos.length / pageSize);
