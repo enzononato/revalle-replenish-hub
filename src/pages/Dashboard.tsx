@@ -56,6 +56,13 @@ const safeObsLog = (logs: unknown): ObservacaoLog[] => {
   return [];
 };
 
+// Helper to parse dates in both dd/MM/yyyy and yyyy-MM-dd formats
+const parseFlexDate = (dateStr: string): Date => {
+  return dateStr.includes('-') 
+    ? parse(dateStr, 'yyyy-MM-dd', new Date()) 
+    : parse(dateStr, 'dd/MM/yyyy', new Date());
+};
+
 
 const COLORS = ['hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(160, 84%, 39%)'];
 
@@ -160,7 +167,7 @@ export default function Dashboard() {
     
     const totalHoje = protocolosFiltrados.filter(p => {
       try {
-        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        const dataProtocolo = parseFlexDate(p.data);
         return isToday(dataProtocolo);
       } catch {
         return false;
@@ -171,7 +178,7 @@ export default function Dashboard() {
     const ontem = subDays(new Date(), 1);
     const totalOntem = protocolosFiltrados.filter(p => {
       try {
-        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        const dataProtocolo = parseFlexDate(p.data);
         return format(dataProtocolo, 'yyyy-MM-dd') === format(ontem, 'yyyy-MM-dd');
       } catch {
         return false;
@@ -300,7 +307,7 @@ export default function Dashboard() {
         
         const abertos = protocolosFiltrados.filter(p => {
           try {
-            const d = parse(p.data, 'dd/MM/yyyy', new Date());
+            const d = parseFlexDate(p.data);
             return d >= startOfDay(weekStart) && d <= endOfDay(weekEnd);
           } catch { return false; }
         }).length;
@@ -310,7 +317,7 @@ export default function Dashboard() {
           const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
           if (!logEnc?.data) return false;
           try {
-            const d = parse(logEnc.data, 'dd/MM/yyyy', new Date());
+            const d = parseFlexDate(logEnc.data);
             return d >= startOfDay(weekStart) && d <= endOfDay(weekEnd);
           } catch { return false; }
         }).length;
@@ -505,14 +512,16 @@ export default function Dashboard() {
   // Função para cor do SLA - usando campo data (DD/MM/YYYY) para consistência com backend
   const calcularSlaDias = (dataStr: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
     try {
-      const dataProtocolo = parse(dataStr, 'dd/MM/yyyy', new Date());
+      const dataProtocolo = parseFlexDate(dataStr);
+      if (isNaN(dataProtocolo.getTime())) return 0;
       
-      // Se encerrado, calcular até a data de encerramento
       if (status === 'encerrado') {
         const dataEncerramentoStr = getDataEncerramentoFromLog(observacoesLog);
         if (dataEncerramentoStr) {
-          const dataEncerramento = parse(dataEncerramentoStr, 'dd/MM/yyyy', new Date());
-          return differenceInDays(dataEncerramento, dataProtocolo);
+          const dataEncerramento = parseFlexDate(dataEncerramentoStr);
+          if (!isNaN(dataEncerramento.getTime())) {
+            return differenceInDays(dataEncerramento, dataProtocolo);
+          }
         }
       }
       
@@ -722,7 +731,7 @@ export default function Dashboard() {
             try {
               const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
               if (dataEnc) {
-                const parsed = parse(dataEnc, 'dd/MM/yyyy', new Date());
+                const parsed = parseFlexDate(dataEnc);
                 return isToday(parsed);
               }
               return false;

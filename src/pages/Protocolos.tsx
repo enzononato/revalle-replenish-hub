@@ -34,6 +34,13 @@ import { useUnidadesDB } from '@/hooks/useUnidadesDB';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import CreateProtocoloModal from '@/components/CreateProtocoloModal';
 
+// Helper to parse dates in both dd/MM/yyyy and yyyy-MM-dd formats
+const parseFlexDate = (dateStr: string): Date => {
+  return dateStr.includes('-') 
+    ? parse(dateStr, 'yyyy-MM-dd', new Date()) 
+    : parse(dateStr, 'dd/MM/yyyy', new Date());
+};
+
 // Função para extrair log de encerramento do histórico
 const getLogEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): ObservacaoLog | null => {
   if (!Array.isArray(observacoesLog)) return null;
@@ -47,20 +54,24 @@ const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | 
 };
 
 const calcularSlaDias = (dataStr: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
-  // data vem no formato DD/MM/YYYY - consistente com o backend
-  const dataProtocolo = parse(dataStr, 'dd/MM/yyyy', new Date());
-  
-  // Se encerrado, calcular até a data de encerramento
-  if (status === 'encerrado') {
-    const dataEncerramentoStr = getDataEncerramentoFromLog(observacoesLog);
-    if (dataEncerramentoStr) {
-      const dataEncerramento = parse(dataEncerramentoStr, 'dd/MM/yyyy', new Date());
-      return differenceInDays(dataEncerramento, dataProtocolo);
+  try {
+    const dataProtocolo = parseFlexDate(dataStr);
+    if (isNaN(dataProtocolo.getTime())) return 0;
+    
+    if (status === 'encerrado') {
+      const dataEncerramentoStr = getDataEncerramentoFromLog(observacoesLog);
+      if (dataEncerramentoStr) {
+        const dataEncerramento = parseFlexDate(dataEncerramentoStr);
+        if (!isNaN(dataEncerramento.getTime())) {
+          return differenceInDays(dataEncerramento, dataProtocolo);
+        }
+      }
     }
+    
+    return differenceInDays(new Date(), dataProtocolo);
+  } catch {
+    return 0;
   }
-  
-  const hoje = new Date();
-  return differenceInDays(hoje, dataProtocolo);
 };
 
 const getSlaColor = (dias: number): string => {
@@ -167,7 +178,7 @@ export default function Protocolos() {
           if (p.status === 'encerrado') {
             const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
             if (dataEnc) {
-              const parsed = parse(dataEnc, 'dd/MM/yyyy', new Date());
+              const parsed = parseFlexDate(dataEnc);
               periodoMatch = isToday(parsed);
             } else {
               periodoMatch = false;
@@ -183,7 +194,7 @@ export default function Protocolos() {
       // Filtro de data inicial
       let dataInicialMatch = true;
       if (dataInicialFilter) {
-        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        const dataProtocolo = parseFlexDate(p.data);
         const dataInicial = parseISO(dataInicialFilter);
         dataInicialMatch = !isBefore(dataProtocolo, dataInicial);
       }
@@ -191,7 +202,7 @@ export default function Protocolos() {
       // Filtro de data final
       let dataFinalMatch = true;
       if (dataFinalFilter) {
-        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
+        const dataProtocolo = parseFlexDate(p.data);
         const dataFinal = parseISO(dataFinalFilter);
         dataFinalMatch = !isAfter(dataProtocolo, dataFinal);
       }
