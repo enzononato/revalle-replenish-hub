@@ -255,6 +255,36 @@ export function PosRota({ motorista }: PosRotaProps) {
         data: format(agora, 'dd/MM/yyyy'),
         hora: format(agora, 'HH:mm'),
       });
+      // Send webhook to n8n (same endpoint as protocol creation)
+      const webhookPayload = {
+        tipo: 'pos_rota',
+        numero,
+        data: format(agora, 'dd/MM/yyyy'),
+        hora: format(agora, 'HH:mm:ss'),
+        mapa: mapa.trim(),
+        codigoPdv: precisaPdv ? codigoPdv.trim() : '',
+        notaFiscal: notaFiscal.trim() || '',
+        motoristaNome: motorista.nome,
+        motoristaCodigo: motorista.codigo,
+        motoristaWhatsapp: motorista.whatsapp || '',
+        motoristaEmail: motorista.email || '',
+        unidade: motorista.unidade || '',
+        tipoReposicao: 'POS_ROTA',
+        causa: `SOBRA EM ROTA - ${tipoLabel.toUpperCase()}`,
+        produtos: [],
+        fotos: { fotosSobra: fotosUrls },
+        observacaoGeral: observacao.trim() || '',
+      };
+
+      fetch('https://n8n.revalle.com.br/webhook/reposicaowpp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webhookPayload),
+      }).then(res => {
+        if (res.ok) console.log('Webhook pós-rota enviado com sucesso');
+        else console.error('Erro webhook pós-rota:', res.status);
+      }).catch(err => console.error('Erro webhook pós-rota:', err));
+
       setEnviado(true);
       fetchContadores();
 
