@@ -7,6 +7,7 @@ interface MotoristaPublicDB {
   id: string;
   nome: string;
   codigo: string;
+  cpf: string | null;
   data_nascimento: string | null;
   unidade: string;
   funcao: string;
@@ -21,6 +22,7 @@ const dbToMotorista = (db: MotoristaPublicDB): Motorista => ({
   id: db.id,
   nome: db.nome,
   codigo: db.codigo,
+  cpf: db.cpf || undefined,
   dataNascimento: db.data_nascimento || '',
   unidade: db.unidade,
   funcao: db.funcao as FuncaoMotorista,
