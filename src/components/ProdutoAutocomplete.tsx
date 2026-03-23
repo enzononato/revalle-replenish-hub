@@ -19,28 +19,38 @@ export function ProdutoAutocomplete({
   placeholder = "Digite o código ou nome do produto",
   className
 }: ProdutoAutocompleteProps) {
+  const [searchTerm, setSearchTerm] = useState('');
   const [inputValue, setInputValue] = useState(value);
   const [isOpen, setIsOpen] = useState(false);
-  const { produtos, isLoading } = useProdutosBusca(inputValue);
+  const [isSelected, setIsSelected] = useState(!!value);
+  const { produtos, isLoading } = useProdutosBusca(searchTerm);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setInputValue(value);
+    setIsSelected(!!value);
   }, [value]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        // If not selected from list, revert to last valid value or clear
+        if (!isSelected) {
+          setInputValue(value);
+          setSearchTerm('');
+        }
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isSelected, value]);
 
   const handleSelect = (produto: ProdutoCatalogo) => {
     const displayValue = `${produto.cod} - ${produto.produto}`;
     setInputValue(displayValue);
+    setSearchTerm('');
+    setIsSelected(true);
     onChange(displayValue, produto.embalagem);
     setIsOpen(false);
   };
@@ -48,8 +58,21 @@ export function ProdutoAutocomplete({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-    onChange(newValue);
+    setSearchTerm(newValue);
+    setIsSelected(false);
+    // Don't call onChange until a product is selected
+    if (newValue === '') {
+      onChange('');
+      setIsSelected(false);
+    }
     setIsOpen(newValue.length >= 2);
+  };
+
+  const handleClear = () => {
+    setInputValue('');
+    setSearchTerm('');
+    setIsSelected(false);
+    onChange('');
   };
 
   return (
