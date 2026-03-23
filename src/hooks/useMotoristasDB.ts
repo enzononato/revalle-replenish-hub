@@ -7,6 +7,7 @@ interface MotoristaPublicDB {
   id: string;
   nome: string;
   codigo: string;
+  cpf: string | null;
   data_nascimento: string | null;
   unidade: string;
   funcao: string;
