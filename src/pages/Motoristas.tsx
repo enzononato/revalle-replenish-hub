@@ -83,10 +83,12 @@ export default function Motoristas() {
     ? (unidadeFiltro === 'todas' ? motoristas : motoristas.filter(m => m.unidade === unidadeFiltro))
     : motoristas.filter(m => m.unidade === user?.unidade);
 
-  const filteredMotoristas = motoristasFiltradosPorUnidade.filter(m => 
-    m.nome.toLowerCase().includes(search.toLowerCase()) ||
-    m.codigo.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredMotoristas = motoristasFiltradosPorUnidade.filter(m => {
+    const s = search.toLowerCase().replace(/[.\-]/g, '');
+    return m.nome.toLowerCase().includes(s) ||
+      m.codigo.toLowerCase().includes(s) ||
+      (m.cpf && m.cpf.replace(/[.\-]/g, '').includes(s));
+  });
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredMotoristas.length / pageSize);
