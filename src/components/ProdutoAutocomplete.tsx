@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { useProdutosBusca, ProdutoCatalogo } from '@/hooks/useProdutosBusca';
 import { cn } from '@/lib/utils';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, X, CheckCircle2 } from 'lucide-react';
 
 interface ProdutoAutocompleteProps {
   value: string;
