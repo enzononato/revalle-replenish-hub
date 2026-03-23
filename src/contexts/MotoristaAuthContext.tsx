@@ -60,6 +60,12 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        try {
+          const errorBody = error.context ? await error.context.json() : null;
+          if (errorBody?.error) {
+            return { success: false, error: errorBody.error };
+          }
+        } catch {}
         return { success: false, error: error.message || 'Erro ao fazer login' };
       }
 
