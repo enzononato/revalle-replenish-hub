@@ -67,8 +67,8 @@ Deno.serve(async (req) => {
           unidade: porCpf.unidade,
         })
         return new Response(
-          JSON.stringify({ error: 'Senha incorreta' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+          JSON.stringify({ success: false, error: 'Senha incorreta' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
 
       const { senha: _, cpf: __, ...safeMotorist } = porCpf
       return new Response(
-        JSON.stringify({ motorista: safeMotorist }),
+        JSON.stringify({ success: true, motorista: safeMotorist }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -106,8 +106,8 @@ Deno.serve(async (req) => {
         erro: codError ? `Erro: ${codError.message}` : 'Motorista não encontrado',
       })
       return new Response(
-        JSON.stringify({ error: 'CPF ou código de motorista não encontrado' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+        JSON.stringify({ success: false, error: 'CPF ou código de motorista não encontrado' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -122,8 +122,8 @@ Deno.serve(async (req) => {
         unidade: porCodigo.unidade,
       })
       return new Response(
-        JSON.stringify({ error: 'Senha incorreta' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        JSON.stringify({ success: false, error: 'Senha incorreta' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
