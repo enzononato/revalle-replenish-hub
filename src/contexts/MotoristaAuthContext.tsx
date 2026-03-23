@@ -60,13 +60,46 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        let friendlyError: string | undefined;
+
         try {
-          const errorBody = error.context ? await error.context.json() : null;
-          if (errorBody?.error) {
-            return { success: false, error: errorBody.error };
+          const context = error.context as
+            | Response
+            | { error?: string }
+            | string
+            | null
+            | undefined;
+
+          if (context && typeof context === 'object' && 'json' in context && typeof context.json === 'function') {
+            const errorBody = await context.json();
+            if (errorBody?.error) {
+              friendlyError = errorBody.error;
+            }
+          } else if (typeof context === 'string') {
+            try {
+              const parsed = JSON.parse(context);
+              if (parsed?.error) {
+                friendlyError = parsed.error;
+              }
+            } catch {}
+          } else if (context && typeof context === 'object' && 'error' in context && context.error) {
+            friendlyError = context.error;
           }
         } catch {}
-        return { success: false, error: error.message || 'Erro ao fazer login' };
+
+        if (!friendlyError && typeof error.message === 'string') {
+          const jsonMatch = error.message.match(/\{.*\}$/);
+          if (jsonMatch) {
+            try {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed?.error) {
+                friendlyError = parsed.error;
+              }
+            } catch {}
+          }
+        }
+
+        return { success: false, error: friendlyError || error.message || 'Erro ao fazer login' };
       }
 
       if (data?.error) {
