@@ -25,6 +25,9 @@ import AbrirProtocolo from "./pages/AbrirProtocolo";
 import AlteracaoPedidos from "./pages/AlteracaoPedidos";
 import MotoristaLogin from "./pages/MotoristaLogin";
 import MotoristaPortal from "./pages/MotoristaPortal";
+import RnLogin from "./pages/RnLogin";
+import RnPortal from "./pages/RnPortal";
+import RepresentantesNegocio from "./pages/RepresentantesNegocio";
 
 import LogsAuditoria from "./pages/LogsAuditoria";
 import Sobras from "./pages/Sobras";
