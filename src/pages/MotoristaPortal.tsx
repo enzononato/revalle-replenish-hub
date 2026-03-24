@@ -1580,7 +1580,7 @@ export default function MotoristaPortal() {
       </div>
 
       {/* Upload Progress Indicator */}
-      {isUploading && uploadProgress && activeTab === 'novo' && (
+      {isUploading && uploadProgress && currentView === 'reposicao' && (
         <div 
           className="fixed bottom-20 left-0 right-0 p-4 bg-background border-t border-border"
           style={{ zIndex: 9998 }}
