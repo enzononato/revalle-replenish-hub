@@ -149,6 +149,7 @@ const App = () => (
                 </Routes>
               </BrowserRouter>
             </TooltipProvider>
+          </RnAuthProvider>
           </MotoristaAuthProvider>
         </ProtocolosProvider>
       </AuthProvider>
