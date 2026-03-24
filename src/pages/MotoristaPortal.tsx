@@ -168,7 +168,7 @@ export default function MotoristaPortal() {
   const { addProtocolo } = useProtocolos();
   const { isOnline, pendingCount, saveOffline, syncPending } = useOfflineProtocolos();
 
-  const [activeTab, setActiveTab] = useState('novo');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'reposicao' | 'pos-rota' | 'meus-protocolos'>('dashboard');
 
   // Form state
   const [mapa, setMapa] = useState('');
