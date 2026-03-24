@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import {
   Select,
   SelectContent,
@@ -27,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Minus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2, MessageCircle, Copy, Route } from 'lucide-react';
+import { Plus, Minus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2, MessageCircle, Copy, Route, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
@@ -168,7 +168,7 @@ export default function MotoristaPortal() {
   const { addProtocolo } = useProtocolos();
   const { isOnline, pendingCount, saveOffline, syncPending } = useOfflineProtocolos();
 
-  const [activeTab, setActiveTab] = useState('novo');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'reposicao' | 'pos-rota' | 'meus-protocolos'>('dashboard');
 
   // Form state
   const [mapa, setMapa] = useState('');
@@ -1018,8 +1018,8 @@ export default function MotoristaPortal() {
                 variant="secondary" 
                 onClick={() => {
                   resetForm();
-                  setActiveTab('meus');
-                }} 
+                  setCurrentView('meus-protocolos');
+                }}
                 className="w-full h-12 text-base"
               >
                 <FileText className="mr-2 h-5 w-5" />
@@ -1067,45 +1067,64 @@ export default function MotoristaPortal() {
       {/* Resumo do dia */}
       <DailySummary motorista={motorista} />
 
-      {/* Tabs */}
+      {/* Content Area */}
       <div className="px-3 pt-2 pb-2 max-w-xl mx-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
-          {/* Botão Novo protocolo - destaque acima */}
-          <div className="mb-2.5">
-            <button
-              onClick={() => setActiveTab('novo')}
-              className={cn(
-                "w-full h-11 rounded-xl text-[14px] font-semibold flex items-center justify-center gap-2 transition-all duration-200 border",
-                activeTab === 'novo'
-                  ? "bg-primary text-primary-foreground shadow-md border-primary"
-                  : "bg-background text-muted-foreground border-border/40 hover:bg-muted/50"
-              )}
+
+        {/* Dashboard Grid */}
+        {currentView === 'dashboard' && (
+          <div className="grid grid-cols-2 gap-3 pt-2 pb-4" data-tour="motorista-tabs">
+            <Card 
+              className="col-span-2 cursor-pointer border-border/50 hover:border-primary/60 active:scale-[0.98] transition-all duration-150"
+              onClick={() => setCurrentView('reposicao')}
             >
-              <PlusCircle className="w-5 h-5 shrink-0" />
-              Novo protocolo
+              <CardContent className="flex flex-col items-center justify-center gap-2 py-8">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <PlusCircle className="w-6 h-6 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Reposição</span>
+              </CardContent>
+            </Card>
+            <Card 
+              className="cursor-pointer border-border/50 hover:border-primary/60 active:scale-[0.98] transition-all duration-150"
+              onClick={() => setCurrentView('pos-rota')}
+            >
+              <CardContent className="flex flex-col items-center justify-center gap-2 py-6">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Route className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Pós Rota</span>
+              </CardContent>
+            </Card>
+            <Card 
+              className="cursor-pointer border-border/50 hover:border-primary/60 active:scale-[0.98] transition-all duration-150"
+              onClick={() => setCurrentView('meus-protocolos')}
+            >
+              <CardContent className="flex flex-col items-center justify-center gap-2 py-6">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Meus Protocolos</span>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Back button for sub-views */}
+        {currentView !== 'dashboard' && (
+          <div className="pt-2 pb-3">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
             </button>
           </div>
+        )}
 
-          {/* Tabs Protocolos | Pós-Rota */}
-          <TabsList className="grid w-full grid-cols-2 h-16 bg-muted/50 p-2 rounded-xl border border-border/40 gap-1.5">
-            <TabsTrigger 
-              value="meus" 
-              className="text-[14px] font-semibold gap-1.5 rounded-lg min-w-0 px-2 data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
-            >
-              <FileText className="w-4.5 h-4.5 shrink-0" />
-              <span>Protocolos</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="pos-rota" 
-              className="text-[14px] font-semibold gap-1.5 rounded-lg min-w-0 px-2 data-[state=inactive]:bg-background/80 data-[state=inactive]:text-muted-foreground data-[state=inactive]:border data-[state=inactive]:border-border/40 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"
-            >
-              <Route className="w-4.5 h-4.5 shrink-0" />
-              <span>Pós-Rota</span>
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Tab: Novo Protocolo */}
-          <TabsContent value="novo" className="mt-4 pb-4 space-y-4" data-tour="motorista-form">
+        {/* Reposição Form */}
+        {currentView === 'reposicao' && (
+          <div className="pb-4 space-y-4" data-tour="motorista-form">
             {/* Seção: Dados Gerais */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
@@ -1542,22 +1561,26 @@ export default function MotoristaPortal() {
                 />
               </div>
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Tab: Pós-Rota */}
-          <TabsContent value="pos-rota" className="mt-4 pb-6">
+        {/* Pós-Rota */}
+        {currentView === 'pos-rota' && (
+          <div className="pb-6">
             <PosRota motorista={motorista} />
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Tab: Meus Protocolos */}
-          <TabsContent value="meus" className="mt-3 pb-6">
+        {/* Meus Protocolos */}
+        {currentView === 'meus-protocolos' && (
+          <div className="pb-6">
             <MeusProtocolos motorista={motorista} />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
 
       {/* Upload Progress Indicator */}
-      {isUploading && uploadProgress && activeTab === 'novo' && (
+      {isUploading && uploadProgress && currentView === 'reposicao' && (
         <div 
           className="fixed bottom-20 left-0 right-0 p-4 bg-background border-t border-border"
           style={{ zIndex: 9998 }}
@@ -1622,7 +1645,7 @@ export default function MotoristaPortal() {
       )}
 
       {/* Submit Button - Only show on new protocol tab */}
-      {activeTab === 'novo' && (
+      {currentView === 'reposicao' && (
         <div className="mt-1 mb-6 flex justify-center" data-tour="btn-enviar">
           <button 
             type="button"

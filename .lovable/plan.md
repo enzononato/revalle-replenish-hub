@@ -1,36 +1,83 @@
 
 
-## Plan: Show friendly error messages on motorista login
+## Plan: Portal dos Representantes de Negócio (RN)
 
-### Problem
-When the edge function returns HTTP 401 (wrong password) or 404 (not found), `supabase.functions.invoke` puts the response in the `error` field with a generic message like "Edge function returned 401". The actual JSON body with `"Senha incorreta"` is lost.
+### Overview
+Create a new portal for RN (Representantes de Negócio) at `/rn/login` and `/rn/portal`, mirroring the motorista portal pattern. RNs can only view and search protocolos by PDV code across three tabs (Abertos, Em Atendimento, Encerrados). An admin management page allows CRUD on RNs.
 
-### Solution
-Update `MotoristaAuthContext.tsx` login function to parse the error response body and extract the friendly message.
+### Database Changes
 
-### Changes
+**1. New table `representantes`**
+- `id` (uuid, PK)
+- `nome` (text, NOT NULL)
+- `cpf` (text, NOT NULL, UNIQUE)
+- `unidade` (text, NOT NULL)
+- `senha` (text, NOT NULL)
+- `created_at` (timestamp)
+- RLS: authenticated users can read/insert/update/delete (for admin management); anon blocked
 
-**File: `src/contexts/MotoristaAuthContext.tsx`** (~lines 58-64)
+**2. New view `representantes_public`** (excludes `senha` column, like `motoristas_public`)
 
-Replace the error handling block to attempt parsing the error context for the original message:
+### Edge Function
 
-```typescript
-const { data, error } = await supabase.functions.invoke('motorista-login', {
-  body: { identificador, senha },
-});
+**`supabase/functions/rn-login/index.ts`**
+- Accepts `{ cpf, senha }`
+- Looks up by CPF in `representantes` table using service role
+- Returns `{ success: true, representante }` or `{ success: false, error: '...' }` (status 200 pattern, matching motorista strategy)
 
-if (error) {
-  // supabase.functions.invoke wraps non-2xx responses as errors
-  // Try to extract the friendly message from the error context
-  try {
-    const errorBody = error.context ? await error.context.json() : null;
-    if (errorBody?.error) {
-      return { success: false, error: errorBody.error };
-    }
-  } catch {}
-  return { success: false, error: error.message || 'Erro ao fazer login' };
-}
+### Frontend - Auth
+
+**`src/contexts/RnAuthContext.tsx`**
+- Same pattern as `MotoristaAuthContext`
+- Stores session in `localStorage` key `rn_session`
+- `login(cpf, senha)` calls `rn-login` edge function
+- Wrap in `App.tsx`
+
+### Frontend - Pages
+
+**`src/pages/RnLogin.tsx`**
+- Similar to `MotoristaLogin` but with "Portal do RN" branding and Briefcase icon
+- Fields: CPF + Senha only (no "Código" option)
+- On success, navigate to `/rn/portal`
+
+**`src/pages/RnPortal.tsx`**
+- Header with RN name, unidade, logout button
+- Search input for PDV code
+- Three tabs: Abertos, Em Atendimento, Encerrados
+- Queries `protocolos` table filtered by `motorista_unidade = rn.unidade` and `codigo_pdv` search
+- Read-only cards showing protocolo details (numero, motorista, PDV, data, status, produtos)
+- No create/edit actions
+
+**`src/pages/RepresentantesNegocio.tsx`** (admin management)
+- Same pattern as `Motoristas.tsx`: table with search, filter by unidade, add/edit/delete dialogs
+- Fields: Nome, CPF, Unidade, Senha
+- Protected route for admin only
+
+### Routing (App.tsx)
+
+- `/rn` → redirect to `/rn/login`
+- `/rn/login` → `RnLogin`
+- `/rn/portal` → `RnPortal`
+- `/representantes` → `RepresentantesNegocio` (inside MainLayout, admin-only ProtectedRoute)
+
+### Sidebar
+
+Add nav item:
+```
+{ icon: UserCheck, label: "RN's", path: '/representantes', roles: ['admin'] }
 ```
 
-This way, "Senha incorreta", "CPF ou código não encontrado", etc. will be shown as friendly toast messages instead of the raw edge function error.
+### Files to Create/Modify
+
+| Action | File |
+|--------|------|
+| Create | `supabase/functions/rn-login/index.ts` |
+| Create | `src/contexts/RnAuthContext.tsx` |
+| Create | `src/pages/RnLogin.tsx` |
+| Create | `src/pages/RnPortal.tsx` |
+| Create | `src/pages/RepresentantesNegocio.tsx` |
+| Create | `src/hooks/useRepresentantesDB.ts` |
+| Modify | `src/App.tsx` (add routes + RnAuthProvider) |
+| Modify | `src/components/layout/Sidebar.tsx` (add RN's nav item) |
+| Migration | Create `representantes` table + `representantes_public` view |
 
