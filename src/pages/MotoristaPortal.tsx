@@ -1561,18 +1561,22 @@ export default function MotoristaPortal() {
                 />
               </div>
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Tab: Pós-Rota */}
-          <TabsContent value="pos-rota" className="mt-4 pb-6">
+        {/* Pós-Rota */}
+        {currentView === 'pos-rota' && (
+          <div className="pb-6">
             <PosRota motorista={motorista} />
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Tab: Meus Protocolos */}
-          <TabsContent value="meus" className="mt-3 pb-6">
+        {/* Meus Protocolos */}
+        {currentView === 'meus-protocolos' && (
+          <div className="pb-6">
             <MeusProtocolos motorista={motorista} />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
 
       {/* Upload Progress Indicator */}
