@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtocolosProvider } from "@/contexts/ProtocolosContext";
 import { MotoristaAuthProvider } from "@/contexts/MotoristaAuthContext";
+import { RnAuthProvider } from "@/contexts/RnAuthContext";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { KeyboardShortcutsModal } from "@/components/KeyboardShortcutsModal";
@@ -24,6 +25,9 @@ import AbrirProtocolo from "./pages/AbrirProtocolo";
 import AlteracaoPedidos from "./pages/AlteracaoPedidos";
 import MotoristaLogin from "./pages/MotoristaLogin";
 import MotoristaPortal from "./pages/MotoristaPortal";
+import RnLogin from "./pages/RnLogin";
+import RnPortal from "./pages/RnPortal";
+import RepresentantesNegocio from "./pages/RepresentantesNegocio";
 
 import LogsAuditoria from "./pages/LogsAuditoria";
 import Sobras from "./pages/Sobras";
@@ -38,6 +42,7 @@ const App = () => (
       <AuthProvider>
         <ProtocolosProvider>
           <MotoristaAuthProvider>
+          <RnAuthProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
@@ -50,6 +55,9 @@ const App = () => (
                   <Route path="/motorista" element={<Navigate to="/motorista/login" replace />} />
                   <Route path="/motorista/login" element={<MotoristaLogin />} />
                   <Route path="/motorista/portal" element={<MotoristaPortal />} />
+                  <Route path="/rn" element={<Navigate to="/rn/login" replace />} />
+                  <Route path="/rn/login" element={<RnLogin />} />
+                  <Route path="/rn/portal" element={<RnPortal />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route element={<MainLayout />}>
                     <Route path="/dashboard" element={<Dashboard />} />
@@ -128,11 +136,20 @@ const App = () => (
                         </ProtectedRoute>
                       } 
                     />
+                    <Route 
+                      path="/representantes" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <RepresentantesNegocio />
+                        </ProtectedRoute>
+                      } 
+                    />
                     </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
             </TooltipProvider>
+          </RnAuthProvider>
           </MotoristaAuthProvider>
         </ProtocolosProvider>
       </AuthProvider>

@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.motorista-login]
 verify_jwt = false
+
+[functions.rn-login]
+verify_jwt = false

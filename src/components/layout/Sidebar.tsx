@@ -18,7 +18,8 @@ import {
   Pencil,
   Phone,
   Send,
-  Package
+  Package,
+  UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -42,6 +43,7 @@ const navItems: NavItem[] = [
   { icon: Phone, label: 'Números', path: '/numeros', roles: ['admin'] },
   { icon: ClipboardList, label: 'Logs de Auditoria', path: '/logs-auditoria', roles: ['admin'] },
   { icon: Send, label: 'Alteração Pedidos', path: '/alteracao-pedidos', roles: ['admin', 'distribuicao', 'controle'] },
+  { icon: UserCheck, label: "RN's", path: '/representantes', roles: ['admin'] },
   { icon: Settings, label: 'Configurações', path: '/configuracoes', roles: ['admin'] },
 ];
 
