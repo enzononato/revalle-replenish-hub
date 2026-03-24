@@ -55,6 +55,9 @@ const App = () => (
                   <Route path="/motorista" element={<Navigate to="/motorista/login" replace />} />
                   <Route path="/motorista/login" element={<MotoristaLogin />} />
                   <Route path="/motorista/portal" element={<MotoristaPortal />} />
+                  <Route path="/rn" element={<Navigate to="/rn/login" replace />} />
+                  <Route path="/rn/login" element={<RnLogin />} />
+                  <Route path="/rn/portal" element={<RnPortal />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route element={<MainLayout />}>
                     <Route path="/dashboard" element={<Dashboard />} />
