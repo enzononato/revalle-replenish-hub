@@ -195,6 +195,13 @@ export default function RnPortal() {
           </Tabs>
         </div>
       </div>
+
+      <RnReenvioModal
+        protocolo={selectedProtocolo}
+        open={!!selectedProtocolo}
+        onClose={() => setSelectedProtocolo(null)}
+        representante={representante}
+      />
     </div>
   );
 }
