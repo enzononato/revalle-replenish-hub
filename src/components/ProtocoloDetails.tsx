@@ -95,32 +95,7 @@ export function ProtocoloDetails({
   const [editandoProdutos, setEditandoProdutos] = useState(false);
   const [produtosEditados, setProdutosEditados] = useState<Produto[]>(protocolo?.produtos || []);
 
-  const [fotosLazy, setFotosLazy] = useState<FotosProtocolo | undefined>(undefined);
 
-  // Lazy-load fotos_protocolo when opening detail (excluded from listing query for performance)
-  useEffect(() => {
-    if (!open || !protocolo) {
-      setFotosLazy(undefined);
-      return;
-    }
-    // If protocolo already has fotos (e.g. from a direct fetch), use them
-    if (protocolo.fotosProtocolo) {
-      setFotosLazy(protocolo.fotosProtocolo);
-      return;
-    }
-    let cancelled = false;
-    supabase
-      .from('protocolos')
-      .select('fotos_protocolo')
-      .eq('id', protocolo.id)
-      .single()
-      .then(({ data }) => {
-        if (!cancelled) {
-          setFotosLazy(data?.fotos_protocolo as unknown as FotosProtocolo | undefined);
-        }
-      });
-    return () => { cancelled = true; };
-  }, [open, protocolo?.id]);
 
   // Função para validar formato de telefone brasileiro
   const validarTelefone = (telefone: string): boolean => {
