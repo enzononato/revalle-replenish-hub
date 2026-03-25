@@ -41,12 +41,14 @@ export default function RnPortal() {
     }
   }, [isAuthenticated, representante, navigate]);
 
-  const fetchProtocolos = async () => {
-    if (!representante || !searchPdv.trim()) {
+  const fetchProtocolos = async (pdvCode?: string) => {
+    const code = pdvCode ?? searchPdv.trim();
+    if (!representante || !code) {
       setProtocolos([]);
       return;
     }
     setIsLoading(true);
+    setSearchedPdv(code);
 
     let statusFilter: string[];
     if (activeTab === 'abertos') statusFilter = ['aberto'];
@@ -58,7 +60,7 @@ export default function RnPortal() {
       .select('id, numero, motorista_nome, codigo_pdv, data, hora, status, tipo_reposicao, causa, produtos, nota_fiscal, mapa')
       .eq('motorista_unidade', representante.unidade)
       .in('status', statusFilter)
-      .eq('codigo_pdv', searchPdv.trim())
+      .eq('codigo_pdv', code)
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -68,10 +70,9 @@ export default function RnPortal() {
 
   const handleSearch = () => fetchProtocolos();
 
-  // Re-fetch when tab changes if there's an active search
+  // Re-fetch when tab changes only if a search was already performed
   useEffect(() => {
-    if (searchPdv.trim()) fetchProtocolos();
-    else setProtocolos([]);
+    if (searchedPdv) fetchProtocolos(searchedPdv);
   }, [activeTab]);
 
   const handleLogout = () => {
