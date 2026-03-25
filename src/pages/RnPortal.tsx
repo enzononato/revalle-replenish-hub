@@ -48,7 +48,7 @@ export default function RnPortal() {
 
     let statusFilter: string[];
     if (activeTab === 'abertos') statusFilter = ['aberto'];
-    else if (activeTab === 'em_atendimento') statusFilter = ['em_atendimento'];
+    else if (activeTab === 'em_atendimento') statusFilter = ['em_andamento'];
     else statusFilter = ['encerrado'];
 
     let query = supabase
