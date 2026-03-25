@@ -242,29 +242,21 @@ export function BuscarProtocoloPdv({
                     {produtos.length > 0 && (
                       <div>
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Produtos</p>
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {produtos.map((prod, idx) => {
                             const entregue = (prod as any).status === 'entregue';
                             return (
-                              <div key={idx} className="flex items-center justify-between text-[11px] px-2 py-1 rounded bg-muted/50">
-                                <span className={entregue ? 'line-through text-muted-foreground' : 'text-foreground'}>
-                                  {(prod as any).cod || ''} – {(prod as any).produto || (prod as any).nome || 'Produto'}
-                                </span>
-                                <span className="text-muted-foreground ml-2 shrink-0">
-                                  {(prod as any).quantidade || (prod as any).qtd || ''} {(prod as any).embalagem || ''}
-                                </span>
+                              <div key={idx} className="text-[11px] px-2.5 py-1.5 rounded-md bg-muted/50 space-y-0.5">
+                                <p className={`leading-snug break-words ${entregue ? 'line-through text-muted-foreground' : 'text-foreground font-medium'}`}>
+                                  {(prod as any).cod ? `${(prod as any).cod} – ` : ''}{(prod as any).produto || (prod as any).nome || 'Produto'}
+                                </p>
+                                <p className="text-muted-foreground text-[10px]">
+                                  Qtd: {(prod as any).quantidade || (prod as any).qtd || '—'} {(prod as any).embalagem || ''}
+                                </p>
                               </div>
                             );
                           })}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Nota fiscal */}
-                    {protocolo.nota_fiscal && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                        <FileText className="w-3 h-3" />
-                        <span>NF: <span className="text-foreground font-medium">{protocolo.nota_fiscal}</span></span>
                       </div>
                     )}
 
