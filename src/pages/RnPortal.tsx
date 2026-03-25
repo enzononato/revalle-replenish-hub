@@ -153,7 +153,7 @@ export default function RnPortal() {
                   protocolos.map(p => {
                     const prods = parseProdutos(p.produtos);
                     return (
-                      <Card key={p.id} className="overflow-hidden">
+                      <Card key={p.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => setSelectedProtocolo(p)}>
                         <CardContent className="p-4 space-y-2">
                           <div className="flex items-center justify-between">
                             <span className="font-mono font-bold text-sm text-foreground">#{p.numero}</span>
