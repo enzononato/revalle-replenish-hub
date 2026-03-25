@@ -509,7 +509,7 @@ export default function LogsAuditoria() {
                   </tbody>
                 </table>
                 
-                {filteredLogs.length === 0 && (
+                {paginatedLogs.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     Nenhum log encontrado
                   </div>
@@ -519,7 +519,7 @@ export default function LogsAuditoria() {
                   currentPage={currentPage}
                   totalPages={totalPages}
                   pageSize={pageSize}
-                  totalItems={filteredLogs.length}
+                  totalItems={totalLogs}
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                 />
@@ -649,7 +649,7 @@ export default function LogsAuditoria() {
                   </tbody>
                 </table>
                 
-                {filteredLoginLogs.length === 0 && (
+                {paginatedLoginLogs.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     Nenhum log de login encontrado
                   </div>
@@ -659,7 +659,7 @@ export default function LogsAuditoria() {
                   currentPage={loginCurrentPage}
                   totalPages={loginTotalPages}
                   pageSize={loginPageSize}
-                  totalItems={filteredLoginLogs.length}
+                  totalItems={totalLoginLogs}
                   onPageChange={setLoginCurrentPage}
                   onPageSizeChange={setLoginPageSize}
                 />
