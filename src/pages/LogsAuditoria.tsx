@@ -214,7 +214,9 @@ const getRoleLabel = (role: string | null): string => {
 export default function LogsAuditoria() {
   const [activeTab, setActiveTab] = useState('auditoria');
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [totalLogs, setTotalLogs] = useState(0);
   const [loginLogs, setLoginLogs] = useState<MotoristaLoginLog[]>([]);
+  const [totalLoginLogs, setTotalLoginLogs] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [search, setSearch] = useState('');
@@ -230,17 +232,36 @@ export default function LogsAuditoria() {
   const [loginCurrentPage, setLoginCurrentPage] = useState(1);
   const [loginPageSize, setLoginPageSize] = useState(20);
 
+  // Server-side paginated fetch for audit logs
   useEffect(() => {
     const fetchLogs = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('audit_logs')
-          .select('*')
+          .select('*', { count: 'exact' })
           .order('created_at', { ascending: false });
+
+        // Apply server-side filters
+        if (tabelaFiltro !== 'todas') {
+          query = query.eq('tabela', tabelaFiltro);
+        }
+        if (acaoFiltro !== 'todas') {
+          query = query.eq('acao', acaoFiltro);
+        }
+        if (search.trim()) {
+          query = query.or(`usuario_nome.ilike.%${search}%,registro_id.ilike.%${search}%`);
+        }
+
+        const from = (currentPage - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+
+        const { data, error, count } = await query;
 
         if (error) throw error;
         setLogs((data as AuditLog[]) || []);
+        setTotalLogs(count ?? 0);
       } catch (error) {
         console.error('Erro ao carregar logs:', error);
       } finally {
@@ -249,20 +270,40 @@ export default function LogsAuditoria() {
     };
 
     fetchLogs();
-  }, []);
+  }, [currentPage, pageSize, tabelaFiltro, acaoFiltro, search]);
 
+  // Server-side paginated fetch for login logs
   useEffect(() => {
     if (activeTab === 'login-motorista') {
       const fetchLoginLogs = async () => {
         setIsLoadingLogin(true);
         try {
-          const { data, error } = await supabase
+          let query = supabase
             .from('motorista_login_logs')
-            .select('*')
+            .select('*', { count: 'exact' })
             .order('created_at', { ascending: false });
+
+          if (loginStatusFiltro === 'sucesso') {
+            query = query.eq('sucesso', true);
+          } else if (loginStatusFiltro === 'falha') {
+            query = query.eq('sucesso', false);
+          }
+          if (loginTipoFiltro !== 'todos') {
+            query = query.eq('identificador_tipo', loginTipoFiltro);
+          }
+          if (loginSearch.trim()) {
+            query = query.or(`identificador.ilike.%${loginSearch}%,motorista_nome.ilike.%${loginSearch}%,unidade.ilike.%${loginSearch}%`);
+          }
+
+          const from = (loginCurrentPage - 1) * loginPageSize;
+          const to = from + loginPageSize - 1;
+          query = query.range(from, to);
+
+          const { data, error, count } = await query;
 
           if (error) throw error;
           setLoginLogs((data as MotoristaLoginLog[]) || []);
+          setTotalLoginLogs(count ?? 0);
         } catch (error) {
           console.error('Erro ao carregar logs de login:', error);
         } finally {
@@ -271,7 +312,7 @@ export default function LogsAuditoria() {
       };
       fetchLoginLogs();
     }
-  }, [activeTab]);
+  }, [activeTab, loginCurrentPage, loginPageSize, loginStatusFiltro, loginTipoFiltro, loginSearch]);
 
   // Filter audit logs
   const filteredLogs = logs.filter(log => {
