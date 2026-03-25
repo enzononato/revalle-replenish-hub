@@ -329,15 +329,15 @@ export function ProtocoloDetails({
   }
   
   // Fotos do objeto fotosProtocolo (usa URL direta do Storage para exibição)
-  if (protocolo.fotosProtocolo) {
-    if (protocolo.fotosProtocolo.fotoMotoristaPdv) {
-      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoMotoristaPdv), label: 'Motorista/PDV' });
+  if (fotosLazy) {
+    if (fotosLazy.fotoMotoristaPdv) {
+      todasFotos.push({ url: getDirectStorageUrl(fotosLazy.fotoMotoristaPdv), label: 'Motorista/PDV' });
     }
-    if (protocolo.fotosProtocolo.fotoLoteProduto) {
-      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoLoteProduto), label: 'Lote Produto' });
+    if (fotosLazy.fotoLoteProduto) {
+      todasFotos.push({ url: getDirectStorageUrl(fotosLazy.fotoLoteProduto), label: 'Lote Produto' });
     }
-    if (protocolo.fotosProtocolo.fotoAvaria) {
-      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoAvaria), label: 'Avaria' });
+    if (fotosLazy.fotoAvaria) {
+      todasFotos.push({ url: getDirectStorageUrl(fotosLazy.fotoAvaria), label: 'Avaria' });
     }
   }
 
