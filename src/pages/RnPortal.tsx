@@ -155,6 +155,7 @@ export default function RnPortal() {
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
                     <p className="text-sm">Nenhum protocolo encontrado para o PDV "{searchPdv}"</p>
+                    <p className="text-xs mt-1 opacity-70">Unidade: {representante.unidade}</p>
                   </div>
                 ) : (
                   protocolos.map(p => {
