@@ -77,7 +77,7 @@ export function BuscarProtocoloPdv({
         .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, motorista_nome, motorista_codigo, motorista_whatsapp, motorista_email, motorista_unidade, produtos, observacao_geral, contato_whatsapp, contato_email, cliente_telefone, fotos_protocolo, observacoes_log, mapa')
         .eq('status', statusFilter)
         .eq('ativo', true)
-        .ilike('codigo_pdv', `%${codigoPdv.trim()}%`)
+        .eq('codigo_pdv', codigoPdv.trim())
         .or('oculto.is.null,oculto.eq.false')
         .order('created_at', { ascending: false })
         .limit(20);
