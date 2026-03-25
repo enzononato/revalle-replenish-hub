@@ -95,6 +95,29 @@ export function ProtocoloDetails({
   const [editandoProdutos, setEditandoProdutos] = useState(false);
   const [produtosEditados, setProdutosEditados] = useState<Produto[]>(protocolo?.produtos || []);
 
+  const [fotosLazy, setFotosLazy] = useState<FotosProtocolo | undefined>(protocolo?.fotosProtocolo);
+
+  // Lazy-load fotos_protocolo when opening detail (excluded from listing query for performance)
+  useEffect(() => {
+    if (!open || !protocolo) return;
+    if (protocolo.fotosProtocolo) {
+      setFotosLazy(protocolo.fotosProtocolo);
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('protocolos')
+      .select('fotos_protocolo')
+      .eq('id', protocolo.id)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled && data?.fotos_protocolo) {
+          setFotosLazy(data.fotos_protocolo as unknown as FotosProtocolo);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [open, protocolo?.id, protocolo?.fotosProtocolo]);
+
   // Função para validar formato de telefone brasileiro
   const validarTelefone = (telefone: string): boolean => {
     // Remove tudo que não é número
