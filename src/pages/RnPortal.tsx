@@ -32,6 +32,7 @@ export default function RnPortal() {
   const [protocolos, setProtocolos] = useState<ProtocoloRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('abertos');
+  const [selectedProtocolo, setSelectedProtocolo] = useState<ProtocoloRow | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || !representante) {
