@@ -100,8 +100,8 @@ export function ProtocoloDetails({
   // Lazy-load fotos_protocolo when opening detail (excluded from listing query for performance)
   useEffect(() => {
     if (!open || !protocolo) return;
-    if (protocolo.fotosProtocolo) {
-      setFotosLazy(protocolo.fotosProtocolo);
+    if (fotosLazy) {
+      setFotosLazy(fotosLazy);
       return;
     }
     let cancelled = false;
@@ -540,9 +540,9 @@ export function ProtocoloDetails({
         observacaoGeral: protocolo.observacaoGeral,
         produtos: protocolo.produtos,
         fotos: {
-          fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
-          fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
-          fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
+          fotoMotoristaPdv: getCustomPhotoUrl(fotosLazy?.fotoMotoristaPdv || ''),
+          fotoLoteProduto: getCustomPhotoUrl(fotosLazy?.fotoLoteProduto || ''),
+          fotoAvaria: getCustomPhotoUrl(fotosLazy?.fotoAvaria || '')
         },
         mensagemEncerramento: mensagemEncerramento || '',
         arquivoEncerramentoUrl: arquivoUrl,
@@ -639,9 +639,9 @@ export function ProtocoloDetails({
           causa: protocolo.causa || '',
           produtos: protocolo.produtos || [],
           fotos: {
-            fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
-            fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
-            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+            fotoMotoristaPdv: fotosLazy?.fotoMotoristaPdv || '',
+            fotoLoteProduto: fotosLazy?.fotoLoteProduto || '',
+            fotoAvaria: fotosLazy?.fotoAvaria || ''
           },
           whatsappContato: numeroContatoReenvio,
           emailContato: protocolo.contatoEmail || '',
@@ -676,9 +676,9 @@ export function ProtocoloDetails({
           observacaoGeral: protocolo.observacaoGeral,
           produtos: protocolo.produtos,
           fotos: {
-            fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
-            fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
-            fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
+            fotoMotoristaPdv: getCustomPhotoUrl(fotosLazy?.fotoMotoristaPdv || ''),
+            fotoLoteProduto: getCustomPhotoUrl(fotosLazy?.fotoLoteProduto || ''),
+            fotoAvaria: getCustomPhotoUrl(fotosLazy?.fotoAvaria || '')
           },
           mensagemEncerramento: protocolo.mensagemEncerramento || '',
           arquivoEncerramentoUrl: protocolo.arquivoEncerramento,
