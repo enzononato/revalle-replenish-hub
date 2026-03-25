@@ -47,7 +47,7 @@ export default function RnLogin() {
     try {
       const result = await login(cpf.replace(/\D/g, ''), senha);
       if (result.success) {
-        toast({ title: "Login realizado!", description: "Bem-vindo ao portal do RN." });
+        // Navigation is immediate, no blocking toast needed
         navigate('/rn/portal');
       } else {
         toast({ title: "Erro no login", description: result.error || "CPF ou senha incorretos.", variant: "destructive" });
