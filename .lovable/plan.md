@@ -1,83 +1,45 @@
 
 
-## Plan: Portal dos Representantes de Negócio (RN)
+## Problema encontrado
 
-### Overview
-Create a new portal for RN (Representantes de Negócio) at `/rn/login` and `/rn/portal`, mirroring the motorista portal pattern. RNs can only view and search protocolos by PDV code across three tabs (Abertos, Em Atendimento, Encerrados). An admin management page allows CRUD on RNs.
+Ao mover o `ProtocolosProvider` para o nível de rota (apenas em `/dashboard` e `/protocolos`), duas outras páginas que também usam `useProtocolos()` ficaram sem o provider, causando crash:
 
-### Database Changes
+1. **`/abrir-protocolo`** - rota standalone fora do `MainLayout`, usa `useProtocolos().addProtocolo`
+2. **`/configuracoes`** - dentro do `MainLayout` mas sem `ProtocolosProvider`, usa `useProtocolos().protocolos`
 
-**1. New table `representantes`**
-- `id` (uuid, PK)
-- `nome` (text, NOT NULL)
-- `cpf` (text, NOT NULL, UNIQUE)
-- `unidade` (text, NOT NULL)
-- `senha` (text, NOT NULL)
-- `created_at` (timestamp)
-- RLS: authenticated users can read/insert/update/delete (for admin management); anon blocked
+As demais páginas (Sobras, Motoristas, Clientes, Unidades, Usuarios, Numeros, LogsAuditoria, AlteracaoPedidos, RepresentantesNegocio) **não** usam `useProtocolos` e estão corretas.
 
-**2. New view `representantes_public`** (excludes `senha` column, like `motoristas_public`)
+---
 
-### Edge Function
+## Plano de correção
 
-**`supabase/functions/rn-login/index.ts`**
-- Accepts `{ cpf, senha }`
-- Looks up by CPF in `representantes` table using service role
-- Returns `{ success: true, representante }` or `{ success: false, error: '...' }` (status 200 pattern, matching motorista strategy)
+### 1. Página `/configuracoes` - Adicionar ProtocolosProvider na rota
 
-### Frontend - Auth
+No `App.tsx`, envolver `Configuracoes` com `ProtocolosProvider`, igual ao Dashboard e Protocolos:
 
-**`src/contexts/RnAuthContext.tsx`**
-- Same pattern as `MotoristaAuthContext`
-- Stores session in `localStorage` key `rn_session`
-- `login(cpf, senha)` calls `rn-login` edge function
-- Wrap in `App.tsx`
-
-### Frontend - Pages
-
-**`src/pages/RnLogin.tsx`**
-- Similar to `MotoristaLogin` but with "Portal do RN" branding and Briefcase icon
-- Fields: CPF + Senha only (no "Código" option)
-- On success, navigate to `/rn/portal`
-
-**`src/pages/RnPortal.tsx`**
-- Header with RN name, unidade, logout button
-- Search input for PDV code
-- Three tabs: Abertos, Em Atendimento, Encerrados
-- Queries `protocolos` table filtered by `motorista_unidade = rn.unidade` and `codigo_pdv` search
-- Read-only cards showing protocolo details (numero, motorista, PDV, data, status, produtos)
-- No create/edit actions
-
-**`src/pages/RepresentantesNegocio.tsx`** (admin management)
-- Same pattern as `Motoristas.tsx`: table with search, filter by unidade, add/edit/delete dialogs
-- Fields: Nome, CPF, Unidade, Senha
-- Protected route for admin only
-
-### Routing (App.tsx)
-
-- `/rn` → redirect to `/rn/login`
-- `/rn/login` → `RnLogin`
-- `/rn/portal` → `RnPortal`
-- `/representantes` → `RepresentantesNegocio` (inside MainLayout, admin-only ProtectedRoute)
-
-### Sidebar
-
-Add nav item:
-```
-{ icon: UserCheck, label: "RN's", path: '/representantes', roles: ['admin'] }
+```tsx
+<Route path="/configuracoes" element={
+  <ProtectedRoute allowedRoles={['admin']}>
+    <ProtocolosProvider><Configuracoes /></ProtocolosProvider>
+  </ProtectedRoute>
+} />
 ```
 
-### Files to Create/Modify
+### 2. Página `/abrir-protocolo` - Usar hook leve ao invés do contexto pesado
 
-| Action | File |
-|--------|------|
-| Create | `supabase/functions/rn-login/index.ts` |
-| Create | `src/contexts/RnAuthContext.tsx` |
-| Create | `src/pages/RnLogin.tsx` |
-| Create | `src/pages/RnPortal.tsx` |
-| Create | `src/pages/RepresentantesNegocio.tsx` |
-| Create | `src/hooks/useRepresentantesDB.ts` |
-| Modify | `src/App.tsx` (add routes + RnAuthProvider) |
-| Modify | `src/components/layout/Sidebar.tsx` (add RN's nav item) |
-| Migration | Create `representantes` table + `representantes_public` view |
+A página `AbrirProtocolo` só precisa de `addProtocolo`. Em vez de carregar todos os 3.400+ protocolos via `ProtocolosProvider`, trocar para o hook leve `useAddProtocolo` que já existe:
+
+- Substituir `import { useProtocolos }` por `import { useAddProtocolo }`
+- Trocar `const { addProtocolo } = useProtocolos()` por `const { addProtocolo } = useAddProtocolo()`
+
+Isso mantém a página rápida sem precisar do provider pesado.
+
+---
+
+## Detalhes técnicos
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/App.tsx` | Envolver rota `/configuracoes` com `ProtocolosProvider` |
+| `src/pages/AbrirProtocolo.tsx` | Trocar `useProtocolos` por `useAddProtocolo` |
 
