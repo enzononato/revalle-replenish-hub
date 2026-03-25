@@ -40,12 +40,11 @@ export default function RnPortal() {
     }
   }, [isAuthenticated, representante, navigate]);
 
-  useEffect(() => {
-    if (representante) fetchProtocolos();
-  }, [representante, activeTab]);
-
   const fetchProtocolos = async () => {
-    if (!representante) return;
+    if (!representante || !searchPdv.trim()) {
+      setProtocolos([]);
+      return;
+    }
     setIsLoading(true);
 
     let statusFilter: string[];
@@ -53,18 +52,15 @@ export default function RnPortal() {
     else if (activeTab === 'em_atendimento') statusFilter = ['em_andamento'];
     else statusFilter = ['encerrado'];
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('protocolos')
       .select('id, numero, motorista_nome, codigo_pdv, data, hora, status, tipo_reposicao, causa, produtos, nota_fiscal, mapa')
       .eq('motorista_unidade', representante.unidade)
       .in('status', statusFilter)
-      .order('created_at', { ascending: false });
+      .eq('codigo_pdv', searchPdv.trim())
+      .order('created_at', { ascending: false })
+      .limit(100);
 
-    if (searchPdv.trim()) {
-      query = query.ilike('codigo_pdv', `%${searchPdv.trim()}%`);
-    }
-
-    const { data, error } = await query.limit(100);
     if (!error && data) setProtocolos(data as ProtocoloRow[]);
     setIsLoading(false);
   };
