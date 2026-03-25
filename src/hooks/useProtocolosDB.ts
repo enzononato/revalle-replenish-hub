@@ -311,7 +311,7 @@ export function useProtocolosDB() {
     }
   });
 
-  // Realtime subscription para atualizações automáticas
+  // Realtime: escuta INSERT/UPDATE/DELETE na tabela protocolos
   useEffect(() => {
     const channel = supabase
       .channel('protocolos-realtime')
