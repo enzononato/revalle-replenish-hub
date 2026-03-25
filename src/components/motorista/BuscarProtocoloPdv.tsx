@@ -227,17 +227,79 @@ export function BuscarProtocoloPdv({
                       Mapa {protocolo.mapa}
                     </span>
                   )}
+                  {produtos.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      <Package className="w-3 h-3 inline mr-0.5" />
+                      {produtos.length} {produtos.length === 1 ? 'produto' : 'produtos'}
+                    </span>
+                  )}
                 </div>
 
-                {/* Botão encerrar - apenas para em_andamento */}
-                {selectionMode !== 'view' && (
-                  <Button
-                    className="w-full mt-2.5 h-9 text-xs font-semibold flex items-center justify-center gap-2"
-                    onClick={(e) => handleConfirmSelect(e, protocolo)}
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Encerrar Reposição
-                  </Button>
+                {/* Detalhes expandidos */}
+                {isExpanded && (
+                  <div className="mt-2.5 pt-2.5 border-t border-border/50 space-y-2" onClick={(e) => e.stopPropagation()}>
+                    {/* Produtos */}
+                    {produtos.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Produtos</p>
+                        <div className="space-y-1">
+                          {produtos.map((prod, idx) => {
+                            const entregue = (prod as any).status === 'entregue';
+                            return (
+                              <div key={idx} className="flex items-center justify-between text-[11px] px-2 py-1 rounded bg-muted/50">
+                                <span className={entregue ? 'line-through text-muted-foreground' : 'text-foreground'}>
+                                  {(prod as any).cod || ''} – {(prod as any).produto || (prod as any).nome || 'Produto'}
+                                </span>
+                                <span className="text-muted-foreground ml-2 shrink-0">
+                                  {(prod as any).quantidade || (prod as any).qtd || ''} {(prod as any).embalagem || ''}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Nota fiscal */}
+                    {protocolo.nota_fiscal && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <FileText className="w-3 h-3" />
+                        <span>NF: <span className="text-foreground font-medium">{protocolo.nota_fiscal}</span></span>
+                      </div>
+                    )}
+
+                    {/* Causa */}
+                    {protocolo.causa && (
+                      <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                        <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span>Causa: <span className="text-foreground">{protocolo.causa}</span></span>
+                      </div>
+                    )}
+
+                    {/* Observação */}
+                    {protocolo.observacao_geral && (
+                      <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                        <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span className="text-foreground">{protocolo.observacao_geral}</span>
+                      </div>
+                    )}
+
+                    {/* Botão encerrar */}
+                    {selectionMode !== 'view' && (
+                      <Button
+                        className="w-full mt-1 h-9 text-xs font-semibold flex items-center justify-center gap-2"
+                        onClick={(e) => handleConfirmSelect(e, protocolo)}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Encerrar Reposição
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {/* Indicador de expandir */}
+                {!isExpanded && (
+                  <p className="text-[10px] text-muted-foreground text-center mt-1.5">Toque para ver detalhes</p>
                 )}
               </div>
             );
