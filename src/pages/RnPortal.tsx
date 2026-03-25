@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Briefcase, LogOut, Search, Package, FileText, Loader2 } from 'lucide-react';
+import { RnReenvioModal } from '@/components/rn/RnReenvioModal';
 
 interface ProtocoloRow {
   id: string;
