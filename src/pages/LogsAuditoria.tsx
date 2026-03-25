@@ -314,49 +314,12 @@ export default function LogsAuditoria() {
     }
   }, [activeTab, loginCurrentPage, loginPageSize, loginStatusFiltro, loginTipoFiltro, loginSearch]);
 
-  // Filter audit logs
-  const filteredLogs = logs.filter(log => {
-    const protocoloNum = log.tabela === 'protocolos' && log.registro_dados ? String((log.registro_dados as Record<string, unknown>).numero || '') : '';
-    const matchesSearch = 
-      log.usuario_nome.toLowerCase().includes(search.toLowerCase()) ||
-      protocoloNum.toLowerCase().includes(search.toLowerCase()) ||
-      (log.registro_dados && JSON.stringify(log.registro_dados).toLowerCase().includes(search.toLowerCase()));
-    
-    const matchesTabela = tabelaFiltro === 'todas' || log.tabela === tabelaFiltro;
-    const matchesAcao = acaoFiltro === 'todas' || log.acao === acaoFiltro;
+  // Server-side pagination — data already filtered and paginated
+  const totalPages = Math.ceil(totalLogs / pageSize);
+  const paginatedLogs = logs;
 
-    return matchesSearch && matchesTabela && matchesAcao;
-  });
-
-  // Filter login logs
-  const filteredLoginLogs = loginLogs.filter(log => {
-    const matchesSearch = 
-      log.identificador.toLowerCase().includes(loginSearch.toLowerCase()) ||
-      (log.motorista_nome && log.motorista_nome.toLowerCase().includes(loginSearch.toLowerCase())) ||
-      (log.unidade && log.unidade.toLowerCase().includes(loginSearch.toLowerCase())) ||
-      (log.erro && log.erro.toLowerCase().includes(loginSearch.toLowerCase()));
-    
-    const matchesStatus = loginStatusFiltro === 'todos' || 
-      (loginStatusFiltro === 'sucesso' && log.sucesso) || 
-      (loginStatusFiltro === 'falha' && !log.sucesso);
-    
-    const matchesTipo = loginTipoFiltro === 'todos' || log.identificador_tipo === loginTipoFiltro;
-
-    return matchesSearch && matchesStatus && matchesTipo;
-  });
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredLogs.length / pageSize);
-  const paginatedLogs = filteredLogs.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const loginTotalPages = Math.ceil(filteredLoginLogs.length / loginPageSize);
-  const paginatedLoginLogs = filteredLoginLogs.slice(
-    (loginCurrentPage - 1) * loginPageSize,
-    loginCurrentPage * loginPageSize
-  );
+  const loginTotalPages = Math.ceil(totalLoginLogs / loginPageSize);
+  const paginatedLoginLogs = loginLogs;
 
   // Reset page when filters change
   useEffect(() => {
