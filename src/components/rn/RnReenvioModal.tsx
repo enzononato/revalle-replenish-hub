@@ -50,6 +50,7 @@ function isValidPhone(value: string): boolean {
 export function RnReenvioModal({ protocolo, open, onClose, representante }: RnReenvioModalProps) {
   const [telefone, setTelefone] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const isMobile = useIsMobile();
 
   if (!protocolo) return null;
 
@@ -77,7 +78,6 @@ export function RnReenvioModal({ protocolo, open, onClose, representante }: RnRe
     setEnviando(true);
 
     try {
-      // Build webhook payload matching admin resend format
       let webhookPayload: Record<string, unknown>;
 
       if (tipo === 'lancar') {
@@ -130,7 +130,6 @@ export function RnReenvioModal({ protocolo, open, onClose, representante }: RnRe
         throw new Error(`Erro ao enviar webhook: ${response.status}`);
       }
 
-      // Update observacoes_log on the protocol
       const { data: currentProto } = await supabase
         .from('protocolos')
         .select('observacoes_log, contato_whatsapp')
@@ -156,7 +155,6 @@ export function RnReenvioModal({ protocolo, open, onClose, representante }: RnRe
         } as any)
         .eq('id', protocolo.id);
 
-      // Register audit log
       await supabase.from('audit_logs').insert([{
         acao: 'reenvio',
         tabela: 'protocolos',
@@ -183,89 +181,110 @@ export function RnReenvioModal({ protocolo, open, onClose, representante }: RnRe
     }
   };
 
+  const modalBody = (
+    <div className="space-y-3">
+      {/* Protocol info */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span>Motorista: <span className="text-foreground font-medium">{protocolo.motorista_nome}</span></span>
+        <span>PDV: <span className="text-foreground font-medium">{protocolo.codigo_pdv || '—'}</span></span>
+        <span>Data: <span className="text-foreground">{protocolo.data}</span></span>
+        <span>Hora: <span className="text-foreground">{protocolo.hora}</span></span>
+        {protocolo.tipo_reposicao && <span>Tipo: <span className="text-foreground capitalize">{protocolo.tipo_reposicao}</span></span>}
+        {protocolo.causa && <span>Causa: <span className="text-foreground">{protocolo.causa}</span></span>}
+        {protocolo.nota_fiscal && <span>NF: <span className="text-foreground">{protocolo.nota_fiscal}</span></span>}
+        {protocolo.mapa && <span>Mapa: <span className="text-foreground">{protocolo.mapa}</span></span>}
+      </div>
+
+      {/* Products */}
+      {prods.length > 0 && (
+        <div className="pt-2 border-t border-border">
+          <div className="flex items-center gap-1 mb-1">
+            <Package size={12} className="text-muted-foreground" />
+            <span className="text-xs font-medium text-muted-foreground">Produtos ({prods.length})</span>
+          </div>
+          <div className="space-y-0.5 max-h-24 overflow-y-auto">
+            {prods.map((prod: any, i: number) => (
+              <p key={i} className="text-xs text-foreground">
+                {prod.nome || prod.produto} — {prod.quantidade} {prod.unidade}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Resend section */}
+      <div className="pt-2 border-t border-border space-y-2">
+        <div className="flex items-center gap-1.5">
+          <Phone size={14} className="text-primary" />
+          <span className="text-sm font-semibold">Reenviar mensagem</span>
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Telefone do PDV:</label>
+          <Input
+            value={telefone}
+            onChange={(e) => setTelefone(formatPhone(e.target.value))}
+            placeholder="(XX) XXXXX-XXXX"
+            maxLength={16}
+            className="h-9"
+          />
+          {telefone && !telefoneValido && (
+            <p className="text-xs text-destructive mt-1">Informe um telefone válido (10 ou 11 dígitos)</p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleReenviar('lancar')}
+            disabled={enviando || !telefoneValido}
+            className="flex-1 gap-1.5 text-xs"
+          >
+            {enviando ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
+            Lançamento
+          </Button>
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => handleReenviar('encerrar')}
+            disabled={enviando || !telefoneValido}
+            className="flex-1 gap-1.5 text-xs"
+          >
+            {enviando ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
+            Encerramento
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
+        <DrawerContent className="max-h-[85dvh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle className="flex items-center gap-2">
+              <span className="font-mono">#{protocolo.numero}</span>
+              {getStatusBadge(protocolo.status)}
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-6 overflow-y-auto">
+            {modalBody}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="font-mono">#{protocolo.numero}</span>
             {getStatusBadge(protocolo.status)}
           </DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Protocol info */}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-            <span>Motorista: <span className="text-foreground font-medium">{protocolo.motorista_nome}</span></span>
-            <span>PDV: <span className="text-foreground font-medium">{protocolo.codigo_pdv || '—'}</span></span>
-            <span>Data: <span className="text-foreground">{protocolo.data}</span></span>
-            <span>Hora: <span className="text-foreground">{protocolo.hora}</span></span>
-            {protocolo.tipo_reposicao && <span>Tipo: <span className="text-foreground capitalize">{protocolo.tipo_reposicao}</span></span>}
-            {protocolo.causa && <span>Causa: <span className="text-foreground">{protocolo.causa}</span></span>}
-            {protocolo.nota_fiscal && <span>NF: <span className="text-foreground">{protocolo.nota_fiscal}</span></span>}
-            {protocolo.mapa && <span>Mapa: <span className="text-foreground">{protocolo.mapa}</span></span>}
-          </div>
-
-          {/* Products */}
-          {prods.length > 0 && (
-            <div className="pt-2 border-t border-border">
-              <div className="flex items-center gap-1 mb-1">
-                <Package size={14} className="text-muted-foreground" />
-                <span className="text-xs font-medium text-muted-foreground">Produtos ({prods.length})</span>
-              </div>
-              <div className="space-y-0.5 max-h-28 overflow-y-auto">
-                {prods.map((prod: any, i: number) => (
-                  <p key={i} className="text-xs text-foreground">
-                    {prod.nome || prod.produto} — {prod.quantidade} {prod.unidade}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Resend section */}
-          <div className="pt-3 border-t border-border space-y-3">
-            <div className="flex items-center gap-1.5">
-              <Phone size={14} className="text-primary" />
-              <span className="text-sm font-semibold">Reenviar mensagem</span>
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Telefone do PDV:</label>
-              <Input
-                value={telefone}
-                onChange={(e) => setTelefone(formatPhone(e.target.value))}
-                placeholder="(XX) XXXXX-XXXX"
-                maxLength={16}
-                className="h-9"
-              />
-              {telefone && !telefoneValido && (
-                <p className="text-xs text-destructive mt-1">Informe um telefone válido (10 ou 11 dígitos)</p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleReenviar('lancar')}
-                disabled={enviando || !telefoneValido}
-                className="flex-1 gap-1.5"
-              >
-                {enviando ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                Reenviar Lançamento
-              </Button>
-              <Button
-                size="sm"
-                variant="default"
-                onClick={() => handleReenviar('encerrar')}
-                disabled={enviando || !telefoneValido}
-                className="flex-1 gap-1.5"
-              >
-                {enviando ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                Reenviar Encerramento
-              </Button>
-            </div>
-          </div>
-        </div>
+        {modalBody}
       </DialogContent>
     </Dialog>
   );
