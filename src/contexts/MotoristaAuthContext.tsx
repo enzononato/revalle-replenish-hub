@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Motorista, FuncaoMotorista, SetorMotorista } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { classifyAuthError, friendlyMessage, withRetry } from '@/lib/authErrorHandling';
 
 interface MotoristaAuthContextType {
   motorista: Motorista | null;
@@ -55,56 +56,18 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (identificador: string, senha: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data, error } = await supabase.functions.invoke('motorista-login', {
-        body: { identificador, senha },
-      });
-
-      if (error) {
-        let friendlyError: string | undefined;
-
-        try {
-          const context = error.context as
-            | Response
-            | { error?: string }
-            | string
-            | null
-            | undefined;
-
-          if (context && typeof context === 'object' && 'json' in context && typeof context.json === 'function') {
-            const errorBody = await context.json();
-            if (errorBody?.error) {
-              friendlyError = errorBody.error;
-            }
-          } else if (typeof context === 'string') {
-            try {
-              const parsed = JSON.parse(context);
-              if (parsed?.error) {
-                friendlyError = parsed.error;
-              }
-            } catch {}
-          } else if (context && typeof context === 'object' && 'error' in context && context.error) {
-            friendlyError = context.error;
-          }
-        } catch {}
-
-        if (!friendlyError && typeof error.message === 'string') {
-          const jsonMatch = error.message.match(/\{.*\}$/);
-          if (jsonMatch) {
-            try {
-              const parsed = JSON.parse(jsonMatch[0]);
-              if (parsed?.error) {
-                friendlyError = parsed.error;
-              }
-            } catch {}
-          }
+      const data = await withRetry(async () => {
+        const { data, error } = await supabase.functions.invoke('motorista-login', {
+          body: { identificador, senha },
+        });
+        if (error) throw error;
+        if (data?.success === false || data?.error) {
+          // Credential errors — don't retry
+          const credErr = new Error(data.error || 'Erro ao fazer login');
+          throw credErr;
         }
-
-        return { success: false, error: friendlyError || error.message || 'Erro ao fazer login' };
-      }
-
-      if (data?.error) {
-        return { success: false, error: data.error };
-      }
+        return data;
+      });
 
       if (data?.motorista) {
         const foundMotorista = edgeToMotorista(data.motorista);
@@ -115,8 +78,9 @@ export function MotoristaAuthProvider({ children }: { children: ReactNode }) {
 
       return { success: false, error: 'Resposta inesperada do servidor' };
     } catch (err) {
-      console.error('Erro no login do motorista:', err);
-      return { success: false, error: 'Erro de conexão. Tente novamente.' };
+      const classified = classifyAuthError(err);
+      console.error(`[AUTH:motorista] Login failed (${classified.type}):`, classified.message);
+      return { success: false, error: friendlyMessage(classified) };
     }
   };
 

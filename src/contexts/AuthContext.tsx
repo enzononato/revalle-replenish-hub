@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { classifyAuthError, friendlyMessage, withRetry } from '@/lib/authErrorHandling';
 
 interface AppUser {
   id: string;
@@ -17,7 +18,7 @@ interface AuthContextType {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAdmin: boolean;
   isDistribuicao: boolean;
@@ -138,25 +139,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchUserProfile]);
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const result = await withRetry(async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        return data;
       });
 
-      if (error) {
-        console.error('Erro no login:', error.message);
-        return false;
-      }
-
-      if (data.user) {
-        const profile = await fetchUserProfile(data.user);
-        
+      if (result.user) {
+        const profile = await fetchUserProfile(result.user);
         if (profile) {
           setUser(profile);
-          
-          // Registrar log de login
           await registrarLog({
             acao: 'login',
             tabela: 'sessao',
@@ -167,14 +161,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             usuario_unidade: profile.unidade,
           });
         }
-        
-        return true;
+        return { success: true };
       }
-      
-      return false;
+      return { success: false, error: 'Resposta inesperada do servidor' };
     } catch (err) {
-      console.error('Erro no login:', err);
-      return false;
+      const classified = classifyAuthError(err);
+      console.error(`[AUTH:admin] Login failed (${classified.type}):`, classified.message);
+      return { success: false, error: friendlyMessage(classified) };
     }
   }, [fetchUserProfile, registrarLog]);
 

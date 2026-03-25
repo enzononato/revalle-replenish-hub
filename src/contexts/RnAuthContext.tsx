@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { classifyAuthError, friendlyMessage, withRetry } from '@/lib/authErrorHandling';
 
 export interface Representante {
   id: string;
@@ -36,36 +37,17 @@ export function RnAuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (cpf: string, senha: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data, error } = await supabase.functions.invoke('rn-login', {
-        body: { cpf, senha },
-      });
-
-      if (error) {
-        let friendlyError: string | undefined;
-        try {
-          const context = error.context as Response | null | undefined;
-          if (context && typeof context === 'object' && 'json' in context && typeof context.json === 'function') {
-            const errorBody = await context.json();
-            if (errorBody?.error) friendlyError = errorBody.error;
-          }
-        } catch {}
-
-        if (!friendlyError && typeof error.message === 'string') {
-          const jsonMatch = error.message.match(/\{.*\}$/);
-          if (jsonMatch) {
-            try {
-              const parsed = JSON.parse(jsonMatch[0]);
-              if (parsed?.error) friendlyError = parsed.error;
-            } catch {}
-          }
+      const data = await withRetry(async () => {
+        const { data, error } = await supabase.functions.invoke('rn-login', {
+          body: { cpf, senha },
+        });
+        if (error) throw error;
+        if (data?.success === false || data?.error) {
+          const credErr = new Error(data.error || 'Erro ao fazer login');
+          throw credErr;
         }
-
-        return { success: false, error: friendlyError || error.message || 'Erro ao fazer login' };
-      }
-
-      if (data?.error || data?.success === false) {
-        return { success: false, error: data.error || 'Erro ao fazer login' };
-      }
+        return data;
+      });
 
       if (data?.representante) {
         setRepresentante(data.representante);
@@ -75,8 +57,9 @@ export function RnAuthProvider({ children }: { children: ReactNode }) {
 
       return { success: false, error: 'Resposta inesperada do servidor' };
     } catch (err) {
-      console.error('Erro no login do RN:', err);
-      return { success: false, error: 'Erro de conexão. Tente novamente.' };
+      const classified = classifyAuthError(err);
+      console.error(`[AUTH:rn] Login failed (${classified.type}):`, classified.message);
+      return { success: false, error: friendlyMessage(classified) };
     }
   };
 
