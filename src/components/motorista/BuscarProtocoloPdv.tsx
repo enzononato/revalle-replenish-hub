@@ -241,30 +241,33 @@ export function BuscarProtocoloPdv({
                     {/* Produtos */}
                     {produtos.length > 0 && (
                       <div>
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Produtos</p>
-                        <div className="space-y-1">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                          <Package className="w-3 h-3 inline mr-1" />
+                          Produtos ({produtos.length})
+                        </p>
+                        <div className="rounded-lg border border-border/40 overflow-hidden">
                           {produtos.map((prod, idx) => {
                             const entregue = (prod as any).status === 'entregue';
+                            const qty = (prod as any).quantidade || (prod as any).qtd || '';
+                            const emb = (prod as any).embalagem || '';
                             return (
-                              <div key={idx} className="flex items-center justify-between text-[11px] px-2 py-1 rounded bg-muted/50">
-                                <span className={entregue ? 'line-through text-muted-foreground' : 'text-foreground'}>
-                                  {(prod as any).cod || ''} – {(prod as any).produto || (prod as any).nome || 'Produto'}
-                                </span>
-                                <span className="text-muted-foreground ml-2 shrink-0">
-                                  {(prod as any).quantidade || (prod as any).qtd || ''} {(prod as any).embalagem || ''}
+                              <div
+                                key={idx}
+                                className={`flex items-center justify-between text-[11px] px-2.5 py-1.5 ${idx % 2 === 0 ? 'bg-muted/30' : 'bg-muted/60'} ${entregue ? 'opacity-60' : ''}`}
+                              >
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                  {entregue && <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" />}
+                                  <span className={`truncate ${entregue ? 'line-through text-muted-foreground' : 'text-foreground font-medium'}`}>
+                                    {(prod as any).produto || (prod as any).nome || 'Produto'}
+                                  </span>
+                                </div>
+                                <span className="ml-2 shrink-0 font-bold text-primary text-xs">
+                                  {qty}{emb ? ` ${emb}` : ''}
                                 </span>
                               </div>
                             );
                           })}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Nota fiscal */}
-                    {protocolo.nota_fiscal && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                        <FileText className="w-3 h-3" />
-                        <span>NF: <span className="text-foreground font-medium">{protocolo.nota_fiscal}</span></span>
                       </div>
                     )}
 
