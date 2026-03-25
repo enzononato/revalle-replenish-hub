@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtocolosProvider } from "@/contexts/ProtocolosContext";
 
 import { MotoristaAuthProvider } from "@/contexts/MotoristaAuthContext";
 import { RnAuthProvider } from "@/contexts/RnAuthContext";
@@ -59,8 +60,8 @@ const App = () => (
                   <Route path="/rn/portal" element={<RnPortal />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route element={<MainLayout />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/protocolos" element={<Protocolos />} />
+                    <Route path="/dashboard" element={<ProtocolosProvider><Dashboard /></ProtocolosProvider>} />
+                    <Route path="/protocolos" element={<ProtocolosProvider><Protocolos /></ProtocolosProvider>} />
                     <Route 
                       path="/sobras" 
                       element={
@@ -113,7 +114,7 @@ const App = () => (
                       path="/configuracoes" 
                       element={
                         <ProtectedRoute allowedRoles={['admin']}>
-                          <Configuracoes />
+                          <ProtocolosProvider><Configuracoes /></ProtocolosProvider>
                         </ProtectedRoute>
                       } 
                     />
