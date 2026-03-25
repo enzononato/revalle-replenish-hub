@@ -1064,6 +1064,15 @@ export default function MotoristaPortal() {
         onLogout={handleLogout}
       />
 
+      {/* Welcome banner */}
+      <div className="px-4 pt-3 pb-1">
+        <div className="max-w-xl mx-auto">
+          <p className="text-xs text-muted-foreground">
+            👋 Olá, <span className="font-medium text-foreground">{motorista.nome.split(' ')[0]}</span>! Bom trabalho hoje.
+          </p>
+        </div>
+      </div>
+
       {/* Resumo do dia */}
       <DailySummary motorista={motorista} />
 
