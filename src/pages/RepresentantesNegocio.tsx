@@ -79,9 +79,11 @@ export default function RepresentantesNegocio() {
           </h1>
           <p className="text-muted-foreground mt-1">Gerencie os RN's e suas unidades</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button className="btn-accent-gradient"><Plus size={20} className="mr-2" />Novo RN</Button>
+        <div className="flex gap-2">
+          <ImportarRepresentantesCSV />
+          <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button className="btn-accent-gradient"><Plus size={20} className="mr-2" />Novo RN</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
