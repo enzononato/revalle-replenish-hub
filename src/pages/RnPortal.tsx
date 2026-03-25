@@ -29,6 +29,7 @@ export default function RnPortal() {
   const navigate = useNavigate();
   const { representante, logout, isAuthenticated } = useRnAuth();
   const [searchPdv, setSearchPdv] = useState('');
+  const [searchedPdv, setSearchedPdv] = useState('');
   const [protocolos, setProtocolos] = useState<ProtocoloRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('abertos');
