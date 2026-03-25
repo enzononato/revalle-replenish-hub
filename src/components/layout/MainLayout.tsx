@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { ProtocolosProvider } from '@/contexts/ProtocolosContext';
 import { Sidebar } from './Sidebar';
 import { ContentHeader } from './ContentHeader';
 import { GuidedTour } from '@/components/GuidedTour';
@@ -55,13 +56,15 @@ export function MainLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar />
-      <main className="flex-1 lg:ml-0 p-4 lg:p-6 pt-14 lg:pt-6 overflow-y-auto sidebar-scroll">
-        <ContentHeader />
-        <Outlet />
-      </main>
-      <GuidedTour />
-    </div>
+    <ProtocolosProvider>
+      <div className="flex h-screen overflow-hidden bg-background">
+        <Sidebar />
+        <main className="flex-1 lg:ml-0 p-4 lg:p-6 pt-14 lg:pt-6 overflow-y-auto sidebar-scroll">
+          <ContentHeader />
+          <Outlet />
+        </main>
+        <GuidedTour />
+      </div>
+    </ProtocolosProvider>
   );
 }

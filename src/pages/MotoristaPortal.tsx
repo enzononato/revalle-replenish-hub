@@ -3,7 +3,7 @@ import { generateUUID } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useMotoristaAuth } from '@/contexts/MotoristaAuthContext';
-import { useProtocolos } from '@/contexts/ProtocolosContext';
+import { useAddProtocolo } from '@/hooks/useAddProtocolo';
 import { useOfflineProtocolos } from '@/hooks/useOfflineProtocolos';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
@@ -165,7 +165,7 @@ function ValidadeDatePicker({
 export default function MotoristaPortal() {
   const navigate = useNavigate();
   const { motorista, logout, isAuthenticated } = useMotoristaAuth();
-  const { addProtocolo } = useProtocolos();
+  const { addProtocolo } = useAddProtocolo();
   const { isOnline, pendingCount, saveOffline, syncPending } = useOfflineProtocolos();
 
   const [currentView, setCurrentView] = useState<'dashboard' | 'reposicao' | 'pos-rota' | 'meus-protocolos'>('dashboard');
