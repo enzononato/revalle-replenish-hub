@@ -214,7 +214,9 @@ const getRoleLabel = (role: string | null): string => {
 export default function LogsAuditoria() {
   const [activeTab, setActiveTab] = useState('auditoria');
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [totalLogs, setTotalLogs] = useState(0);
   const [loginLogs, setLoginLogs] = useState<MotoristaLoginLog[]>([]);
+  const [totalLoginLogs, setTotalLoginLogs] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [search, setSearch] = useState('');
@@ -230,17 +232,36 @@ export default function LogsAuditoria() {
   const [loginCurrentPage, setLoginCurrentPage] = useState(1);
   const [loginPageSize, setLoginPageSize] = useState(20);
 
+  // Server-side paginated fetch for audit logs
   useEffect(() => {
     const fetchLogs = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('audit_logs')
-          .select('*')
+          .select('*', { count: 'exact' })
           .order('created_at', { ascending: false });
+
+        // Apply server-side filters
+        if (tabelaFiltro !== 'todas') {
+          query = query.eq('tabela', tabelaFiltro);
+        }
+        if (acaoFiltro !== 'todas') {
+          query = query.eq('acao', acaoFiltro);
+        }
+        if (search.trim()) {
+          query = query.or(`usuario_nome.ilike.%${search}%,registro_id.ilike.%${search}%`);
+        }
+
+        const from = (currentPage - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+
+        const { data, error, count } = await query;
 
         if (error) throw error;
         setLogs((data as AuditLog[]) || []);
+        setTotalLogs(count ?? 0);
       } catch (error) {
         console.error('Erro ao carregar logs:', error);
       } finally {
@@ -249,20 +270,40 @@ export default function LogsAuditoria() {
     };
 
     fetchLogs();
-  }, []);
+  }, [currentPage, pageSize, tabelaFiltro, acaoFiltro, search]);
 
+  // Server-side paginated fetch for login logs
   useEffect(() => {
     if (activeTab === 'login-motorista') {
       const fetchLoginLogs = async () => {
         setIsLoadingLogin(true);
         try {
-          const { data, error } = await supabase
+          let query = supabase
             .from('motorista_login_logs')
-            .select('*')
+            .select('*', { count: 'exact' })
             .order('created_at', { ascending: false });
+
+          if (loginStatusFiltro === 'sucesso') {
+            query = query.eq('sucesso', true);
+          } else if (loginStatusFiltro === 'falha') {
+            query = query.eq('sucesso', false);
+          }
+          if (loginTipoFiltro !== 'todos') {
+            query = query.eq('identificador_tipo', loginTipoFiltro);
+          }
+          if (loginSearch.trim()) {
+            query = query.or(`identificador.ilike.%${loginSearch}%,motorista_nome.ilike.%${loginSearch}%,unidade.ilike.%${loginSearch}%`);
+          }
+
+          const from = (loginCurrentPage - 1) * loginPageSize;
+          const to = from + loginPageSize - 1;
+          query = query.range(from, to);
+
+          const { data, error, count } = await query;
 
           if (error) throw error;
           setLoginLogs((data as MotoristaLoginLog[]) || []);
+          setTotalLoginLogs(count ?? 0);
         } catch (error) {
           console.error('Erro ao carregar logs de login:', error);
         } finally {
@@ -271,51 +312,14 @@ export default function LogsAuditoria() {
       };
       fetchLoginLogs();
     }
-  }, [activeTab]);
+  }, [activeTab, loginCurrentPage, loginPageSize, loginStatusFiltro, loginTipoFiltro, loginSearch]);
 
-  // Filter audit logs
-  const filteredLogs = logs.filter(log => {
-    const protocoloNum = log.tabela === 'protocolos' && log.registro_dados ? String((log.registro_dados as Record<string, unknown>).numero || '') : '';
-    const matchesSearch = 
-      log.usuario_nome.toLowerCase().includes(search.toLowerCase()) ||
-      protocoloNum.toLowerCase().includes(search.toLowerCase()) ||
-      (log.registro_dados && JSON.stringify(log.registro_dados).toLowerCase().includes(search.toLowerCase()));
-    
-    const matchesTabela = tabelaFiltro === 'todas' || log.tabela === tabelaFiltro;
-    const matchesAcao = acaoFiltro === 'todas' || log.acao === acaoFiltro;
+  // Server-side pagination — data already filtered and paginated
+  const totalPages = Math.ceil(totalLogs / pageSize);
+  const paginatedLogs = logs;
 
-    return matchesSearch && matchesTabela && matchesAcao;
-  });
-
-  // Filter login logs
-  const filteredLoginLogs = loginLogs.filter(log => {
-    const matchesSearch = 
-      log.identificador.toLowerCase().includes(loginSearch.toLowerCase()) ||
-      (log.motorista_nome && log.motorista_nome.toLowerCase().includes(loginSearch.toLowerCase())) ||
-      (log.unidade && log.unidade.toLowerCase().includes(loginSearch.toLowerCase())) ||
-      (log.erro && log.erro.toLowerCase().includes(loginSearch.toLowerCase()));
-    
-    const matchesStatus = loginStatusFiltro === 'todos' || 
-      (loginStatusFiltro === 'sucesso' && log.sucesso) || 
-      (loginStatusFiltro === 'falha' && !log.sucesso);
-    
-    const matchesTipo = loginTipoFiltro === 'todos' || log.identificador_tipo === loginTipoFiltro;
-
-    return matchesSearch && matchesStatus && matchesTipo;
-  });
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredLogs.length / pageSize);
-  const paginatedLogs = filteredLogs.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
-  const loginTotalPages = Math.ceil(filteredLoginLogs.length / loginPageSize);
-  const paginatedLoginLogs = filteredLoginLogs.slice(
-    (loginCurrentPage - 1) * loginPageSize,
-    loginCurrentPage * loginPageSize
-  );
+  const loginTotalPages = Math.ceil(totalLoginLogs / loginPageSize);
+  const paginatedLoginLogs = loginLogs;
 
   // Reset page when filters change
   useEffect(() => {
@@ -505,7 +509,7 @@ export default function LogsAuditoria() {
                   </tbody>
                 </table>
                 
-                {filteredLogs.length === 0 && (
+                {paginatedLogs.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     Nenhum log encontrado
                   </div>
@@ -515,7 +519,7 @@ export default function LogsAuditoria() {
                   currentPage={currentPage}
                   totalPages={totalPages}
                   pageSize={pageSize}
-                  totalItems={filteredLogs.length}
+                  totalItems={totalLogs}
                   onPageChange={setCurrentPage}
                   onPageSizeChange={setPageSize}
                 />
@@ -645,7 +649,7 @@ export default function LogsAuditoria() {
                   </tbody>
                 </table>
                 
-                {filteredLoginLogs.length === 0 && (
+                {paginatedLoginLogs.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     Nenhum log de login encontrado
                   </div>
@@ -655,7 +659,7 @@ export default function LogsAuditoria() {
                   currentPage={loginCurrentPage}
                   totalPages={loginTotalPages}
                   pageSize={loginPageSize}
-                  totalItems={filteredLoginLogs.length}
+                  totalItems={totalLoginLogs}
                   onPageChange={setLoginCurrentPage}
                   onPageSizeChange={setLoginPageSize}
                 />
