@@ -95,32 +95,7 @@ export function ProtocoloDetails({
   const [editandoProdutos, setEditandoProdutos] = useState(false);
   const [produtosEditados, setProdutosEditados] = useState<Produto[]>(protocolo?.produtos || []);
 
-  const [fotosLazy, setFotosLazy] = useState<FotosProtocolo | undefined>(undefined);
 
-  // Lazy-load fotos_protocolo when opening detail (excluded from listing query for performance)
-  useEffect(() => {
-    if (!open || !protocolo) {
-      setFotosLazy(undefined);
-      return;
-    }
-    // If protocolo already has fotos (e.g. from a direct fetch), use them
-    if (protocolo.fotosProtocolo) {
-      setFotosLazy(protocolo.fotosProtocolo);
-      return;
-    }
-    let cancelled = false;
-    supabase
-      .from('protocolos')
-      .select('fotos_protocolo')
-      .eq('id', protocolo.id)
-      .single()
-      .then(({ data }) => {
-        if (!cancelled) {
-          setFotosLazy(data?.fotos_protocolo as unknown as FotosProtocolo | undefined);
-        }
-      });
-    return () => { cancelled = true; };
-  }, [open, protocolo?.id]);
 
   // Função para validar formato de telefone brasileiro
   const validarTelefone = (telefone: string): boolean => {
@@ -333,15 +308,15 @@ export function ProtocoloDetails({
   }
   
   // Fotos do objeto fotosProtocolo (usa URL direta do Storage para exibição)
-  if (fotosLazy) {
-    if (fotosLazy.fotoMotoristaPdv) {
-      todasFotos.push({ url: getDirectStorageUrl(fotosLazy.fotoMotoristaPdv), label: 'Motorista/PDV' });
+  if (protocolo.fotosProtocolo) {
+    if (protocolo.fotosProtocolo.fotoMotoristaPdv) {
+      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoMotoristaPdv), label: 'Motorista/PDV' });
     }
-    if (fotosLazy.fotoLoteProduto) {
-      todasFotos.push({ url: getDirectStorageUrl(fotosLazy.fotoLoteProduto), label: 'Lote Produto' });
+    if (protocolo.fotosProtocolo.fotoLoteProduto) {
+      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoLoteProduto), label: 'Lote Produto' });
     }
-    if (fotosLazy.fotoAvaria) {
-      todasFotos.push({ url: getDirectStorageUrl(fotosLazy.fotoAvaria), label: 'Avaria' });
+    if (protocolo.fotosProtocolo.fotoAvaria) {
+      todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoAvaria), label: 'Avaria' });
     }
   }
 
@@ -544,9 +519,9 @@ export function ProtocoloDetails({
         observacaoGeral: protocolo.observacaoGeral,
         produtos: protocolo.produtos,
         fotos: {
-          fotoMotoristaPdv: getCustomPhotoUrl(fotosLazy?.fotoMotoristaPdv || ''),
-          fotoLoteProduto: getCustomPhotoUrl(fotosLazy?.fotoLoteProduto || ''),
-          fotoAvaria: getCustomPhotoUrl(fotosLazy?.fotoAvaria || '')
+          fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
+          fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
+          fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
         },
         mensagemEncerramento: mensagemEncerramento || '',
         arquivoEncerramentoUrl: arquivoUrl,
@@ -643,9 +618,9 @@ export function ProtocoloDetails({
           causa: protocolo.causa || '',
           produtos: protocolo.produtos || [],
           fotos: {
-            fotoMotoristaPdv: fotosLazy?.fotoMotoristaPdv || '',
-            fotoLoteProduto: fotosLazy?.fotoLoteProduto || '',
-            fotoAvaria: fotosLazy?.fotoAvaria || ''
+            fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
+            fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
+            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
           },
           whatsappContato: numeroContatoReenvio,
           emailContato: protocolo.contatoEmail || '',
@@ -680,9 +655,9 @@ export function ProtocoloDetails({
           observacaoGeral: protocolo.observacaoGeral,
           produtos: protocolo.produtos,
           fotos: {
-            fotoMotoristaPdv: getCustomPhotoUrl(fotosLazy?.fotoMotoristaPdv || ''),
-            fotoLoteProduto: getCustomPhotoUrl(fotosLazy?.fotoLoteProduto || ''),
-            fotoAvaria: getCustomPhotoUrl(fotosLazy?.fotoAvaria || '')
+            fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
+            fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
+            fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
           },
           mensagemEncerramento: protocolo.mensagemEncerramento || '',
           arquivoEncerramentoUrl: protocolo.arquivoEncerramento,

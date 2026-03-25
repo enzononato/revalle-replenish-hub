@@ -192,32 +192,13 @@ export function useProtocolosDB() {
       }
 
       const totalPages = Math.ceil(total / PAGE_SIZE);
-      // Select only needed columns — exclude heavy fotos_protocolo to reduce payload
-      const LISTING_COLUMNS = [
-        'id', 'numero', 'motorista_id', 'motorista_nome', 'motorista_codigo',
-        'motorista_whatsapp', 'motorista_email', 'motorista_unidade',
-        'data', 'hora', 'status', 'validacao', 'lancado',
-        'enviado_lancar', 'enviado_encerrar',
-        'tipo_reposicao', 'causa', 'mapa', 'codigo_pdv', 'nota_fiscal',
-        'produtos', 'observacao_geral', 'observacoes_log',
-        'mensagem_encerramento', 'arquivo_encerramento',
-        'oculto', 'habilitar_reenvio', 'created_at',
-        'enviado_lancar_status', 'enviado_lancar_erro',
-        'enviado_encerrar_status', 'enviado_encerrar_erro',
-        'cliente_telefone', 'contato_whatsapp', 'contato_email',
-        'status_envio', 'status_encerramento',
-        'encerrado_por_tipo', 'encerrado_por_motorista_id',
-        'encerrado_por_motorista_nome',
-        'foto_nota_fiscal_encerramento', 'foto_entrega_mercadoria'
-      ].join(',');
-
       const pageRequests = Array.from({ length: totalPages }, (_, pageIndex) => {
         const from = pageIndex * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
 
         return supabase
           .from('protocolos')
-          .select(LISTING_COLUMNS)
+          .select('*')
           .eq('ativo', true)
           .order('created_at', { ascending: false })
           .range(from, to);
