@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Protocolo, ObservacaoLog, Produto, User, FotosProtocolo } from '@/types';
+import { Protocolo, ObservacaoLog, Produto, User, FotosProtocolo } from '@/types'; // restored
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
