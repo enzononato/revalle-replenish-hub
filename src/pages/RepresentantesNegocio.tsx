@@ -18,6 +18,7 @@ import {
 import { Plus, Pencil, Trash2, Briefcase, Loader2 } from 'lucide-react';
 import { useRepresentantesDB, RepresentanteDB } from '@/hooks/useRepresentantesDB';
 import { useAuth } from '@/contexts/AuthContext';
+import { ImportarRepresentantesCSV } from '@/components/ImportarRepresentantesCSV';
 
 export default function RepresentantesNegocio() {
   const { representantes, isLoading, addRepresentante, updateRepresentante, deleteRepresentante } = useRepresentantesDB();
@@ -78,9 +79,11 @@ export default function RepresentantesNegocio() {
           </h1>
           <p className="text-muted-foreground mt-1">Gerencie os RN's e suas unidades</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button className="btn-accent-gradient"><Plus size={20} className="mr-2" />Novo RN</Button>
+        <div className="flex gap-2">
+          <ImportarRepresentantesCSV />
+          <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
+            <DialogTrigger asChild>
+              <Button className="btn-accent-gradient"><Plus size={20} className="mr-2" />Novo RN</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
@@ -110,6 +113,7 @@ export default function RepresentantesNegocio() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
