@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { FotosProtocolo } from '@/types';
 import { Protocolo, ObservacaoLog, Produto, User } from '@/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
