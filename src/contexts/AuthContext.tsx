@@ -30,6 +30,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const fallbackAuthContext: AuthContextType = {
+  user: null,
+  session: null,
+  isAuthenticated: false,
+  isLoading: false,
+  login: async () => ({
+    success: false,
+    error: 'Sistema de autenticação indisponível. Atualize a página e tente novamente.',
+  }),
+  logout: async () => {},
+  isAdmin: false,
+  isDistribuicao: false,
+  isConferente: false,
+  isControle: false,
+  canValidate: false,
+  canLaunch: false,
+};
+
+let hasWarnedMissingProvider = false;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -217,8 +237,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+  if (!context && !hasWarnedMissingProvider) {
+    hasWarnedMissingProvider = true;
+    console.error('useAuth foi chamado fora do AuthProvider. Aplicando fallback para evitar tela em branco.');
   }
-  return context;
+  return context ?? fallbackAuthContext;
 }
