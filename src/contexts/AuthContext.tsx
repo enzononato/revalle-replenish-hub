@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const profile = await fetchUserProfile(result.user);
         if (profile) {
           setUser(profile);
-          await registrarLog({
+          void registrarLog({
             acao: 'login',
             tabela: 'sessao',
             registro_id: profile.id,
@@ -174,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     if (user) {
       // Registrar log de logout
-      await registrarLog({
+      void registrarLog({
         acao: 'logout',
         tabela: 'sessao',
         registro_id: user.id,

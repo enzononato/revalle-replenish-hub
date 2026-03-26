@@ -14,31 +14,28 @@ export function MainLayout() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      queryClient.prefetchQuery({
-        queryKey: ['motoristas'],
-        queryFn: async () => {
-          const { data, error } = await supabase
-            .from('motoristas_public' as any)
-            .select('*')
-            .order('nome', { ascending: true });
-          if (error) throw error;
-          return data;
-        },
-        staleTime: 1000 * 60 * 5,
-      });
+      const timer = setTimeout(() => {
+        queryClient.prefetchQuery({
+          queryKey: ['unidades'],
+          queryFn: async () => {
+            const { data, error } = await supabase
+              .from('unidades')
+              .select('*')
+              .order('nome');
 
-      queryClient.prefetchQuery({
-        queryKey: ['unidades'],
-        queryFn: async () => {
-          const { data, error } = await supabase
-            .from('unidades')
-            .select('*')
-            .order('nome');
-          if (error) throw error;
-          return data;
-        },
-        staleTime: 1000 * 60 * 5,
-      });
+            if (error) {
+              console.warn('[prefetch] Falha ao pré-carregar unidades:', error.message);
+              return [];
+            }
+
+            return data;
+          },
+          staleTime: 1000 * 60 * 5,
+          retry: false,
+        });
+      }, 1000);
+
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, queryClient]);
 

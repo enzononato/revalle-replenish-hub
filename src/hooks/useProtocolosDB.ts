@@ -174,43 +174,42 @@ export function useProtocolosDB() {
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    retry: 1,
     queryFn: async () => {
-      // Buscar todos os protocolos em páginas de 1000 para contornar o limite do PostgREST
-      const PAGE_SIZE = 1000;
+      const allData: ProtocoloDB[] = [];
 
-      const { count, error: countError } = await supabase
-        .from('protocolos')
-        .select('id', { count: 'exact' })
-        .eq('ativo', true)
-        .limit(1);
+      // Carregar em lotes menores evita timeout e melhora o tempo de primeira renderização.
+      // Mantemos uma janela ampla de dados recentes para não travar a aplicação.
+      const PAGE_SIZE = 300;
+      const MAX_ROWS = 1200;
 
-      if (countError) throw countError;
+      for (let from = 0; from < MAX_ROWS; from += PAGE_SIZE) {
+        const to = Math.min(from + PAGE_SIZE - 1, MAX_ROWS - 1);
 
-      const total = count ?? 0;
-      if (total === 0) {
-        return [];
-      }
-
-      const totalPages = Math.ceil(total / PAGE_SIZE);
-      const pageRequests = Array.from({ length: totalPages }, (_, pageIndex) => {
-        const from = pageIndex * PAGE_SIZE;
-        const to = from + PAGE_SIZE - 1;
-
-        return supabase
+        const { data, error } = await supabase
           .from('protocolos')
           .select('*')
           .eq('ativo', true)
           .order('created_at', { ascending: false })
           .range(from, to);
-      });
 
-      const responses = await Promise.all(pageRequests);
-      const allData: ProtocoloDB[] = [];
+        if (error) {
+          // Se já carregou parte dos dados, preserva o que veio para não bloquear a tela.
+          if (allData.length > 0) {
+            console.warn('[protocolos] Timeout parcial ao carregar histórico. Exibindo dados já carregados.');
+            break;
+          }
+          throw error;
+        }
 
-      for (const { data, error } of responses) {
-        if (error) throw error;
-        if (data?.length) {
-          allData.push(...(data as unknown as ProtocoloDB[]));
+        if (!data?.length) {
+          break;
+        }
+
+        allData.push(...(data as unknown as ProtocoloDB[]));
+
+        if (data.length < PAGE_SIZE) {
+          break;
         }
       }
 
