@@ -106,6 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
   }, []);
+
+  // Limpar cache stale na montagem para forçar busca fresca
+  useEffect(() => {
+    clearCachedUser();
+  }, []);
+
   // Inicialização - verificar sessão existente
   useEffect(() => {
     // Configurar listener de mudanças de auth PRIMEIRO
