@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Protocolo, Produto, FotosProtocolo, ObservacaoLog } from '@/types';
@@ -167,53 +166,51 @@ function protocoloToDB(p: Protocolo): Omit<ProtocoloDB, 'id'> {
 
 export function useProtocolosDB() {
   const queryClient = useQueryClient();
+  const protocolosQueryKey = ['protocolos'] as const;
 
   const { data: protocolos = [], isLoading, error } = useQuery({
-    queryKey: ['protocolos'],
+    queryKey: protocolosQueryKey,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,
     queryFn: async () => {
-      const allData: ProtocoloDB[] = [];
+      const pageSize = 1000;
 
-      // Carregar em lotes menores evita timeout e melhora o tempo de primeira renderização.
-      // Mantemos uma janela ampla de dados recentes para não travar a aplicação.
-      const PAGE_SIZE = 300;
-      const MAX_ROWS = 1200;
+      const { count, error: countError } = await supabase
+        .from('protocolos')
+        .select('id', { count: 'exact', head: true })
+        .eq('ativo', true);
 
-      for (let from = 0; from < MAX_ROWS; from += PAGE_SIZE) {
-        const to = Math.min(from + PAGE_SIZE - 1, MAX_ROWS - 1);
+      if (countError) throw countError;
 
-        const { data, error } = await supabase
+      const total = count ?? 0;
+      if (total === 0) return [];
+
+      const totalPages = Math.ceil(total / pageSize);
+
+      const pageRequests = Array.from({ length: totalPages }, (_, pageIndex) => {
+        const from = pageIndex * pageSize;
+        const to = from + pageSize - 1;
+
+        return supabase
           .from('protocolos')
           .select('*')
           .eq('ativo', true)
           .order('created_at', { ascending: false })
           .range(from, to);
+      });
 
-        if (error) {
-          // Se já carregou parte dos dados, preserva o que veio para não bloquear a tela.
-          if (allData.length > 0) {
-            console.warn('[protocolos] Timeout parcial ao carregar histórico. Exibindo dados já carregados.');
-            break;
-          }
-          throw error;
-        }
+      const pageResults = await Promise.all(pageRequests);
+      const pageError = pageResults.find((result) => result.error)?.error;
+      if (pageError) throw pageError;
 
-        if (!data?.length) {
-          break;
-        }
+      const allProtocolos = pageResults.flatMap(
+        (result) => (result.data as unknown as ProtocoloDB[] | null) ?? []
+      );
 
-        allData.push(...(data as unknown as ProtocoloDB[]));
-
-        if (data.length < PAGE_SIZE) {
-          break;
-        }
-      }
-
-      return allData.map(dbToProtocolo);
+      return allProtocolos.map(dbToProtocolo);
     }
   });
 
@@ -258,13 +255,13 @@ export function useProtocolosDB() {
     // Optimistic update para resposta instantânea
     onMutate: async (newProtocolo) => {
       // Cancelar queries em andamento
-      await queryClient.cancelQueries({ queryKey: ['protocolos'] });
+      await queryClient.cancelQueries({ queryKey: protocolosQueryKey });
 
       // Salvar estado anterior
-      const previousProtocolos = queryClient.getQueryData<Protocolo[]>(['protocolos']);
+      const previousProtocolos = queryClient.getQueryData<Protocolo[]>(protocolosQueryKey);
 
       // Atualizar cache otimisticamente
-      queryClient.setQueryData<Protocolo[]>(['protocolos'], (old) => 
+      queryClient.setQueryData<Protocolo[]>(protocolosQueryKey, (old) => 
         old?.map(p => p.id === newProtocolo.id ? newProtocolo : p) ?? []
       );
 
@@ -273,7 +270,7 @@ export function useProtocolosDB() {
     onError: (error, _newProtocolo, context) => {
       // Reverter para estado anterior em caso de erro
       if (context?.previousProtocolos) {
-        queryClient.setQueryData(['protocolos'], context.previousProtocolos);
+        queryClient.setQueryData(protocolosQueryKey, context.previousProtocolos);
       }
       console.error('Erro ao atualizar protocolo:', error);
       toast({
@@ -310,32 +307,7 @@ export function useProtocolosDB() {
     }
   });
 
-  // Realtime: escuta INSERT/UPDATE/DELETE na tabela protocolos
-  useEffect(() => {
-    const channel = supabase
-      .channel('protocolos-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'protocolos' },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            toast({
-              title: '📋 Novo protocolo recebido!',
-              description: `Protocolo ${(payload.new as any)?.numero || ''} acabou de chegar.`,
-            });
-          }
-          // Deferir para evitar conflito com ciclo de render do React
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['protocolos'] });
-          }, 100);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
+  // Realtime removido para melhorar performance de carregamento
 
   return {
     protocolos,

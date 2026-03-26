@@ -38,6 +38,24 @@ const buildFallbackUser = (authUser: User): AppUser => ({
   unidade: '',
 });
 
+const withTimeout = <T,>(promise: Promise<T>, timeoutMs = 9000): Promise<T> => {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error('Timeout ao carregar sessão/perfil'));
+    }, timeoutMs);
+
+    promise
+      .then((result) => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
+};
+
 const fallbackAuthContext: AuthContextType = {
   user: null,
   session: null,
@@ -113,11 +131,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (newSession?.user) {
         setTimeout(() => {
-          fetchUserProfile(newSession.user).then(profile => {
-            if (!isMounted) return;
-            setUser(profile);
-            setIsLoading(false);
-          });
+          fetchUserProfile(newSession.user)
+            .then(profile => {
+              if (!isMounted) return;
+              setUser(profile);
+            })
+            .catch((err) => {
+              console.warn('Erro ao hidratar perfil no evento auth, aplicando fallback:', err);
+              if (!isMounted) return;
+              setUser(buildFallbackUser(newSession.user));
+            })
+            .finally(() => {
+              if (isMounted) setIsLoading(false);
+            });
         }, 0);
       } else {
         setUser(null);
@@ -127,7 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeSession = async () => {
       try {
-        const { data: { session: existingSession }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session: existingSession }, error: sessionError } = await withTimeout(
+          supabase.auth.getSession()
+        );
         if (!isMounted) return;
 
         // Se houve erro ao restaurar sessão (token inválido/expirado), limpar tudo

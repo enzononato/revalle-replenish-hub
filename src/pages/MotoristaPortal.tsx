@@ -166,7 +166,7 @@ export default function MotoristaPortal() {
   const navigate = useNavigate();
   const { motorista, logout, isAuthenticated } = useMotoristaAuth();
   const { addProtocolo } = useAddProtocolo();
-  const { isOnline, pendingCount, saveOffline, syncPending } = useOfflineProtocolos();
+  const { isOnline, pendingCount, isSyncing, saveOffline, syncPending } = useOfflineProtocolos();
 
   const [currentView, setCurrentView] = useState<'dashboard' | 'reposicao' | 'pos-rota' | 'meus-protocolos'>('dashboard');
 
@@ -245,12 +245,10 @@ export default function MotoristaPortal() {
     return Math.round((completed / statuses.length) * 100);
   };
 
-  // Sincronizar protocolos pendentes quando online
-  useEffect(() => {
-    if (isOnline && pendingCount > 0) {
-      syncPending(addProtocolo);
-    }
-  }, [isOnline, pendingCount, syncPending, addProtocolo]);
+  const handleSyncPending = async () => {
+    if (!isOnline || pendingCount === 0 || isSyncing) return;
+    await syncPending(addProtocolo);
+  };
 
   // Notificações em tempo real quando status do protocolo mudar
   useEffect(() => {
@@ -1072,6 +1070,29 @@ export default function MotoristaPortal() {
           </p>
         </div>
       </div>
+
+      {isOnline && pendingCount > 0 && (
+        <div className="px-4 pb-1">
+          <div className="max-w-xl mx-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncPending}
+              disabled={isSyncing}
+              className="w-full"
+            >
+              {isSyncing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sincronizando pendências...
+                </>
+              ) : (
+                `Sincronizar ${pendingCount} protocolo(s) pendente(s)`
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Resumo do dia */}
       <DailySummary motorista={motorista} />
