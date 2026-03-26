@@ -180,7 +180,7 @@ export function useProtocolosDB() {
     refetchOnReconnect: false,
     retry: 1,
     queryFn: async () => {
-      const limit = queryScope === 'resumo' ? 300 : 500;
+      const limit = queryScope === 'resumo' ? 1000 : 5000;
 
       const { data, error } = await supabase
         .from('protocolos')
