@@ -56,7 +56,8 @@ export function useMotoristasDB() {
       const { data, error: fetchError } = await supabase
         .from('motoristas_public' as any)
         .select('*')
-        .order('nome', { ascending: true });
+        .order('nome', { ascending: true })
+        .limit(1000);
 
       if (fetchError) throw fetchError;
       return (data as unknown as MotoristaPublicDB[]).map(dbToMotorista);
