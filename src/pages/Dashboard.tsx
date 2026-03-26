@@ -429,7 +429,9 @@ export default function Dashboard() {
           baseQuery = baseQuery.in('motorista_unidade', unidadesFiltro);
         }
 
-        const { data, error } = await baseQuery;
+        const { data, error } = await baseQuery
+          .order('created_at', { ascending: false })
+          .limit(1000);
         if (error) throw error;
 
         const filtered = data || [];
