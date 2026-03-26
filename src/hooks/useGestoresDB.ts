@@ -19,8 +19,9 @@ export function useGestoresDB() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gestores')
-        .select('*')
-        .order('nome', { ascending: true });
+        .select('id,nome,whatsapp,unidades,created_at,updated_at')
+        .order('nome', { ascending: true })
+        .limit(500);
 
       if (error) {
         console.error('Erro ao buscar gestores:', error);
@@ -29,6 +30,11 @@ export function useGestoresDB() {
 
       return data as Gestor[];
     },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   });
 
   const addGestorMutation = useMutation({

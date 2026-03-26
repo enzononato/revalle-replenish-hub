@@ -28,8 +28,9 @@ export function useUsuariosDB() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('user_profiles')
-        .select('*')
-        .order('nome');
+        .select('id,nome,user_email,nivel,unidade,created_at')
+        .order('nome')
+        .limit(500);
 
       if (error) throw error;
 
@@ -43,6 +44,10 @@ export function useUsuariosDB() {
       }));
     },
     staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   });
 
   const addMutation = useMutation({

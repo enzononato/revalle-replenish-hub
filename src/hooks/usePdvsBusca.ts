@@ -49,32 +49,20 @@ export function usePdvsBusca(termo: string, unidade: string) {
 
       setIsLoading(true);
       try {
-        // Dois queries em paralelo: match exato + match parcial (sem o exato)
-        const [exactResult, partialResult] = await Promise.all([
-          supabase
-            .from('pdvs')
-            .select('codigo, nome, bairro, cidade, endereco')
-            .eq('unidade', unidadeCodigo)
-            .eq('codigo', termo)
-            .limit(1),
-          supabase
-            .from('pdvs')
-            .select('codigo, nome, bairro, cidade, endereco')
-            .eq('unidade', unidadeCodigo)
-            .or(`codigo.ilike.%${termo}%,nome.ilike.%${termo}%`)
-            .neq('codigo', termo)
-            .limit(19),
-        ]);
+        const { data, error } = await supabase
+          .from('pdvs')
+          .select('codigo, nome, bairro, cidade, endereco')
+          .eq('unidade', unidadeCodigo)
+          .or(`codigo.ilike.%${termo}%,nome.ilike.%${termo}%`)
+          .limit(20);
 
-        if (exactResult.error) throw exactResult.error;
-        if (partialResult.error) throw partialResult.error;
+        if (error) throw error;
 
-        const combined = [
-          ...(exactResult.data || []),
-          ...(partialResult.data || []),
-        ];
+        const sorted = (data || []).sort((a, b) => {
+          const exatoA = a.codigo === termo ? 0 : 1;
+          const exatoB = b.codigo === termo ? 0 : 1;
+          if (exatoA !== exatoB) return exatoA - exatoB;
 
-        const sorted = combined.sort((a, b) => {
           const numA = parseInt(a.codigo, 10);
           const numB = parseInt(b.codigo, 10);
           if (!isNaN(numA) && !isNaN(numB)) return numA - numB;

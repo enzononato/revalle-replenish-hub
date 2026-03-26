@@ -410,37 +410,51 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchSobrasStats = async () => {
       try {
-        let baseQuery = supabase
-          .from('protocolos')
-          .select('status, causa, motorista_unidade')
-          .eq('tipo_reposicao', 'pos_rota')
-          .eq('ativo', true);
+        const buildBaseCountQuery = () => {
+          let query: any = supabase
+            .from('protocolos')
+            .select('id', { count: 'exact', head: true })
+            .eq('tipo_reposicao', 'pos_rota')
+            .eq('ativo', true);
 
-        if (!isAdmin) {
-          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
-          const unidadesPermitidas = unidadesFiltro.length > 0
-            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
-            : userUnidades;
+          if (!isAdmin) {
+            const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+            const unidadesPermitidas = unidadesFiltro.length > 0
+              ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+              : userUnidades;
 
-          if (unidadesPermitidas.length > 0) {
-            baseQuery = baseQuery.in('motorista_unidade', unidadesPermitidas);
+            if (unidadesPermitidas.length > 0) {
+              query = query.in('motorista_unidade', unidadesPermitidas);
+            }
+          } else if (unidadesFiltro.length > 0) {
+            query = query.in('motorista_unidade', unidadesFiltro);
           }
-        } else if (unidadesFiltro.length > 0) {
-          baseQuery = baseQuery.in('motorista_unidade', unidadesFiltro);
-        }
 
-        const { data, error } = await baseQuery;
-        if (error) throw error;
+          return query;
+        };
 
-        const filtered = data || [];
+        const runCount = async (modifier?: (query: any) => any) => {
+          let query = buildBaseCountQuery();
+          if (modifier) query = modifier(query);
+          const { count, error } = await query;
+          if (error) throw error;
+          return count || 0;
+        };
+
+        const total = await runCount();
+        const pendente = await runCount((q) => q.eq('status', 'aberto'));
+        const tratamento = await runCount((q) => q.eq('status', 'em_andamento'));
+        const resolvido = await runCount((q) => q.eq('status', 'encerrado'));
+        const erroCarregamento = await runCount((q) => q.ilike('causa', '%ERRO DE CARREGAMENTO%'));
+        const erroEntrega = await runCount((q) => q.ilike('causa', '%ERRO DE ENTREGA%'));
 
         setSobrasStats({
-          total: filtered.length,
-          pendente: filtered.filter(s => s.status === 'aberto').length,
-          tratamento: filtered.filter(s => s.status === 'em_andamento').length,
-          resolvido: filtered.filter(s => s.status === 'encerrado').length,
-          erroCarregamento: filtered.filter(s => s.causa?.toUpperCase().includes('ERRO DE CARREGAMENTO')).length,
-          erroEntrega: filtered.filter(s => s.causa?.toUpperCase().includes('ERRO DE ENTREGA')).length,
+          total,
+          pendente,
+          tratamento,
+          resolvido,
+          erroCarregamento,
+          erroEntrega,
         });
       } catch (err) {
         console.error('Erro ao buscar sobras stats:', err);
