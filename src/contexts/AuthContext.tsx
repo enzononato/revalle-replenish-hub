@@ -5,6 +5,23 @@ import { UserRole } from '@/types';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { classifyAuthError, friendlyMessage, withRetry } from '@/lib/authErrorHandling';
 
+const AUTH_USER_CACHE_KEY = 'auth_user_cache_v1';
+const APP_ROLES: UserRole[] = ['admin', 'distribuicao', 'conferente', 'controle'];
+
+const isValidRole = (value: unknown): value is UserRole =>
+  typeof value === 'string' && APP_ROLES.includes(value as UserRole);
+
+const readCachedUser = (): Partial<AppUser> | null => {
+  try {
+    const cached = localStorage.getItem(AUTH_USER_CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    return parsed && typeof parsed === 'object' ? (parsed as Partial<AppUser>) : null;
+  } catch {
+    return null;
+  }
+};
+
 interface AppUser {
   id: string;
   nome: string;
@@ -30,13 +47,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const buildFallbackUser = (authUser: User): AppUser => ({
-  id: authUser.id,
-  nome: (authUser.user_metadata?.nome as string | undefined) || authUser.email || 'Usuário',
-  email: authUser.email || '',
-  nivel: 'conferente',
-  unidade: '',
-});
+const buildFallbackUser = (authUser: User, cachedUser?: Partial<AppUser> | null, roleOverride?: UserRole): AppUser => {
+  const cachedRole = cachedUser?.email === authUser.email && isValidRole(cachedUser?.nivel)
+    ? cachedUser.nivel
+    : undefined;
+
+  return {
+    id: authUser.id,
+    nome: (authUser.user_metadata?.nome as string | undefined) || cachedUser?.nome || authUser.email || 'Usuário',
+    email: authUser.email || cachedUser?.email || '',
+    nivel: roleOverride || cachedRole || 'conferente',
+    unidade: cachedUser?.email === authUser.email ? (cachedUser?.unidade || '') : '',
+  };
+};
 
 const withTimeout = <T,>(promise: Promise<T>, timeoutMs = 9000): Promise<T> => {
   return new Promise((resolve, reject) => {
@@ -82,39 +105,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { registrarLog } = useAuditLog();
 
-  // Buscar perfil do usuário no banco
-  const fetchUserProfile = useCallback(async (authUser: User): Promise<AppUser | null> => {
-    try {
-      const { data: profile, error } = await withRetry(async () => {
-        return supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('user_email', authUser.email)
-          .maybeSingle();
-      }, 2, 600);
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(AUTH_USER_CACHE_KEY, JSON.stringify(user));
+      return;
+    }
+    localStorage.removeItem(AUTH_USER_CACHE_KEY);
+  }, [user]);
 
-      if (error) {
-        console.warn('Erro ao buscar perfil, aplicando fallback:', error.message);
-        return buildFallbackUser(authUser);
+  const fetchUserRole = useCallback(async (userId: string): Promise<UserRole | null> => {
+    try {
+      const roleValue = await withTimeout(
+        withRetry(async () => {
+          const { data, error } = await supabase.rpc('get_user_role', { _user_id: userId });
+          if (error) throw error;
+          return data;
+        }, 1, 300),
+        3500,
+      );
+
+      return isValidRole(roleValue) ? roleValue : null;
+    } catch (error) {
+      console.warn('Falha ao buscar role em user_roles:', error);
+      return null;
+    }
+  }, []);
+
+  // Buscar perfil do usuário no banco
+  const fetchUserProfile = useCallback(async (authUser: User): Promise<AppUser> => {
+    const cachedUser = readCachedUser();
+
+    try {
+      const [profileResult, roleResult] = await Promise.allSettled([
+        withTimeout(
+          withRetry(async () => {
+            const { data, error } = await supabase
+              .from('user_profiles')
+              .select('id, nome, user_email, nivel, unidade')
+              .eq('user_email', authUser.email)
+              .maybeSingle();
+            if (error) throw error;
+            return data;
+          }, 1, 300),
+          3500,
+        ),
+        fetchUserRole(authUser.id),
+      ]);
+
+      const profile = profileResult.status === 'fulfilled' ? profileResult.value : null;
+      const roleFromTable = roleResult.status === 'fulfilled' ? roleResult.value : null;
+
+      if (profileResult.status === 'rejected') {
+        console.warn('Erro ao buscar perfil, aplicando fallback parcial:', profileResult.reason);
       }
 
+      const roleFromProfile = isValidRole(profile?.nivel) ? (profile.nivel as UserRole) : null;
+      const cachedRole = cachedUser?.email === authUser.email && isValidRole(cachedUser?.nivel)
+        ? cachedUser.nivel
+        : null;
+
+      const resolvedRole = roleFromTable || roleFromProfile || cachedRole || 'conferente';
+
       if (!profile) {
-        console.warn('Perfil não encontrado, aplicando fallback para:', authUser.email);
-        return buildFallbackUser(authUser);
+        return buildFallbackUser(authUser, cachedUser, resolvedRole);
       }
 
       return {
         id: profile.id,
-        nome: profile.nome || authUser.email || '',
-        email: profile.user_email,
-        nivel: (profile.nivel as UserRole) || 'conferente',
-        unidade: profile.unidade || '',
+        nome: profile.nome || authUser.email || cachedUser?.nome || '',
+        email: profile.user_email || authUser.email || cachedUser?.email || '',
+        nivel: resolvedRole,
+        unidade: profile.unidade || (cachedUser?.email === authUser.email ? (cachedUser?.unidade || '') : ''),
       };
     } catch (err) {
       console.warn('Erro ao buscar perfil, aplicando fallback:', err);
-      return buildFallbackUser(authUser);
+      return buildFallbackUser(authUser, cachedUser);
     }
-  }, []);
+  }, [fetchUserRole]);
 
   // Inicialização - verificar sessão existente sem flicker/redirect indevido
   useEffect(() => {
