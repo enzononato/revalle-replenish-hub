@@ -56,6 +56,8 @@ const withTimeout = <T,>(promise: Promise<T>, timeoutMs = 9000): Promise<T> => {
   });
 };
 
+const PROFILE_FETCH_TIMEOUT_MS = 2500;
+
 const fallbackAuthContext: AuthContextType = {
   user: null,
   session: null,
@@ -88,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: profile, error } = await withRetry(async () => {
         return supabase
           .from('user_profiles')
-          .select('*')
+          .select('id,nome,user_email,nivel,unidade')
           .eq('user_email', authUser.email)
           .maybeSingle();
       }, 2, 600);
@@ -116,6 +118,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const fetchUserProfileFast = useCallback(async (authUser: User): Promise<AppUser> => {
+    try {
+      const profile = await withTimeout(fetchUserProfile(authUser), PROFILE_FETCH_TIMEOUT_MS);
+      return profile ?? buildFallbackUser(authUser);
+    } catch {
+      return buildFallbackUser(authUser);
+    }
+  }, [fetchUserProfile]);
+
   // Inicialização - verificar sessão existente sem flicker/redirect indevido
   useEffect(() => {
     let isMounted = true;
@@ -131,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (newSession?.user) {
         setTimeout(() => {
-          fetchUserProfile(newSession.user)
+          fetchUserProfileFast(newSession.user)
             .then(profile => {
               if (!isMounted) return;
               setUser(profile);
@@ -170,7 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(existingSession);
 
         if (existingSession?.user) {
-          const profile = await fetchUserProfile(existingSession.user);
+          const profile = await fetchUserProfileFast(existingSession.user);
           if (!isMounted) return;
           setUser(profile);
         } else {
@@ -195,7 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, [fetchUserProfileFast]);
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
@@ -206,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (result.user) {
-        const profile = await fetchUserProfile(result.user);
+        const profile = await fetchUserProfileFast(result.user);
         setUser(profile);
         void registrarLog({
           acao: 'login',
@@ -225,7 +236,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error(`[AUTH:admin] Login failed (${classified.type}):`, classified.message);
       return { success: false, error: friendlyMessage(classified) };
     }
-  }, [fetchUserProfile, registrarLog]);
+  }, [fetchUserProfileFast, registrarLog]);
 
   const logout = useCallback(async () => {
     if (user) {
