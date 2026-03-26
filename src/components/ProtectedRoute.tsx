@@ -23,13 +23,10 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to="/login" replace />;
   }
 
-  // User profile still loading (session exists but profile not yet fetched)
+  // Fallback de segurança: evita spinner infinito quando sessão existe,
+  // mas o perfil não pôde ser hidratado.
   if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-primary" size={48} />
-      </div>
-    );
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (!allowedRoles.includes(user.nivel)) {
