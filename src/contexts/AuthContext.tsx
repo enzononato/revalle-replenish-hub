@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
 import { useAuditLog } from '@/hooks/useAuditLog';
 
+const AUTH_CACHE_KEY = 'auth_user_cache_v1';
+
 interface AppUser {
   id: string;
   nome: string;
@@ -29,44 +31,81 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Retry helper for transient DB errors
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3, delayMs = 1000): Promise<T> {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === attempts - 1) throw err;
+      await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+  throw new Error('withRetry exhausted');
+}
+
+function cacheUser(user: AppUser) {
+  try { localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(user)); } catch {}
+}
+
+function getCachedUser(): AppUser | null {
+  try {
+    const raw = localStorage.getItem(AUTH_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function clearCachedUser() {
+  try { localStorage.removeItem(AUTH_CACHE_KEY); } catch {}
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { registrarLog } = useAuditLog();
 
-  // Buscar perfil do usuário no banco
+  // Buscar perfil do usuário no banco com retry
   const fetchUserProfile = useCallback(async (authUser: User): Promise<AppUser | null> => {
     try {
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_email', authUser.email)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Erro ao buscar perfil:', error);
-        return null;
-      }
+      const profile = await withRetry(async () => {
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_email', authUser.email)
+          .maybeSingle();
+        if (error) throw error;
+        return data;
+      });
 
       if (!profile) {
         console.warn('Perfil não encontrado para:', authUser.email);
+        // Tentar cache como fallback
+        const cached = getCachedUser();
+        if (cached && cached.email === authUser.email) return cached;
         return null;
       }
 
-      return {
+      const appUser: AppUser = {
         id: profile.id,
         nome: profile.nome || authUser.email || '',
         email: profile.user_email,
         nivel: (profile.nivel as UserRole) || 'conferente',
         unidade: profile.unidade || '',
       };
+      cacheUser(appUser);
+      return appUser;
     } catch (err) {
       console.error('Erro ao buscar perfil:', err);
+      // Fallback para cache em caso de erro de conexão
+      const cached = getCachedUser();
+      if (cached && cached.email === authUser.email) {
+        console.log('Usando perfil do cache local');
+        return cached;
+      }
       return null;
     }
   }, []);
-
   // Inicialização - verificar sessão existente
   useEffect(() => {
     // Configurar listener de mudanças de auth PRIMEIRO
