@@ -176,15 +176,41 @@ export function useProtocolosDB() {
     refetchOnReconnect: false,
     retry: 1,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('protocolos')
-        .select('*')
-        .eq('ativo', true)
-        .order('created_at', { ascending: false })
-        .limit(500);
+      const pageSize = 1000;
 
-      if (error) throw error;
-      return (data as unknown as ProtocoloDB[]).map(dbToProtocolo);
+      const { count, error: countError } = await supabase
+        .from('protocolos')
+        .select('id', { count: 'exact', head: true })
+        .eq('ativo', true);
+
+      if (countError) throw countError;
+
+      const total = count ?? 0;
+      if (total === 0) return [];
+
+      const totalPages = Math.ceil(total / pageSize);
+
+      const pageRequests = Array.from({ length: totalPages }, (_, pageIndex) => {
+        const from = pageIndex * pageSize;
+        const to = from + pageSize - 1;
+
+        return supabase
+          .from('protocolos')
+          .select('*')
+          .eq('ativo', true)
+          .order('created_at', { ascending: false })
+          .range(from, to);
+      });
+
+      const pageResults = await Promise.all(pageRequests);
+      const pageError = pageResults.find((result) => result.error)?.error;
+      if (pageError) throw pageError;
+
+      const allProtocolos = pageResults.flatMap(
+        (result) => (result.data as unknown as ProtocoloDB[] | null) ?? []
+      );
+
+      return allProtocolos.map(dbToProtocolo);
     }
   });
 
