@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Protocolo, Produto, FotosProtocolo, ObservacaoLog } from '@/types';
@@ -167,9 +166,14 @@ function protocoloToDB(p: Protocolo): Omit<ProtocoloDB, 'id'> {
 
 export function useProtocolosDB() {
   const queryClient = useQueryClient();
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  const isProtocolosRoute = pathname.startsWith('/protocolos');
+  const isConfiguracoesRoute = pathname.startsWith('/configuracoes');
+  const queryScope = isProtocolosRoute || isConfiguracoesRoute ? 'detalhado' : 'resumo';
+  const protocolosQueryKey = ['protocolos', queryScope] as const;
 
   const { data: protocolos = [], isLoading, error } = useQuery({
-    queryKey: ['protocolos'],
+    queryKey: protocolosQueryKey,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
@@ -178,11 +182,10 @@ export function useProtocolosDB() {
     queryFn: async () => {
       const allData: ProtocoloDB[] = [];
 
-      // Carregamento sequencial com cursor (keyset) evita custo de OFFSET alto em tabelas grandes.
-      // Mantemos janela ampla de dados recentes sem travar a UI.
-      const PAGE_SIZE = 250;
-      const MAX_ROWS = 1200;
-      const BATCH_TIMEOUT_MS = 8000;
+      // Mantém carregamento rápido: resumo menor para dashboard e carga maior apenas em telas que precisam detalhamento.
+      const PAGE_SIZE = queryScope === 'resumo' ? 150 : 220;
+      const MAX_ROWS = queryScope === 'resumo' ? 300 : 900;
+      const BATCH_TIMEOUT_MS = queryScope === 'resumo' ? 4500 : 7000;
       let cursorCreatedAt: string | null = null;
 
       const runWithTimeout = <T,>(operation: PromiseLike<T>, timeoutMs: number): Promise<T> => {
@@ -304,13 +307,13 @@ export function useProtocolosDB() {
     // Optimistic update para resposta instantânea
     onMutate: async (newProtocolo) => {
       // Cancelar queries em andamento
-      await queryClient.cancelQueries({ queryKey: ['protocolos'] });
+      await queryClient.cancelQueries({ queryKey: protocolosQueryKey });
 
       // Salvar estado anterior
-      const previousProtocolos = queryClient.getQueryData<Protocolo[]>(['protocolos']);
+      const previousProtocolos = queryClient.getQueryData<Protocolo[]>(protocolosQueryKey);
 
       // Atualizar cache otimisticamente
-      queryClient.setQueryData<Protocolo[]>(['protocolos'], (old) => 
+      queryClient.setQueryData<Protocolo[]>(protocolosQueryKey, (old) => 
         old?.map(p => p.id === newProtocolo.id ? newProtocolo : p) ?? []
       );
 
@@ -319,7 +322,7 @@ export function useProtocolosDB() {
     onError: (error, _newProtocolo, context) => {
       // Reverter para estado anterior em caso de erro
       if (context?.previousProtocolos) {
-        queryClient.setQueryData(['protocolos'], context.previousProtocolos);
+        queryClient.setQueryData(protocolosQueryKey, context.previousProtocolos);
       }
       console.error('Erro ao atualizar protocolo:', error);
       toast({
