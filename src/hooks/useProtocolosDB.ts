@@ -166,11 +166,7 @@ function protocoloToDB(p: Protocolo): Omit<ProtocoloDB, 'id'> {
 
 export function useProtocolosDB() {
   const queryClient = useQueryClient();
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-  const isProtocolosRoute = pathname.startsWith('/protocolos');
-  const isConfiguracoesRoute = pathname.startsWith('/configuracoes');
-  const queryScope = isProtocolosRoute || isConfiguracoesRoute ? 'detalhado' : 'resumo';
-  const protocolosQueryKey = ['protocolos', queryScope] as const;
+  const protocolosQueryKey = ['protocolos'] as const;
 
   const { data: protocolos = [], isLoading, error } = useQuery({
     queryKey: protocolosQueryKey,
@@ -180,18 +176,6 @@ export function useProtocolosDB() {
     refetchOnReconnect: false,
     retry: 1,
     queryFn: async () => {
-      if (queryScope === 'resumo') {
-        const { data, error } = await supabase
-          .from('protocolos')
-          .select('*')
-          .eq('ativo', true)
-          .order('created_at', { ascending: false })
-          .limit(300);
-
-        if (error) throw error;
-        return (data as unknown as ProtocoloDB[] | null)?.map(dbToProtocolo) ?? [];
-      }
-
       const pageSize = 1000;
 
       const { count, error: countError } = await supabase
