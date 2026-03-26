@@ -359,31 +359,52 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [protocolosFiltrados]);
 
-  // Mapa de código PDV -> nome PDV
+  // TOP 5 Clientes PDVs por código (para buscar apenas os nomes necessários)
+  const topClientesPorCodigo = useMemo(() => {
+    const contagem: Record<string, number> = {};
+    protocolosFiltrados.forEach(p => {
+      const pdv = p.codigoPdv || 'Sem PDV';
+      contagem[pdv] = (contagem[pdv] || 0) + 1;
+    });
+
+    return Object.entries(contagem)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+  }, [protocolosFiltrados]);
+
+  // Mapa de código PDV -> nome PDV (somente TOP 5, evitando query em massa)
   const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
 
-  // Buscar nomes dos PDVs do banco (em lotes para evitar limite)
   useEffect(() => {
-    const codigos = [...new Set(protocolosFiltrados.map(p => p.codigoPdv).filter(Boolean))] as string[];
-    if (codigos.length === 0) return;
+    const codigos = topClientesPorCodigo
+      .map(([codigo]) => codigo)
+      .filter((codigo) => codigo !== 'Sem PDV');
+
+    if (codigos.length === 0) {
+      setPdvNamesMap({});
+      return;
+    }
 
     const fetchPdvNames = async () => {
-      const map: Record<string, string> = {};
-      const batchSize = 200;
-      for (let i = 0; i < codigos.length; i += batchSize) {
-        const batch = codigos.slice(i, i + batchSize);
-        const { data } = await supabase
-          .from('pdvs')
-          .select('codigo, nome')
-          .in('codigo', batch);
-        if (data) {
-          data.forEach(p => { map[p.codigo] = p.nome; });
-        }
+      const { data } = await supabase
+        .from('pdvs')
+        .select('codigo, nome')
+        .in('codigo', codigos);
+
+      if (!data) {
+        setPdvNamesMap({});
+        return;
       }
+
+      const map: Record<string, string> = {};
+      data.forEach((p) => {
+        map[p.codigo] = p.nome;
+      });
       setPdvNamesMap(map);
     };
+
     fetchPdvNames();
-  }, [protocolosFiltrados]);
+  }, [topClientesPorCodigo]);
 
   // Fetch sobras stats from database
   useEffect(() => {
@@ -395,22 +416,23 @@ export default function Dashboard() {
           .eq('tipo_reposicao', 'pos_rota')
           .eq('ativo', true);
 
+        if (!isAdmin) {
+          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+          const unidadesPermitidas = unidadesFiltro.length > 0
+            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+            : userUnidades;
+
+          if (unidadesPermitidas.length > 0) {
+            baseQuery = baseQuery.in('motorista_unidade', unidadesPermitidas);
+          }
+        } else if (unidadesFiltro.length > 0) {
+          baseQuery = baseQuery.in('motorista_unidade', unidadesFiltro);
+        }
+
         const { data, error } = await baseQuery;
         if (error) throw error;
 
-        let filtered = data || [];
-        
-        // Apply unit filter
-        if (!isAdmin) {
-          const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
-          if (unidadesFiltro.length > 0) {
-            filtered = filtered.filter(s => s.motorista_unidade && unidadesFiltro.includes(s.motorista_unidade) && userUnidades.includes(s.motorista_unidade));
-          } else {
-            filtered = filtered.filter(s => s.motorista_unidade && userUnidades.includes(s.motorista_unidade));
-          }
-        } else if (unidadesFiltro.length > 0) {
-          filtered = filtered.filter(s => s.motorista_unidade && unidadesFiltro.includes(s.motorista_unidade));
-        }
+        const filtered = data || [];
 
         setSobrasStats({
           total: filtered.length,
@@ -429,20 +451,14 @@ export default function Dashboard() {
 
   // TOP 5 Clientes PDVs (calculado dos protocolos reais)
   const topClientesReal = useMemo(() => {
-    const contagem: Record<string, number> = {};
-    protocolosFiltrados.forEach(p => {
-      const pdv = p.codigoPdv || 'Sem PDV';
-      contagem[pdv] = (contagem[pdv] || 0) + 1;
-    });
-    return Object.entries(contagem)
+    return topClientesPorCodigo
       .map(([codigo, quantidade], index) => ({
         id: `pdv-${index}`,
         nome: pdvNamesMap[codigo] || codigo,
         quantidade
       }))
-      .sort((a, b) => b.quantidade - a.quantidade)
-      .slice(0, 5);
-  }, [protocolosFiltrados, pdvNamesMap]);
+      .sort((a, b) => b.quantidade - a.quantidade);
+  }, [topClientesPorCodigo, pdvNamesMap]);
 
   // TOP 5 Produtos (calculado dos protocolos reais)
   const topProdutosReal = useMemo(() => {
