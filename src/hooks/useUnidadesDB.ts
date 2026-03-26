@@ -11,8 +11,9 @@ export function useUnidadesDB() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('unidades')
-        .select('*')
-        .order('nome');
+        .select('id,nome,codigo,cnpj,created_at')
+        .order('nome')
+        .limit(500);
 
       if (error) throw error;
 
@@ -25,6 +26,10 @@ export function useUnidadesDB() {
       }));
     },
     staleTime: 1000 * 60 * 5, // 5 minutes cache
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   });
 
   const addMutation = useMutation({
