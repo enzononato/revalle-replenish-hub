@@ -176,41 +176,16 @@ export function useProtocolosDB() {
     refetchOnReconnect: false,
     retry: 1,
     queryFn: async () => {
-      const pageSize = 1000;
-
-      const { count, error: countError } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('protocolos')
-        .select('id', { count: 'exact', head: true })
-        .eq('ativo', true);
+        .select('*')
+        .eq('ativo', true)
+        .order('created_at', { ascending: false })
+        .limit(500);
 
-      if (countError) throw countError;
+      if (fetchError) throw fetchError;
 
-      const total = count ?? 0;
-      if (total === 0) return [];
-
-      const totalPages = Math.ceil(total / pageSize);
-
-      const pageRequests = Array.from({ length: totalPages }, (_, pageIndex) => {
-        const from = pageIndex * pageSize;
-        const to = from + pageSize - 1;
-
-        return supabase
-          .from('protocolos')
-          .select('*')
-          .eq('ativo', true)
-          .order('created_at', { ascending: false })
-          .range(from, to);
-      });
-
-      const pageResults = await Promise.all(pageRequests);
-      const pageError = pageResults.find((result) => result.error)?.error;
-      if (pageError) throw pageError;
-
-      const allProtocolos = pageResults.flatMap(
-        (result) => (result.data as unknown as ProtocoloDB[] | null) ?? []
-      );
-
-      return allProtocolos.map(dbToProtocolo);
+      return ((data as unknown as ProtocoloDB[] | null) ?? []).map(dbToProtocolo);
     }
   });
 
