@@ -308,7 +308,7 @@ const Configuracoes = forwardRef<HTMLDivElement, {}>(function Configuracoes(_pro
   };
 
   return (
-    <div className="space-y-4">
+    <div ref={ref} className="space-y-4">
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">Configurações</h1>
         <p className="text-muted-foreground mt-0.5 text-sm">Gerencie as configurações do sistema</p>
