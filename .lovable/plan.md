@@ -1,58 +1,34 @@
 
-Objetivo: corrigir o problema “não entra em nenhuma tela” com foco em resiliência de autenticação (Admin, Motorista e RN), já que os logs mostram falhas intermitentes de backend (timeouts 500/504 e `context canceled`) em `/token` e nas funções de login.
 
-1) Consolidar tratamento de erro de rede/timeout nos 3 fluxos de login
-- Criar um util único (ex.: `src/lib/authErrorHandling.ts`) para:
-  - classificar erros de timeout, indisponibilidade e credenciais inválidas;
-  - padronizar mensagens amigáveis para UI;
-  - evitar mensagens genéricas (“Failed to fetch”).
-- Aplicar em:
-  - `src/contexts/AuthContext.tsx` (login admin)
-  - `src/contexts/MotoristaAuthContext.tsx`
-  - `src/contexts/RnAuthContext.tsx`
+# Execução do Backup Completo — Plano Confirmado
 
-2) Adicionar retry controlado para falhas transitórias
-- Implementar retry curto com backoff (ex.: 2 tentativas adicionais) apenas para erros de rede/timeout.
-- Não aplicar retry para credencial inválida.
-- Garantir que `isLoading` sempre finalize, mesmo com exceções encadeadas.
+O plano já foi aprovado. Vou executar as 4 etapas na seguinte ordem:
 
-3) Melhorar feedback visual nas telas de login
-- Em `src/pages/Login.tsx`, `src/pages/MotoristaLogin.tsx`, `src/pages/RnLogin.tsx`:
-  - trocar mensagem única de erro por textos específicos:
-    - “credenciais inválidas”
-    - “sistema instável, tente novamente em instantes”
-  - incluir botão “Tentar novamente” mantendo os campos preenchidos.
-- Resultado esperado: usuário entende se é erro dele ou instabilidade do sistema.
+## Etapa 1: Dump do schema `public`
+- Usar `psql` com `COPY ... TO STDOUT CSV HEADER` para exportar todas as 16 tabelas (protocolos, motoristas, pdvs, produtos, gestores, unidades, representantes, user_profiles, user_roles, audit_logs, chat_conversations, chat_messages, chat_participants, alteracao_pedidos_log, alteracao_pedidos_envios, motorista_login_logs)
+- Gerar arquivo consolidado `/mnt/documents/backup_public.sql`
 
-4) Fortalecer chamadas das funções de login (Motorista/RN)
-- Ajustar CORS headers das funções para o conjunto completo recomendado, reduzindo risco de falha de preflight em navegadores/SDKs novos.
-  - `supabase/functions/motorista-login/index.ts`
-  - `supabase/functions/rn-login/index.ts`
-- Manter retorno estruturado `{ success: false, error: '...' }` para UX consistente.
+## Etapa 2: Export Auth (prioridade: encrypted_password via psql)
+- **Tentativa A**: `psql -c "SELECT id, email, encrypted_password, raw_user_meta_data, created_at, email_confirmed_at FROM auth.users"` → CSV
+- **Tentativa B (fallback)**: Edge function com `auth.admin.listUsers()` → JSON sem hashes
+- Resultado em `/mnt/documents/users_with_passwords.csv` ou `/mnt/documents/users.json`
 
-5) Instrumentação mínima para diagnóstico contínuo
-- Adicionar logs de erro no cliente com contexto do fluxo (`admin`, `motorista`, `rn`) e tipo classificado do erro.
-- Não expor detalhes sensíveis ao usuário final.
-- Facilita identificar se a próxima falha é de autenticação, função ou indisponibilidade do backend.
+## Etapa 3: Export do Storage
+- Criar e invocar edge function `listar-storage` que lista todos os arquivos do bucket `fotos-protocolos`
+- Gerar `/mnt/documents/storage_files.json`
 
-Arquivos previstos
-- `src/lib/authErrorHandling.ts` (novo)
-- `src/contexts/AuthContext.tsx`
-- `src/contexts/MotoristaAuthContext.tsx`
-- `src/contexts/RnAuthContext.tsx`
-- `src/pages/Login.tsx`
-- `src/pages/MotoristaLogin.tsx`
-- `src/pages/RnLogin.tsx`
-- `supabase/functions/motorista-login/index.ts`
-- `supabase/functions/rn-login/index.ts`
+## Etapa 4: Scripts de Migração
+- `/mnt/documents/migrar-auth.js` — importa usuários (com password_hash se disponível)
+- `/mnt/documents/migrar-storage.js` — baixa e re-envia fotos
+- `/mnt/documents/README-migracao.md` — guia passo a passo
 
-Critérios de aceite
-- Nenhum login fica preso em “Entrando...” indefinidamente.
-- Em cenário de timeout, usuário recebe mensagem clara de instabilidade e consegue tentar novamente sem recarregar.
-- Em credencial inválida, mensagem específica aparece sem retry desnecessário.
-- Fluxos Admin, Motorista e RN exibem comportamento consistente.
+## Arquivos finais
+| Arquivo | Conteúdo |
+|---|---|
+| `backup_public.sql` | Dump completo schema public (INSERT statements) |
+| `users_with_passwords.csv` ou `users.json` | Auth users com ou sem hashes |
+| `storage_files.json` | Manifesto de arquivos do storage |
+| `migrar-auth.js` | Script Node.js de importação |
+| `migrar-storage.js` | Script Node.js de migração de fotos |
+| `README-migracao.md` | Instruções de restauração |
 
-Detalhes técnicos (resumo)
-- Causa observada: falhas intermitentes de infraestrutura (timeouts no auth/token e consultas nas funções), não um único bug de tela.
-- Estratégia: tornar o front resiliente a indisponibilidade transitória e reduzir “Failed to fetch” opaco.
-- Sem mudanças de schema/migração nesta etapa; foco em robustez de autenticação e UX de erro.
