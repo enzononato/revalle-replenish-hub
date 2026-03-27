@@ -344,7 +344,7 @@ export function ProtocoloDetails({
   };
 
   const getLogEncerramento = (): { data: string; hora: string; usuarioNome: string; texto: string; tipo?: string; motoristaNome?: string } | null => {
-    const logEncerramento = protocolo.observacoesLog?.find(l => l.acao === 'Encerrou o protocolo');
+    const logEncerramento = protocolo.observacoesLog?.find(l => l.acao.startsWith('Encerrou o protocolo'));
     if (logEncerramento) {
       return {
         data: logEncerramento.data,
