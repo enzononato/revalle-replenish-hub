@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,7 @@ import { usePdvsDB } from '@/hooks/usePdvsDB';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { useAuth } from '@/contexts/AuthContext';
 
-const Configuracoes = forwardRef<HTMLDivElement, {}>(function Configuracoes(_props, ref) {
+export default function Configuracoes() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [webhookToken, setWebhookToken] = useState('');
   const [slaDefault, setSlaDefault] = useState('4');
@@ -308,7 +308,7 @@ const Configuracoes = forwardRef<HTMLDivElement, {}>(function Configuracoes(_pro
   };
 
   return (
-    <div ref={ref} className="space-y-4">
+    <div className="space-y-4">
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">Configurações</h1>
         <p className="text-muted-foreground mt-0.5 text-sm">Gerencie as configurações do sistema</p>
@@ -621,6 +621,7 @@ const Configuracoes = forwardRef<HTMLDivElement, {}>(function Configuracoes(_pro
                 <p className="text-sm font-medium">O backup inclui:</p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                   <li>Protocolos</li>
+                  <li>Sobras (Pós-Rota)</li>
                   <li>Motoristas</li>
                   <li>Clientes (PDVs)</li>
                   <li>Produtos</li>
@@ -660,7 +661,7 @@ const Configuracoes = forwardRef<HTMLDivElement, {}>(function Configuracoes(_pro
                 Exportar Fotos do Sistema
               </CardTitle>
               <CardDescription>
-                Baixe todas as fotos dos protocolos em um arquivo ZIP
+                Baixe todas as fotos dos protocolos e sobras (pós-rota) em um arquivo ZIP
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -699,6 +700,4 @@ const Configuracoes = forwardRef<HTMLDivElement, {}>(function Configuracoes(_pro
       </Tabs>
     </div>
   );
-});
-
-export default Configuracoes;
+}

@@ -47,6 +47,7 @@ interface BuscarProtocoloPdvProps {
   onSelectProtocolo?: (protocolo: ProtocoloEncontrado) => void;
   motorista: Motorista;
   selectionMode?: 'select' | 'view';
+  statusFilter?: 'aberto' | 'em_andamento';
 }
 
 export function BuscarProtocoloPdv({
@@ -55,6 +56,7 @@ export function BuscarProtocoloPdv({
   onSelectProtocolo,
   motorista,
   selectionMode = 'select',
+  statusFilter = 'em_andamento',
 }: BuscarProtocoloPdvProps) {
   const [codigoPdv, setCodigoPdv] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -73,9 +75,9 @@ export function BuscarProtocoloPdv({
       const { data, error } = await supabase
         .from('protocolos')
         .select('id, numero, data, hora, status, tipo_reposicao, causa, codigo_pdv, nota_fiscal, motorista_nome, motorista_codigo, motorista_whatsapp, motorista_email, motorista_unidade, produtos, observacao_geral, contato_whatsapp, contato_email, cliente_telefone, fotos_protocolo, observacoes_log, mapa')
-        .eq('status', 'em_andamento')
+        .eq('status', statusFilter)
         .eq('ativo', true)
-        .ilike('codigo_pdv', `%${codigoPdv.trim()}%`)
+        .eq('codigo_pdv', codigoPdv.trim())
         .or('oculto.is.null,oculto.eq.false')
         .order('created_at', { ascending: false })
         .limit(20);
@@ -173,7 +175,7 @@ export function BuscarProtocoloPdv({
           {!isSearching && buscaRealizada && resultados.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Nenhum protocolo em atendimento encontrado</p>
+              <p className="text-sm">Nenhum protocolo {statusFilter === 'aberto' ? 'aberto' : 'em atendimento'} encontrado</p>
               <p className="text-xs mt-1">para o PDV "{codigoPdv}"</p>
             </div>
           )}
@@ -183,79 +185,115 @@ export function BuscarProtocoloPdv({
             const isExpanded = protocoloExpandidoId === protocolo.id || protocoloExpandidoId === '__all__';
 
             return (
-              <Card
+              <div
                 key={protocolo.id}
-                className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all border-border/80"
+                className="rounded-lg border border-border/60 bg-card p-2.5 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all"
                 onClick={() => handleSelectProtocolo(protocolo)}
               >
-                <CardContent className="p-3 sm:p-4">
-                  {/* Header row */}
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <FileText className="w-4 h-4 text-primary shrink-0" />
-                      <span className="font-mono text-xs sm:text-sm font-semibold truncate">
-                        {protocolo.numero}
-                      </span>
-                    </div>
-                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 text-[10px] shrink-0 whitespace-nowrap">
-                      Em Atendimento
-                    </Badge>
+                {/* Header */}
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="font-mono text-[11px] font-bold truncate">
+                      {protocolo.numero}
+                    </span>
                   </div>
+                  {statusFilter === 'aberto' ? (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600 border border-yellow-500/25">
+                      Aberto
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/25">
+                      Em Atendimento
+                    </span>
+                  )}
+                </div>
 
-                  {/* Info grid */}
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <p>PDV: <span className="font-medium text-foreground">{protocolo.codigo_pdv}</span></p>
-                    <p>{formatDate(protocolo.data)} às {protocolo.hora}</p>
-                    <p className="col-span-2">Motorista: <span className="font-medium text-foreground">{protocolo.motorista_nome}</span></p>
-                    {protocolo.tipo_reposicao && (
-                      <p className="col-span-2 capitalize">{protocolo.tipo_reposicao.toLowerCase()}</p>
+                {/* Info compacta */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground ml-5">
+                  <span>◉ PDV {protocolo.codigo_pdv}</span>
+                  <span>⏱ {formatDate(protocolo.data)} às {protocolo.hora}</span>
+                </div>
+
+                {/* Tags: tipo + mapa */}
+                <div className="flex flex-wrap gap-1.5 mt-1.5 ml-5">
+                  {protocolo.tipo_reposicao && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground capitalize">
+                      {protocolo.tipo_reposicao.toLowerCase()}
+                    </span>
+                  )}
+                  {protocolo.mapa && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      Mapa {protocolo.mapa}
+                    </span>
+                  )}
+                  {produtos.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      <Package className="w-3 h-3 inline mr-0.5" />
+                      {produtos.length} {produtos.length === 1 ? 'produto' : 'produtos'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Detalhes expandidos */}
+                {isExpanded && (
+                  <div className="mt-2.5 pt-2.5 border-t border-border/50 space-y-2" onClick={(e) => e.stopPropagation()}>
+                    {/* Produtos */}
+                    {produtos.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Produtos</p>
+                        <div className="space-y-1.5">
+                          {produtos.map((prod, idx) => {
+                            const entregue = (prod as any).status === 'entregue';
+                            return (
+                              <div key={idx} className="text-[11px] px-2.5 py-1.5 rounded-md bg-muted/50 space-y-0.5">
+                                <p className={`leading-snug break-words ${entregue ? 'line-through text-muted-foreground' : 'text-foreground font-medium'}`}>
+                                  {(prod as any).cod ? `${(prod as any).cod} – ` : ''}{(prod as any).produto || (prod as any).nome || 'Produto'}
+                                </p>
+                                <p className="text-muted-foreground text-[10px]">
+                                  Qtd: {(prod as any).quantidade || (prod as any).qtd || '—'} {(prod as any).embalagem || ''}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Causa */}
+                    {protocolo.causa && (
+                      <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                        <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span>Causa: <span className="text-foreground">{protocolo.causa}</span></span>
+                      </div>
+                    )}
+
+                    {/* Observação */}
+                    {protocolo.observacao_geral && (
+                      <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                        <MessageSquare className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span className="text-foreground">{protocolo.observacao_geral}</span>
+                      </div>
+                    )}
+
+                    {/* Botão encerrar */}
+                    {selectionMode !== 'view' && (
+                      <Button
+                        className="w-full mt-1 h-9 text-xs font-semibold flex items-center justify-center gap-2"
+                        onClick={(e) => handleConfirmSelect(e, protocolo)}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Encerrar Reposição
+                      </Button>
                     )}
                   </div>
+                )}
 
-                  {/* Observação */}
-                  {protocolo.observacao_geral && (
-                    <div className="mt-2.5 pt-2.5 border-t border-border/50">
-                      <div className="flex items-start gap-1.5 text-xs">
-                        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                        <p className="text-foreground leading-relaxed">{protocolo.observacao_geral}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Produtos */}
-                  {produtos.length > 0 && (
-                    <div className="mt-2.5 pt-2.5 border-t border-border/50">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-                        <Package className="w-3.5 h-3.5" />
-                        <span className="font-semibold">{produtos.length} produto{produtos.length > 1 ? 's' : ''}:</span>
-                      </div>
-                      <ul className="text-xs text-foreground space-y-1 ml-1">
-                        {produtos.map((produto, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5 py-0.5">
-                            <span className="text-muted-foreground mt-0.5 shrink-0">•</span>
-                            <span className="flex-1 min-w-0 leading-relaxed">{produto.nome}</span>
-                            <span className="font-semibold text-primary shrink-0 tabular-nums">
-                              {produto.quantidade || 1} {produto.unidade || 'un'}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-
-                  {/* Botão encerrar */}
-                  {isExpanded && (
-                    <Button
-                      className="w-full mt-4 h-11 text-sm font-semibold flex items-center justify-center gap-2"
-                      onClick={(e) => handleConfirmSelect(e, protocolo)}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      Encerrar Reposição
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+                {/* Indicador de expandir */}
+                {!isExpanded && (
+                  <p className="text-[10px] text-muted-foreground text-center mt-1.5">Toque para ver detalhes</p>
+                )}
+              </div>
             );
           })}
         </div>

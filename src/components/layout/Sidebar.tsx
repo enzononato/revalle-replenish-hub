@@ -17,7 +17,9 @@ import {
   Moon,
   Pencil,
   Phone,
-  Send
+  Send,
+  Package,
+  UserCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -34,12 +36,14 @@ type NavItem = {
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'distribuicao', 'conferente', 'controle'] },
   { icon: FileText, label: 'Protocolos', path: '/protocolos', roles: ['admin', 'distribuicao', 'conferente', 'controle'] },
+  { icon: Package, label: 'Sobras', path: '/sobras', roles: ['admin', 'distribuicao', 'controle'] },
   { icon: Truck, label: 'Motoristas', path: '/motoristas', roles: ['admin', 'distribuicao'] },
   { icon: Building2, label: 'Unidades', path: '/unidades', roles: ['admin'] },
   { icon: Users, label: 'Usuários', path: '/usuarios', roles: ['admin'] },
   { icon: Phone, label: 'Números', path: '/numeros', roles: ['admin'] },
   { icon: ClipboardList, label: 'Logs de Auditoria', path: '/logs-auditoria', roles: ['admin'] },
   { icon: Send, label: 'Alteração Pedidos', path: '/alteracao-pedidos', roles: ['admin', 'distribuicao', 'controle'] },
+  { icon: UserCheck, label: "RN's", path: '/representantes', roles: ['admin'] },
   { icon: Settings, label: 'Configurações', path: '/configuracoes', roles: ['admin'] },
 ];
 

@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Protocolo, Produto, FotosProtocolo, ObservacaoLog } from '@/types';
 import { toast } from '@/hooks/use-toast';
@@ -86,7 +85,7 @@ function dbToProtocolo(db: ProtocoloDB): Protocolo {
     produtos: db.produtos || [],
     fotosProtocolo: db.fotos_protocolo || undefined,
     observacaoGeral: db.observacao_geral || undefined,
-    observacoesLog: Array.isArray(db.observacoes_log) ? db.observacoes_log : [],
+    observacoesLog: Array.isArray(db.observacoes_log) ? db.observacoes_log as unknown as ObservacaoLog[] : [],
     mensagemEncerramento: db.mensagem_encerramento || undefined,
     arquivoEncerramento: db.arquivo_encerramento || undefined,
     oculto: db.oculto ?? false,
@@ -167,52 +166,52 @@ function protocoloToDB(p: Protocolo): Omit<ProtocoloDB, 'id'> {
 
 export function useProtocolosDB() {
   const queryClient = useQueryClient();
-  const [authReady, setAuthReady] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setAuthReady(!!session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthReady(!!session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const protocolosQueryKey = ['protocolos'] as const;
 
   const { data: protocolos = [], isLoading, error } = useQuery({
-    queryKey: ['protocolos', authReady],
+    queryKey: protocolosQueryKey,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
     queryFn: async () => {
-      // Buscar todos os protocolos em páginas de 1000 para contornar o limite do PostgREST
-      const PAGE_SIZE = 1000;
-      let allData: ProtocoloDB[] = [];
-      let from = 0;
-      let hasMore = true;
+      const pageSize = 1000;
 
-      while (hasMore) {
-        const { data, error } = await supabase
+      const { count, error: countError } = await supabase
+        .from('protocolos')
+        .select('id', { count: 'exact', head: true })
+        .eq('ativo', true);
+
+      if (countError) throw countError;
+
+      const total = count ?? 0;
+      if (total === 0) return [];
+
+      const totalPages = Math.ceil(total / pageSize);
+
+      const pageRequests = Array.from({ length: totalPages }, (_, pageIndex) => {
+        const from = pageIndex * pageSize;
+        const to = from + pageSize - 1;
+
+        return supabase
           .from('protocolos')
           .select('*')
           .eq('ativo', true)
           .order('created_at', { ascending: false })
-          .range(from, from + PAGE_SIZE - 1);
+          .range(from, to);
+      });
 
-        if (error) throw error;
-        
-        const rows = (data || []) as unknown as ProtocoloDB[];
-        allData = [...allData, ...rows];
-        
-        if (rows.length < PAGE_SIZE) {
-          hasMore = false;
-        } else {
-          from += PAGE_SIZE;
-        }
-      }
+      const pageResults = await Promise.all(pageRequests);
+      const pageError = pageResults.find((result) => result.error)?.error;
+      if (pageError) throw pageError;
 
-      return allData.map(dbToProtocolo);
-    },
-    enabled: authReady,
+      const allProtocolos = pageResults.flatMap(
+        (result) => (result.data as unknown as ProtocoloDB[] | null) ?? []
+      );
+
+      return allProtocolos.map(dbToProtocolo);
+    }
   });
 
   const addMutation = useMutation({
@@ -256,13 +255,13 @@ export function useProtocolosDB() {
     // Optimistic update para resposta instantânea
     onMutate: async (newProtocolo) => {
       // Cancelar queries em andamento
-      await queryClient.cancelQueries({ queryKey: ['protocolos'] });
+      await queryClient.cancelQueries({ queryKey: protocolosQueryKey });
 
       // Salvar estado anterior
-      const previousProtocolos = queryClient.getQueryData<Protocolo[]>(['protocolos']);
+      const previousProtocolos = queryClient.getQueryData<Protocolo[]>(protocolosQueryKey);
 
       // Atualizar cache otimisticamente
-      queryClient.setQueryData<Protocolo[]>(['protocolos'], (old) => 
+      queryClient.setQueryData<Protocolo[]>(protocolosQueryKey, (old) => 
         old?.map(p => p.id === newProtocolo.id ? newProtocolo : p) ?? []
       );
 
@@ -271,7 +270,7 @@ export function useProtocolosDB() {
     onError: (error, _newProtocolo, context) => {
       // Reverter para estado anterior em caso de erro
       if (context?.previousProtocolos) {
-        queryClient.setQueryData(['protocolos'], context.previousProtocolos);
+        queryClient.setQueryData(protocolosQueryKey, context.previousProtocolos);
       }
       console.error('Erro ao atualizar protocolo:', error);
       toast({
@@ -307,6 +306,8 @@ export function useProtocolosDB() {
       });
     }
   });
+
+  // Realtime removido para melhorar performance de carregamento
 
   return {
     protocolos,

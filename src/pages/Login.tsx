@@ -34,12 +34,12 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         toast.success('Login realizado com sucesso!');
         navigate('/dashboard');
       } else {
-        toast.error('Email ou senha inválidos');
+        toast.error(result.error || 'Email ou senha inválidos');
       }
     } catch (error) {
       toast.error('Erro ao fazer login');

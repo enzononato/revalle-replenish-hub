@@ -40,10 +40,17 @@ export function ProtocolosProvider({ children }: { children: ReactNode }) {
   );
 }
 
+const defaultContext: ProtocolosContextType = {
+  protocolos: [],
+  addProtocolo: async (p: Protocolo) => p,
+  updateProtocolo: async (p: Protocolo) => p,
+  deleteProtocolo: async () => {},
+  isLoading: false,
+  isAdding: false,
+  isUpdating: false,
+};
+
 export function useProtocolos() {
   const context = useContext(ProtocolosContext);
-  if (context === undefined) {
-    throw new Error('useProtocolos must be used within a ProtocolosProvider');
-  }
-  return context;
+  return context ?? defaultContext;
 }

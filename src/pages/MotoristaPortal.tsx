@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { generateUUID } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useMotoristaAuth } from '@/contexts/MotoristaAuthContext';
-import { useProtocolos } from '@/contexts/ProtocolosContext';
+import { useAddProtocolo } from '@/hooks/useAddProtocolo';
 import { useOfflineProtocolos } from '@/hooks/useOfflineProtocolos';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import {
   Select,
   SelectContent,
@@ -27,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Plus, Minus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2, MessageCircle, Copy } from 'lucide-react';
+import { Plus, Minus, Trash2, CheckCircle, Camera, Package, X, AlertCircle, Check, CalendarIcon, LogOut, FileText, PlusCircle, Phone, Loader2, MessageCircle, Copy, Route, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Protocolo, Produto, FotosProtocolo } from '@/types';
 import { format } from 'date-fns';
@@ -36,7 +36,9 @@ import { cn } from '@/lib/utils';
 import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 import { PdvAutocomplete } from '@/components/PdvAutocomplete';
 import { MeusProtocolos } from '@/components/motorista/MeusProtocolos';
+import { PosRota } from '@/components/motorista/PosRota';
 import { MotoristaHeader } from '@/components/motorista/MotoristaHeader';
+import { DailySummary } from '@/components/motorista/DailySummary';
 import CameraCapture from '@/components/CameraCapture';
 
 interface ProdutoForm {
@@ -163,10 +165,10 @@ function ValidadeDatePicker({
 export default function MotoristaPortal() {
   const navigate = useNavigate();
   const { motorista, logout, isAuthenticated } = useMotoristaAuth();
-  const { addProtocolo } = useProtocolos();
-  const { isOnline, pendingCount, saveOffline, syncPending } = useOfflineProtocolos();
+  const { addProtocolo } = useAddProtocolo();
+  const { isOnline, pendingCount, isSyncing, saveOffline, syncPending } = useOfflineProtocolos();
 
-  const [activeTab, setActiveTab] = useState('novo');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'reposicao' | 'pos-rota' | 'meus-protocolos'>('dashboard');
 
   // Form state
   const [mapa, setMapa] = useState('');
@@ -243,12 +245,10 @@ export default function MotoristaPortal() {
     return Math.round((completed / statuses.length) * 100);
   };
 
-  // Sincronizar protocolos pendentes quando online
-  useEffect(() => {
-    if (isOnline && pendingCount > 0) {
-      syncPending(addProtocolo);
-    }
-  }, [isOnline, pendingCount, syncPending, addProtocolo]);
+  const handleSyncPending = async () => {
+    if (!isOnline || pendingCount === 0 || isSyncing) return;
+    await syncPending(addProtocolo);
+  };
 
   // Notificações em tempo real quando status do protocolo mudar
   useEffect(() => {
@@ -794,13 +794,13 @@ export default function MotoristaPortal() {
   };
 
   // Open camera for a specific field
-  const openCamera = useCallback((field: 'fotoMotoristaPdv' | 'fotoLoteProduto' | 'fotoAvaria') => {
+  const openCamera = (field: 'fotoMotoristaPdv' | 'fotoLoteProduto' | 'fotoAvaria') => {
     setCameraTarget(field);
     setCameraOpen(true);
-  }, []);
+  };
 
   // Handle camera capture
-  const handleCameraCapture = useCallback(async (imageDataUrl: string) => {
+  const handleCameraCapture = async (imageDataUrl: string) => {
     if (!cameraTarget) return;
     
     setIsCompressing(true);
@@ -836,7 +836,7 @@ export default function MotoristaPortal() {
       setIsCompressing(false);
       setCameraTarget(null);
     }
-  }, [cameraTarget]);
+  };
 
   // Photo upload card component
   const PhotoUploadCard = ({
@@ -1016,8 +1016,8 @@ export default function MotoristaPortal() {
                 variant="secondary" 
                 onClick={() => {
                   resetForm();
-                  setActiveTab('meus');
-                }} 
+                  setCurrentView('meus-protocolos');
+                }}
                 className="w-full h-12 text-base"
               >
                 <FileText className="mr-2 h-5 w-5" />
@@ -1053,7 +1053,7 @@ export default function MotoristaPortal() {
         }
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 safe-area-inset">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 safe-area-inset overflow-x-hidden">
       {/* Header com nome, código e unidade */}
       <MotoristaHeader 
         motorista={motorista}
@@ -1062,43 +1062,113 @@ export default function MotoristaPortal() {
         onLogout={handleLogout}
       />
 
-      {/* Tabs */}
-      <div className="px-4 pt-4 pb-2 max-w-lg mx-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full" data-tour="motorista-tabs">
-          <TabsList className="grid w-full grid-cols-2 h-12 bg-muted/60 p-1 rounded-lg border border-border/50">
-            <TabsTrigger 
-              value="novo" 
-              className="text-sm gap-2 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
-            >
-              <PlusCircle className="w-4 h-4" />
-              Novo Protocolo
-            </TabsTrigger>
-            <TabsTrigger 
-              value="meus" 
-              className="text-sm gap-2 rounded-md border border-transparent data-[state=inactive]:border-border/40 data-[state=inactive]:bg-background/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all"
-            >
-              <FileText className="w-4 h-4" />
-              Meus Protocolos
-            </TabsTrigger>
-          </TabsList>
+      {/* Welcome banner */}
+      <div className="px-4 pt-3 pb-1">
+        <div className="max-w-xl mx-auto">
+          <p className="text-xs text-muted-foreground">
+            👋 Olá, <span className="font-medium text-foreground">{motorista.nome.split(' ')[0]}</span>! Bom trabalho hoje.
+          </p>
+        </div>
+      </div>
 
-          {/* Tab: Novo Protocolo */}
-          <TabsContent value="novo" className="mt-4 pb-24 space-y-4" data-tour="motorista-form">
+      {isOnline && pendingCount > 0 && (
+        <div className="px-4 pb-1">
+          <div className="max-w-xl mx-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncPending}
+              disabled={isSyncing}
+              className="w-full"
+            >
+              {isSyncing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sincronizando pendências...
+                </>
+              ) : (
+                `Sincronizar ${pendingCount} protocolo(s) pendente(s)`
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Resumo do dia */}
+      <DailySummary motorista={motorista} />
+
+      {/* Content Area */}
+      <div className="px-3 pt-2 pb-2 max-w-xl mx-auto">
+
+        {/* Dashboard Grid */}
+        {currentView === 'dashboard' && (
+          <div className="grid grid-cols-2 gap-3 pt-2 pb-4" data-tour="motorista-tabs">
+            <Card 
+              className="col-span-2 cursor-pointer border-border/50 hover:border-primary/60 active:scale-[0.98] transition-all duration-150"
+              onClick={() => setCurrentView('reposicao')}
+            >
+              <CardContent className="flex flex-col items-center justify-center gap-2 py-8">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <PlusCircle className="w-6 h-6 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Reposição</span>
+              </CardContent>
+            </Card>
+            <Card 
+              className="cursor-pointer border-border/50 hover:border-primary/60 active:scale-[0.98] transition-all duration-150"
+              onClick={() => setCurrentView('pos-rota')}
+            >
+              <CardContent className="flex flex-col items-center justify-center gap-2 py-6">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Route className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Pós Rota</span>
+              </CardContent>
+            </Card>
+            <Card 
+              className="cursor-pointer border-border/50 hover:border-primary/60 active:scale-[0.98] transition-all duration-150"
+              onClick={() => setCurrentView('meus-protocolos')}
+            >
+              <CardContent className="flex flex-col items-center justify-center gap-2 py-6">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Meus Protocolos</span>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Back button for sub-views */}
+        {currentView !== 'dashboard' && (
+          <div className="pt-2 pb-3">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Voltar
+            </button>
+          </div>
+        )}
+
+        {/* Reposição Form */}
+        {currentView === 'reposicao' && (
+          <div className="pb-4 space-y-4" data-tour="motorista-form">
             {/* Seção: Dados Gerais */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50">
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
-                <h3 className="text-base font-medium text-foreground flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
                   Dados Gerais
                 </h3>
               </div>
               <div className="p-4 space-y-4">
-                {/* General Info */}
                 <div className="space-y-4">
-                  <div className="space-y-2" data-tour="campo-mapa">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="mapa" className="text-sm font-medium">MAPA *</Label>
-                      {touched.mapa && mapa.trim() && <Check size={14} className="text-green-500" />}
+                  <div className="space-y-1.5" data-tour="campo-mapa">
+                    <div className="flex items-center gap-1.5">
+                      <Label htmlFor="mapa" className="text-sm font-medium">Mapa *</Label>
+                      {touched.mapa && mapa.trim() && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Input
                       id="mapa"
@@ -1106,21 +1176,21 @@ export default function MotoristaPortal() {
                       onChange={(e) => setMapa(formatOnlyNumbers(e.target.value))}
                       onBlur={() => handleBlur('mapa')}
                       placeholder="Ex: 16431"
-                      className={getInputClassName('mapa', mapa)}
+                      className={cn("h-11 text-sm", getInputClassName('mapa', mapa))}
                       inputMode="numeric"
                       pattern="[0-9]*"
                     />
                     {touched.mapa && !mapa.trim() && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Campo obrigatório
                       </p>
                     )}
                   </div>
                   <div className="space-y-1.5" data-tour="campo-pdv">
                     <div className="flex items-center gap-1.5">
-                      <Label htmlFor="codigoPdv" className="text-xs font-medium">Código PDV *</Label>
-                      {touched.codigoPdv && codigoPdv.trim() && <Check size={12} className="text-green-500" />}
+                      <Label htmlFor="codigoPdv" className="text-sm font-medium">Código PDV *</Label>
+                      {touched.codigoPdv && codigoPdv.trim() && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <PdvAutocomplete
                       value={codigoPdv}
@@ -1134,22 +1204,22 @@ export default function MotoristaPortal() {
                       onBlur={() => handleBlur('codigoPdv')}
                     />
                     {touched.codigoPdv && !codigoPdv.trim() && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Campo obrigatório
                       </p>
                     )}
                     {touched.codigoPdv && codigoPdv.trim() && !pdvSelecionadoDaLista && (
-                      <p className="text-[10px] text-amber-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-amber-500 flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Selecione um PDV da lista
                       </p>
                     )}
                   </div>
                   <div className="space-y-1.5" data-tour="campo-nota-fiscal">
                     <div className="flex items-center gap-1.5">
-                      <Label htmlFor="notaFiscal" className="text-xs font-medium">Nota Fiscal *</Label>
-                      {touched.notaFiscal && notaFiscal.trim() && <Check size={12} className="text-green-500" />}
+                      <Label htmlFor="notaFiscal" className="text-sm font-medium">Nota Fiscal *</Label>
+                      {touched.notaFiscal && notaFiscal.trim() && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Input
                       id="notaFiscal"
@@ -1157,13 +1227,13 @@ export default function MotoristaPortal() {
                       onChange={(e) => setNotaFiscal(formatOnlyNumbers(e.target.value))}
                       onBlur={() => handleBlur('notaFiscal')}
                       placeholder="Ex: 243631"
-                      className={getInputClassName('notaFiscal', notaFiscal)}
+                      className={cn("h-11 text-sm", getInputClassName('notaFiscal', notaFiscal))}
                       inputMode="numeric"
                       pattern="[0-9]*"
                     />
                     {touched.notaFiscal && !notaFiscal.trim() && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Campo obrigatório
                       </p>
                     )}
@@ -1174,27 +1244,27 @@ export default function MotoristaPortal() {
 
             {/* Seção: Tipo e Causa */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-primary" />
                   Tipo e Causa
                 </h3>
               </div>
-              <div className="p-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" data-tour="campo-tipo-reposicao">
+              <div className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" data-tour="campo-tipo-reposicao">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Label className="text-xs font-medium">Tipo *</Label>
-                      {touched.tipoReposicao && tipoReposicao && <Check size={12} className="text-green-500" />}
+                      <Label className="text-sm font-medium">Tipo *</Label>
+                      {touched.tipoReposicao && tipoReposicao && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Select 
                       value={tipoReposicao} 
                       onValueChange={handleTipoReposicaoChange}
                     >
                       <SelectTrigger className={cn(
-                        "h-10 text-sm",
-                        touched.tipoReposicao && tipoReposicao && 'border-green-500 focus:ring-green-500',
-                        touched.tipoReposicao && !tipoReposicao && 'border-red-500 focus:ring-red-500'
+                        "h-11 text-sm",
+                        touched.tipoReposicao && tipoReposicao && 'border-emerald-500 focus:ring-emerald-500',
+                        touched.tipoReposicao && !tipoReposicao && 'border-destructive focus:ring-destructive'
                       )}>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
@@ -1205,8 +1275,8 @@ export default function MotoristaPortal() {
                       </SelectContent>
                     </Select>
                     {touched.tipoReposicao && !tipoReposicao && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Selecione
                       </p>
                     )}
@@ -1214,8 +1284,8 @@ export default function MotoristaPortal() {
 
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5">
-                      <Label className="text-xs font-medium">Causa *</Label>
-                      {touched.causa && causa && <Check size={12} className="text-green-500" />}
+                      <Label className="text-sm font-medium">Causa *</Label>
+                      {touched.causa && causa && <Check size={14} className="text-emerald-500" />}
                     </div>
                     <Select 
                       value={causa} 
@@ -1226,9 +1296,9 @@ export default function MotoristaPortal() {
                       disabled={!tipoReposicao}
                     >
                       <SelectTrigger className={cn(
-                        "h-10 text-sm",
-                        touched.causa && causa && 'border-green-500 focus:ring-green-500',
-                        touched.causa && !causa && tipoReposicao && 'border-red-500 focus:ring-red-500'
+                        "h-11 text-sm",
+                        touched.causa && causa && 'border-emerald-500 focus:ring-emerald-500',
+                        touched.causa && !causa && tipoReposicao && 'border-destructive focus:ring-destructive'
                       )}>
                         <SelectValue placeholder={tipoReposicao ? "Selecione" : "Escolha o tipo"} />
                       </SelectTrigger>
@@ -1239,8 +1309,8 @@ export default function MotoristaPortal() {
                       </SelectContent>
                     </Select>
                     {touched.causa && !causa && tipoReposicao && (
-                      <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                        <AlertCircle size={10} />
+                      <p className="text-[11px] text-destructive flex items-center gap-1">
+                        <AlertCircle size={11} />
                         Selecione
                       </p>
                     )}
@@ -1251,22 +1321,22 @@ export default function MotoristaPortal() {
 
             {/* Seção: Produtos */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50" data-tour="secao-produtos">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30 flex items-center justify-between">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <Package className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
                   Produtos
                   {tipoReposicao === 'inversao' && (
-                    <span className="text-[10px] text-muted-foreground font-normal ml-0.5">(apenas 1)</span>
+                    <span className="text-[11px] text-muted-foreground font-normal ml-0.5">(apenas 1)</span>
                   )}
                 </h3>
                 {podeAdicionarMultiplos && (
-                  <Button type="button" variant="ghost" size="sm" onClick={addProduto} className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10">
-                    <Plus className="mr-0.5 h-3.5 w-3.5" />
+                  <Button type="button" variant="ghost" size="sm" onClick={addProduto} className="h-8 text-xs text-primary hover:text-primary hover:bg-primary/10">
+                    <Plus className="mr-0.5 h-4 w-4" />
                     Adicionar
                   </Button>
                 )}
               </div>
-              <div className="p-3 space-y-2">
+              <div className="p-4 space-y-3">
                   
                   {produtos.map((produto, index) => {
                     const isTouched = touched.produtos[index];
@@ -1284,8 +1354,8 @@ export default function MotoristaPortal() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-medium text-foreground">Produto {index + 1}</span>
-                            {isTouched && isValid && <Check size={12} className="text-green-500" />}
+                            <span className="text-sm font-medium text-foreground">Produto {index + 1}</span>
+                            {isTouched && isValid && <Check size={14} className="text-emerald-500" />}
                           </div>
                           {produtos.length > 1 && (
                             <Button
@@ -1300,8 +1370,8 @@ export default function MotoristaPortal() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <div className="space-y-1">
-                            <Label className="text-[10px] font-medium text-muted-foreground">Produto *</Label>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-medium text-muted-foreground">Produto *</Label>
                             <ProdutoAutocomplete
                               value={produto.produto}
                               onChange={(value, embalagem) => {
@@ -1321,8 +1391,8 @@ export default function MotoristaPortal() {
                             )}
                           </div>
                           <div className="grid grid-cols-[auto_60px_1fr] gap-1.5">
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-muted-foreground">Qtd</Label>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-medium text-muted-foreground">Qtd</Label>
                               <div className="flex items-center gap-1">
                                 <Button
                                   type="button"
@@ -1362,8 +1432,8 @@ export default function MotoristaPortal() {
                                 </Button>
                               </div>
                             </div>
-                            <div className="space-y-1">
-                              <Label className="text-[10px] font-medium text-muted-foreground">Und</Label>
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-medium text-muted-foreground">Und</Label>
                               <Select
                                 value={produto.unidade}
                                 onValueChange={(value) => updateProduto(index, 'unidade', value)}
@@ -1393,14 +1463,14 @@ export default function MotoristaPortal() {
 
             {/* Seção: Fotos */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden" data-tour="secao-fotos">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <Camera className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Camera className="h-4 w-4 text-primary" />
                   Fotos
-                  <span className="text-[10px] text-destructive font-normal">*</span>
+                  <span className="text-[11px] text-destructive font-normal">*</span>
                 </h3>
               </div>
-              <div className="p-3">
+              <div className="p-4">
                 {tipoReposicao ? (
                   <div className="space-y-2">
                     
@@ -1442,15 +1512,15 @@ export default function MotoristaPortal() {
 
             {/* Seção: Contato */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-primary" />
                   Contato
                 </h3>
               </div>
-              <div className="p-3 space-y-2">
-                    <div className="space-y-1" data-tour="campo-whatsapp">
-                      <Label htmlFor="whatsappContato" className="text-[10px] font-medium text-muted-foreground">
+              <div className="p-4 space-y-4">
+                    <div className="space-y-1.5" data-tour="campo-whatsapp">
+                      <Label htmlFor="whatsappContato" className="text-sm font-medium">
                         WhatsApp *
                       </Label>
                       <Input
@@ -1461,22 +1531,22 @@ export default function MotoristaPortal() {
                         placeholder="(00) 00000-0000"
                         maxLength={16}
                         className={cn(
-                          "h-9 text-sm",
-                          touched.whatsappContato && validateWhatsApp(whatsappContato) && 'border-green-500',
-                          touched.whatsappContato && !validateWhatsApp(whatsappContato) && 'border-red-500'
+                          "h-11 text-sm",
+                          touched.whatsappContato && validateWhatsApp(whatsappContato) && 'border-emerald-500',
+                          touched.whatsappContato && !validateWhatsApp(whatsappContato) && 'border-destructive'
                         )}
                         inputMode="tel"
                       />
                       {touched.whatsappContato && !validateWhatsApp(whatsappContato) && (
-                        <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                          <AlertCircle size={10} />
+                        <p className="text-[11px] text-destructive flex items-center gap-1">
+                          <AlertCircle size={11} />
                           WhatsApp inválido
                         </p>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="emailContato" className="text-[10px] font-medium text-muted-foreground">
-                        E-mail (opcional)
+                    <div className="space-y-1.5">
+                      <Label htmlFor="emailContato" className="text-sm font-medium">
+                        E-mail <span className="text-muted-foreground font-normal">(opcional)</span>
                       </Label>
                       <Input
                         id="emailContato"
@@ -1485,15 +1555,15 @@ export default function MotoristaPortal() {
                         onChange={(e) => setEmailContato(e.target.value)}
                         placeholder="email@exemplo.com"
                         className={cn(
-                          "h-9 text-sm",
-                          emailContato.trim() && validateEmail(emailContato) && 'border-green-500',
-                          emailContato.trim() && !validateEmail(emailContato) && 'border-red-500'
+                          "h-11 text-sm",
+                          emailContato.trim() && validateEmail(emailContato) && 'border-emerald-500',
+                          emailContato.trim() && !validateEmail(emailContato) && 'border-destructive'
                         )}
                         inputMode="email"
                       />
                       {emailContato.trim() && !validateEmail(emailContato) && (
-                        <p className="text-[10px] text-red-500 flex items-center gap-0.5">
-                          <AlertCircle size={10} />
+                        <p className="text-[11px] text-destructive flex items-center gap-1">
+                          <AlertCircle size={11} />
                           E-mail inválido
                         </p>
                       )}
@@ -1503,14 +1573,14 @@ export default function MotoristaPortal() {
 
             {/* Seção: Observação */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2 border-b border-border/30">
-                <h3 className="text-sm font-medium text-foreground flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-primary" />
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 border-b border-border/30">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
                   Observação
-                  <span className="text-[10px] text-muted-foreground font-normal">(opcional)</span>
+                  <span className="text-[11px] text-muted-foreground font-normal">(opcional)</span>
                 </h3>
               </div>
-              <div className="p-3">
+              <div className="p-4">
                 <Textarea
                   id="observacao"
                   value={observacao}
@@ -1521,17 +1591,26 @@ export default function MotoristaPortal() {
                 />
               </div>
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Tab: Meus Protocolos */}
-          <TabsContent value="meus" className="mt-3 pb-6">
+        {/* Pós-Rota */}
+        {currentView === 'pos-rota' && (
+          <div className="pb-6">
+            <PosRota motorista={motorista} />
+          </div>
+        )}
+
+        {/* Meus Protocolos */}
+        {currentView === 'meus-protocolos' && (
+          <div className="pb-6">
             <MeusProtocolos motorista={motorista} />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
 
       {/* Upload Progress Indicator */}
-      {isUploading && uploadProgress && activeTab === 'novo' && (
+      {isUploading && uploadProgress && currentView === 'reposicao' && (
         <div 
           className="fixed bottom-20 left-0 right-0 p-4 bg-background border-t border-border"
           style={{ zIndex: 9998 }}
@@ -1596,7 +1675,7 @@ export default function MotoristaPortal() {
       )}
 
       {/* Submit Button - Only show on new protocol tab */}
-      {activeTab === 'novo' && (
+      {currentView === 'reposicao' && (
         <div className="mt-1 mb-6 flex justify-center" data-tour="btn-enviar">
           <button 
             type="button"

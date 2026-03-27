@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, useTransition } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Protocolo, ObservacaoLog } from '@/types';
 import { useProtocolos } from '@/contexts/ProtocolosContext';
 import { supabase } from '@/integrations/supabase/client';
 
+import { MultiSelectUnidade } from '@/components/ui/MultiSelectUnidade';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,9 +34,17 @@ import { useUnidadesDB } from '@/hooks/useUnidadesDB';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import CreateProtocoloModal from '@/components/CreateProtocoloModal';
 
+// Helper to parse dates in both dd/MM/yyyy and yyyy-MM-dd formats
+const parseFlexDate = (dateStr: string): Date => {
+  return dateStr.includes('-') 
+    ? parse(dateStr, 'yyyy-MM-dd', new Date()) 
+    : parse(dateStr, 'dd/MM/yyyy', new Date());
+};
+
 // Função para extrair log de encerramento do histórico
 const getLogEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): ObservacaoLog | null => {
-  const logEncerramento = observacoesLog?.find(l => l.acao?.startsWith('Encerrou o protocolo'));
+  if (!Array.isArray(observacoesLog)) return null;
+  const logEncerramento = observacoesLog.find(l => l.acao?.startsWith('Encerrou o protocolo'));
   return logEncerramento || null;
 };
 
@@ -45,20 +54,24 @@ const getDataEncerramentoFromLog = (observacoesLog?: ObservacaoLog[]): string | 
 };
 
 const calcularSlaDias = (dataStr: string, status?: string, observacoesLog?: ObservacaoLog[]): number => {
-  // data vem no formato DD/MM/YYYY - consistente com o backend
-  const dataProtocolo = parse(dataStr, 'dd/MM/yyyy', new Date());
-  
-  // Se encerrado, calcular até a data de encerramento
-  if (status === 'encerrado') {
-    const dataEncerramentoStr = getDataEncerramentoFromLog(observacoesLog);
-    if (dataEncerramentoStr) {
-      const dataEncerramento = parse(dataEncerramentoStr, 'dd/MM/yyyy', new Date());
-      return differenceInDays(dataEncerramento, dataProtocolo);
+  try {
+    const dataProtocolo = parseFlexDate(dataStr);
+    if (isNaN(dataProtocolo.getTime())) return 0;
+    
+    if (status === 'encerrado') {
+      const dataEncerramentoStr = getDataEncerramentoFromLog(observacoesLog);
+      if (dataEncerramentoStr) {
+        const dataEncerramento = parseFlexDate(dataEncerramentoStr);
+        if (!isNaN(dataEncerramento.getTime())) {
+          return differenceInDays(dataEncerramento, dataProtocolo);
+        }
+      }
     }
+    
+    return differenceInDays(new Date(), dataProtocolo);
+  } catch {
+    return 0;
   }
-  
-  const hoje = new Date();
-  return differenceInDays(hoje, dataProtocolo);
 };
 
 const getSlaColor = (dias: number): string => {
@@ -79,46 +92,46 @@ export default function Protocolos() {
   const { unidades } = useUnidadesDB();
   const { protocolos, addProtocolo, updateProtocolo, deleteProtocolo, isLoading } = useProtocolos();
   const { registrarLog } = useAuditLog();
+  const [isPending, startTransition] = useTransition();
   
+  const initialStatusParam = searchParams.get('status');
+  const initialPeriodoParam = searchParams.get('periodo');
+  const initialTipoParam = searchParams.get('tipo');
+  const initialUnidadeParam = searchParams.get('unidade');
+
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState<string>('aberto');
+  const [activeTab, setActiveTab] = useState<string>(() => initialStatusParam || 'aberto');
+  
+  const handleTabChange = useCallback((value: string) => {
+    startTransition(() => {
+      setActiveTab(value);
+    });
+  }, []);
   const [dataInicialFilter, setDataInicialFilter] = useState('');
   const [dataFinalFilter, setDataFinalFilter] = useState('');
   const [lancadoFilter, setLancadoFilter] = useState<string>('todos');
   const [validadoFilter, setValidadoFilter] = useState<string>('todos');
-  const [tipoFilter, setTipoFilter] = useState<string>('todos');
+  const [tipoFilter, setTipoFilter] = useState<string>(() => initialTipoParam || 'todos');
   const [selectedProtocolo, setSelectedProtocolo] = useState<Protocolo | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(() => Boolean(initialTipoParam));
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [periodoFilter, setPeriodoFilter] = useState<string>('todos');
-  const [unidadeFilter, setUnidadeFilter] = useState<string>('todas');
-  
-  // Inicializar filtro de unidade com a unidade do usuário (para não-admins)
-  // Não precisa mais inicializar filtro - array vazio = todas as unidades do usuário
+  const [periodoFilter, setPeriodoFilter] = useState<string>(() => initialPeriodoParam || 'todos');
+  const [unidadesFiltro, setUnidadesFiltro] = useState<string[]>(() => {
+    if (!initialUnidadeParam) return [];
+    return initialUnidadeParam.split(',').map(u => u.trim()).filter(Boolean);
+  });
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // Processar parâmetros da URL
+  // Hydration lock: prevents rendering stale data before URL params are applied
+  const isHydrated = useRef(false);
+  
   useEffect(() => {
-    const statusParam = searchParams.get('status');
-    const periodoParam = searchParams.get('periodo');
-    const tipoParam = searchParams.get('tipo');
-    
-    if (statusParam) {
-      setActiveTab(statusParam);
-    }
-    
-    if (periodoParam) {
-      setPeriodoFilter(periodoParam);
-    }
-    
-    if (tipoParam) {
-      setTipoFilter(tipoParam);
-      setShowFilters(true);
-    }
-  }, [searchParams]);
+    isHydrated.current = true;
+  }, []);
 
   // Abrir protocolo por ID quando protocolos estiverem carregados (apenas uma vez)
   useEffect(() => {
@@ -138,95 +151,95 @@ export default function Protocolos() {
     }
   }, [searchParams, protocolos, selectedProtocolo, setSearchParams]);
 
-  const filteredProtocolos = protocolos
-    .filter(p => {
-      // Não mostrar protocolos ocultos (exceto para admin que os ocultou)
-      if (p.oculto) return false;
-      
-      // Filtrar por unidade do motorista
-      // Se o usuário não é admin, filtra pela unidade do usuário
-      // Se é admin e tem filtro selecionado, aplica o filtro
-      if (!isAdmin) {
-        const userUnidades = (user?.unidade || '').split(',').map(u => u.trim());
-        if (unidadeFilter !== 'todas') {
-          if (unidadeFilter !== p.unidadeNome || !userUnidades.includes(p.unidadeNome)) return false;
-        } else {
-          if (!userUnidades.includes(p.unidadeNome)) return false;
-        }
-      } else if (unidadeFilter !== 'todas') {
-        if (unidadeFilter !== p.unidadeNome) return false;
-      }
-      
-      const searchMatch = 
-        p.numero.toLowerCase().includes(search.toLowerCase()) ||
-        p.motorista.nome.toLowerCase().includes(search.toLowerCase()) ||
-        (p.contatoWhatsapp || '').includes(search) ||
-        (p.motorista.whatsapp || '').includes(search) ||
-        p.codigoPdv?.includes(search) ||
-        p.mapa?.includes(search);
-      
-      const statusMatch = activeTab === 'todos' || p.status === activeTab;
-      
-      // Filtro de período (hoje)
-      let periodoMatch = true;
-      if (periodoFilter === 'hoje') {
-        try {
-          if (p.status === 'encerrado') {
-            const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
-            if (dataEnc) {
-              const parsed = parse(dataEnc, 'dd/MM/yyyy', new Date());
-              periodoMatch = isToday(parsed);
-            } else {
-              periodoMatch = false;
-            }
+  const filteredProtocolos = useMemo(() => {
+    const searchLower = search.toLowerCase();
+    const userUnidades = (user?.unidade || '').split(',').map(u => u.trim());
+
+    return protocolos
+      .filter(p => {
+        if (p.oculto) return false;
+        if (p.tipoReposicao === 'pos_rota') return false;
+
+        if (!isAdmin) {
+          if (unidadesFiltro.length > 0) {
+            if (!unidadesFiltro.includes(p.unidadeNome || '') || !userUnidades.includes(p.unidadeNome || '')) return false;
           } else {
-            periodoMatch = isToday(parseISO(p.createdAt));
+            if (!userUnidades.includes(p.unidadeNome || '')) return false;
           }
-        } catch {
-          periodoMatch = false;
+        } else if (unidadesFiltro.length > 0) {
+          if (!unidadesFiltro.includes(p.unidadeNome || '')) return false;
         }
-      }
-      
-      // Filtro de data inicial
-      let dataInicialMatch = true;
-      if (dataInicialFilter) {
-        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
-        const dataInicial = parseISO(dataInicialFilter);
-        dataInicialMatch = !isBefore(dataProtocolo, dataInicial);
-      }
-      
-      // Filtro de data final
-      let dataFinalMatch = true;
-      if (dataFinalFilter) {
-        const dataProtocolo = parse(p.data, 'dd/MM/yyyy', new Date());
-        const dataFinal = parseISO(dataFinalFilter);
-        dataFinalMatch = !isAfter(dataProtocolo, dataFinal);
-      }
-      
-      // Filtro de lançado
-      const lancadoMatch = lancadoFilter === 'todos' || 
-        (lancadoFilter === 'sim' && p.lancado) || 
-        (lancadoFilter === 'nao' && !p.lancado);
-      
-      // Filtro de validado
-      const validadoMatch = validadoFilter === 'todos' || 
-        (validadoFilter === 'sim' && p.validacao) || 
-        (validadoFilter === 'nao' && !p.validacao);
-      
-      // Filtro de tipo
-      const tipoMatch = tipoFilter === 'todos' || p.tipoReposicao === tipoFilter;
-      
-      return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
-    })
-    // Ordenar por SLA: mais antigos primeiro (maior SLA = topo)
-    // Para protocolos com mesmo SLA, ordenar por número (mais antigo primeiro)
-    .sort((a, b) => {
-      const slaA = calcularSlaDias(a.data, a.status, a.observacoesLog);
-      const slaB = calcularSlaDias(b.data, b.status, b.observacoesLog);
-      if (slaB !== slaA) return slaB - slaA;
-      // Ordenação secundária: número do protocolo (mais antigo primeiro)
-      return a.numero.localeCompare(b.numero);
-    });
+
+        const searchMatch =
+          p.numero.toLowerCase().includes(searchLower) ||
+          p.motorista.nome.toLowerCase().includes(searchLower) ||
+          (p.contatoWhatsapp || '').includes(search) ||
+          (p.motorista.whatsapp || '').includes(search) ||
+          p.codigoPdv?.includes(search) ||
+          p.mapa?.includes(search);
+
+        const statusMatch = activeTab === 'todos' || p.status === activeTab;
+
+        let periodoMatch = true;
+        if (periodoFilter === 'hoje') {
+          try {
+            if (p.status === 'encerrado') {
+              const dataEnc = getDataEncerramentoFromLog(p.observacoesLog);
+              periodoMatch = dataEnc ? isToday(parseFlexDate(dataEnc)) : false;
+            } else {
+              periodoMatch = isToday(parseISO(p.createdAt));
+            }
+          } catch {
+            periodoMatch = false;
+          }
+        }
+
+        let dataInicialMatch = true;
+        if (dataInicialFilter) {
+          const dataProtocolo = parseFlexDate(p.data);
+          const dataInicial = parseISO(dataInicialFilter);
+          dataInicialMatch = !isBefore(dataProtocolo, dataInicial);
+        }
+
+        let dataFinalMatch = true;
+        if (dataFinalFilter) {
+          const dataProtocolo = parseFlexDate(p.data);
+          const dataFinal = parseISO(dataFinalFilter);
+          dataFinalMatch = !isAfter(dataProtocolo, dataFinal);
+        }
+
+        const lancadoMatch = lancadoFilter === 'todos' ||
+          (lancadoFilter === 'sim' && p.lancado) ||
+          (lancadoFilter === 'nao' && !p.lancado);
+
+        const validadoMatch = validadoFilter === 'todos' ||
+          (validadoFilter === 'sim' && p.validacao) ||
+          (validadoFilter === 'nao' && !p.validacao);
+
+        const tipoMatch = tipoFilter === 'todos' || p.tipoReposicao === tipoFilter;
+
+        return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
+      })
+      .map(p => ({ p, sla: calcularSlaDias(p.data, p.status, p.observacoesLog) }))
+      .sort((a, b) => {
+        if (b.sla !== a.sla) return b.sla - a.sla;
+        return a.p.numero.localeCompare(b.p.numero);
+      })
+      .map(({ p }) => p);
+  }, [
+    protocolos,
+    isAdmin,
+    user?.unidade,
+    unidadesFiltro,
+    search,
+    activeTab,
+    periodoFilter,
+    dataInicialFilter,
+    dataFinalFilter,
+    lancadoFilter,
+    validadoFilter,
+    tipoFilter,
+  ]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredProtocolos.length / pageSize);
@@ -238,7 +251,7 @@ export default function Protocolos() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, unidadeFilter, pageSize]);
+  }, [search, activeTab, dataInicialFilter, dataFinalFilter, lancadoFilter, validadoFilter, tipoFilter, unidadesFiltro, pageSize]);
 
   // Envio WhatsApp é feito via webhook n8n
 
@@ -464,11 +477,11 @@ export default function Protocolos() {
     setValidadoFilter('todos');
     setTipoFilter('todos');
     if (isAdmin) {
-      setUnidadeFilter('todas');
+      setUnidadesFiltro([]);
     }
   };
 
-  const hasActiveFilters = activeTab === 'todos' || dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos' || tipoFilter !== 'todos' || unidadeFilter !== 'todas';
+  const hasActiveFilters = activeTab === 'todos' || dataInicialFilter || dataFinalFilter || lancadoFilter !== 'todos' || validadoFilter !== 'todos' || tipoFilter !== 'todos' || unidadesFiltro.length > 0;
 
   return (
     <div className="space-y-4">
@@ -528,7 +541,7 @@ export default function Protocolos() {
       </div>
 
       {/* Status Tabs - SEM "Todos" */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="bg-transparent gap-1.5 h-auto p-0">
           <TabsTrigger 
             value="aberto" 
@@ -557,7 +570,7 @@ export default function Protocolos() {
           <div className="flex flex-wrap gap-3 items-end">
             <div className="space-y-1 min-w-[110px]">
               <label className="text-xs font-medium text-muted-foreground">Status</label>
-              <Select value={activeTab} onValueChange={setActiveTab}>
+              <Select value={activeTab} onValueChange={handleTabChange}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -642,19 +655,14 @@ export default function Protocolos() {
                     return userUnidades.includes(u.nome);
                   });
               return unidadesDisponiveis.length > 1 ? (
-                <div className="space-y-1 min-w-[130px]">
+                <div className="space-y-1 min-w-[180px]">
                   <label className="text-xs font-medium text-muted-foreground">Unidade</label>
-                  <Select value={unidadeFilter} onValueChange={setUnidadeFilter}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Todas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todas">Todas</SelectItem>
-                      {unidadesDisponiveis.map(u => (
-                        <SelectItem key={u.id} value={u.nome}>{u.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelectUnidade
+                    unidades={unidadesDisponiveis}
+                    selected={unidadesFiltro}
+                    onChange={setUnidadesFiltro}
+                    triggerClassName="h-8 text-xs w-full"
+                  />
                 </div>
               ) : null;
             })()}
@@ -675,7 +683,7 @@ export default function Protocolos() {
       </p>
 
       {/* Table */}
-      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto border border-border/50">
+      <div className={cn("bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto border border-border/50 transition-opacity", isPending && "opacity-50")}>
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-muted/50 border-b border-border">

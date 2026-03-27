@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { unidades } from '@/data/mockData';
 import { Motorista, FuncaoMotorista, SetorMotorista } from '@/types';
 import { SearchInput } from '@/components/ui/SearchInput';
@@ -33,17 +34,25 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, MapPin, Hash, Truck, Users, Building, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useMotoristasDB } from '@/hooks/useMotoristasDB';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { toast } from 'sonner';
 
 export default function Motoristas() {
+  const [searchParams] = useSearchParams();
   const { motoristas, isLoading, addMotorista, updateMotorista, deleteMotorista, importMotoristas } = useMotoristasDB();
   const { isAdmin, user } = useAuth();
   const { registrarLog } = useAuditLog();
   const [search, setSearch] = useState('');
-  const [unidadeFiltro, setUnidadeFiltro] = useState<string>('todas');
+  const [unidadeFiltro, setUnidadeFiltro] = useState<string>(() => {
+    const unidadeParam = searchParams.get('unidade');
+    if (unidadeParam) {
+      return decodeURIComponent(unidadeParam).split(',')[0] || 'todas';
+    }
+    return 'todas';
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMotorista, setEditingMotorista] = useState<Motorista | null>(null);
   const [formData, setFormData] = useState({
@@ -74,10 +83,12 @@ export default function Motoristas() {
     ? (unidadeFiltro === 'todas' ? motoristas : motoristas.filter(m => m.unidade === unidadeFiltro))
     : motoristas.filter(m => m.unidade === user?.unidade);
 
-  const filteredMotoristas = motoristasFiltradosPorUnidade.filter(m => 
-    m.nome.toLowerCase().includes(search.toLowerCase()) ||
-    m.codigo.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredMotoristas = motoristasFiltradosPorUnidade.filter(m => {
+    const s = search.toLowerCase().replace(/[.\-]/g, '');
+    return m.nome.toLowerCase().includes(s) ||
+      m.codigo.toLowerCase().includes(s) ||
+      (m.cpf && m.cpf.replace(/[.\-]/g, '').includes(s));
+  });
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredMotoristas.length / pageSize);
@@ -339,14 +350,14 @@ export default function Motoristas() {
   const unidadesAtivas = new Set(motoristas.map(m => m.unidade)).size;
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-            <Truck className="text-primary" size={24} />
+          <h1 className="font-heading text-3xl font-bold text-foreground flex items-center gap-2">
+            <Truck className="text-primary" size={32} />
             Motoristas
           </h1>
-          <p className="text-muted-foreground mt-0.5 text-sm">Gerencie os motoristas cadastrados</p>
+          <p className="text-muted-foreground mt-1">Gerencie motoristas, ajudantes e suas unidades de operação</p>
         </div>
         
         <div className="flex gap-2">
@@ -484,7 +495,7 @@ export default function Motoristas() {
                   </div>
                 </div>
                 
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancelar
                   </Button>
@@ -499,57 +510,57 @@ export default function Motoristas() {
       </div>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '50ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Users size={18} className="text-primary" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '50ms' }}>
+          <div className="flex items-center gap-2">
+            <div className="p-2.5 rounded-xl bg-primary/10">
+              <Users size={20} className="text-primary" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Total</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalMotoristas}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-green-500/10">
-              <Truck size={18} className="text-green-500" />
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <div className="flex items-center gap-2">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10">
+              <Truck size={20} className="text-emerald-500" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Motoristas</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Motoristas</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalPorFuncao.motorista}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '150ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-orange-500/10">
-              <Users size={18} className="text-orange-500" />
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '150ms' }}>
+          <div className="flex items-center gap-2">
+            <div className="p-2.5 rounded-xl bg-amber-500/10">
+              <Users size={20} className="text-amber-500" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Ajudantes</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Ajudantes</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : totalPorFuncao.ajudante}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-card rounded-xl p-3 shadow-sm border border-border animate-fade-in" style={{ animationDelay: '200ms' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <Building size={18} className="text-blue-500" />
+        <div className="bg-card rounded-xl p-5 border shadow-sm hover:shadow-md transition-shadow animate-fade-in" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-center gap-2">
+            <div className="p-2.5 rounded-xl bg-info/10">
+              <Building size={20} className="text-info" />
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Unidades</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-muted-foreground text-xs font-medium">Unidades</p>
+              <p className="text-2xl font-bold text-foreground">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : unidadesAtivas}
               </p>
             </div>
@@ -558,17 +569,17 @@ export default function Motoristas() {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-4">
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Buscar por nome ou código..."
-          className="flex-1 max-w-md"
+          className="flex-1"
         />
         
         {isAdmin && (
           <Select value={unidadeFiltro} onValueChange={setUnidadeFiltro}>
-            <SelectTrigger className="w-[180px] h-8 text-xs">
+            <SelectTrigger className="w-52">
               <MapPin size={14} className="mr-1.5 text-muted-foreground" />
               <SelectValue placeholder="Todas as Unidades" />
             </SelectTrigger>
@@ -609,109 +620,137 @@ export default function Motoristas() {
       )}
 
       {/* Table */}
-      <div className="bg-card rounded-xl p-4 shadow-md animate-fade-in overflow-x-auto">
+      <div className="bg-card rounded-xl shadow-md animate-fade-in overflow-hidden border">
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
           <>
-            <table className="w-full">
-              <thead>
-                <tr className="table-header">
-                  <th className="text-left p-2.5 text-[11px] rounded-tl-lg w-10">
-                    <Checkbox
-                      checked={isAllSelected}
-                      onCheckedChange={toggleSelectAll}
-                      aria-label="Selecionar todos"
-                      className={isPartialSelected ? "data-[state=checked]:bg-primary/50" : ""}
-                    />
-                  </th>
-                  <th className="text-left p-2.5 text-[11px]">Nome</th>
-                  <th className="text-left p-2.5 text-[11px]">Código</th>
-                  <th className="text-left p-2.5 text-[11px]">CPF</th>
-                  <th className="text-left p-2.5 text-[11px]">Função</th>
-                  <th className="text-left p-2.5 text-[11px]">Setor</th>
-                  <th className="text-left p-2.5 text-[11px]">Unidade</th>
-                  <th className="text-right p-2.5 text-[11px] rounded-tr-lg">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedMotoristas.map((motorista, index) => (
-                  <tr 
-                    key={motorista.id} 
-                    className={`border-b border-border hover:bg-muted/50 transition-colors ${selectedIds.has(motorista.id) ? 'bg-primary/5' : ''}`}
-                    style={{ animationDelay: `${index * 20}ms` }}
-                  >
-                    <td className="p-2.5">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-left p-2.5 w-10">
                       <Checkbox
-                        checked={selectedIds.has(motorista.id)}
-                        onCheckedChange={() => toggleSelect(motorista.id)}
-                        aria-label={`Selecionar ${motorista.nome}`}
+                        checked={isAllSelected}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Selecionar todos"
+                        className={isPartialSelected ? "data-[state=checked]:bg-primary/50" : ""}
                       />
-                    </td>
-                    <td className="p-2.5 font-medium text-xs">{motorista.nome}</td>
-                    <td className="p-2.5">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-                        <Hash size={12} />
-                        {motorista.codigo}
-                      </span>
-                    </td>
-                    <td className="p-2.5">
-                      <span className="text-muted-foreground text-xs font-mono">
-                        {motorista.cpf || '-'}
-                      </span>
-                    </td>
-                    <td className="p-2.5">
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                        motorista.funcao === 'ajudante_entrega' 
-                          ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' 
-                          : 'bg-green-500/20 text-green-700 dark:text-green-400'
-                      }`}>
-                        <Users size={10} />
-                        {getFuncaoLabel(motorista.funcao)}
-                      </span>
-                    </td>
-                    <td className="p-2.5">
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
-                        motorista.setor === 'interior' 
-                          ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' 
-                          : 'bg-green-500/20 text-green-700 dark:text-green-400'
-                      }`}>
-                        <Building size={10} />
-                        {getSetorLabel(motorista.setor)}
-                      </span>
-                    </td>
-                    <td className="p-2.5">
-                      <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-                        <MapPin size={12} />
-                        {motorista.unidade}
-                      </span>
-                    </td>
-                    <td className="p-2.5">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(motorista)}
-                          className="text-primary hover:text-primary/80 h-6 w-6 p-0"
-                        >
-                          <Pencil size={14} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDeleteConfirmation(motorista.id)}
-                          className="text-destructive hover:text-destructive/80 h-6 w-6 p-0"
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </td>
+                    </th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Nome</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Código</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">CPF</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Função</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Setor</th>
+                    <th className="text-left p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Unidade</th>
+                    <th className="text-right p-2.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedMotoristas.map((motorista) => {
+                    const initials = motorista.nome
+                      .split(' ')
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map(n => n[0])
+                      .join('')
+                      .toUpperCase();
+
+                    return (
+                      <tr 
+                        key={motorista.id} 
+                        className={cn(
+                          "border-b border-border hover:bg-muted/40 transition-colors",
+                          selectedIds.has(motorista.id) && "bg-primary/5"
+                        )}
+                      >
+                        <td className="p-2.5">
+                          <Checkbox
+                            checked={selectedIds.has(motorista.id)}
+                            onCheckedChange={() => toggleSelect(motorista.id)}
+                            aria-label={`Selecionar ${motorista.nome}`}
+                          />
+                        </td>
+                        <td className="p-2.5">
+                          <div className="flex items-center gap-2">
+                            <div className={cn(
+                              "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                              motorista.funcao === 'motorista' 
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" 
+                                : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                            )}>
+                              {initials}
+                            </div>
+                            <span className="font-medium text-sm">{motorista.nome}</span>
+                          </div>
+                        </td>
+                        <td className="p-2.5">
+                          <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm font-mono">
+                            <Hash size={13} />
+                            {motorista.codigo}
+                          </span>
+                        </td>
+                        <td className="p-2.5">
+                          <span className="text-muted-foreground text-sm font-mono">
+                            {motorista.cpf || '-'}
+                          </span>
+                        </td>
+                        <td className="p-2.5">
+                          <span className={cn(
+                            "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium",
+                            motorista.funcao === 'ajudante_entrega' 
+                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' 
+                              : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                          )}>
+                            {motorista.funcao === 'motorista' ? <Truck size={12} /> : <Users size={12} />}
+                            {getFuncaoLabel(motorista.funcao)}
+                          </span>
+                        </td>
+                        <td className="p-2.5">
+                          <span className={cn(
+                            "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium",
+                            motorista.setor === 'interior' 
+                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' 
+                              : 'bg-info/15 text-info'
+                          )}>
+                            <Building size={12} />
+                            {getSetorLabel(motorista.setor)}
+                          </span>
+                        </td>
+                        <td className="p-2.5">
+                          <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm">
+                            <MapPin size={13} />
+                            {motorista.unidade}
+                          </span>
+                        </td>
+                        <td className="p-2.5">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDialog(motorista)}
+                              className="text-primary hover:text-primary/80 hover:bg-primary/10 h-8 w-8 p-0"
+                            >
+                              <Pencil size={15} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openDeleteConfirmation(motorista.id)}
+                              className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-8 w-8 p-0"
+                            >
+                              <Trash2 size={15} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
             
             {filteredMotoristas.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
@@ -720,14 +759,18 @@ export default function Motoristas() {
             )}
 
             {/* Pagination */}
-            <TablePagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              totalItems={filteredMotoristas.length}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-            />
+            {filteredMotoristas.length > 0 && (
+              <div className="border-t">
+                <TablePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredMotoristas.length}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
