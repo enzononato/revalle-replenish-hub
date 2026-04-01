@@ -42,8 +42,8 @@ Deno.serve(async (req) => {
     if (authError) {
       if (authError.message.includes('already been registered')) {
         return new Response(
-          JSON.stringify({ error: 'EMAIL_EXISTS' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+          JSON.stringify({ success: true, skipped: true, reason: 'EMAIL_EXISTS' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
       }
       throw authError

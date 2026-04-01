@@ -63,10 +63,11 @@ export function useUsuariosDB() {
       }
 
       if (data?.error) {
-        if (data.error === 'EMAIL_EXISTS') {
-          throw new Error('EMAIL_EXISTS');
-        }
         throw new Error(data.error);
+      }
+
+      if (data?.skipped && data?.reason === 'EMAIL_EXISTS') {
+        throw new Error('EMAIL_EXISTS');
       }
 
       return { success: true };
