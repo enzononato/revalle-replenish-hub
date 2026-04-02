@@ -24,15 +24,24 @@ export function usePdvsDB() {
     try {
       const unidadeUpper = unidade.toUpperCase();
 
-      // Buscar códigos já existentes para essa unidade
-      const { data: existentesData, error: fetchError } = await supabase
-        .from('pdvs')
-        .select('codigo')
-        .eq('unidade', unidadeUpper);
+      // Buscar TODOS os códigos existentes com paginação para evitar limite de 1000
+      let allCodigos: string[] = [];
+      let from = 0;
+      const pageSize = 5000;
+      while (true) {
+        const { data, error: fetchError } = await supabase
+          .from('pdvs')
+          .select('codigo')
+          .eq('unidade', unidadeUpper)
+          .range(from, from + pageSize - 1);
+        if (fetchError) throw fetchError;
+        if (!data || data.length === 0) break;
+        allCodigos.push(...data.map(p => String(p.codigo).trim()));
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
 
-      if (fetchError) throw fetchError;
-
-      const existentes = new Set((existentesData || []).map(p => String(p.codigo).trim()));
+      const existentes = new Set(allCodigos);
       const novos = pdvs.filter(p => !existentes.has(String(p.codigo || '').replace(/\./g, '').trim()));
       const ignorados = pdvs.length - novos.length;
 

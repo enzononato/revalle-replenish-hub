@@ -103,12 +103,22 @@ export function ImportarPdvsCSV() {
   const enrichWithStatus = async (parsed: PdvImport[], unidade: string) => {
     setLoadingStatus(true);
     try {
-      const { data: existentesData } = await supabase
-        .from('pdvs')
-        .select('codigo')
-        .eq('unidade', unidade.toUpperCase());
-
-      const existentesSet = new Set((existentesData || []).map(p => String(p.codigo).trim()));
+      // Buscar TODOS os códigos existentes com paginação para evitar limite de 1000
+      let allCodigos: string[] = [];
+      let from = 0;
+      const pageSize = 5000;
+      while (true) {
+        const { data } = await supabase
+          .from('pdvs')
+          .select('codigo')
+          .eq('unidade', unidade.toUpperCase())
+          .range(from, from + pageSize - 1);
+        if (!data || data.length === 0) break;
+        allCodigos.push(...data.map(p => String(p.codigo).trim()));
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      const existentesSet = new Set(allCodigos);
 
       const comStatus: PdvComStatus[] = parsed.map(p => ({
         ...p,
