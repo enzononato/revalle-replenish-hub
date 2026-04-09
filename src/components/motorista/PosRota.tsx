@@ -137,15 +137,22 @@ export function PosRota({ motorista }: PosRotaProps) {
     setPdvSelecionado(!!pdv);
   };
 
-  const handleTipoChange = (value: string) => {
-    setTipo(value);
-    if (value !== 'erro_entrega' && value !== 'avaria' && value !== 'inversao') {
-      setCodigoPdv('');
-      setPdvSelecionado(false);
+  const addProduto = () => {
+    setProdutos(prev => [...prev, { codigo: '', nome: '', quantidade: 1, unidade: 'UN' }]);
+  };
+
+  const removeProduto = (index: number) => {
+    if (produtos.length > 1) {
+      setProdutos(prev => prev.filter((_, i) => i !== index));
     }
-    if (value !== 'avaria' && value !== 'inversao') {
-      setNotaFiscal('');
-    }
+  };
+
+  const updateProduto = (index: number, field: keyof ProdutoForm, value: string | number) => {
+    setProdutos(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const handleCameraCapture = useCallback(async (imageDataUrl: string) => {
@@ -168,14 +175,15 @@ export function PosRota({ motorista }: PosRotaProps) {
 
   const resetForm = () => {
     setMapa('');
+    setPlaca('');
     setNotaFiscal('');
-    setTipo('');
     setCodigoPdv('');
     setPdvSelecionado(false);
     setObservacao('');
     setEnviado(false);
     setNumeroProtocolo('');
     setFotos([]);
+    setProdutos([{ codigo: '', nome: '', quantidade: 1, unidade: 'UN' }]);
     setMensagemCopiada(false);
     setMostrarDetalhes(false);
     setDadosProtocoloCriado(null);
@@ -188,7 +196,8 @@ export function PosRota({ motorista }: PosRotaProps) {
     try {
       const agora = new Date();
       const numero = `POSROTA-${format(agora, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
-      const tipoLabel = TIPOS_POS_ROTA.find(t => t.value === tipo)?.label || tipo;
+
+      const produtosValidos = produtos.filter(p => p.nome.trim() && p.quantidade >= 1);
 
       const fotosUrls: string[] = [];
       for (let i = 0; i < fotos.length; i++) {
@@ -196,24 +205,33 @@ export function PosRota({ motorista }: PosRotaProps) {
         if (url) fotosUrls.push(url);
       }
 
+      const produtosPayload = produtosValidos.map(p => ({
+        codigo: p.codigo || p.nome,
+        nome: p.nome,
+        unidade: p.unidade,
+        quantidade: p.quantidade,
+        validade: '',
+      }));
+
       const { error } = await supabase.from('protocolos').insert({
         numero,
         data: format(agora, 'dd/MM/yyyy'),
         hora: format(agora, 'HH:mm'),
         status: 'aberto',
         tipo_reposicao: 'pos_rota',
-        causa: `SOBRA EM ROTA - ${tipoLabel.toUpperCase()}`,
+        causa: 'SOBRAS',
         mapa: mapa.trim(),
         nota_fiscal: notaFiscal.trim() || null,
-        codigo_pdv: precisaPdv ? codigoPdv.trim() : null,
+        codigo_pdv: codigoPdv.trim() || null,
         motorista_id: motorista.id,
         motorista_nome: motorista.nome,
         motorista_codigo: motorista.codigo,
         motorista_whatsapp: motorista.whatsapp || null,
         motorista_email: motorista.email || null,
         motorista_unidade: motorista.unidade,
-        observacao_geral: observacao.trim() || null,
-        fotos_protocolo: { fotosSobra: fotosUrls },
+        observacao_geral: observacao.trim() || `Placa: ${placa.trim().toUpperCase()}`,
+        produtos: produtosPayload,
+        fotos_protocolo: { fotosSobra: fotosUrls, placa: placa.trim().toUpperCase() },
         observacoes_log: JSON.stringify([{
           id: crypto.randomUUID(),
           usuarioNome: motorista.nome,
@@ -221,7 +239,7 @@ export function PosRota({ motorista }: PosRotaProps) {
           data: format(agora, 'dd/MM/yyyy'),
           hora: format(agora, 'HH:mm'),
           acao: 'Registrou pós-rota',
-          texto: `Sobra em rota - ${tipoLabel}${precisaPdv ? ` | PDV: ${codigoPdv.trim()}` : ''}${notaFiscal.trim() ? ` | NF: ${notaFiscal.trim()}` : ''} | ${fotosUrls.length} foto(s)`
+          texto: `Sobras | Placa: ${placa.trim().toUpperCase()} | ${produtosValidos.length} produto(s)${codigoPdv.trim() ? ` | PDV: ${codigoPdv.trim()}` : ''}${notaFiscal.trim() ? ` | NF: ${notaFiscal.trim()}` : ''} | ${fotosUrls.length} foto(s)`
         }]),
       });
 
@@ -233,10 +251,12 @@ export function PosRota({ motorista }: PosRotaProps) {
         registro_id: numero,
         registro_dados: {
           numero,
-          tipo: tipoLabel,
+          tipo: 'Sobras',
+          placa: placa.trim().toUpperCase(),
           mapa: mapa.trim(),
-          codigo_pdv: precisaPdv ? codigoPdv.trim() : null,
+          codigo_pdv: codigoPdv.trim() || null,
           nota_fiscal: notaFiscal.trim() || null,
+          produtos: produtosValidos.length,
           fotos_count: fotosUrls.length,
         },
         usuario_nome: motorista.nome,
@@ -246,23 +266,25 @@ export function PosRota({ motorista }: PosRotaProps) {
 
       setNumeroProtocolo(numero);
       setDadosProtocoloCriado({
-        tipo: tipoLabel,
         mapa: mapa.trim(),
-        codigoPdv: precisaPdv ? codigoPdv.trim() : '',
+        placa: placa.trim().toUpperCase(),
+        codigoPdv: codigoPdv.trim(),
         notaFiscal: notaFiscal.trim(),
         observacao: observacao.trim(),
         fotosCount: fotosUrls.length,
         data: format(agora, 'dd/MM/yyyy'),
         hora: format(agora, 'HH:mm'),
+        produtos: produtosValidos,
       });
-      // Send webhook to n8n (same endpoint as protocol creation)
+
       const webhookPayload = {
         tipo: 'pos_rota',
         numero,
         data: format(agora, 'dd/MM/yyyy'),
         hora: format(agora, 'HH:mm:ss'),
         mapa: mapa.trim(),
-        codigoPdv: precisaPdv ? codigoPdv.trim() : '',
+        placa: placa.trim().toUpperCase(),
+        codigoPdv: codigoPdv.trim() || '',
         notaFiscal: notaFiscal.trim() || '',
         motoristaNome: motorista.nome,
         motoristaCodigo: motorista.codigo,
@@ -270,8 +292,8 @@ export function PosRota({ motorista }: PosRotaProps) {
         motoristaEmail: motorista.email || '',
         unidade: motorista.unidade || '',
         tipoReposicao: 'POS_ROTA',
-        causa: `SOBRA EM ROTA - ${tipoLabel.toUpperCase()}`,
-        produtos: [],
+        causa: 'SOBRAS',
+        produtos: produtosPayload,
         fotos: { fotosSobra: fotosUrls },
         observacaoGeral: observacao.trim() || '',
       };
@@ -290,7 +312,7 @@ export function PosRota({ motorista }: PosRotaProps) {
 
       toast({
         title: 'Pós-Rota registrado!',
-        description: `Registro ${numero} criado com ${fotosUrls.length} foto(s).`,
+        description: `Registro ${numero} criado com ${produtosValidos.length} produto(s) e ${fotosUrls.length} foto(s).`,
       });
 
       try {
@@ -303,10 +325,12 @@ export function PosRota({ motorista }: PosRotaProps) {
             motorista_nome: motorista.nome,
             motorista_unidade: motorista.unidade,
             mapa: mapa.trim(),
-            tipo: tipoLabel,
-            codigo_pdv: precisaPdv ? codigoPdv.trim() : undefined,
+            placa: placa.trim().toUpperCase(),
+            tipo: 'Sobras',
+            codigo_pdv: codigoPdv.trim() || undefined,
             nota_fiscal: notaFiscal.trim() || undefined,
             observacao: observacao.trim() || undefined,
+            produtos_count: produtosValidos.length,
             fotos_count: fotosUrls.length,
             data: format(agora, 'dd/MM/yyyy'),
             hora: format(agora, 'HH:mm'),
