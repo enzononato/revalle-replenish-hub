@@ -359,14 +359,19 @@ export function PosRota({ motorista }: PosRotaProps) {
       ``,
       `*Protocolo:* ${numeroProtocolo}`,
       ``,
-      `*Tipo:* ${d.tipo}`,
-      `*Causa:* SOBRA EM ROTA - ${d.tipo.toUpperCase()}`,
+      `*Tipo:* Sobras`,
+      `*Placa:* ${d.placa}`,
       ``,
       `*Data:* ${d.data} as ${d.hora}`,
       `*Mapa:* ${d.mapa}`,
       ...(d.codigoPdv ? [`*Cod. PDV:* ${d.codigoPdv}`] : []),
       ...(d.notaFiscal ? [`*NF:* ${d.notaFiscal}`] : []),
       ``,
+      ...(d.produtos.length > 0 ? [
+        `*Produtos:*`,
+        ...d.produtos.map(p => `  - ${p.nome} (${p.quantidade} ${p.unidade})`),
+        ``,
+      ] : []),
       `*Motorista:* ${motorista.nome}`,
       `*Unidade:* ${motorista.unidade || ''}`,
       ``,
@@ -450,7 +455,11 @@ export function PosRota({ motorista }: PosRotaProps) {
                 <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tipo</span>
-                    <span className="font-medium">{dadosProtocoloCriado.tipo}</span>
+                    <span className="font-medium">Sobras</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Placa</span>
+                    <span className="font-medium">{dadosProtocoloCriado.placa}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Mapa</span>
@@ -703,61 +712,100 @@ export function PosRota({ motorista }: PosRotaProps) {
               </div>
             </div>
 
-            {/* Tipo e Causa */}
+            {/* Produtos */}
+            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border/30 bg-muted/20">
+                <h3 className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
+                  <ShoppingCart className="w-3.5 h-3.5 text-primary" />
+                  Produtos *
+                </h3>
+              </div>
+              <div className="p-3.5 space-y-2.5">
+                {produtos.map((produto, index) => (
+                  <div key={index} className="space-y-2 p-2.5 bg-muted/20 rounded-lg border border-border/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-medium text-muted-foreground">Produto {index + 1}</span>
+                      {produtos.length > 1 && (
+                        <button type="button" onClick={() => removeProduto(index)} className="text-destructive hover:text-destructive/80">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <ProdutoAutocomplete
+                      value={produto.nome}
+                      onChange={(value, prod) => {
+                        if (prod) {
+                          updateProduto(index, 'codigo', prod.cod);
+                          updateProduto(index, 'nome', prod.produto);
+                        } else {
+                          updateProduto(index, 'nome', value);
+                        }
+                      }}
+                      placeholder="Buscar produto..."
+                      className="h-10 text-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Qtd *</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={produto.quantidade}
+                          onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
+                          className="h-10 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Unidade</Label>
+                        <Select value={produto.unidade} onValueChange={(val) => updateProduto(index, 'unidade', val)}>
+                          <SelectTrigger className="h-10 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="UN">UN</SelectItem>
+                            <SelectItem value="CX">CX</SelectItem>
+                            <SelectItem value="PCT">PCT</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={addProduto} className="w-full h-9 text-xs rounded-lg">
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Adicionar Produto
+                </Button>
+              </div>
+            </div>
+
+            {/* PDV e NF (opcionais) */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-border/30 bg-muted/20">
                 <h3 className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
                   <Tag className="w-3.5 h-3.5 text-primary" />
-                  Tipo — Sobra em Rota
+                  PDV e Nota Fiscal (opcional)
                 </h3>
               </div>
               <div className="p-3.5 space-y-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Tipo *</Label>
-                  <Select value={tipo} onValueChange={handleTipoChange}>
-                    <SelectTrigger className="h-11 text-sm truncate text-left gap-2">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIPOS_POS_ROTA.map((t) => (
-                        <SelectItem key={t.value} value={t.value} className="text-sm">
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs font-medium text-muted-foreground">Código do PDV</Label>
+                  <PdvAutocomplete
+                    value={codigoPdv}
+                    onChange={handlePdvChange}
+                    unidade={motorista.unidade}
+                    placeholder="Buscar PDV..."
+                    className="h-11 text-sm"
+                  />
                 </div>
-
-                {precisaPdv && (
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-muted-foreground">Código do PDV *</Label>
-                    <PdvAutocomplete
-                      value={codigoPdv}
-                      onChange={handlePdvChange}
-                      unidade={motorista.unidade}
-                      placeholder="Buscar PDV..."
-                      className="h-11 text-sm"
-                    />
-                    {codigoPdv && !pdvSelecionado && (
-                      <p className="text-[11px] text-amber-600 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        Selecione um PDV da lista
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {precisaNF && (
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal do PDV</Label>
-                    <Input
-                      placeholder="NF relacionada ao PDV"
-                      value={notaFiscal}
-                      onChange={(e) => setNotaFiscal(e.target.value)}
-                      className="h-11 text-sm"
-                    />
-                  </div>
-                )}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal</Label>
+                  <Input
+                    placeholder="NF relacionada"
+                    value={notaFiscal}
+                    onChange={(e) => setNotaFiscal(e.target.value)}
+                    className="h-11 text-sm"
+                  />
+                </div>
               </div>
             </div>
 
