@@ -653,6 +653,16 @@ export default function Sobras() {
                   <p className="text-xs text-muted-foreground">Mapa</p>
                   <p className="text-sm font-medium flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{detalheSobra.mapa || '-'}</p>
                 </div>
+                {(() => {
+                  const fotosObj = detalheSobra.fotos_protocolo as Record<string, unknown> | null;
+                  const placaVeiculo = fotosObj?.placa as string | undefined;
+                  return placaVeiculo ? (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Placa do Veículo</p>
+                      <p className="text-sm font-mono font-medium flex items-center gap-1"><Truck className="w-3.5 h-3.5" />{placaVeiculo}</p>
+                    </div>
+                  ) : null;
+                })()}
                 <div>
                   <p className="text-xs text-muted-foreground">Tipo</p>
                   <Badge variant="outline" className={getTipoBadgeColor(detalheSobra.causa)}>
