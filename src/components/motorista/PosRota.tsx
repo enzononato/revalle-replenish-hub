@@ -691,14 +691,26 @@ export function PosRota({ motorista }: PosRotaProps) {
                 </h3>
               </div>
               <div className="p-3.5 space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Mapa *</Label>
-                  <Input
-                    placeholder="Número do mapa"
-                    value={mapa}
-                    onChange={(e) => setMapa(e.target.value)}
-                    className="h-11 text-sm"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-muted-foreground">Mapa *</Label>
+                    <Input
+                      placeholder="Número do mapa"
+                      value={mapa}
+                      onChange={(e) => setMapa(e.target.value)}
+                      className="h-11 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-muted-foreground">Placa do Veículo *</Label>
+                    <Input
+                      placeholder="Ex: ABC1D23"
+                      value={placa}
+                      onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+                      maxLength={7}
+                      className="h-11 text-sm uppercase"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal</Label>
