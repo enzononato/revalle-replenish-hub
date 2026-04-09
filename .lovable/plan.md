@@ -1,19 +1,25 @@
 
 
-# Fix: Paginação de PDVs usando pageSize maior que o limite do servidor
+# Fix: Validação de unidade rejeitando "UND"
 
 ## Problema
-O `pageSize` está configurado como `5000`, mas o servidor limita respostas a **1000 linhas**. Quando a query retorna 1000 registros, o código interpreta `1000 < 5000` como "acabou os dados" e para o loop. Resultado: só 1000 dos 15.788 códigos são comparados.
+A validação na edição de produtos aceita apenas `UN`, `CX`, `PCT`, mas:
+1. O valor padrão ao adicionar novo produto é `'UND'` (linhas 195 e 222)
+2. Existem produtos já salvos no banco com unidade `'UND'`
+
+Resultado: mesmo selecionando tudo corretamente, se a unidade carregada do banco ou o default for `UND`, a validação falha.
 
 ## Solução
-Reduzir o `pageSize` para `1000` em ambos os arquivos para alinhar com o limite do servidor.
 
-### Arquivo 1: `src/components/ImportarPdvsCSV.tsx` — `enrichWithStatus`
-- Linha 109: `const pageSize = 5000;` → `const pageSize = 1000;`
+### Arquivo: `src/components/ProtocoloDetails.tsx`
 
-### Arquivo 2: `src/hooks/usePdvsDB.ts` — `importPdvsNovos`
-- Mesma mudança: `const pageSize = 5000;` → `const pageSize = 1000;`
+1. **Corrigir defaults** — trocar `'UND'` por `'UN'` nas linhas 195 e 222
+2. **Normalizar na validação** — antes de validar, converter `'UND'` para `'UN'` no `handleSalvarProdutos` (sanitização), para cobrir dados antigos do banco:
+   ```
+   unidade: produto.unidade === 'UND' ? 'UN' : produto.unidade
+   ```
 
-## Por que funciona
-Com `pageSize = 1000`, quando a query retorna exatamente 1000 registros, o loop sabe que **pode haver mais** e continua buscando. Quando retorna menos de 1000, sabe que acabou. Isso garante que todos os 15.788 códigos da unidade RP sejam carregados antes da comparação.
+### Impacto
+- Corrige o erro imediato ao editar produtos
+- Produtos antigos com `UND` no banco serão salvos como `UN` ao serem editados
 
