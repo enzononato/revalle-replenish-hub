@@ -182,7 +182,7 @@ export function ProtocoloDetails({
       ...produto,
       codigo: digitandoLivre ? '' : codigo.trim(),
       nome: digitandoLivre ? value : nome,
-      unidade: embalagem || produto.unidade || 'UND',
+      unidade: embalagem || produto.unidade || 'UN',
     } : produto));
   };
 
@@ -192,7 +192,7 @@ export function ProtocoloDetails({
       {
         codigo: '',
         nome: '',
-        unidade: 'UND',
+        unidade: 'UN',
         quantidade: 1,
         validade: '',
         observacao: ''
@@ -219,7 +219,7 @@ export function ProtocoloDetails({
       return;
     }
 
-    setProdutosEditados([{ codigo: '', nome: '', unidade: 'UND', quantidade: 1, validade: '', observacao: '' }]);
+    setProdutosEditados([{ codigo: '', nome: '', unidade: 'UN', quantidade: 1, validade: '', observacao: '' }]);
     setEditandoProdutos(true);
   };
 
@@ -239,7 +239,7 @@ export function ProtocoloDetails({
       ...produto,
       codigo: String(produto.codigo || '').trim(),
       nome: String(produto.nome || '').trim(),
-      unidade: String(produto.unidade || '').trim(),
+      unidade: (() => { const u = String(produto.unidade || '').trim(); return u === 'UND' ? 'UN' : u; })(),
       quantidade: Number(produto.quantidade) || 1,
       validade: String(produto.validade || '').trim(),
       observacao: String(produto.observacao || '').trim() || undefined,
