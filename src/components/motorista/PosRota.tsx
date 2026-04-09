@@ -13,10 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PdvAutocomplete } from '@/components/PdvAutocomplete';
+import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 import { toast } from '@/hooks/use-toast';
 import { Motorista } from '@/types';
 import { cn } from '@/lib/utils';
-import { Loader2, CheckCircle, MapPin, FileText, Tag, AlertTriangle, Camera, X, ImageIcon, MessageCircle, Copy, Check, Plus, ChevronDown, ChevronUp, Clock, Package } from 'lucide-react';
+import { Loader2, CheckCircle, MapPin, FileText, Tag, AlertTriangle, Camera, X, ImageIcon, MessageCircle, Copy, Check, Plus, ChevronDown, ChevronUp, Clock, Package, Trash2, ShoppingCart, Truck } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
@@ -26,12 +27,12 @@ interface PosRotaProps {
   motorista: Motorista;
 }
 
-const TIPOS_POS_ROTA = [
-  { value: 'inversao', label: 'Inversão' },
-  { value: 'avaria', label: 'Avaria' },
-  { value: 'erro_carregamento', label: 'Erro de Carregamento' },
-  { value: 'erro_entrega', label: 'Erro de Entrega' },
-];
+interface ProdutoForm {
+  codigo: string;
+  nome: string;
+  quantidade: number;
+  unidade: 'UN' | 'CX' | 'PCT';
+}
 
 type AbaAtiva = 'form' | 'lista';
 
@@ -53,8 +54,8 @@ export function PosRota({ motorista }: PosRotaProps) {
   const [statusFiltro, setStatusFiltro] = useState<string>('aberto');
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [mapa, setMapa] = useState('');
+  const [placa, setPlaca] = useState('');
   const [notaFiscal, setNotaFiscal] = useState('');
-  const [tipo, setTipo] = useState('');
   const [codigoPdv, setCodigoPdv] = useState('');
   const [pdvSelecionado, setPdvSelecionado] = useState(false);
   const [observacao, setObservacao] = useState('');
@@ -63,8 +64,9 @@ export function PosRota({ motorista }: PosRotaProps) {
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
   const [mensagemCopiada, setMensagemCopiada] = useState(false);
   const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
+  const [produtos, setProdutos] = useState<ProdutoForm[]>([{ codigo: '', nome: '', quantidade: 1, unidade: 'UN' }]);
   const [dadosProtocoloCriado, setDadosProtocoloCriado] = useState<{
-    tipo: string; mapa: string; codigoPdv: string; notaFiscal: string; observacao: string; fotosCount: number; data: string; hora: string;
+    mapa: string; placa: string; codigoPdv: string; notaFiscal: string; observacao: string; fotosCount: number; data: string; hora: string; produtos: ProdutoForm[];
   } | null>(null);
   
   // Fotos
@@ -77,9 +79,7 @@ export function PosRota({ motorista }: PosRotaProps) {
   const [loadingSobras, setLoadingSobras] = useState(false);
   const [contadores, setContadores] = useState({ pendentes: 0, tratamento: 0, resolvido: 0 });
 
-  const precisaPdv = tipo === 'erro_entrega' || tipo === 'avaria' || tipo === 'inversao';
-  const precisaNF = tipo === 'avaria' || tipo === 'inversao';
-  const canSubmit = mapa.trim() && tipo && (!precisaPdv || (codigoPdv.trim() && pdvSelecionado)) && fotos.length > 0;
+  const canSubmit = mapa.trim() && placa.trim() && produtos.some(p => p.nome.trim() && p.quantidade >= 1) && fotos.length > 0;
 
   // Fetch sobras do motorista
   const fetchSobras = useCallback(async (statusFilter: string) => {
@@ -137,15 +137,22 @@ export function PosRota({ motorista }: PosRotaProps) {
     setPdvSelecionado(!!pdv);
   };
 
-  const handleTipoChange = (value: string) => {
-    setTipo(value);
-    if (value !== 'erro_entrega' && value !== 'avaria' && value !== 'inversao') {
-      setCodigoPdv('');
-      setPdvSelecionado(false);
+  const addProduto = () => {
+    setProdutos(prev => [...prev, { codigo: '', nome: '', quantidade: 1, unidade: 'UN' }]);
+  };
+
+  const removeProduto = (index: number) => {
+    if (produtos.length > 1) {
+      setProdutos(prev => prev.filter((_, i) => i !== index));
     }
-    if (value !== 'avaria' && value !== 'inversao') {
-      setNotaFiscal('');
-    }
+  };
+
+  const updateProduto = (index: number, field: keyof ProdutoForm, value: string | number) => {
+    setProdutos(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
   const handleCameraCapture = useCallback(async (imageDataUrl: string) => {
@@ -168,14 +175,15 @@ export function PosRota({ motorista }: PosRotaProps) {
 
   const resetForm = () => {
     setMapa('');
+    setPlaca('');
     setNotaFiscal('');
-    setTipo('');
     setCodigoPdv('');
     setPdvSelecionado(false);
     setObservacao('');
     setEnviado(false);
     setNumeroProtocolo('');
     setFotos([]);
+    setProdutos([{ codigo: '', nome: '', quantidade: 1, unidade: 'UN' }]);
     setMensagemCopiada(false);
     setMostrarDetalhes(false);
     setDadosProtocoloCriado(null);
@@ -188,7 +196,8 @@ export function PosRota({ motorista }: PosRotaProps) {
     try {
       const agora = new Date();
       const numero = `POSROTA-${format(agora, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
-      const tipoLabel = TIPOS_POS_ROTA.find(t => t.value === tipo)?.label || tipo;
+
+      const produtosValidos = produtos.filter(p => p.nome.trim() && p.quantidade >= 1);
 
       const fotosUrls: string[] = [];
       for (let i = 0; i < fotos.length; i++) {
@@ -196,24 +205,33 @@ export function PosRota({ motorista }: PosRotaProps) {
         if (url) fotosUrls.push(url);
       }
 
+      const produtosPayload = produtosValidos.map(p => ({
+        codigo: p.codigo || p.nome,
+        nome: p.nome,
+        unidade: p.unidade,
+        quantidade: p.quantidade,
+        validade: '',
+      }));
+
       const { error } = await supabase.from('protocolos').insert({
         numero,
         data: format(agora, 'dd/MM/yyyy'),
         hora: format(agora, 'HH:mm'),
         status: 'aberto',
         tipo_reposicao: 'pos_rota',
-        causa: `SOBRA EM ROTA - ${tipoLabel.toUpperCase()}`,
+        causa: 'SOBRAS',
         mapa: mapa.trim(),
         nota_fiscal: notaFiscal.trim() || null,
-        codigo_pdv: precisaPdv ? codigoPdv.trim() : null,
+        codigo_pdv: codigoPdv.trim() || null,
         motorista_id: motorista.id,
         motorista_nome: motorista.nome,
         motorista_codigo: motorista.codigo,
         motorista_whatsapp: motorista.whatsapp || null,
         motorista_email: motorista.email || null,
         motorista_unidade: motorista.unidade,
-        observacao_geral: observacao.trim() || null,
-        fotos_protocolo: { fotosSobra: fotosUrls },
+        observacao_geral: observacao.trim() || `Placa: ${placa.trim().toUpperCase()}`,
+        produtos: produtosPayload,
+        fotos_protocolo: { fotosSobra: fotosUrls, placa: placa.trim().toUpperCase() },
         observacoes_log: JSON.stringify([{
           id: crypto.randomUUID(),
           usuarioNome: motorista.nome,
@@ -221,7 +239,7 @@ export function PosRota({ motorista }: PosRotaProps) {
           data: format(agora, 'dd/MM/yyyy'),
           hora: format(agora, 'HH:mm'),
           acao: 'Registrou pós-rota',
-          texto: `Sobra em rota - ${tipoLabel}${precisaPdv ? ` | PDV: ${codigoPdv.trim()}` : ''}${notaFiscal.trim() ? ` | NF: ${notaFiscal.trim()}` : ''} | ${fotosUrls.length} foto(s)`
+          texto: `Sobras | Placa: ${placa.trim().toUpperCase()} | ${produtosValidos.length} produto(s)${codigoPdv.trim() ? ` | PDV: ${codigoPdv.trim()}` : ''}${notaFiscal.trim() ? ` | NF: ${notaFiscal.trim()}` : ''} | ${fotosUrls.length} foto(s)`
         }]),
       });
 
@@ -233,10 +251,12 @@ export function PosRota({ motorista }: PosRotaProps) {
         registro_id: numero,
         registro_dados: {
           numero,
-          tipo: tipoLabel,
+          tipo: 'Sobras',
+          placa: placa.trim().toUpperCase(),
           mapa: mapa.trim(),
-          codigo_pdv: precisaPdv ? codigoPdv.trim() : null,
+          codigo_pdv: codigoPdv.trim() || null,
           nota_fiscal: notaFiscal.trim() || null,
+          produtos: produtosValidos.length,
           fotos_count: fotosUrls.length,
         },
         usuario_nome: motorista.nome,
@@ -246,23 +266,25 @@ export function PosRota({ motorista }: PosRotaProps) {
 
       setNumeroProtocolo(numero);
       setDadosProtocoloCriado({
-        tipo: tipoLabel,
         mapa: mapa.trim(),
-        codigoPdv: precisaPdv ? codigoPdv.trim() : '',
+        placa: placa.trim().toUpperCase(),
+        codigoPdv: codigoPdv.trim(),
         notaFiscal: notaFiscal.trim(),
         observacao: observacao.trim(),
         fotosCount: fotosUrls.length,
         data: format(agora, 'dd/MM/yyyy'),
         hora: format(agora, 'HH:mm'),
+        produtos: produtosValidos,
       });
-      // Send webhook to n8n (same endpoint as protocol creation)
+
       const webhookPayload = {
         tipo: 'pos_rota',
         numero,
         data: format(agora, 'dd/MM/yyyy'),
         hora: format(agora, 'HH:mm:ss'),
         mapa: mapa.trim(),
-        codigoPdv: precisaPdv ? codigoPdv.trim() : '',
+        placa: placa.trim().toUpperCase(),
+        codigoPdv: codigoPdv.trim() || '',
         notaFiscal: notaFiscal.trim() || '',
         motoristaNome: motorista.nome,
         motoristaCodigo: motorista.codigo,
@@ -270,8 +292,8 @@ export function PosRota({ motorista }: PosRotaProps) {
         motoristaEmail: motorista.email || '',
         unidade: motorista.unidade || '',
         tipoReposicao: 'POS_ROTA',
-        causa: `SOBRA EM ROTA - ${tipoLabel.toUpperCase()}`,
-        produtos: [],
+        causa: 'SOBRAS',
+        produtos: produtosPayload,
         fotos: { fotosSobra: fotosUrls },
         observacaoGeral: observacao.trim() || '',
       };
@@ -290,7 +312,7 @@ export function PosRota({ motorista }: PosRotaProps) {
 
       toast({
         title: 'Pós-Rota registrado!',
-        description: `Registro ${numero} criado com ${fotosUrls.length} foto(s).`,
+        description: `Registro ${numero} criado com ${produtosValidos.length} produto(s) e ${fotosUrls.length} foto(s).`,
       });
 
       try {
@@ -303,10 +325,12 @@ export function PosRota({ motorista }: PosRotaProps) {
             motorista_nome: motorista.nome,
             motorista_unidade: motorista.unidade,
             mapa: mapa.trim(),
-            tipo: tipoLabel,
-            codigo_pdv: precisaPdv ? codigoPdv.trim() : undefined,
+            placa: placa.trim().toUpperCase(),
+            tipo: 'Sobras',
+            codigo_pdv: codigoPdv.trim() || undefined,
             nota_fiscal: notaFiscal.trim() || undefined,
             observacao: observacao.trim() || undefined,
+            produtos_count: produtosValidos.length,
             fotos_count: fotosUrls.length,
             data: format(agora, 'dd/MM/yyyy'),
             hora: format(agora, 'HH:mm'),
@@ -335,14 +359,19 @@ export function PosRota({ motorista }: PosRotaProps) {
       ``,
       `*Protocolo:* ${numeroProtocolo}`,
       ``,
-      `*Tipo:* ${d.tipo}`,
-      `*Causa:* SOBRA EM ROTA - ${d.tipo.toUpperCase()}`,
+      `*Tipo:* Sobras`,
+      `*Placa:* ${d.placa}`,
       ``,
       `*Data:* ${d.data} as ${d.hora}`,
       `*Mapa:* ${d.mapa}`,
       ...(d.codigoPdv ? [`*Cod. PDV:* ${d.codigoPdv}`] : []),
       ...(d.notaFiscal ? [`*NF:* ${d.notaFiscal}`] : []),
       ``,
+      ...(d.produtos.length > 0 ? [
+        `*Produtos:*`,
+        ...d.produtos.map(p => `  - ${p.nome} (${p.quantidade} ${p.unidade})`),
+        ``,
+      ] : []),
       `*Motorista:* ${motorista.nome}`,
       `*Unidade:* ${motorista.unidade || ''}`,
       ``,
@@ -426,7 +455,11 @@ export function PosRota({ motorista }: PosRotaProps) {
                 <div className="bg-muted/30 rounded-lg p-3 space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tipo</span>
-                    <span className="font-medium">{dadosProtocoloCriado.tipo}</span>
+                    <span className="font-medium">Sobras</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Placa</span>
+                    <span className="font-medium">{dadosProtocoloCriado.placa}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Mapa</span>
@@ -658,14 +691,26 @@ export function PosRota({ motorista }: PosRotaProps) {
                 </h3>
               </div>
               <div className="p-3.5 space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Mapa *</Label>
-                  <Input
-                    placeholder="Número do mapa"
-                    value={mapa}
-                    onChange={(e) => setMapa(e.target.value)}
-                    className="h-11 text-sm"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-muted-foreground">Mapa *</Label>
+                    <Input
+                      placeholder="Número do mapa"
+                      value={mapa}
+                      onChange={(e) => setMapa(e.target.value)}
+                      className="h-11 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-medium text-muted-foreground">Placa do Veículo *</Label>
+                    <Input
+                      placeholder="Ex: ABC1D23"
+                      value={placa}
+                      onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+                      maxLength={7}
+                      className="h-11 text-sm uppercase"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal</Label>
@@ -679,61 +724,95 @@ export function PosRota({ motorista }: PosRotaProps) {
               </div>
             </div>
 
-            {/* Tipo e Causa */}
+            {/* Produtos */}
+            <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-border/30 bg-muted/20">
+                <h3 className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
+                  <ShoppingCart className="w-3.5 h-3.5 text-primary" />
+                  Produtos *
+                </h3>
+              </div>
+              <div className="p-3.5 space-y-2.5">
+                {produtos.map((produto, index) => (
+                  <div key={index} className="space-y-2 p-2.5 bg-muted/20 rounded-lg border border-border/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-medium text-muted-foreground">Produto {index + 1}</span>
+                      {produtos.length > 1 && (
+                        <button type="button" onClick={() => removeProduto(index)} className="text-destructive hover:text-destructive/80">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <ProdutoAutocomplete
+                      value={produto.nome}
+                      onChange={(value) => {
+                        updateProduto(index, 'nome', value);
+                      }}
+                      placeholder="Buscar produto..."
+                      className="h-10 text-sm"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Qtd *</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={produto.quantidade}
+                          onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
+                          className="h-10 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Unidade</Label>
+                        <Select value={produto.unidade} onValueChange={(val) => updateProduto(index, 'unidade', val)}>
+                          <SelectTrigger className="h-10 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="UN">UN</SelectItem>
+                            <SelectItem value="CX">CX</SelectItem>
+                            <SelectItem value="PCT">PCT</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={addProduto} className="w-full h-9 text-xs rounded-lg">
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Adicionar Produto
+                </Button>
+              </div>
+            </div>
+
+            {/* PDV e NF (opcionais) */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
               <div className="px-4 py-2.5 border-b border-border/30 bg-muted/20">
                 <h3 className="text-xs font-semibold flex items-center gap-2 text-foreground/80">
                   <Tag className="w-3.5 h-3.5 text-primary" />
-                  Tipo — Sobra em Rota
+                  PDV e Nota Fiscal (opcional)
                 </h3>
               </div>
               <div className="p-3.5 space-y-3">
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Tipo *</Label>
-                  <Select value={tipo} onValueChange={handleTipoChange}>
-                    <SelectTrigger className="h-11 text-sm truncate text-left gap-2">
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIPOS_POS_ROTA.map((t) => (
-                        <SelectItem key={t.value} value={t.value} className="text-sm">
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs font-medium text-muted-foreground">Código do PDV</Label>
+                  <PdvAutocomplete
+                    value={codigoPdv}
+                    onChange={handlePdvChange}
+                    unidade={motorista.unidade}
+                    placeholder="Buscar PDV..."
+                    className="h-11 text-sm"
+                  />
                 </div>
-
-                {precisaPdv && (
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-muted-foreground">Código do PDV *</Label>
-                    <PdvAutocomplete
-                      value={codigoPdv}
-                      onChange={handlePdvChange}
-                      unidade={motorista.unidade}
-                      placeholder="Buscar PDV..."
-                      className="h-11 text-sm"
-                    />
-                    {codigoPdv && !pdvSelecionado && (
-                      <p className="text-[11px] text-amber-600 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        Selecione um PDV da lista
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {precisaNF && (
-                  <div className="space-y-1">
-                    <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal do PDV</Label>
-                    <Input
-                      placeholder="NF relacionada ao PDV"
-                      value={notaFiscal}
-                      onChange={(e) => setNotaFiscal(e.target.value)}
-                      className="h-11 text-sm"
-                    />
-                  </div>
-                )}
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal</Label>
+                  <Input
+                    placeholder="NF relacionada"
+                    value={notaFiscal}
+                    onChange={(e) => setNotaFiscal(e.target.value)}
+                    className="h-11 text-sm"
+                  />
+                </div>
               </div>
             </div>
 
