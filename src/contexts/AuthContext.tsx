@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserRole = useCallback(async (userId: string): Promise<UserRole | null> => {
     try {
       const { data, error } = await withTimeout(
-        supabase.rpc('get_user_role', { _user_id: userId }).then(r => r),
+        Promise.resolve(supabase.rpc('get_user_role', { _user_id: userId })),
         2500,
       );
       if (error) throw error;
@@ -141,12 +141,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const [profileResult, roleResult] = await Promise.allSettled([
         withTimeout(
-          supabase
-            .from('user_profiles')
-            .select('id, nome, user_email, nivel, unidade')
-            .eq('user_email', authUser.email!)
-            .maybeSingle()
-            .then(r => r),
+          Promise.resolve(
+            supabase
+              .from('user_profiles')
+              .select('id, nome, user_email, nivel, unidade')
+              .eq('user_email', authUser.email!)
+              .maybeSingle()
+          ),
           2500,
         ),
         fetchUserRole(authUser.id),
