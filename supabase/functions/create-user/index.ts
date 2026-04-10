@@ -42,18 +42,20 @@ Deno.serve(async (req) => {
 
     if (authError) {
       if (authError.message.includes('already been registered')) {
-        // User already exists in Auth — find by email directly
-        const { data: userData, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(email)
+        // User already exists in Auth — find by email via listUsers
+        const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers()
         
-        if (getUserError || !userData?.user) {
-          console.error('Failed to find existing user:', getUserError?.message)
+        const existingUser = listData?.users?.find((u: { email?: string }) => u.email === email)
+        
+        if (listError || !existingUser) {
+          console.error('Failed to find existing user:', listError?.message)
           return jsonResponse({ 
             error: 'Já existe um usuário com este email no sistema de autenticação.',
             reason: 'EMAIL_EXISTS'
           })
         }
 
-        userId = userData.user.id
+        userId = existingUser.id
 
         // Upsert profile
         const { data: profileExists } = await supabaseAdmin
