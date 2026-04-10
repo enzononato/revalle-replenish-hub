@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { classifyAuthError, friendlyMessage, withRetry } from '@/lib/authErrorHandling';
+import { classifyAuthError, friendlyMessage } from '@/lib/authErrorHandling';
 
 const AUTH_USER_CACHE_KEY = 'auth_user_cache_v1';
 const APP_ROLES: UserRole[] = ['admin', 'distribuicao', 'conferente', 'controle'];
@@ -11,12 +11,15 @@ const APP_ROLES: UserRole[] = ['admin', 'distribuicao', 'conferente', 'controle'
 const isValidRole = (value: unknown): value is UserRole =>
   typeof value === 'string' && APP_ROLES.includes(value as UserRole);
 
-const readCachedUser = (): Partial<AppUser> | null => {
+const readCachedUser = (): AppUser | null => {
   try {
     const cached = localStorage.getItem(AUTH_USER_CACHE_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached);
-    return parsed && typeof parsed === 'object' ? (parsed as Partial<AppUser>) : null;
+    if (parsed && typeof parsed === 'object' && parsed.id && parsed.email && isValidRole(parsed.nivel)) {
+      return parsed as AppUser;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -47,7 +50,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const buildFallbackUser = (authUser: User, cachedUser?: Partial<AppUser> | null, roleOverride?: UserRole): AppUser => {
+const buildFallbackUser = (authUser: User, cachedUser?: AppUser | null, roleOverride?: UserRole): AppUser => {
   const cachedRole = cachedUser?.email === authUser.email && isValidRole(cachedUser?.nivel)
     ? cachedUser.nivel
     : undefined;
@@ -61,7 +64,7 @@ const buildFallbackUser = (authUser: User, cachedUser?: Partial<AppUser> | null,
   };
 };
 
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs = 9000): Promise<T> => {
+const withTimeout = <T,>(promise: Promise<T>, timeoutMs = 5000): Promise<T> => {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject(new Error('Timeout ao carregar sessão/perfil'));
@@ -105,6 +108,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const { registrarLog } = useAuditLog();
 
+  // Flag to skip onAuthStateChange profile fetch when login already handled it
+  const skipNextAuthEvent = useRef(false);
+
   useEffect(() => {
     if (user) {
       localStorage.setItem(AUTH_USER_CACHE_KEY, JSON.stringify(user));
@@ -113,46 +119,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(AUTH_USER_CACHE_KEY);
   }, [user]);
 
+  // Fetch role from user_roles table (no retry — single fast attempt)
   const fetchUserRole = useCallback(async (userId: string): Promise<UserRole | null> => {
     try {
-      const roleValue = await withTimeout(
-        withRetry(async () => {
-          const { data, error } = await supabase.rpc('get_user_role', { _user_id: userId });
-          if (error) throw error;
-          return data;
-        }, 1, 300),
-        3500,
+      const { data, error } = await withTimeout(
+        supabase.rpc('get_user_role', { _user_id: userId }),
+        2500,
       );
-
-      return isValidRole(roleValue) ? roleValue : null;
+      if (error) throw error;
+      return isValidRole(data) ? data : null;
     } catch (error) {
       console.warn('Falha ao buscar role em user_roles:', error);
       return null;
     }
   }, []);
 
-  // Buscar perfil do usuário no banco
+  // Fetch user profile — single attempt, no retry, tight timeout
   const fetchUserProfile = useCallback(async (authUser: User): Promise<AppUser> => {
     const cachedUser = readCachedUser();
 
     try {
       const [profileResult, roleResult] = await Promise.allSettled([
         withTimeout(
-          withRetry(async () => {
-            const { data, error } = await supabase
-              .from('user_profiles')
-              .select('id, nome, user_email, nivel, unidade')
-              .eq('user_email', authUser.email)
-              .maybeSingle();
-            if (error) throw error;
-            return data;
-          }, 1, 300),
-          3500,
+          supabase
+            .from('user_profiles')
+            .select('id, nome, user_email, nivel, unidade')
+            .eq('user_email', authUser.email)
+            .maybeSingle(),
+          2500,
         ),
         fetchUserRole(authUser.id),
       ]);
 
-      const profile = profileResult.status === 'fulfilled' ? profileResult.value : null;
+      const profileResponse = profileResult.status === 'fulfilled' ? profileResult.value : null;
+      const profile = profileResponse && 'data' in profileResponse ? profileResponse.data : null;
       const roleFromTable = roleResult.status === 'fulfilled' ? roleResult.value : null;
 
       if (profileResult.status === 'rejected') {
@@ -183,35 +183,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchUserRole]);
 
-  // Inicialização - verificar sessão existente sem flicker/redirect indevido
+  // Initialization
   useEffect(() => {
     let isMounted = true;
-    let isInitializing = true;
+
+    // 1. Instantly show cached user to eliminate loading flash
+    const cachedUser = readCachedUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!isMounted) return;
 
       setSession(newSession);
 
-      // Durante bootstrap, quem decide estado final é getSession()
-      if (isInitializing && event === 'INITIAL_SESSION') return;
+      // Skip if login() already handled this
+      if (skipNextAuthEvent.current) {
+        skipNextAuthEvent.current = false;
+        return;
+      }
+
+      // During INITIAL_SESSION, let initializeSession handle it
+      if (event === 'INITIAL_SESSION') return;
 
       if (newSession?.user) {
-        setTimeout(() => {
-          fetchUserProfile(newSession.user)
-            .then(profile => {
-              if (!isMounted) return;
-              setUser(profile);
-            })
-            .catch((err) => {
-              console.warn('Erro ao hidratar perfil no evento auth, aplicando fallback:', err);
-              if (!isMounted) return;
-              setUser(buildFallbackUser(newSession.user));
-            })
-            .finally(() => {
-              if (isMounted) setIsLoading(false);
-            });
-        }, 0);
+        fetchUserProfile(newSession.user)
+          .then(profile => {
+            if (isMounted) setUser(profile);
+          })
+          .catch((err) => {
+            console.warn('Erro ao hidratar perfil no evento auth:', err);
+            if (isMounted) setUser(buildFallbackUser(newSession.user));
+          })
+          .finally(() => {
+            if (isMounted) setIsLoading(false);
+          });
       } else {
         setUser(null);
         setIsLoading(false);
@@ -221,11 +225,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeSession = async () => {
       try {
         const { data: { session: existingSession }, error: sessionError } = await withTimeout(
-          supabase.auth.getSession()
+          supabase.auth.getSession(),
+          5000,
         );
         if (!isMounted) return;
 
-        // Se houve erro ao restaurar sessão (token inválido/expirado), limpar tudo
         if (sessionError) {
           console.warn('Sessão inválida, limpando:', sessionError.message);
           await supabase.auth.signOut();
@@ -237,22 +241,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(existingSession);
 
         if (existingSession?.user) {
-          const profile = await fetchUserProfile(existingSession.user);
-          if (!isMounted) return;
-          setUser(profile);
+          // If we have a valid cache for this user, show it immediately and refresh in background
+          if (cachedUser && cachedUser.email === existingSession.user.email) {
+            setUser(cachedUser);
+            setIsLoading(false);
+
+            // Background refresh — update silently
+            fetchUserProfile(existingSession.user)
+              .then(freshProfile => {
+                if (isMounted) setUser(freshProfile);
+              })
+              .catch(() => { /* cache is already showing, ignore */ });
+          } else {
+            // No valid cache — fetch then show
+            const profile = await fetchUserProfile(existingSession.user);
+            if (isMounted) setUser(profile);
+          }
         } else {
           setUser(null);
         }
       } catch (err) {
         console.error('Erro ao inicializar sessão:', err);
-        // Em caso de erro inesperado, garantir que não fique travado
         if (isMounted) {
+          // If we had a cached user but getSession timed out, still try to show something
+          // but mark as not authenticated since session is unknown
           setSession(null);
           setUser(null);
         }
       } finally {
         if (isMounted) setIsLoading(false);
-        isInitializing = false;
       }
     };
 
@@ -266,15 +283,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await withRetry(async () => {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        return data;
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
 
-      if (result.user) {
-        const profile = await fetchUserProfile(result.user);
+      if (data.user) {
+        // Tell onAuthStateChange to skip its fetch — we handle it here
+        skipNextAuthEvent.current = true;
+
+        const profile = await fetchUserProfile(data.user);
         setUser(profile);
+        setSession(data.session);
+
+        // Non-blocking audit log
         void registrarLog({
           acao: 'login',
           tabela: 'sessao',
@@ -296,7 +316,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     if (user) {
-      // Registrar log de logout
       void registrarLog({
         acao: 'logout',
         tabela: 'sessao',
