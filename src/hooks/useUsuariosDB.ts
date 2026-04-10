@@ -59,26 +59,33 @@ export function useUsuariosDB() {
       });
 
       if (error) {
-        throw new Error(error.message || 'Erro ao criar usuário');
+        // Edge function returned non-2xx — extract message from error context
+        const msg = error.message || 'Erro ao criar usuário';
+        throw new Error(msg);
       }
 
       if (data?.error) {
-        throw new Error(data.error);
+        throw new Error(data.reason === 'EMAIL_EXISTS' ? 'EMAIL_EXISTS' : data.error);
       }
 
       if (data?.skipped && data?.reason === 'EMAIL_EXISTS') {
-        throw new Error('EMAIL_EXISTS');
+        // User existed but was updated successfully
+        return { success: true, updated: true };
       }
 
       return { success: true };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast.success('Usuário criado com sucesso! Ele já pode fazer login.');
+      if (result?.updated) {
+        toast.success('Usuário já existia e foi atualizado com sucesso!');
+      } else {
+        toast.success('Usuário criado com sucesso! Ele já pode fazer login.');
+      }
     },
     onError: (error: Error) => {
       if (error.message === 'EMAIL_EXISTS') {
-        toast.error('Já existe um usuário com este email');
+        toast.error('Já existe um usuário com este email mas não foi possível atualizá-lo.');
       } else {
         toast.error('Erro ao criar usuário: ' + (error.message || 'Erro desconhecido'));
       }
