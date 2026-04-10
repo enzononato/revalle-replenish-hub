@@ -229,10 +229,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeSession = async () => {
       try {
-        const { data: { session: existingSession }, error: sessionError } = await withTimeout(
+        const result = await withTimeout(
           supabase.auth.getSession(),
           5000,
         );
+        const existingSession = result.data?.session ?? null;
+        const sessionError = result.error;
         if (!isMounted) return;
 
         if (sessionError) {
