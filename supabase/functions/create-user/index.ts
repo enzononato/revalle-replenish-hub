@@ -5,6 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status,
+  })
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -14,24 +21,16 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
     const { email, password, nome, nivel, unidades } = await req.json()
 
     if (!email || !password || !nome || !nivel || !unidades) {
-      return new Response(
-        JSON.stringify({ error: 'Campos obrigatórios faltando' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      )
+      return jsonResponse({ error: 'Campos obrigatórios faltando' }, 400)
     }
 
-    // Tentar criar usuário
+    // Try to create user in Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -43,20 +42,20 @@ Deno.serve(async (req) => {
 
     if (authError) {
       if (authError.message.includes('already been registered')) {
-        // Usuário já existe no auth — buscar o ID dele
-        const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
-        const existing = listData?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+        // User already exists in Auth — find by email directly
+        const { data: userData, error: getUserError } = await supabaseAdmin.auth.admin.getUserByEmail(email)
         
-        if (!existing) {
-          return new Response(
-            JSON.stringify({ error: 'Usuário reportado como existente mas não encontrado' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-          )
+        if (getUserError || !userData?.user) {
+          console.error('Failed to find existing user:', getUserError?.message)
+          return jsonResponse({ 
+            error: 'Já existe um usuário com este email no sistema de autenticação.',
+            reason: 'EMAIL_EXISTS'
+          })
         }
 
-        userId = existing.id
+        userId = userData.user.id
 
-        // Garantir que o user_profile existe
+        // Upsert profile
         const { data: profileExists } = await supabaseAdmin
           .from('user_profiles')
           .select('id')
@@ -78,7 +77,7 @@ Deno.serve(async (req) => {
           }).eq('user_email', email)
         }
 
-        // Garantir que o user_role existe
+        // Upsert role
         const { data: roleExists } = await supabaseAdmin
           .from('user_roles')
           .select('id')
@@ -96,50 +95,39 @@ Deno.serve(async (req) => {
           }).eq('user_id', userId)
         }
 
-        return new Response(
-          JSON.stringify({ success: true, userId, skipped: true, reason: 'EMAIL_EXISTS' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-        )
+        return jsonResponse({ success: true, userId, skipped: true, reason: 'EMAIL_EXISTS' })
       }
-      throw authError
+      
+      // Other auth error
+      console.error('Auth error:', authError.message)
+      return jsonResponse({ error: authError.message })
     }
 
     if (!authData.user) {
-      throw new Error('Falha ao criar usuário')
+      return jsonResponse({ error: 'Falha ao criar usuário' })
     }
 
     userId = authData.user.id
 
-    // Aguardar o trigger criar o user_profile
+    // Wait for trigger to create user_profile
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // Atualizar o user_profile
+    // Update the user_profile
     await supabaseAdmin
       .from('user_profiles')
-      .update({
-        nome,
-        nivel,
-        unidade: unidades.join(', ')
-      })
+      .update({ nome, nivel, unidade: unidades.join(', ') })
       .eq('user_email', email)
 
-    // Criar role do usuário
+    // Create user role
     await supabaseAdmin
       .from('user_roles')
-      .insert({
-        user_id: userId,
-        role: nivel
-      })
+      .insert({ user_id: userId, role: nivel })
 
-    return new Response(
-      JSON.stringify({ success: true, userId }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return jsonResponse({ success: true, userId })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Erro desconhecido'
-    return new Response(
-      JSON.stringify({ error: message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-    )
+    console.error('Unhandled error in create-user:', message)
+    // Always return 200 with error in body so frontend can read the message
+    return jsonResponse({ error: message })
   }
 })
