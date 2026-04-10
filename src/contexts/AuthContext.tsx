@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserRole = useCallback(async (userId: string): Promise<UserRole | null> => {
     try {
       const { data, error } = await withTimeout(
-        supabase.rpc('get_user_role', { _user_id: userId }),
+        supabase.rpc('get_user_role', { _user_id: userId }).then(r => r),
         2500,
       );
       if (error) throw error;
@@ -144,22 +144,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           supabase
             .from('user_profiles')
             .select('id, nome, user_email, nivel, unidade')
-            .eq('user_email', authUser.email)
-            .maybeSingle(),
+            .eq('user_email', authUser.email!)
+            .maybeSingle()
+            .then(r => r),
           2500,
         ),
         fetchUserRole(authUser.id),
       ]);
 
       const profileResponse = profileResult.status === 'fulfilled' ? profileResult.value : null;
-      const profile = profileResponse && 'data' in profileResponse ? profileResponse.data : null;
+      const profile = profileResponse?.data ?? null;
       const roleFromTable = roleResult.status === 'fulfilled' ? roleResult.value : null;
 
       if (profileResult.status === 'rejected') {
         console.warn('Erro ao buscar perfil, aplicando fallback parcial:', profileResult.reason);
       }
+      if (profileResponse?.error) {
+        console.warn('Erro DB ao buscar perfil:', profileResponse.error.message);
+      }
 
-      const roleFromProfile = isValidRole(profile?.nivel) ? (profile.nivel as UserRole) : null;
+      const roleFromProfile = profile && isValidRole(profile.nivel) ? (profile.nivel as UserRole) : null;
       const cachedRole = cachedUser?.email === authUser.email && isValidRole(cachedUser?.nivel)
         ? cachedUser.nivel
         : null;
