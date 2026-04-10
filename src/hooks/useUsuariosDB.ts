@@ -75,13 +75,17 @@ export function useUsuariosDB() {
 
       return { success: true };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] });
-      toast.success('Usuário criado com sucesso! Ele já pode fazer login.');
+      if (result?.updated) {
+        toast.success('Usuário já existia e foi atualizado com sucesso!');
+      } else {
+        toast.success('Usuário criado com sucesso! Ele já pode fazer login.');
+      }
     },
     onError: (error: Error) => {
       if (error.message === 'EMAIL_EXISTS') {
-        toast.error('Já existe um usuário com este email');
+        toast.error('Já existe um usuário com este email mas não foi possível atualizá-lo.');
       } else {
         toast.error('Erro ao criar usuário: ' + (error.message || 'Erro desconhecido'));
       }
