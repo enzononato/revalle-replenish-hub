@@ -251,7 +251,7 @@ export function BuscarProtocoloPdv({
                                   {(prod as any).cod ? `${(prod as any).cod} – ` : ''}{(prod as any).produto || (prod as any).nome || 'Produto'}
                                 </p>
                                 <p className="text-muted-foreground text-[10px]">
-                                  Qtd: {(prod as any).quantidade || (prod as any).qtd || '—'} {(prod as any).embalagem || ''}
+                                  Qtd: {(prod as any).quantidade || (prod as any).qtd || '—'} — {(prod as any).unidade || (prod as any).embalagem || 'UN'}
                                 </p>
                               </div>
                             );
