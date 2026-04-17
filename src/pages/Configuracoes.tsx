@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin, Store, Database, Loader2, Camera } from 'lucide-react';
+import { MessageSquare, Key, Clock, Building, Download, Save, Package, Users, FileText, MapPin, Store, Database, Loader2, Camera, ShieldCheck } from 'lucide-react';
+import { SyncOrphanUsers } from '@/components/SyncOrphanUsers';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import JSZip from 'jszip';
@@ -343,6 +344,10 @@ export default function Configuracoes() {
           <TabsTrigger value="backup" className="gap-1.5 text-xs">
             <Database size={14} />
             Backup
+          </TabsTrigger>
+          <TabsTrigger value="sync-users" className="gap-1.5 text-xs">
+            <ShieldCheck size={14} />
+            Sync Usuários
           </TabsTrigger>
         </TabsList>
 

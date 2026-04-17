@@ -262,7 +262,7 @@ export function SyncOrphanUsers() {
             <div>
               <Label>Unidades</Label>
               <MultiSelectUnidade
-                unidades={unidades.map(u => u.nome)}
+                unidades={unidades.map(u => ({ id: u.id, nome: u.nome }))}
                 selected={unidadesSel}
                 onChange={setUnidadesSel}
               />
