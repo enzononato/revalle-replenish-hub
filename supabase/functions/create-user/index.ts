@@ -42,15 +42,33 @@ Deno.serve(async (req) => {
 
     if (authError) {
       if (authError.message.includes('already been registered')) {
-        // User already exists in Auth — find by email via listUsers
-        const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers()
-        
-        const existingUser = listData?.users?.find((u: { email?: string }) => u.email === email)
-        
-        if (listError || !existingUser) {
-          console.error('Failed to find existing user:', listError?.message)
+        // User already exists in Auth — paginate listUsers to find by email
+        let existingUser: { id: string; email?: string } | undefined
+        let page = 1
+        const perPage = 1000
+        const emailLower = email.toLowerCase()
+
+        while (!existingUser) {
+          const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage })
+
+          if (listError) {
+            console.error('listUsers error on page', page, ':', listError.message)
+            break
+          }
+
+          const users = listData?.users ?? []
+          existingUser = users.find((u: { email?: string }) => u.email?.toLowerCase() === emailLower)
+
+          if (existingUser || users.length < perPage) break
+          page += 1
+          if (page > 20) break // safety: max 20k users
+        }
+
+        if (!existingUser) {
+          console.error('User not found in Auth pagination for email:', email)
+          // Try updating password to "reset" — maybe email exists but unfindable; ask user to use different email
           return jsonResponse({ 
-            error: 'Já existe um usuário com este email no sistema de autenticação.',
+            error: 'Este email já está cadastrado no sistema de autenticação mas não foi possível localizar o registro. Entre em contato com o suporte.',
             reason: 'EMAIL_EXISTS'
           })
         }
