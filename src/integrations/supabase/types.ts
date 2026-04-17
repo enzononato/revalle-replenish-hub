@@ -145,6 +145,33 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_sync_errors: {
+        Row: {
+          created_at: string
+          error_context: string | null
+          error_message: string
+          id: string
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_context?: string | null
+          error_message: string
+          id?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_context?: string | null
+          error_message?: string
+          id?: string
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       chat_conversations: {
         Row: {
           created_at: string
