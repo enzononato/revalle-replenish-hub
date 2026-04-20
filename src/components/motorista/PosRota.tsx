@@ -769,9 +769,21 @@ export function PosRota({ motorista }: PosRotaProps) {
                             type="number"
                             min="1"
                             inputMode="numeric"
-                            value={produto.quantidade}
+                            value={produto.quantidade === 0 ? '' : produto.quantidade}
                             onFocus={(e) => e.target.select()}
-                            onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === '') {
+                                updateProduto(index, 'quantidade', 0);
+                              } else {
+                                const n = parseInt(v);
+                                if (!isNaN(n)) updateProduto(index, 'quantidade', n);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const n = parseInt(e.target.value);
+                              if (isNaN(n) || n < 1) updateProduto(index, 'quantidade', 1);
+                            }}
                             className="h-9 text-sm text-center w-14"
                           />
                           <Button
