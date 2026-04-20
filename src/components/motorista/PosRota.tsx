@@ -754,13 +754,36 @@ export function PosRota({ motorista }: PosRotaProps) {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Qtd *</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={produto.quantidade}
-                          onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
-                          className="h-10 text-sm"
-                        />
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-9 w-9 shrink-0"
+                            onClick={() => updateProduto(index, 'quantidade', Math.max(1, produto.quantidade - 1))}
+                            disabled={produto.quantidade <= 1}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min="1"
+                            inputMode="numeric"
+                            value={produto.quantidade}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => updateProduto(index, 'quantidade', parseInt(e.target.value) || 1)}
+                            className="h-9 text-sm text-center w-14"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-9 w-9 shrink-0"
+                            onClick={() => updateProduto(index, 'quantidade', produto.quantidade + 1)}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Unidade</Label>
