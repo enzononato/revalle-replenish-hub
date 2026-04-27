@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, RefreshCw, Loader2, AlertTriangle, CheckCircle2, RotateCcw, History, Download } from 'lucide-react';
+import { CalendarIcon, RefreshCw, Loader2, AlertTriangle, CheckCircle2, RotateCcw, History, Download, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +47,33 @@ export default function HistoricoEnvios() {
   const [errorLogs, setErrorLogs] = useState<HistoryLogRow[]>([]);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [editingPhone, setEditingPhone] = useState<Record<string, string>>({});
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClearErrors = async () => {
+    if (errorLogs.length === 0) return;
+    setIsClearing(true);
+    try {
+      const ids = errorLogs.map(r => r.id);
+      const { error } = await supabase
+        .from('alteracao_pedidos_log')
+        .update({ oculto: true })
+        .in('id', ids);
+
+      if (error) {
+        console.error('Erro ao ocultar erros:', error);
+        toast.error('Erro ao limpar registros');
+        return;
+      }
+
+      toast.success(`${ids.length} erro(s) ocultos do histórico!`);
+      await fetchHistory();
+    } catch (err) {
+      console.error('Erro ao limpar:', err);
+      toast.error('Erro ao limpar registros');
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   const fetchHistory = async () => {
     setIsLoading(true);
@@ -43,6 +81,7 @@ export default function HistoricoEnvios() {
       let query = supabase
         .from('alteracao_pedidos_log')
         .select('id, cod_pdv, nome_pdv, telefone_pdv, status_pedido, mensagem_cliente, sucesso, erro_mensagem, created_at')
+        .eq('oculto', false)
         .order('created_at', { ascending: false })
         .limit(500);
 
@@ -241,16 +280,49 @@ export default function HistoricoEnvios() {
                   Erros
                   <Badge variant="destructive" className="text-xs">{errorLogs.length}</Badge>
                 </CardTitle>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs px-2"
-                  onClick={handleDownloadErrorsCsv}
-                  disabled={errorLogs.length === 0}
-                >
-                  <Download className="h-3 w-3 mr-1" />
-                  CSV
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs px-2"
+                    onClick={handleDownloadErrorsCsv}
+                    disabled={errorLogs.length === 0}
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    CSV
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-7 text-xs px-2"
+                        disabled={errorLogs.length === 0 || isClearing}
+                      >
+                        {isClearing ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3 mr-1" />
+                        )}
+                        Limpar erros
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Limpar erros do histórico?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação irá remover {errorLogs.length} registro(s) com erro da lista. Os registros não serão excluídos do banco, apenas marcados como resolvidos. Deseja continuar?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearErrors}>
+                          Sim, limpar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="px-2 pb-2">

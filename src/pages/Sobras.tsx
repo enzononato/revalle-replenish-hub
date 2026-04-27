@@ -23,13 +23,15 @@ import {
 } from '@/components/ui/dialog';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send, Hash, Calendar, Route, Trash2 } from 'lucide-react';
+import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send, Hash, Calendar, Route, Trash2, Pencil, Save, X, Plus, Minus } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { ObservacaoLog } from '@/types';
 import { getDirectStorageUrl } from '@/utils/urlHelpers';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 
 interface SobraProtocolo {
   id: string;
@@ -48,7 +50,31 @@ interface SobraProtocolo {
   created_at: string | null;
   observacoes_log: unknown;
   fotos_protocolo: unknown;
+  produtos: unknown;
 }
+
+interface ProdutoSobra {
+  codigo?: string;
+  nome?: string;
+  unidade?: string;
+  quantidade?: number | string;
+  validade?: string;
+  observacao?: string;
+}
+
+const parseProdutos = (raw: unknown): ProdutoSobra[] => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw as ProdutoSobra[];
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 const STATUS_OPTIONS = [
   { value: 'todos', label: 'Todos' },
@@ -122,8 +148,115 @@ export default function Sobras() {
   const [comentario, setComentario] = useState('');
   const [enviandoComentario, setEnviandoComentario] = useState(false);
   const [excluindoSobra, setExcluindoSobra] = useState<string | null>(null);
+  const [editandoProdutos, setEditandoProdutos] = useState(false);
+  const [produtosEditados, setProdutosEditados] = useState<ProdutoSobra[]>([]);
+  const [salvandoProdutos, setSalvandoProdutos] = useState(false);
 
   const isAdmin = user?.nivel === 'admin';
+  const podeEditarProdutos = ['admin', 'controle', 'distribuicao'].includes(user?.nivel || '');
+
+  const formatarProdutoHistorico = (p: ProdutoSobra) =>
+    `${p.codigo || '-'} | ${p.nome || '-'} | ${p.quantidade ?? 0} ${p.unidade || '-'}${p.validade ? ` | val: ${p.validade}` : ''}${p.observacao ? ` | obs: ${p.observacao}` : ''}`;
+
+  const iniciarEdicaoProdutos = () => {
+    if (!detalheSobra) return;
+    setProdutosEditados(parseProdutos(detalheSobra.produtos));
+    setEditandoProdutos(true);
+  };
+
+  const cancelarEdicaoProdutos = () => {
+    setEditandoProdutos(false);
+    setProdutosEditados([]);
+  };
+
+  const updateProdutoEditado = (index: number, field: keyof ProdutoSobra, value: string | number) => {
+    setProdutosEditados(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
+  };
+
+  const updateProdutoAutocomplete = (index: number, displayValue: string, embalagem?: string) => {
+    const match = displayValue.match(/^(\d+)\s*-\s*(.+)$/);
+    setProdutosEditados(prev => prev.map((p, i) => i === index ? {
+      ...p,
+      codigo: match ? match[1] : '',
+      nome: match ? match[2] : displayValue,
+      unidade: ['UN', 'CX', 'PCT'].includes(p.unidade || '') ? p.unidade : (embalagem && ['UN', 'CX', 'PCT'].includes(embalagem) ? embalagem : 'UN'),
+    } : p));
+  };
+
+  const removerProdutoEditado = (index: number) => {
+    setProdutosEditados(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const adicionarProdutoEditado = () => {
+    setProdutosEditados(prev => [...prev, { codigo: '', nome: '', unidade: 'UN', quantidade: 1, validade: '' }]);
+  };
+
+  const handleSalvarProdutos = async () => {
+    if (!detalheSobra || !user) return;
+
+    const sanitizados = produtosEditados.map(p => ({
+      codigo: String(p.codigo || '').trim(),
+      nome: String(p.nome || '').trim(),
+      unidade: (() => { const u = String(p.unidade || '').trim().toUpperCase(); return u === 'UND' ? 'UN' : u; })(),
+      quantidade: Number(p.quantidade) || 1,
+      validade: String(p.validade || '').trim(),
+      observacao: String(p.observacao || '').trim() || undefined,
+    }));
+
+    const invalido = sanitizados.some(p => !p.nome || !['UN', 'CX', 'PCT'].includes(p.unidade) || p.quantidade <= 0);
+    if (invalido) {
+      toast.error('Preencha produto, unidade válida (UN, CX ou PCT) e quantidade > 0 em todos os itens.');
+      return;
+    }
+
+    setSalvandoProdutos(true);
+    try {
+      const antes = parseProdutos(detalheSobra.produtos).map(formatarProdutoHistorico);
+      const depois = sanitizados.map(formatarProdutoHistorico);
+
+      const logs = Array.isArray(detalheSobra.observacoes_log) ? detalheSobra.observacoes_log as ObservacaoLog[] : [];
+      const novoLog: ObservacaoLog = {
+        id: Date.now().toString(),
+        usuarioNome: user.nome || user.email || 'Usuário',
+        usuarioId: user.id,
+        data: format(new Date(), 'dd/MM/yyyy'),
+        hora: format(new Date(), 'HH:mm'),
+        acao: 'Alterou produtos da sobra',
+        texto: `Alteração de produtos. Antes: ${antes.length ? antes.join(' || ') : 'sem produtos'}. Depois: ${depois.length ? depois.join(' || ') : 'sem produtos'}.`,
+      };
+      const novosLogs = [...logs, novoLog];
+
+      const { error } = await supabase
+        .from('protocolos')
+        .update({
+          produtos: sanitizados as unknown as never,
+          observacoes_log: novosLogs as unknown as never,
+        })
+        .eq('id', detalheSobra.id);
+      if (error) throw error;
+
+      await registrarLog({
+        acao: 'edicao',
+        tabela: 'protocolos',
+        registro_id: detalheSobra.numero,
+        registro_dados: { campo: 'produtos', antes, depois },
+        usuario_nome: user.nome || user.email || 'Usuário',
+        usuario_role: user.nivel,
+        usuario_unidade: user.unidade,
+      });
+
+      setDetalheSobra({ ...detalheSobra, produtos: sanitizados, observacoes_log: novosLogs });
+      setSobras(prev => prev.map(s => s.id === detalheSobra.id ? { ...s, produtos: sanitizados, observacoes_log: novosLogs } : s));
+      setEditandoProdutos(false);
+      setProdutosEditados([]);
+      toast.success('Produtos atualizados!');
+    } catch (err) {
+      console.error('Erro ao salvar produtos:', err);
+      toast.error('Erro ao salvar produtos');
+    } finally {
+      setSalvandoProdutos(false);
+    }
+  };
 
   const handleExcluirSobra = async (sobra: SobraProtocolo) => {
     if (!isAdmin) return;
@@ -177,7 +310,7 @@ export default function Sobras() {
     try {
       let query = supabase
         .from('protocolos')
-        .select('id, numero, data, hora, status, causa, mapa, nota_fiscal, codigo_pdv, motorista_nome, motorista_unidade, motorista_codigo, observacao_geral, created_at, observacoes_log, fotos_protocolo', { count: 'exact' })
+        .select('id, numero, data, hora, status, causa, mapa, nota_fiscal, codigo_pdv, motorista_nome, motorista_unidade, motorista_codigo, observacao_geral, created_at, observacoes_log, fotos_protocolo, produtos', { count: 'exact' })
         .eq('tipo_reposicao', 'pos_rota')
         .eq('ativo', true)
         .order('created_at', { ascending: false });
@@ -538,6 +671,34 @@ export default function Sobras() {
                         </span>
                       </div>
 
+                      {/* Produtos informados pelo motorista */}
+                      {(() => {
+                        const produtos = parseProdutos(sobra.produtos);
+                        if (produtos.length === 0) return null;
+                        return (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {produtos.slice(0, 3).map((p, i) => (
+                              <Badge
+                                key={i}
+                                variant="secondary"
+                                className="text-xs font-normal max-w-[280px] truncate"
+                                title={`${p.codigo ? p.codigo + ' - ' : ''}${p.nome || ''} (${p.quantidade ?? '?'} ${p.unidade || ''})`}
+                              >
+                                <Package className="w-3 h-3 mr-1 shrink-0" />
+                                <span className="truncate">
+                                  {p.quantidade ?? '?'} {p.unidade || ''} · {p.nome || p.codigo || 'Produto'}
+                                </span>
+                              </Badge>
+                            ))}
+                            {produtos.length > 3 && (
+                              <Badge variant="secondary" className="text-xs font-normal">
+                                +{produtos.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       {/* Indicadores */}
                       {(fotosCount > 0 || logsCount > 0 || sobra.observacao_geral) && (
                         <div className="flex items-center gap-3 mt-2">
@@ -630,7 +791,7 @@ export default function Sobras() {
       )}
 
       {/* Modal de detalhes */}
-      <Dialog open={!!detalheSobra} onOpenChange={(open) => { if (!open) { setDetalheSobra(null); setComentario(''); } }}>
+      <Dialog open={!!detalheSobra} onOpenChange={(open) => { if (!open) { setDetalheSobra(null); setComentario(''); setEditandoProdutos(false); setProdutosEditados([]); } }}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -701,6 +862,174 @@ export default function Sobras() {
                   <p className="text-sm bg-muted/50 rounded-lg p-3">{detalheSobra.observacao_geral}</p>
                 </div>
               )}
+
+              {/* Produtos informados pelo motorista */}
+              {(() => {
+                const produtos = parseProdutos(detalheSobra.produtos);
+                const lista = editandoProdutos ? produtosEditados : produtos;
+                const isEncerrado = detalheSobra.status === 'encerrado';
+                if (produtos.length === 0 && !editandoProdutos) return null;
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Package className="w-3.5 h-3.5" />
+                        Produtos informados ({lista.length})
+                      </p>
+                      {podeEditarProdutos && !isEncerrado && (
+                        editandoProdutos ? (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs px-2"
+                              onClick={cancelarEdicaoProdutos}
+                              disabled={salvandoProdutos}
+                            >
+                              <X className="w-3.5 h-3.5 mr-1" />
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs px-2"
+                              onClick={handleSalvarProdutos}
+                              disabled={salvandoProdutos}
+                            >
+                              <Save className="w-3.5 h-3.5 mr-1" />
+                              Salvar
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs px-2"
+                            onClick={iniciarEdicaoProdutos}
+                          >
+                            <Pencil className="w-3.5 h-3.5 mr-1" />
+                            Editar
+                          </Button>
+                        )
+                      )}
+                    </div>
+
+                    {editandoProdutos ? (
+                      <div className="space-y-2">
+                        {produtosEditados.map((p, i) => (
+                          <div key={i} className="bg-muted/40 rounded-lg p-2.5 space-y-2 border border-border/40">
+                            <ProdutoAutocomplete
+                              value={p.codigo && p.nome ? `${p.codigo} - ${p.nome}` : (p.nome || '')}
+                              onChange={(v, emb) => updateProdutoAutocomplete(i, v, emb)}
+                              placeholder="Buscar produto"
+                              className="h-9 text-sm"
+                            />
+                            <div className="grid grid-cols-12 gap-2">
+                              <div className="col-span-5">
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 shrink-0"
+                                    onClick={() => updateProdutoEditado(i, 'quantidade', Math.max(1, (Number(p.quantidade) || 1) - 1))}
+                                    disabled={(Number(p.quantidade) || 1) <= 1}
+                                  >
+                                    <Minus className="w-4 h-4" />
+                                  </Button>
+                                  <Input
+                                    type="number"
+                                    inputMode="numeric"
+                                    value={p.quantidade === 0 || p.quantidade === '' ? '' : p.quantidade}
+                                    onChange={(e) => {
+                                      const v = e.target.value;
+                                      if (v === '') updateProdutoEditado(i, 'quantidade', 0);
+                                      else {
+                                        const n = parseInt(v);
+                                        if (!isNaN(n)) updateProdutoEditado(i, 'quantidade', n);
+                                      }
+                                    }}
+                                    onBlur={(e) => {
+                                      const n = parseInt(e.target.value);
+                                      if (isNaN(n) || n < 1) updateProdutoEditado(i, 'quantidade', 1);
+                                    }}
+                                    onFocus={(e) => e.target.select()}
+                                    className="h-9 text-sm text-center"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 shrink-0"
+                                    onClick={() => updateProdutoEditado(i, 'quantidade', (Number(p.quantidade) || 0) + 1)}
+                                  >
+                                    <Plus className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="col-span-5">
+                                <Select
+                                  value={['UN', 'CX', 'PCT'].includes(p.unidade || '') ? p.unidade : 'UN'}
+                                  onValueChange={(v) => updateProdutoEditado(i, 'unidade', v)}
+                                >
+                                  <SelectTrigger className="h-9 text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="UN">UN</SelectItem>
+                                    <SelectItem value="CX">CX</SelectItem>
+                                    <SelectItem value="PCT">PCT</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="col-span-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                                  onClick={() => removerProdutoEditado(i)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full h-8 text-xs"
+                          onClick={adicionarProdutoEditado}
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" />
+                          Adicionar produto
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {produtos.map((p, i) => (
+                          <div
+                            key={i}
+                            className="flex items-start justify-between gap-3 bg-muted/50 rounded-lg p-2.5 text-sm"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{p.nome || 'Produto sem nome'}</p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                                {p.codigo && <span className="font-mono">Cód {p.codigo}</span>}
+                                {p.validade && <span>Val: {p.validade}</span>}
+                                {p.observacao && <span className="italic">"{p.observacao}"</span>}
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="shrink-0 font-mono">
+                              {p.quantidade ?? '?'} {p.unidade || ''}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Fotos das sobras */}
               {(() => {
