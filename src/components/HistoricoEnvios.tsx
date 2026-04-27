@@ -279,16 +279,49 @@ export default function HistoricoEnvios() {
                   Erros
                   <Badge variant="destructive" className="text-xs">{errorLogs.length}</Badge>
                 </CardTitle>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs px-2"
-                  onClick={handleDownloadErrorsCsv}
-                  disabled={errorLogs.length === 0}
-                >
-                  <Download className="h-3 w-3 mr-1" />
-                  CSV
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs px-2"
+                    onClick={handleDownloadErrorsCsv}
+                    disabled={errorLogs.length === 0}
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    CSV
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-7 text-xs px-2"
+                        disabled={errorLogs.length === 0 || isClearing}
+                      >
+                        {isClearing ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3 w-3 mr-1" />
+                        )}
+                        Limpar erros
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Limpar erros do histórico?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação irá remover {errorLogs.length} registro(s) com erro da lista. Os registros não serão excluídos do banco, apenas marcados como resolvidos. Deseja continuar?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearErrors}>
+                          Sim, limpar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="px-2 pb-2">
