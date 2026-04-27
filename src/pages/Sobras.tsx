@@ -23,13 +23,15 @@ import {
 } from '@/components/ui/dialog';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send, Hash, Calendar, Route, Trash2 } from 'lucide-react';
+import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send, Hash, Calendar, Route, Trash2, Pencil, Save, X, Plus, Minus } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { ObservacaoLog } from '@/types';
 import { getDirectStorageUrl } from '@/utils/urlHelpers';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
 
 interface SobraProtocolo {
   id: string;
