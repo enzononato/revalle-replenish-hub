@@ -47,6 +47,33 @@ export default function HistoricoEnvios() {
   const [errorLogs, setErrorLogs] = useState<HistoryLogRow[]>([]);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [editingPhone, setEditingPhone] = useState<Record<string, string>>({});
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClearErrors = async () => {
+    if (errorLogs.length === 0) return;
+    setIsClearing(true);
+    try {
+      const ids = errorLogs.map(r => r.id);
+      const { error } = await supabase
+        .from('alteracao_pedidos_log')
+        .update({ sucesso: true, erro_mensagem: 'LIMPO_MANUALMENTE' })
+        .in('id', ids);
+
+      if (error) {
+        console.error('Erro ao limpar erros:', error);
+        toast.error('Erro ao limpar registros');
+        return;
+      }
+
+      toast.success(`${ids.length} erro(s) limpos do histórico!`);
+      await fetchHistory();
+    } catch (err) {
+      console.error('Erro ao limpar:', err);
+      toast.error('Erro ao limpar registros');
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   const fetchHistory = async () => {
     setIsLoading(true);
