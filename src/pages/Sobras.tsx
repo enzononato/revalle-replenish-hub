@@ -754,6 +754,40 @@ export default function Sobras() {
                 </div>
               )}
 
+              {/* Produtos informados pelo motorista */}
+              {(() => {
+                const produtos = parseProdutos(detalheSobra.produtos);
+                if (produtos.length === 0) return null;
+                return (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                      <Package className="w-3.5 h-3.5" />
+                      Produtos informados ({produtos.length})
+                    </p>
+                    <div className="space-y-1.5">
+                      {produtos.map((p, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start justify-between gap-3 bg-muted/50 rounded-lg p-2.5 text-sm"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{p.nome || 'Produto sem nome'}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                              {p.codigo && <span className="font-mono">Cód {p.codigo}</span>}
+                              {p.validade && <span>Val: {p.validade}</span>}
+                              {p.observacao && <span className="italic">"{p.observacao}"</span>}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="shrink-0 font-mono">
+                            {p.quantidade ?? '?'} {p.unidade || ''}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Fotos das sobras */}
               {(() => {
                 const fotos = detalheSobra.fotos_protocolo as Record<string, unknown> | null;
