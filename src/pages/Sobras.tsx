@@ -562,6 +562,34 @@ export default function Sobras() {
                         </span>
                       </div>
 
+                      {/* Produtos informados pelo motorista */}
+                      {(() => {
+                        const produtos = parseProdutos(sobra.produtos);
+                        if (produtos.length === 0) return null;
+                        return (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {produtos.slice(0, 3).map((p, i) => (
+                              <Badge
+                                key={i}
+                                variant="secondary"
+                                className="text-xs font-normal max-w-[280px] truncate"
+                                title={`${p.codigo ? p.codigo + ' - ' : ''}${p.nome || ''} (${p.quantidade ?? '?'} ${p.unidade || ''})`}
+                              >
+                                <Package className="w-3 h-3 mr-1 shrink-0" />
+                                <span className="truncate">
+                                  {p.quantidade ?? '?'} {p.unidade || ''} · {p.nome || p.codigo || 'Produto'}
+                                </span>
+                              </Badge>
+                            ))}
+                            {produtos.length > 3 && (
+                              <Badge variant="secondary" className="text-xs font-normal">
+                                +{produtos.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })()}
+
                       {/* Indicadores */}
                       {(fotosCount > 0 || logsCount > 0 || sobra.observacao_geral) && (
                         <div className="flex items-center gap-3 mt-2">
