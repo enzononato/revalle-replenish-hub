@@ -48,7 +48,31 @@ interface SobraProtocolo {
   created_at: string | null;
   observacoes_log: unknown;
   fotos_protocolo: unknown;
+  produtos: unknown;
 }
+
+interface ProdutoSobra {
+  codigo?: string;
+  nome?: string;
+  unidade?: string;
+  quantidade?: number | string;
+  validade?: string;
+  observacao?: string;
+}
+
+const parseProdutos = (raw: unknown): ProdutoSobra[] => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw as ProdutoSobra[];
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 const STATUS_OPTIONS = [
   { value: 'todos', label: 'Todos' },
