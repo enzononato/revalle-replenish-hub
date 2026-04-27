@@ -79,6 +79,7 @@ export type Database = {
           id: string
           mensagem_cliente: string | null
           nome_pdv: string | null
+          oculto: boolean
           status_pedido: string | null
           sucesso: boolean
           telefone_pdv: string | null
@@ -91,6 +92,7 @@ export type Database = {
           id?: string
           mensagem_cliente?: string | null
           nome_pdv?: string | null
+          oculto?: boolean
           status_pedido?: string | null
           sucesso?: boolean
           telefone_pdv?: string | null
@@ -103,6 +105,7 @@ export type Database = {
           id?: string
           mensagem_cliente?: string | null
           nome_pdv?: string | null
+          oculto?: boolean
           status_pedido?: string | null
           sucesso?: boolean
           telefone_pdv?: string | null
