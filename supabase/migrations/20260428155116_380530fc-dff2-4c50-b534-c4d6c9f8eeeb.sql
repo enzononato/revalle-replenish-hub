@@ -1,0 +1,1 @@
+UPDATE public.protocolos SET status = 'aberto' WHERE numero = 'POSROTA-2026042514515085';
