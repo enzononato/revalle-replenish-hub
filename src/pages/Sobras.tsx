@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send, Hash, Calendar, Route, Trash2, Pencil, Save, X, Plus, Minus } from 'lucide-react';
+import { Package, RefreshCw, Clock, CheckCircle, AlertTriangle, MapPin, FileText, Truck, Eye, ImageIcon, Warehouse, MessageSquare, Send, Hash, Calendar, Route, Trash2, Pencil, Save, X, Plus, Minus, ShieldCheck } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -32,6 +32,7 @@ import { getDirectStorageUrl } from '@/utils/urlHelpers';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { ProdutoAutocomplete } from '@/components/ProdutoAutocomplete';
+import { ConferenciaSobraSection } from '@/components/sobras/ConferenciaSobraSection';
 
 interface SobraProtocolo {
   id: string;
@@ -51,6 +52,13 @@ interface SobraProtocolo {
   observacoes_log: unknown;
   fotos_protocolo: unknown;
   produtos: unknown;
+  protocolo_origem_id: string | null;
+  conferencia_status: string | null;
+  confirmacao_conferente: unknown;
+  destino_final: string | null;
+  observacao_finalizacao: string | null;
+  finalizado_por_nome: string | null;
+  finalizado_em: string | null;
 }
 
 interface ProdutoSobra {
@@ -310,7 +318,7 @@ export default function Sobras() {
     try {
       let query = supabase
         .from('protocolos')
-        .select('id, numero, data, hora, status, causa, mapa, nota_fiscal, codigo_pdv, motorista_nome, motorista_unidade, motorista_codigo, observacao_geral, created_at, observacoes_log, fotos_protocolo, produtos', { count: 'exact' })
+        .select('id, numero, data, hora, status, causa, mapa, nota_fiscal, codigo_pdv, motorista_nome, motorista_unidade, motorista_codigo, observacao_geral, created_at, observacoes_log, fotos_protocolo, produtos, protocolo_origem_id, conferencia_status, confirmacao_conferente, destino_final, observacao_finalizacao, finalizado_por_nome, finalizado_em', { count: 'exact' })
         .eq('tipo_reposicao', 'pos_rota')
         .eq('ativo', true)
         .order('created_at', { ascending: false });
@@ -640,6 +648,25 @@ export default function Sobras() {
                         <Badge variant="outline" className={`text-xs ${getTipoBadgeColor(sobra.causa)}`}>
                           {getTipoFromCausa(sobra.causa)}
                         </Badge>
+                        {sobra.protocolo_origem_id && (
+                          <Badge
+                            variant="outline"
+                            className={
+                              sobra.conferencia_status === 'finalizado'
+                                ? 'text-xs border-green-500 text-green-600 bg-green-50 dark:bg-green-500/10'
+                                : sobra.conferencia_status === 'confirmado_conferente'
+                                ? 'text-xs border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-500/10'
+                                : 'text-xs border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-500/10'
+                            }
+                          >
+                            <ShieldCheck className="w-3 h-3 mr-1" />
+                            {sobra.conferencia_status === 'finalizado'
+                              ? 'Conferência finalizada'
+                              : sobra.conferencia_status === 'confirmado_conferente'
+                              ? 'Aguarda finalização'
+                              : 'Pendente conferente'}
+                          </Badge>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
@@ -1062,6 +1089,41 @@ export default function Sobras() {
                   </div>
                 );
               })()}
+
+              {/* Conferência (apenas para sobras vindas de inversão/avaria) */}
+              {detalheSobra.protocolo_origem_id && (
+                <ConferenciaSobraSection
+                  sobraId={detalheSobra.id}
+                  numero={detalheSobra.numero}
+                  produtos={parseProdutos(detalheSobra.produtos)}
+                  conferenciaStatus={detalheSobra.conferencia_status}
+                  confirmacaoConferente={
+                    (detalheSobra.confirmacao_conferente as Record<string, {
+                      status: 'voltou' | 'parcial' | 'nao_voltou';
+                      quantidade_retornada: number;
+                      foto?: string;
+                      conferente_nome?: string;
+                      conferente_id?: string;
+                      data?: string;
+                      hora?: string;
+                    }> | null) || null
+                  }
+                  destinoFinal={detalheSobra.destino_final}
+                  observacaoFinalizacao={detalheSobra.observacao_finalizacao}
+                  finalizadoPorNome={detalheSobra.finalizado_por_nome}
+                  finalizadoEm={detalheSobra.finalizado_em}
+                  observacoesLog={
+                    Array.isArray(detalheSobra.observacoes_log)
+                      ? (detalheSobra.observacoes_log as ObservacaoLog[])
+                      : []
+                  }
+                  onUpdated={() => {
+                    setDetalheSobra(null);
+                    fetchSobras();
+                    fetchContadores();
+                  }}
+                />
+              )}
 
               {/* Histórico */}
               {Array.isArray(detalheSobra.observacoes_log) && (detalheSobra.observacoes_log as ObservacaoLog[]).length > 0 && (

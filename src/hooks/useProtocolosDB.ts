@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Protocolo, Produto, FotosProtocolo, ObservacaoLog } from '@/types';
 import { toast } from '@/hooks/use-toast';
+import { criarSobraDeProtocolo } from '@/utils/criarSobraDeProtocolo';
 
 interface ProtocoloDB {
   id: string;
@@ -226,8 +227,15 @@ export function useProtocolosDB() {
       if (error) throw error;
       return dbToProtocolo(data as unknown as ProtocoloDB);
     },
-    onSuccess: () => {
+    onSuccess: (criado) => {
       queryClient.invalidateQueries({ queryKey: ['protocolos'] });
+      // Auto-gera sobra para inversão/avaria
+      const tipo = (criado.tipoReposicao || '').toLowerCase();
+      if (tipo === 'inversao' || tipo === 'avaria') {
+        criarSobraDeProtocolo(criado)
+          .then(() => queryClient.invalidateQueries({ queryKey: ['protocolos'] }))
+          .catch((err) => console.error('Falha ao criar sobra automática:', err));
+      }
     },
     onError: (error) => {
       console.error('Erro ao adicionar protocolo:', error);
