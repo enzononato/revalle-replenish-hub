@@ -17,7 +17,15 @@ import { CheckCircle, XCircle, Package, ImageIcon, Loader2, ShieldCheck } from '
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { ObservacaoLog } from '@/types';
-import { uploadFotoStorage } from '@/utils/uploadFotoStorage';
+import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 import { getDirectStorageUrl } from '@/utils/urlHelpers';
 
 interface ProdutoItem {
@@ -109,7 +117,9 @@ export function ConferenciaSobraSection({
   const handleFoto = async (key: string, file: File) => {
     setUploadingFotoIdx(key);
     try {
-      const url = await uploadFotoStorage(file, `sobras/${numero}/conferencia-${key}-${Date.now()}.jpg`);
+      const base64 = await fileToBase64(file);
+      const url = await uploadFotoParaStorage(base64, numero, `conferencia_${key}`);
+      if (!url) throw new Error('upload falhou');
       updateProduto(key, { foto: url });
       toast.success('Foto anexada');
     } catch (err) {
