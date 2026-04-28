@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Protocolo } from '@/types';
 import { toast } from '@/hooks/use-toast';
+import { criarSobraDeProtocolo } from '@/utils/criarSobraDeProtocolo';
 
 /**
  * Lightweight hook to insert a protocolo directly into the database.
@@ -70,7 +71,18 @@ export function useAddProtocolo() {
       throw error;
     }
 
-    return { ...protocolo, id: data.id };
+    const protocoloCriado: Protocolo = { ...protocolo, id: data.id };
+
+    // Auto-gera uma sobra (protocolo pos_rota) para inversão/avaria
+    const tipo = (protocolo.tipoReposicao || '').toLowerCase();
+    if (tipo === 'inversao' || tipo === 'avaria') {
+      // Não bloquear o fluxo principal — falha silenciosa apenas com log
+      criarSobraDeProtocolo(protocoloCriado).catch((err) =>
+        console.error('Falha ao criar sobra automática:', err)
+      );
+    }
+
+    return protocoloCriado;
   }, []);
 
   return { addProtocolo };
