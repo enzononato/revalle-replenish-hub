@@ -472,10 +472,13 @@ export type Database = {
           causa: string | null
           cliente_telefone: string | null
           codigo_pdv: string | null
+          conferencia_status: string
+          confirmacao_conferente: Json
           contato_email: string | null
           contato_whatsapp: string | null
           created_at: string | null
           data: string
+          destino_final: string | null
           encerrado_por_motorista_id: string | null
           encerrado_por_motorista_nome: string | null
           encerrado_por_tipo: string | null
@@ -485,6 +488,9 @@ export type Database = {
           enviado_lancar: boolean | null
           enviado_lancar_erro: string | null
           enviado_lancar_status: string | null
+          finalizado_em: string | null
+          finalizado_por_id: string | null
+          finalizado_por_nome: string | null
           foto_entrega_mercadoria: string | null
           foto_nota_fiscal_encerramento: string | null
           fotos_protocolo: Json | null
@@ -502,10 +508,12 @@ export type Database = {
           motorista_whatsapp: string | null
           nota_fiscal: string | null
           numero: string
+          observacao_finalizacao: string | null
           observacao_geral: string | null
           observacoes_log: Json | null
           oculto: boolean | null
           produtos: Json | null
+          protocolo_origem_id: string | null
           sla_16_enviado: boolean | null
           sla_16_enviado_at: string | null
           status: string
@@ -521,10 +529,13 @@ export type Database = {
           causa?: string | null
           cliente_telefone?: string | null
           codigo_pdv?: string | null
+          conferencia_status?: string
+          confirmacao_conferente?: Json
           contato_email?: string | null
           contato_whatsapp?: string | null
           created_at?: string | null
           data: string
+          destino_final?: string | null
           encerrado_por_motorista_id?: string | null
           encerrado_por_motorista_nome?: string | null
           encerrado_por_tipo?: string | null
@@ -534,6 +545,9 @@ export type Database = {
           enviado_lancar?: boolean | null
           enviado_lancar_erro?: string | null
           enviado_lancar_status?: string | null
+          finalizado_em?: string | null
+          finalizado_por_id?: string | null
+          finalizado_por_nome?: string | null
           foto_entrega_mercadoria?: string | null
           foto_nota_fiscal_encerramento?: string | null
           fotos_protocolo?: Json | null
@@ -551,10 +565,12 @@ export type Database = {
           motorista_whatsapp?: string | null
           nota_fiscal?: string | null
           numero: string
+          observacao_finalizacao?: string | null
           observacao_geral?: string | null
           observacoes_log?: Json | null
           oculto?: boolean | null
           produtos?: Json | null
+          protocolo_origem_id?: string | null
           sla_16_enviado?: boolean | null
           sla_16_enviado_at?: string | null
           status?: string
@@ -570,10 +586,13 @@ export type Database = {
           causa?: string | null
           cliente_telefone?: string | null
           codigo_pdv?: string | null
+          conferencia_status?: string
+          confirmacao_conferente?: Json
           contato_email?: string | null
           contato_whatsapp?: string | null
           created_at?: string | null
           data?: string
+          destino_final?: string | null
           encerrado_por_motorista_id?: string | null
           encerrado_por_motorista_nome?: string | null
           encerrado_por_tipo?: string | null
@@ -583,6 +602,9 @@ export type Database = {
           enviado_lancar?: boolean | null
           enviado_lancar_erro?: string | null
           enviado_lancar_status?: string | null
+          finalizado_em?: string | null
+          finalizado_por_id?: string | null
+          finalizado_por_nome?: string | null
           foto_entrega_mercadoria?: string | null
           foto_nota_fiscal_encerramento?: string | null
           fotos_protocolo?: Json | null
@@ -600,10 +622,12 @@ export type Database = {
           motorista_whatsapp?: string | null
           nota_fiscal?: string | null
           numero?: string
+          observacao_finalizacao?: string | null
           observacao_geral?: string | null
           observacoes_log?: Json | null
           oculto?: boolean | null
           produtos?: Json | null
+          protocolo_origem_id?: string | null
           sla_16_enviado?: boolean | null
           sla_16_enviado_at?: string | null
           status?: string
