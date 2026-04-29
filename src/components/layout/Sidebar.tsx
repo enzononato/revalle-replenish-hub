@@ -19,7 +19,8 @@ import {
   Phone,
   Send,
   Package,
-  UserCheck
+  UserCheck,
+  Repeat
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['admin', 'distribuicao', 'conferente', 'controle'] },
   { icon: FileText, label: 'Protocolos', path: '/protocolos', roles: ['admin', 'distribuicao', 'conferente', 'controle'] },
+  { icon: Repeat, label: 'Trocas', path: '/trocas', roles: ['admin', 'distribuicao', 'controle'] },
   { icon: Package, label: 'Sobras', path: '/sobras', roles: ['admin', 'distribuicao', 'controle'] },
   { icon: Truck, label: 'Motoristas', path: '/motoristas', roles: ['admin', 'distribuicao'] },
   { icon: Building2, label: 'Unidades', path: '/unidades', roles: ['admin'] },
