@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types';
 import { useAuditLog } from '@/hooks/useAuditLog';
-import { classifyAuthError, friendlyMessage } from '@/lib/authErrorHandling';
+import { classifyAuthError, friendlyMessage, withRetry } from '@/lib/authErrorHandling';
 
 const AUTH_USER_CACHE_KEY = 'auth_user_cache_v1';
 const APP_ROLES: UserRole[] = ['admin', 'distribuicao', 'conferente', 'controle'];
@@ -290,8 +290,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const { data } = await withRetry(async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        return { data };
+      });
 
       if (data.user) {
         // Tell onAuthStateChange to skip its fetch — we handle it here
