@@ -6,6 +6,36 @@ export interface ClassifiedError {
   shouldRetry: boolean;
 }
 
+function extractErrorText(error: unknown): string {
+  if (error instanceof Error) {
+    const details = [
+      error.name,
+      error.message,
+      (error as { status?: unknown }).status,
+      (error as { code?: unknown }).code,
+      (error as { details?: unknown }).details,
+      (error as { hint?: unknown }).hint,
+    ]
+      .filter((value) => value !== undefined && value !== null && String(value).trim() !== '')
+      .map(String)
+      .join(' ');
+
+    try {
+      return `${details} ${JSON.stringify(error)}`.trim();
+    } catch {
+      return details || error.message || 'Erro desconhecido';
+    }
+  }
+
+  if (typeof error === 'string') return error;
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Erro desconhecido';
+  }
+}
+
 const TIMEOUT_PATTERNS = [
   'timeout', 'timed out', 'upstream request timeout',
   'context canceled', 'gateway', '504', '502', '503',
@@ -29,11 +59,7 @@ function matchesAny(text: string, patterns: string[]): boolean {
 }
 
 export function classifyAuthError(error: unknown): ClassifiedError {
-  const msg = error instanceof Error
-    ? error.message
-    : typeof error === 'string'
-      ? error
-      : 'Erro desconhecido';
+  const msg = extractErrorText(error) || 'Erro desconhecido';
 
   if (matchesAny(msg, CREDENTIAL_PATTERNS)) {
     return { type: 'credentials', message: msg, shouldRetry: false };
