@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { formatPhone, isValidPhone } from '@/lib/phone';
 import type { Representante } from '@/contexts/RnAuthContext';
 
 interface ProtocoloRow {
