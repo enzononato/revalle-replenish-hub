@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, LogOut, Search, Package, FileText, Loader2 } from 'lucide-react';
+import { Briefcase, LogOut, Search, Package, FileText, Loader2, Repeat } from 'lucide-react';
 import { RnReenvioModal } from '@/components/rn/RnReenvioModal';
+import { TrocaForm } from '@/components/rn/TrocaForm';
 
 interface ProtocoloRow {
   id: string;
@@ -126,91 +127,107 @@ export default function RnPortal() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="px-4 py-3 border-b border-border bg-card">
-        <div className="max-w-2xl mx-auto flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-            <Input
-              placeholder="Buscar por código do PDV..."
-              value={searchPdv}
-              onChange={(e) => setSearchPdv(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-9"
-            />
-          </div>
-          <Button onClick={handleSearch} size="default">Buscar</Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex-1 px-4 py-4">
+      {/* Top tabs: Buscar Protocolos vs Nova Troca */}
+      <div className="flex-1 px-4 py-3">
         <div className="max-w-2xl mx-auto">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="w-full grid grid-cols-3">
-              <TabsTrigger value="abertos">Abertos</TabsTrigger>
-              <TabsTrigger value="em_atendimento">Em Atendimento</TabsTrigger>
-              <TabsTrigger value="encerrados">Encerrados</TabsTrigger>
+          <Tabs defaultValue="buscar">
+            <TabsList className="w-full grid grid-cols-2 mb-4">
+              <TabsTrigger value="buscar" className="gap-1.5">
+                <Search size={14} /> Buscar Protocolos
+              </TabsTrigger>
+              <TabsTrigger value="troca" className="gap-1.5">
+                <Repeat size={14} /> Nova Troca
+              </TabsTrigger>
             </TabsList>
 
-            {['abertos', 'em_atendimento', 'encerrados'].map(tab => (
-              <TabsContent key={tab} value={tab} className="mt-4 space-y-3">
-                {isLoading ? (
-                  <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-                ) : !searchedPdv ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Search className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">Digite o código do PDV acima para buscar protocolos</p>
-                  </div>
-                ) : protocolos.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">Nenhum protocolo encontrado para o PDV "{searchedPdv}"</p>
-                    <p className="text-xs mt-1 opacity-70">Unidade: {representante.unidade}</p>
-                  </div>
-                ) : (
-                  protocolos.map(p => {
-                    const prods = parseProdutos(p.produtos);
-                    return (
-                      <Card key={p.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => setSelectedProtocolo(p)}>
-                        <CardContent className="p-4 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono font-bold text-sm text-foreground">#{p.numero}</span>
-                            {getStatusBadge(p.status)}
-                          </div>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                            <span>Motorista: <span className="text-foreground">{p.motorista_nome}</span></span>
-                            <span>PDV: <span className="text-foreground">{p.codigo_pdv || '—'}</span></span>
-                            <span>Data: <span className="text-foreground">{p.data}</span></span>
-                            <span>Hora: <span className="text-foreground">{p.hora}</span></span>
-                            {p.tipo_reposicao && <span>Tipo: <span className="text-foreground capitalize">{p.tipo_reposicao}</span></span>}
-                            {p.causa && <span>Causa: <span className="text-foreground">{p.causa}</span></span>}
-                            {p.nota_fiscal && <span>NF: <span className="text-foreground">{p.nota_fiscal}</span></span>}
-                            {p.mapa && <span>Mapa: <span className="text-foreground">{p.mapa}</span></span>}
-                          </div>
-                          {prods.length > 0 && (
-                            <div className="pt-2 border-t border-border">
-                              <div className="flex items-center gap-1 mb-1">
-                                <Package size={12} className="text-muted-foreground" />
-                                <span className="text-xs font-medium text-muted-foreground">Produtos ({prods.length})</span>
+            <TabsContent value="buscar" className="mt-0 space-y-3">
+              {/* Search */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                  <Input
+                    placeholder="Buscar por código do PDV..."
+                    value={searchPdv}
+                    onChange={(e) => setSearchPdv(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    className="pl-9"
+                  />
+                </div>
+                <Button onClick={handleSearch} size="default">Buscar</Button>
+              </div>
+
+              {/* Status tabs */}
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="w-full grid grid-cols-3">
+                  <TabsTrigger value="abertos">Abertos</TabsTrigger>
+                  <TabsTrigger value="em_atendimento">Em Atendimento</TabsTrigger>
+                  <TabsTrigger value="encerrados">Encerrados</TabsTrigger>
+                </TabsList>
+
+                {['abertos', 'em_atendimento', 'encerrados'].map(tab => (
+                  <TabsContent key={tab} value={tab} className="mt-4 space-y-3">
+                    {isLoading ? (
+                      <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+                    ) : !searchedPdv ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Search className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">Digite o código do PDV acima para buscar protocolos</p>
+                      </div>
+                    ) : protocolos.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">Nenhum protocolo encontrado para o PDV "{searchedPdv}"</p>
+                        <p className="text-xs mt-1 opacity-70">Unidade: {representante.unidade}</p>
+                      </div>
+                    ) : (
+                      protocolos.map(p => {
+                        const prods = parseProdutos(p.produtos);
+                        return (
+                          <Card key={p.id} className="overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => setSelectedProtocolo(p)}>
+                            <CardContent className="p-4 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono font-bold text-sm text-foreground">#{p.numero}</span>
+                                {getStatusBadge(p.status)}
                               </div>
-                              <div className="space-y-0.5">
-                                {prods.slice(0, 5).map((prod: any, i: number) => (
-                                  <p key={i} className="text-xs text-foreground">
-                                    {prod.nome || prod.produto} — {prod.quantidade} {prod.unidade}
-                                  </p>
-                                ))}
-                                {prods.length > 5 && <p className="text-xs text-muted-foreground">+{prods.length - 5} mais...</p>}
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                <span>Motorista: <span className="text-foreground">{p.motorista_nome}</span></span>
+                                <span>PDV: <span className="text-foreground">{p.codigo_pdv || '—'}</span></span>
+                                <span>Data: <span className="text-foreground">{p.data}</span></span>
+                                <span>Hora: <span className="text-foreground">{p.hora}</span></span>
+                                {p.tipo_reposicao && <span>Tipo: <span className="text-foreground capitalize">{p.tipo_reposicao}</span></span>}
+                                {p.causa && <span>Causa: <span className="text-foreground">{p.causa}</span></span>}
+                                {p.nota_fiscal && <span>NF: <span className="text-foreground">{p.nota_fiscal}</span></span>}
+                                {p.mapa && <span>Mapa: <span className="text-foreground">{p.mapa}</span></span>}
                               </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })
-                )}
-              </TabsContent>
-            ))}
+                              {prods.length > 0 && (
+                                <div className="pt-2 border-t border-border">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <Package size={12} className="text-muted-foreground" />
+                                    <span className="text-xs font-medium text-muted-foreground">Produtos ({prods.length})</span>
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    {prods.slice(0, 5).map((prod: any, i: number) => (
+                                      <p key={i} className="text-xs text-foreground">
+                                        {prod.nome || prod.produto} — {prod.quantidade} {prod.unidade}
+                                      </p>
+                                    ))}
+                                    {prods.length > 5 && <p className="text-xs text-muted-foreground">+{prods.length - 5} mais...</p>}
+                                  </div>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    )}
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="troca" className="mt-0">
+              <TrocaForm representante={representante} />
+            </TabsContent>
           </Tabs>
         </div>
       </div>

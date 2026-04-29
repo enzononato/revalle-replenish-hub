@@ -1,109 +1,106 @@
-# Plano: Sobras automáticas para Inversão e Avaria
+## Plano: Protocolos de "Trocas" (criados pelos RN's)
 
-## Contexto descoberto
-"Sobras" hoje **não é uma tabela** — é a página `src/pages/Sobras.tsx` que lista registros de `protocolos` com `tipo_reposicao = 'pos_rota'`. Ou seja, cada "sobra" é um protocolo do tipo `pos_rota`, criado hoje pelo motorista no fluxo de Pós-Rota.
-
-Vamos manter esse mesmo modelo: cada protocolo de **Inversão** ou **Avaria** vai gerar automaticamente um **protocolo-irmão do tipo `pos_rota`** (a "sobra"), vinculado ao original. Isso reaproveita 100% da página de Sobras já existente.
+Criar um novo tipo de protocolo **Trocas** que só o RN pode abrir pelo portal, e expor uma nova aba **Trocas** no menu lateral do painel administrativo logo abaixo de **Protocolos**.
 
 ---
 
-## Mudanças
+### 1. Modelo de dados (sem migração)
 
-### 1. Banco de dados (migração)
-Adicionar campos na tabela `protocolos`:
-- `protocolo_origem_id uuid` — referência ao protocolo original (inversão/avaria) que gerou esta sobra. Null para sobras criadas pelo Pós-Rota normal.
-- `confirmacao_conferente jsonb default '{}'` — armazena por produto: `{ codigo: { status: 'voltou' | 'nao_voltou' | 'parcial', quantidade_retornada: number, foto?: string, conferente_nome, conferente_id, data, hora } }`.
-- `conferencia_status text default 'pendente'` — `pendente` → `confirmado_conferente` → `finalizado`.
-- `finalizado_por_nome text`, `finalizado_por_id text`, `finalizado_em timestamptz`, `destino_final text` (estoque/descarte/outro), `observacao_finalizacao text`.
+Reutilizamos a tabela `protocolos`:
+- `tipo_reposicao = 'troca'` — marcador do tipo.
+- `causa` — uma das opções fixas (lista abaixo).
+- `motorista_*` recebe os dados do RN (`motorista_nome` = nome do RN, `motorista_codigo` = `RN-{cpf}` para diferenciar nos relatórios).
+- `motorista_unidade` = unidade do RN (mantém compatibilidade com os filtros de unidade existentes).
+- `fotos_protocolo = { fotosTroca: [urls] }`.
+- `contato_whatsapp`, `contato_email`, `observacao_geral`, `codigo_pdv`, `produtos`.
+- `status` inicial `aberto`.
+- `observacoes_log` recebe entrada inicial: "RN {nome} abriu protocolo de Trocas".
 
-Índice em `protocolo_origem_id`.
-
-### 2. Criação automática da sobra
-Quando um protocolo é criado com `tipo_reposicao IN ('inversao', 'avaria')`:
-- Disparar a criação de um **segundo protocolo** com:
-  - `tipo_reposicao = 'pos_rota'`
-  - `protocolo_origem_id = <id do original>`
-  - mesmo motorista, unidade, codigo_pdv, produtos (clonados, mas com quantidades zeradas em `confirmacao_conferente`)
-  - `numero` derivado (ex.: `<numero_original>-S`)
-  - `status = 'aberto'`, `conferencia_status = 'pendente'`
-  - observação automática: "Sobra gerada automaticamente a partir do protocolo X (inversão/avaria)"
-
-**Onde implementar:** no fluxo de criação de protocolo no front (`useAddProtocolo` / `CreateProtocoloModal` / `AbrirProtocolo` / `MotoristaPortal`). Centralizar numa função utilitária `criarSobraDeProtocolo(protocoloOriginal)` chamada após o insert do original retornar com sucesso.
-
-**Aplica-se apenas a novos protocolos.** Os existentes ficam como estão.
-
-### 3. Página Sobras — confirmação por produto
-No modal de detalhe de sobra (`ProtocoloDetails` / detalheSobra em `Sobras.tsx`):
-- Quando `protocolo_origem_id` estiver presente E `conferencia_status = 'pendente'`, mostrar bloco **"Confirmação do Conferente"**:
-  - Lista de produtos do protocolo origem
-  - Para cada produto: 3 botões/radio (`Voltou tudo` / `Voltou parcial` / `Não voltou`) + campo de quantidade retornada (quando parcial) + upload opcional de foto (botão "Anexar foto", usa `CameraCapture` ou input file, sobe para bucket `fotos-protocolos`)
-  - Botão **"Confirmar conferência"** salva tudo no `confirmacao_conferente` e muda `conferencia_status` para `confirmado_conferente`. Registra log em `observacoes_log`.
-
-- Roles permitidos para confirmar: `conferente`, `admin`, `distribuicao`.
-
-### 4. Finalização (admin/distribuição)
-Quando `conferencia_status = 'confirmado_conferente'`, mostrar bloco **"Finalizar tratativa"**:
-- Resumo do que o conferente confirmou (read-only)
-- Select de **destino final**: `Devolver ao estoque` / `Descarte` / `Reentregar` / `Outro`
-- Campo de observação obrigatório
-- Botão **"Finalizar"** → preenche `finalizado_*`, muda `conferencia_status` para `finalizado` e `status` do protocolo-sobra para `encerrado`. Log na timeline.
-
-Permitido apenas para `admin` e `distribuicao`.
-
-### 5. Indicadores visuais na página Sobras
-- Badge no card da sobra mostrando `conferencia_status` (Pendente conferente / Aguardando finalização / Finalizado).
-- Filtro/aba adicional na barra de status para esses 3 estados.
-- Quando a sobra tem `protocolo_origem_id`, mostrar link/badge "Origem: protocolo Nº X (Inversão|Avaria)" que abre o protocolo original em outra aba/modal.
-
-### 6. Rastreabilidade no protocolo original
-No `ProtocoloDetails` do protocolo de inversão/avaria, mostrar bloco "Sobra vinculada" com link para a sobra gerada e seu status atual de conferência.
+**Causas (lista fixa no Select):**
+1. 01 - Vencido
+2. 02 - Embalagem Avariada
+3. 03 - Sabor Alterado
+4. 04 - Impureza
+5. 05 - Mal Cheio
+6. 06 - Sem data de Validade
+7. 08 - Fora do Prazo Comercial
+8. 09 - Produto Impróprio
 
 ---
 
-## Diagrama do fluxo
+### 2. Portal do RN — formulário de Trocas
 
+**Arquivo novo:** `src/components/rn/TrocaForm.tsx`
+
+Estrutura visual baseada em `PosRota.tsx`. Campos:
+1. **Código do PDV** — `PdvAutocomplete` filtrando pela unidade do RN. Obrigatório, com seleção via autocomplete (regra: bloquear digitação manual).
+2. **Causa** — `Select` com as 8 opções acima. Obrigatório.
+3. **Produtos** — lista dinâmica usando `ProdutoAutocomplete`, quantidade numérica e unidade `UN/CX/PCT`.
+4. **Fotos** — `CameraCapture` + galeria, upload via `uploadFotoParaStorage` no bucket `fotos-protocolos`. Obrigatório (≥1 foto).
+5. **WhatsApp do contato** — obrigatório, máscara e validação 10–11 dígitos (extrair `formatPhone`/`isValidPhone` para `src/lib/phone.ts` para compartilhar com `RnReenvioModal`).
+6. **E-mail** — opcional.
+7. **Observação** — `Textarea` opcional.
+
+Submissão:
+- Numeração: `TROCA-{yyyyMMddHHmmss}{NN}`.
+- `INSERT` em `protocolos` conforme item 1.
+- `audit_logs`: `acao='criacao_troca'`, `usuario_role='RN'`, `usuario_unidade=unidade do RN`.
+- **Webhook n8n** `https://n8n.revalle.com.br/webhook/reposicaowpp` — **mesma estrutura do webhook de reposição/criação de protocolo** (`tipo: 'criacao_protocolo'`, mesmos campos: `numero`, `data`, `hora`, `codigoPdv`, `motoristaNome` (= nome do RN), `unidade`, `tipoReposicao: 'TROCA'`, `causa`, `produtos`, `whatsappContato`, `observacaoGeral`). Disparo fire-and-forget. Sem notificação adicional (apenas o webhook).
+- Tela de sucesso: número do protocolo, botão "Copiar mensagem" e link WhatsApp (padrão PosRota), botão "Nova troca".
+
+**Integração no portal RN** (`src/pages/RnPortal.tsx`):
+- Adicionar `Tabs` no topo: **Buscar Protocolos** (conteúdo atual) e **Nova Troca** (`<TrocaForm representante={representante} />`).
+- Manter visual mobile-first existente.
+
+---
+
+### 3. Página administrativa de Trocas
+
+**Arquivo novo:** `src/pages/Trocas.tsx`
+
+Layout baseado em `Protocolos.tsx`:
+- Lista paginada de protocolos com `tipo_reposicao='troca'` e `ativo=true`.
+- Filtros: status (Aberto / Em andamento / Encerrado), unidade, busca por número/PDV/RN, faixa de datas.
+- Aplicar filtragem por unidade do usuário (admin vê tudo; demais filtram por `motorista_unidade` na unidade do usuário, suportando multi-unidade separada por vírgula).
+- Cada linha mostra: número, data/hora, PDV, RN (`motorista_nome`), causa, qtd. produtos, status.
+- Modal de detalhes com: dados gerais, produtos, fotos (galeria com `getDirectStorageUrl` apontando para `fotosTroca`), histórico (`observacoes_log`), contatos.
+- Ações para admin / distribuição / controle: marcar **Em andamento**, **Encerrar** (com observação), adicionar nota ao log.
+- Soft delete (`ativo=false`) somente para admin.
+- Sem fluxo de conferência (diferente de Sobras).
+
+**Roteamento** em `src/App.tsx`:
 ```text
-[Motorista cria protocolo Inversão/Avaria]
-            |
-            v
-[INSERT protocolos (original)]
-            |
-            v
-[Auto: INSERT protocolos (sobra, tipo=pos_rota, origem=original.id)]
-            |
-            v
-[Página Sobras lista a sobra como "Pendente conferente"]
-            |
-            v
-[Conferente abre, marca cada produto: voltou/parcial/não voltou (+foto)]
-            |
-            v
-[conferencia_status = confirmado_conferente]
-            |
-            v
-[Admin/Distribuição abre, escolhe destino final + observação]
-            |
-            v
-[conferencia_status = finalizado, status = encerrado]
+<Route path="/trocas" element={
+  <ProtectedRoute allowedRoles={['admin','distribuicao','controle']}>
+    <Trocas />
+  </ProtectedRoute>
+} />
 ```
 
----
-
-## Arquivos previstos
-
-- `supabase/migrations/<novo>.sql` — colunas novas + índice
-- `src/utils/criarSobraDeProtocolo.ts` (novo) — helper centralizado
-- `src/hooks/useAddProtocolo.ts` — chamar o helper após criar inversão/avaria
-- `src/components/CreateProtocoloModal.tsx` e `src/pages/AbrirProtocolo.tsx` e `src/pages/MotoristaPortal.tsx` — garantir que usam o helper (ou que `useAddProtocolo` cobre todos)
-- `src/pages/Sobras.tsx` — novos blocos de confirmação/finalização, badges e filtros
-- `src/components/ProtocoloDetails.tsx` — mostrar link "Sobra vinculada" no protocolo original
-- `src/types/index.ts` — campos novos no tipo `Protocolo`
-- `src/integrations/supabase/types.ts` — auto-regenerado pela migração
+**Sidebar** (`src/components/layout/Sidebar.tsx`):
+- Adicionar item **Trocas** (ícone `Repeat` da lucide) imediatamente após **Protocolos**, com `roles: ['admin','distribuicao','controle']`.
 
 ---
 
-## Pontos que NÃO entram neste plano (deixar explícito)
-- Não migra protocolos antigos.
-- Não envia webhook/n8n específico para a criação automática da sobra (ela segue o mesmo fluxo das outras sobras).
-- Não altera o fluxo do Pós-Rota normal (motorista continua criando sobras manualmente também).
-- Não muda o comportamento de protocolos do tipo `falta` (não geram sobra).
+### 4. Esconder Trocas das listagens existentes
+
+Para evitar mistura com protocolos de reposição:
+- `Protocolos.tsx`: filtrar `tipo_reposicao != 'troca'` (manter o filtro existente que exclui `pos_rota`).
+- `Sobras.tsx`: já filtra por `tipo_reposicao='pos_rota'`, sem impacto.
+
+---
+
+### 5. Dashboard — métrica separada
+
+- Acrescentar contador / card "Trocas" no `Dashboard.tsx` separado dos protocolos de reposição (consulta `tipo_reposicao='troca'` com os mesmos filtros de data e unidade já aplicados).
+- Excluir trocas dos contadores existentes de protocolos para não inflar os números (filtro `tipo_reposicao != 'troca'`).
+- Sem alteração no ranking de PDVs/motoristas; trocas ficam isoladas em seu próprio card/seção.
+
+---
+
+### 6. Detalhes técnicos finais
+
+- Sem alterações em RLS: `protocolos` já permite INSERT público (RN não usa Supabase Auth).
+- Reuso de utilidades: `compressImage`, `uploadFotoParaStorage`, `PdvAutocomplete`, `ProdutoAutocomplete`, novo `src/lib/phone.ts` (formatPhone/isValidPhone).
+- Refatorar `RnReenvioModal.tsx` para importar de `src/lib/phone.ts`.
+- Sem novas edge functions, sem novas migrations.

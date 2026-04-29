@@ -159,6 +159,7 @@ export default function Protocolos() {
       .filter(p => {
         if (p.oculto) return false;
         if (p.tipoReposicao === 'pos_rota') return false;
+        if (p.tipoReposicao === 'troca') return false;
 
         if (!isAdmin) {
           if (unidadesFiltro.length > 0) {

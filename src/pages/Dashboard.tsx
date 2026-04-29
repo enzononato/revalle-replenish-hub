@@ -81,10 +81,11 @@ export default function Dashboard() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [chartPeriodo, setChartPeriodo] = useState<'dia' | 'semana' | 'mes'>('semana');
   const [sobrasStats, setSobrasStats] = useState({ total: 0, pendente: 0, tratamento: 0, resolvido: 0, erroCarregamento: 0, erroEntrega: 0 });
+  const [trocasTotal, setTrocasTotal] = useState(0);
 
   // Protocolos filtrados por unidade e período
   const protocolosFiltrados = useMemo(() => {
-    let filtered = protocolos.filter(p => !p.oculto && p.tipoReposicao !== 'pos_rota');
+    let filtered = protocolos.filter(p => !p.oculto && p.tipoReposicao !== 'pos_rota' && p.tipoReposicao !== 'troca');
     
     if (!isAdmin) {
       const userUnidades = user?.unidade?.split(',').map(u => u.trim()) || [];
@@ -449,6 +450,30 @@ export default function Dashboard() {
       }
     };
     fetchSobrasStats();
+
+    const fetchTrocasStats = async () => {
+      try {
+        let q = supabase
+          .from('protocolos')
+          .select('id', { count: 'exact', head: true })
+          .eq('tipo_reposicao', 'troca')
+          .eq('ativo', true);
+        if (!isAdmin) {
+          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+          const permitidas = unidadesFiltro.length > 0
+            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+            : userUnidades;
+          if (permitidas.length > 0) q = q.in('motorista_unidade', permitidas);
+        } else if (unidadesFiltro.length > 0) {
+          q = q.in('motorista_unidade', unidadesFiltro);
+        }
+        const { count } = await q;
+        setTrocasTotal(count || 0);
+      } catch (err) {
+        console.error('Erro ao buscar trocas stats:', err);
+      }
+    };
+    fetchTrocasStats();
   }, [isAdmin, user?.unidade, unidadesFiltro]);
 
   // TOP 5 Clientes PDVs (calculado dos protocolos reais)
@@ -486,7 +511,7 @@ export default function Dashboard() {
       map[u.nome] = { unidade: u.nome, inversao: 0, avaria: 0, falta: 0 };
     });
     // Contar de TODOS protocolos (sem filtro de unidade selecionada)
-    const todosProtocolos = protocolos.filter(p => !p.oculto && p.tipoReposicao !== 'pos_rota');
+    const todosProtocolos = protocolos.filter(p => !p.oculto && p.tipoReposicao !== 'pos_rota' && p.tipoReposicao !== 'troca');
     todosProtocolos.forEach(p => {
       const unidade = p.unidadeNome || 'Sem Unidade';
       if (!map[unidade]) map[unidade] = { unidade, inversao: 0, avaria: 0, falta: 0 };
@@ -945,6 +970,14 @@ export default function Dashboard() {
           variant="default"
           delay={525}
           href={buildHref("/sobras")}
+        />
+        <StatCard
+          title="Trocas"
+          value={trocasTotal}
+          icon={Warehouse}
+          variant="default"
+          delay={550}
+          href={buildHref("/trocas")}
         />
       </div>
 

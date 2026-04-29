@@ -32,6 +32,7 @@ import RepresentantesNegocio from "./pages/RepresentantesNegocio";
 
 import LogsAuditoria from "./pages/LogsAuditoria";
 import Sobras from "./pages/Sobras";
+import Trocas from "./pages/Trocas";
 import NotFound from "./pages/NotFound";
 import PhotoProxyRedirect from "./pages/PhotoProxyRedirect";
 
@@ -67,6 +68,14 @@ const App = () => (
                       element={
                         <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'controle']}>
                           <Sobras />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/trocas" 
+                      element={
+                        <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'controle']}>
+                          <Trocas />
                         </ProtectedRoute>
                       } 
                     />
