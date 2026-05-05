@@ -16,14 +16,14 @@ import { format } from 'date-fns';
  */
 export async function criarSobraDeProtocolo(original: Protocolo): Promise<string | null> {
   const tipo = (original.tipoReposicao || '').toLowerCase();
-  if (tipo !== 'inversao' && tipo !== 'avaria') return null;
+  if (tipo !== 'inversao') return null;
 
   try {
     const agora = new Date();
     const dataStr = format(agora, 'dd/MM/yyyy');
     const horaStr = format(agora, 'HH:mm');
 
-    const tipoLabel = tipo === 'inversao' ? 'Inversão' : 'Avaria';
+    const tipoLabel = 'Inversão';
 
     const logInicial = {
       id: crypto.randomUUID(),
