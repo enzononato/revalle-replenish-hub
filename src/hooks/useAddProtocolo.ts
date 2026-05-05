@@ -75,7 +75,7 @@ export function useAddProtocolo() {
 
     // Auto-gera uma sobra (protocolo pos_rota) para inversão/avaria
     const tipo = (protocolo.tipoReposicao || '').toLowerCase();
-    if (tipo === 'inversao' || tipo === 'avaria') {
+    if (tipo === 'inversao') {
       // Não bloquear o fluxo principal — falha silenciosa apenas com log
       criarSobraDeProtocolo(protocoloCriado).catch((err) =>
         console.error('Falha ao criar sobra automática:', err)
