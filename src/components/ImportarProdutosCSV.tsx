@@ -173,18 +173,20 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
   };
 
   const handleImport = async () => {
-    if (novos.length === 0) return;
+    if (novos.length === 0 && atualizar.length === 0) return;
 
-    const result = await importProdutosNovos(novos);
+    // Envia novos + atualizações (a função classifica internamente)
+    const result = await importProdutosNovos([...novos, ...atualizar]);
 
     if (result.success) {
-      if (result.inseridos === 0) {
-        toast.info('Nenhum produto novo para inserir — todos já existiam na base.');
+      const partes: string[] = [];
+      if (result.inseridos) partes.push(`${result.inseridos} novo(s) inserido(s)`);
+      if (result.atualizados) partes.push(`${result.atualizados} atualizado(s)`);
+      if (result.inalterados) partes.push(`${result.inalterados} inalterado(s)`);
+      if (partes.length === 0) {
+        toast.info('Nada a importar — todos os produtos já estão atualizados.');
       } else {
-        const msg = result.ignorados && result.ignorados > 0
-          ? `${result.inseridos} novo(s) produto(s) inserido(s). ${result.ignorados} já existiam e foram ignorados.`
-          : `${result.inseridos} produto(s) inserido(s) com sucesso!`;
-        toast.success(msg);
+        toast.success(partes.join(' · '));
       }
       setProdutos([]);
       setFileName('');
