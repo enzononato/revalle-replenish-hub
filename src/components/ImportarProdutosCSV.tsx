@@ -13,8 +13,11 @@ interface ImportarProdutosCSVProps {
   onImportComplete?: () => void;
 }
 
+type StatusImport = 'novo' | 'atualizar' | 'inalterado';
+
 interface ProdutoComStatus extends ProdutoImport {
-  existente: boolean;
+  status: StatusImport;
+  nomeAtual?: string;
 }
 
 const HEADER_VARIATIONS: Record<string, string[]> = {
@@ -51,8 +54,9 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { importProdutosNovos, isImporting } = useProdutosDB();
 
-  const novos = produtos.filter(p => !p.existente);
-  const existentes = produtos.filter(p => p.existente);
+  const novos = produtos.filter(p => p.status === 'novo');
+  const atualizar = produtos.filter(p => p.status === 'atualizar');
+  const inalterados = produtos.filter(p => p.status === 'inalterado');
 
   const processFile = async (file: File) => {
     const reader = new FileReader();
@@ -130,14 +134,22 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
         try {
           const { data: existentesData } = await supabase
             .from('produtos')
-            .select('cod');
+            .select('cod, produto');
 
-          const existentesSet = new Set((existentesData || []).map(p => p.cod.trim()));
+          const mapaExistentes = new Map(
+            (existentesData || []).map(p => [p.cod.trim(), (p.produto || '').trim()])
+          );
 
-          const comStatus: ProdutoComStatus[] = parsedProdutos.map(p => ({
-            ...p,
-            existente: existentesSet.has(p.cod.trim()),
-          }));
+          const comStatus: ProdutoComStatus[] = parsedProdutos.map(p => {
+            const cod = p.cod.trim();
+            const nome = p.produto.trim();
+            const nomeAtual = mapaExistentes.get(cod);
+            let status: StatusImport = 'novo';
+            if (nomeAtual !== undefined) {
+              status = nomeAtual === nome ? 'inalterado' : 'atualizar';
+            }
+            return { ...p, status, nomeAtual };
+          });
 
           setProdutos(comStatus);
         } finally {
@@ -161,18 +173,20 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
   };
 
   const handleImport = async () => {
-    if (novos.length === 0) return;
+    if (novos.length === 0 && atualizar.length === 0) return;
 
-    const result = await importProdutosNovos(novos);
+    // Envia novos + atualizações (a função classifica internamente)
+    const result = await importProdutosNovos([...novos, ...atualizar]);
 
     if (result.success) {
-      if (result.inseridos === 0) {
-        toast.info('Nenhum produto novo para inserir — todos já existiam na base.');
+      const partes: string[] = [];
+      if (result.inseridos) partes.push(`${result.inseridos} novo(s) inserido(s)`);
+      if (result.atualizados) partes.push(`${result.atualizados} atualizado(s)`);
+      if (result.inalterados) partes.push(`${result.inalterados} inalterado(s)`);
+      if (partes.length === 0) {
+        toast.info('Nada a importar — todos os produtos já estão atualizados.');
       } else {
-        const msg = result.ignorados && result.ignorados > 0
-          ? `${result.inseridos} novo(s) produto(s) inserido(s). ${result.ignorados} já existiam e foram ignorados.`
-          : `${result.inseridos} produto(s) inserido(s) com sucesso!`;
-        toast.success(msg);
+        toast.success(partes.join(' · '));
       }
       setProdutos([]);
       setFileName('');
@@ -251,14 +265,21 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
       {produtos.length > 0 && !loadingStatus && (
         <>
           {/* Resumo */}
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-3 text-sm flex-wrap">
             <span className="text-muted-foreground">Total no arquivo: <strong>{produtos.length}</strong></span>
-            <Badge variant="default" className="bg-primary/90">
-              {novos.length} novo{novos.length !== 1 ? 's' : ''}
-            </Badge>
-            {existentes.length > 0 && (
+            {novos.length > 0 && (
+              <Badge variant="default" className="bg-primary/90">
+                {novos.length} novo{novos.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+            {atualizar.length > 0 && (
+              <Badge className="bg-amber-500/90 hover:bg-amber-500/90 text-white">
+                {atualizar.length} para atualizar
+              </Badge>
+            )}
+            {inalterados.length > 0 && (
               <Badge variant="secondary">
-                {existentes.length} já existente{existentes.length !== 1 ? 's' : ''}
+                {inalterados.length} inalterado{inalterados.length !== 1 ? 's' : ''}
               </Badge>
             )}
           </div>
@@ -275,19 +296,30 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
                   <TableRow>
                     <TableHead className="w-32">Código</TableHead>
                     <TableHead>Produto</TableHead>
-                    <TableHead className="w-28 text-center">Status</TableHead>
+                    <TableHead className="w-32 text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {produtos.map((produto, index) => (
-                    <TableRow key={index} className={produto.existente ? 'opacity-50' : ''}>
+                    <TableRow key={index} className={produto.status === 'inalterado' ? 'opacity-50' : ''}>
                       <TableCell className="font-mono text-sm">{produto.cod}</TableCell>
-                      <TableCell>{produto.produto}</TableCell>
+                      <TableCell>
+                        {produto.produto}
+                        {produto.status === 'atualizar' && produto.nomeAtual && (
+                          <div className="text-[11px] text-muted-foreground line-through">
+                            {produto.nomeAtual}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-center">
-                        {produto.existente ? (
-                          <Badge variant="secondary" className="text-xs">Existente</Badge>
-                        ) : (
+                        {produto.status === 'novo' && (
                           <Badge variant="default" className="text-xs bg-primary/90">Novo</Badge>
+                        )}
+                        {produto.status === 'atualizar' && (
+                          <Badge className="text-xs bg-amber-500/90 hover:bg-amber-500/90 text-white">Atualizar</Badge>
+                        )}
+                        {produto.status === 'inalterado' && (
+                          <Badge variant="secondary" className="text-xs">Inalterado</Badge>
                         )}
                       </TableCell>
                     </TableRow>
@@ -300,7 +332,7 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
           <div className="flex gap-2">
             <Button
               onClick={handleImport}
-              disabled={isImporting || novos.length === 0}
+              disabled={isImporting || (novos.length === 0 && atualizar.length === 0)}
               className="gap-2"
             >
               {isImporting ? (
@@ -310,9 +342,12 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
               )}
               {isImporting
                 ? 'Importando...'
-                : novos.length === 0
-                  ? 'Nenhum produto novo'
-                  : `Importar ${novos.length} produto${novos.length !== 1 ? 's' : ''} novo${novos.length !== 1 ? 's' : ''}`
+                : novos.length === 0 && atualizar.length === 0
+                  ? 'Nada para importar'
+                  : [
+                      novos.length > 0 ? `Importar ${novos.length} novo${novos.length !== 1 ? 's' : ''}` : '',
+                      atualizar.length > 0 ? `atualizar ${atualizar.length}` : '',
+                    ].filter(Boolean).join(' e ')
               }
             </Button>
             <Button variant="outline" onClick={handleClear} disabled={isImporting} className="gap-2">

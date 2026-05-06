@@ -10,6 +10,8 @@ export interface ImportResult {
   success: boolean;
   total: number;
   inseridos?: number;
+  atualizados?: number;
+  inalterados?: number;
   ignorados?: number;
   error?: string;
 }
@@ -51,40 +53,68 @@ export function useProdutosDB() {
   const importProdutosNovos = async (produtos: ProdutoImport[]): Promise<ImportResult> => {
     setIsImporting(true);
     try {
-      // Busca todos os códigos existentes
+      // Busca todos os existentes (cod + produto) para classificar cada linha
       const { data: existentesData, error: fetchError } = await supabase
         .from('produtos')
-        .select('cod');
+        .select('cod, produto');
 
       if (fetchError) throw fetchError;
 
-      const existentes = new Set((existentesData || []).map(p => p.cod.trim()));
-      const novos = produtos.filter(p => !existentes.has(p.cod.trim()));
-      const ignorados = produtos.length - novos.length;
+      const mapaExistentes = new Map(
+        (existentesData || []).map(p => [p.cod.trim(), (p.produto || '').trim()])
+      );
 
-      if (novos.length === 0) {
-        return { success: true, total: produtos.length, inseridos: 0, ignorados };
+      const novos: ProdutoImport[] = [];
+      const paraAtualizar: ProdutoImport[] = [];
+      let inalterados = 0;
+
+      for (const p of produtos) {
+        const cod = p.cod.trim();
+        const nome = p.produto.trim();
+        if (!mapaExistentes.has(cod)) {
+          novos.push({ cod, produto: nome });
+        } else if (mapaExistentes.get(cod) !== nome) {
+          paraAtualizar.push({ cod, produto: nome });
+        } else {
+          inalterados += 1;
+        }
       }
 
-      const novosComEmbalagem = novos.map(p => ({
-        cod: p.cod.trim(),
-        produto: p.produto.trim(),
-        embalagem: 'UN',
-      }));
+      // Inserir novos
+      if (novos.length > 0) {
+        const { error: insertError } = await supabase.from('produtos').insert(
+          novos.map(p => ({ cod: p.cod, produto: p.produto, embalagem: 'UN' }))
+        );
+        if (insertError) throw insertError;
+      }
 
-      const { error } = await supabase
-        .from('produtos')
-        .insert(novosComEmbalagem);
+      // Atualizar nomes dos existentes (em paralelo)
+      if (paraAtualizar.length > 0) {
+        const results = await Promise.all(
+          paraAtualizar.map(p =>
+            supabase.from('produtos').update({ produto: p.produto }).eq('cod', p.cod)
+          )
+        );
+        const firstErr = results.find(r => r.error)?.error;
+        if (firstErr) throw firstErr;
+      }
 
-      if (error) throw error;
-
-      return { success: true, total: produtos.length, inseridos: novos.length, ignorados };
+      return {
+        success: true,
+        total: produtos.length,
+        inseridos: novos.length,
+        atualizados: paraAtualizar.length,
+        inalterados,
+        ignorados: inalterados,
+      };
     } catch (error) {
       console.error('Erro ao importar produtos novos:', error);
       return {
         success: false,
         total: 0,
         inseridos: 0,
+        atualizados: 0,
+        inalterados: 0,
         ignorados: 0,
         error: error instanceof Error ? error.message : 'Erro desconhecido',
       };
