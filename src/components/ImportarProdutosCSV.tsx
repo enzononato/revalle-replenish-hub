@@ -54,8 +54,9 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { importProdutosNovos, isImporting } = useProdutosDB();
 
-  const novos = produtos.filter(p => !p.existente);
-  const existentes = produtos.filter(p => p.existente);
+  const novos = produtos.filter(p => p.status === 'novo');
+  const atualizar = produtos.filter(p => p.status === 'atualizar');
+  const inalterados = produtos.filter(p => p.status === 'inalterado');
 
   const processFile = async (file: File) => {
     const reader = new FileReader();
