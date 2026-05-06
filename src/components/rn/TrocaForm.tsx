@@ -462,8 +462,19 @@ export function TrocaForm({ representante }: TrocaFormProps) {
                   <Input
                     type="number"
                     min={1}
-                    value={p.quantidade}
-                    onChange={e => updateProduto(i, 'quantidade', Math.max(1, Number(e.target.value) || 1))}
+                    value={p.quantidade === 0 ? '' : p.quantidade}
+                    onChange={e => {
+                      const v = e.target.value;
+                      if (v === '') {
+                        updateProduto(i, 'quantidade', 0);
+                      } else {
+                        const n = parseInt(v, 10);
+                        if (!isNaN(n)) updateProduto(i, 'quantidade', Math.max(1, n));
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!p.quantidade || p.quantidade < 1) updateProduto(i, 'quantidade', 1);
+                    }}
                     className="h-8 text-center"
                   />
                   <Button

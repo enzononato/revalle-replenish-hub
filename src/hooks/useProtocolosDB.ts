@@ -231,7 +231,7 @@ export function useProtocolosDB() {
       queryClient.invalidateQueries({ queryKey: ['protocolos'] });
       // Auto-gera sobra para inversão/avaria
       const tipo = (criado.tipoReposicao || '').toLowerCase();
-      if (tipo === 'inversao' || tipo === 'avaria') {
+      if (tipo === 'inversao') {
         criarSobraDeProtocolo(criado)
           .then(() => queryClient.invalidateQueries({ queryKey: ['protocolos'] }))
           .catch((err) => console.error('Falha ao criar sobra automática:', err));
