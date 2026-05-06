@@ -265,14 +265,21 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
       {produtos.length > 0 && !loadingStatus && (
         <>
           {/* Resumo */}
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-3 text-sm flex-wrap">
             <span className="text-muted-foreground">Total no arquivo: <strong>{produtos.length}</strong></span>
-            <Badge variant="default" className="bg-primary/90">
-              {novos.length} novo{novos.length !== 1 ? 's' : ''}
-            </Badge>
-            {existentes.length > 0 && (
+            {novos.length > 0 && (
+              <Badge variant="default" className="bg-primary/90">
+                {novos.length} novo{novos.length !== 1 ? 's' : ''}
+              </Badge>
+            )}
+            {atualizar.length > 0 && (
+              <Badge className="bg-amber-500/90 hover:bg-amber-500/90 text-white">
+                {atualizar.length} para atualizar
+              </Badge>
+            )}
+            {inalterados.length > 0 && (
               <Badge variant="secondary">
-                {existentes.length} já existente{existentes.length !== 1 ? 's' : ''}
+                {inalterados.length} inalterado{inalterados.length !== 1 ? 's' : ''}
               </Badge>
             )}
           </div>
@@ -289,19 +296,30 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
                   <TableRow>
                     <TableHead className="w-32">Código</TableHead>
                     <TableHead>Produto</TableHead>
-                    <TableHead className="w-28 text-center">Status</TableHead>
+                    <TableHead className="w-32 text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {produtos.map((produto, index) => (
-                    <TableRow key={index} className={produto.existente ? 'opacity-50' : ''}>
+                    <TableRow key={index} className={produto.status === 'inalterado' ? 'opacity-50' : ''}>
                       <TableCell className="font-mono text-sm">{produto.cod}</TableCell>
-                      <TableCell>{produto.produto}</TableCell>
+                      <TableCell>
+                        {produto.produto}
+                        {produto.status === 'atualizar' && produto.nomeAtual && (
+                          <div className="text-[11px] text-muted-foreground line-through">
+                            {produto.nomeAtual}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-center">
-                        {produto.existente ? (
-                          <Badge variant="secondary" className="text-xs">Existente</Badge>
-                        ) : (
+                        {produto.status === 'novo' && (
                           <Badge variant="default" className="text-xs bg-primary/90">Novo</Badge>
+                        )}
+                        {produto.status === 'atualizar' && (
+                          <Badge className="text-xs bg-amber-500/90 hover:bg-amber-500/90 text-white">Atualizar</Badge>
+                        )}
+                        {produto.status === 'inalterado' && (
+                          <Badge variant="secondary" className="text-xs">Inalterado</Badge>
                         )}
                       </TableCell>
                     </TableRow>
@@ -314,7 +332,7 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
           <div className="flex gap-2">
             <Button
               onClick={handleImport}
-              disabled={isImporting || novos.length === 0}
+              disabled={isImporting || (novos.length === 0 && atualizar.length === 0)}
               className="gap-2"
             >
               {isImporting ? (
@@ -324,9 +342,12 @@ export function ImportarProdutosCSV({ onImportComplete }: ImportarProdutosCSVPro
               )}
               {isImporting
                 ? 'Importando...'
-                : novos.length === 0
-                  ? 'Nenhum produto novo'
-                  : `Importar ${novos.length} produto${novos.length !== 1 ? 's' : ''} novo${novos.length !== 1 ? 's' : ''}`
+                : novos.length === 0 && atualizar.length === 0
+                  ? 'Nada para importar'
+                  : [
+                      novos.length > 0 ? `Importar ${novos.length} novo${novos.length !== 1 ? 's' : ''}` : '',
+                      atualizar.length > 0 ? `atualizar ${atualizar.length}` : '',
+                    ].filter(Boolean).join(' e ')
               }
             </Button>
             <Button variant="outline" onClick={handleClear} disabled={isImporting} className="gap-2">
