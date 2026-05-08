@@ -870,6 +870,22 @@ export type Database = {
           unidade: string
         }[]
       }
+      get_dashboard_resumo: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_unidades?: string[]
+        }
+        Returns: {
+          sobras_andamento: number
+          sobras_erro_carregamento: number
+          sobras_erro_entrega: number
+          sobras_pendente: number
+          sobras_resolvido: number
+          sobras_total: number
+          trocas_total: number
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

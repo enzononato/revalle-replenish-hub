@@ -407,73 +407,53 @@ export default function Dashboard() {
     fetchPdvNames();
   }, [topClientesPorCodigo]);
 
-  // Fetch sobras stats from database
+  // Fetch sobras + trocas stats agregados via RPC (corrige limit antigo de 1000)
   useEffect(() => {
-    const fetchSobrasStats = async () => {
+    const fetchResumo = async () => {
       try {
-        let baseQuery = supabase
-          .from('protocolos')
-          .select('status, causa, motorista_unidade')
-          .eq('tipo_reposicao', 'pos_rota')
-          .eq('ativo', true);
-
+        let unidadesParam: string[] | null = null;
         if (!isAdmin) {
           const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
           const unidadesPermitidas = unidadesFiltro.length > 0
             ? unidadesFiltro.filter((u) => userUnidades.includes(u))
             : userUnidades;
-
-          if (unidadesPermitidas.length > 0) {
-            baseQuery = baseQuery.in('motorista_unidade', unidadesPermitidas);
-          }
+          unidadesParam = unidadesPermitidas.length > 0 ? unidadesPermitidas : [];
         } else if (unidadesFiltro.length > 0) {
-          baseQuery = baseQuery.in('motorista_unidade', unidadesFiltro);
+          unidadesParam = unidadesFiltro;
         }
 
-        const { data, error } = await baseQuery
-          .order('created_at', { ascending: false })
-          .limit(1000);
+        // Se usuário não-admin não tem unidade permitida, zera tudo sem chamar
+        if (unidadesParam !== null && unidadesParam.length === 0) {
+          setSobrasStats({ total: 0, pendente: 0, tratamento: 0, resolvido: 0, erroCarregamento: 0, erroEntrega: 0 });
+          setTrocasTotal(0);
+          return;
+        }
+
+        const { data, error } = await supabase.rpc('get_dashboard_resumo', {
+          p_unidades: unidadesParam,
+          p_data_inicio: null,
+          p_data_fim: null,
+        });
+
         if (error) throw error;
 
-        const filtered = data || [];
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row) return;
 
         setSobrasStats({
-          total: filtered.length,
-          pendente: filtered.filter(s => s.status === 'aberto').length,
-          tratamento: filtered.filter(s => s.status === 'em_andamento').length,
-          resolvido: filtered.filter(s => s.status === 'encerrado').length,
-          erroCarregamento: filtered.filter(s => s.causa?.toUpperCase().includes('ERRO DE CARREGAMENTO')).length,
-          erroEntrega: filtered.filter(s => s.causa?.toUpperCase().includes('ERRO DE ENTREGA')).length,
+          total: Number(row.sobras_total) || 0,
+          pendente: Number(row.sobras_pendente) || 0,
+          tratamento: Number(row.sobras_andamento) || 0,
+          resolvido: Number(row.sobras_resolvido) || 0,
+          erroCarregamento: Number(row.sobras_erro_carregamento) || 0,
+          erroEntrega: Number(row.sobras_erro_entrega) || 0,
         });
+        setTrocasTotal(Number(row.trocas_total) || 0);
       } catch (err) {
-        console.error('Erro ao buscar sobras stats:', err);
+        console.error('Erro ao buscar resumo do dashboard:', err);
       }
     };
-    fetchSobrasStats();
-
-    const fetchTrocasStats = async () => {
-      try {
-        let q = supabase
-          .from('protocolos')
-          .select('id', { count: 'exact', head: true })
-          .eq('tipo_reposicao', 'troca')
-          .eq('ativo', true);
-        if (!isAdmin) {
-          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
-          const permitidas = unidadesFiltro.length > 0
-            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
-            : userUnidades;
-          if (permitidas.length > 0) q = q.in('motorista_unidade', permitidas);
-        } else if (unidadesFiltro.length > 0) {
-          q = q.in('motorista_unidade', unidadesFiltro);
-        }
-        const { count } = await q;
-        setTrocasTotal(count || 0);
-      } catch (err) {
-        console.error('Erro ao buscar trocas stats:', err);
-      }
-    };
-    fetchTrocasStats();
+    fetchResumo();
   }, [isAdmin, user?.unidade, unidadesFiltro]);
 
   // TOP 5 Clientes PDVs (calculado dos protocolos reais)
