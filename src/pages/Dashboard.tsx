@@ -415,6 +415,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchTopPdvs = async () => {
+      setTopPdvsLoading(true);
+      setTopPdvsError(null);
       try {
         let unidadesParam: string[] | null = null;
         if (!isAdmin) {
@@ -454,6 +456,9 @@ export default function Dashboard() {
         setPdvNamesMap(map);
       } catch (err) {
         console.error('Erro ao buscar TOP PDVs:', err);
+        setTopPdvsError('Não foi possível carregar o ranking de PDVs.');
+      } finally {
+        setTopPdvsLoading(false);
       }
     };
     fetchTopPdvs();
