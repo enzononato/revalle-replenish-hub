@@ -432,7 +432,7 @@ export default function HistoricoEnvios() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {errorLogs.map((row) => (
+                      {filteredErrorLogs.map((row) => (
                         <TableRow key={row.id}>
                           <TableCell className="text-xs whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
                           <TableCell className="text-xs font-medium">{row.cod_pdv}</TableCell>
