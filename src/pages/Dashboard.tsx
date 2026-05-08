@@ -410,6 +410,8 @@ export default function Dashboard() {
   // TOP 5 PDVs via RPC (já vem com nome resolvido, com filtro de unidade aplicado no banco)
   const [topPdvsRpc, setTopPdvsRpc] = useState<{ codigo: string; nome: string; total: number }[]>([]);
   const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
+  const [topPdvsLoading, setTopPdvsLoading] = useState(false);
+  const [topPdvsError, setTopPdvsError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTopPdvs = async () => {
