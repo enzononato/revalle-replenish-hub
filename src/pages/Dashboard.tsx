@@ -1314,41 +1314,59 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={barData} margin={{ top: 28, right: 12, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.2))]} fontSize={11} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontSize: '11px'
-                }}
-              />
-              <Legend 
-                wrapperStyle={{ paddingTop: '10px' }}
-                formatter={(value) => (
-                  <span className="text-xs text-muted-foreground capitalize">{value}</span>
-                )}
-              />
-              <Bar
-                dataKey="abertos"
-                name="Abertos"
-                fill="hsl(38, 92%, 50%)"
-                radius={[4, 4, 0, 0]}
-                label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              />
-              <Bar
-                dataKey="encerrados"
-                name="Encerrados"
-                fill="hsl(160, 84%, 39%)"
-                radius={[4, 4, 0, 0]}
-                label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="relative">
+            {seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                  <AlertTriangle size={14} />
+                  {seriesError}
+                </div>
+              </div>
+            )}
+            {seriesLoading && !seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <RefreshCw size={14} className="animate-spin" />
+                  Carregando dados...
+                </div>
+              </div>
+            )}
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={barData} margin={{ top: 28, right: 12, left: -8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.2))]} fontSize={11} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '11px'
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '10px' }}
+                  formatter={(value) => (
+                    <span className="text-xs text-muted-foreground capitalize">{value}</span>
+                  )}
+                />
+                <Bar
+                  dataKey="abertos"
+                  name="Abertos"
+                  fill="hsl(38, 92%, 50%)"
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                />
+                <Bar
+                  dataKey="encerrados"
+                  name="Encerrados"
+                  fill="hsl(160, 84%, 39%)"
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Pie Chart */}
