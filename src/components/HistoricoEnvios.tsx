@@ -368,7 +368,7 @@ export default function HistoricoEnvios() {
                 <CardTitle className="text-sm flex items-center gap-2">
                   <AlertTriangle size={14} className="text-destructive" />
                   Erros
-                  <Badge variant="destructive" className="text-xs">{errorLogs.length}</Badge>
+                  <Badge variant="destructive" className="text-xs">{filteredErrorLogs.length}{hasFilters && errorLogs.length !== filteredErrorLogs.length ? `/${errorLogs.length}` : ''}</Badge>
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
