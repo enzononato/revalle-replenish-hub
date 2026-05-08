@@ -870,6 +870,19 @@ export type Database = {
           unidade: string
         }[]
       }
+      get_dashboard_protocolos_por_periodo: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_granularidade?: string
+          p_unidades?: string[]
+        }
+        Returns: {
+          abertos: number
+          encerrados: number
+          periodo: string
+        }[]
+      }
       get_dashboard_resumo: {
         Args: {
           p_data_fim?: string
@@ -884,6 +897,19 @@ export type Database = {
           sobras_resolvido: number
           sobras_total: number
           trocas_total: number
+        }[]
+      }
+      get_dashboard_top_pdvs: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_limite?: number
+          p_unidades?: string[]
+        }
+        Returns: {
+          codigo: string
+          nome: string
+          total: number
         }[]
       }
       get_user_role: {
