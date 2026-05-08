@@ -1146,13 +1146,31 @@ export default function Dashboard() {
           delay={500}
           variant="primary"
         />
-        <RankingCard
-          title="Top 5 Clientes (PDVs)"
-          icon={<Building2 className="text-sky-500" size={18} />}
-          items={topClientesReal}
-          delay={600}
-          variant="info"
-        />
+        <div className="relative">
+          <RankingCard
+            title="Top 5 Clientes (PDVs)"
+            icon={<Building2 className="text-sky-500" size={18} />}
+            items={topClientesReal}
+            delay={600}
+            variant="info"
+          />
+          {topPdvsError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-xl p-3">
+              <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md text-center">
+                <AlertTriangle size={14} />
+                {topPdvsError}
+              </div>
+            </div>
+          )}
+          {topPdvsLoading && !topPdvsError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-xl">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <RefreshCw size={14} className="animate-spin" />
+                Carregando ranking...
+              </div>
+            </div>
+          )}
+        </div>
         <RankingCard
           title="Top 5 Produtos"
           icon={<Package className="text-emerald-500" size={18} />}
