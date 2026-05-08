@@ -258,22 +258,88 @@ export default function Dashboard() {
     { name: 'Encerrados', value: stats.encerrados },
   ], [stats]);
 
+  // Séries de protocolos abertos × encerrados via RPC (dia 7d e mês 6m)
+  const [serieDiaria, setSerieDiaria] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
+  const [serieMensal, setSerieMensal] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
+
+  useEffect(() => {
+    const computeUnidades = (): string[] | null => {
+      if (!isAdmin) {
+        const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+        const permitidas = unidadesFiltro.length > 0
+          ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+          : userUnidades;
+        return permitidas;
+      }
+      return unidadesFiltro.length > 0 ? unidadesFiltro : null;
+    };
+
+    const unidadesParam = computeUnidades();
+    if (Array.isArray(unidadesParam) && unidadesParam.length === 0 && !isAdmin) {
+      setSerieDiaria([]);
+      setSerieMensal([]);
+      return;
+    }
+
+    const fetchSeries = async () => {
+      try {
+        const today = new Date();
+        const inicio7d = format(subDays(today, 6), 'yyyy-MM-dd');
+        const inicio6m = format(startOfMonth(subMonths(today, 5)), 'yyyy-MM-dd');
+        const fimHoje = format(today, 'yyyy-MM-dd');
+
+        const [diaria, mensal] = await Promise.all([
+          supabase.rpc('get_dashboard_protocolos_por_periodo', {
+            p_unidades: unidadesParam,
+            p_data_inicio: inicio7d,
+            p_data_fim: fimHoje,
+            p_granularidade: 'dia',
+          }),
+          supabase.rpc('get_dashboard_protocolos_por_periodo', {
+            p_unidades: unidadesParam,
+            p_data_inicio: inicio6m,
+            p_data_fim: fimHoje,
+            p_granularidade: 'mes',
+          }),
+        ]);
+
+        if (diaria.error) throw diaria.error;
+        if (mensal.error) throw mensal.error;
+
+        setSerieDiaria((diaria.data || []).map((r: { periodo: string; abertos: number | string; encerrados: number | string }) => ({
+          periodo: r.periodo,
+          abertos: Number(r.abertos) || 0,
+          encerrados: Number(r.encerrados) || 0,
+        })));
+        setSerieMensal((mensal.data || []).map((r: { periodo: string; abertos: number | string; encerrados: number | string }) => ({
+          periodo: r.periodo,
+          abertos: Number(r.abertos) || 0,
+          encerrados: Number(r.encerrados) || 0,
+        })));
+      } catch (err) {
+        console.error('Erro ao buscar séries do dashboard:', err);
+      }
+    };
+
+    fetchSeries();
+  }, [isAdmin, user?.unidade, unidadesFiltro]);
+
   // Dados do gráfico de barras (dinâmico por período)
   const barData = useMemo(() => {
     const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const today = new Date();
-    const result = [];
+    const result: { name: string; abertos: number; encerrados: number }[] = [];
 
     if (chartPeriodo === 'dia') {
-      // Últimas 24h em blocos de 4h
+      // Mantido em JS: granularidade por blocos de 4h não cabe na RPC
       for (let i = 5; i >= 0; i--) {
         const hourStart = new Date(today);
         hourStart.setHours(today.getHours() - i * 4, 0, 0, 0);
         const hourEnd = new Date(hourStart);
         hourEnd.setHours(hourStart.getHours() + 4);
         const label = `${format(hourStart, 'HH')}h`;
-        
+
         const abertos = protocolosFiltrados.filter(p => {
           try {
             const dataProtocolo = parseFlexDate(p.data);
@@ -286,61 +352,33 @@ export default function Dashboard() {
         result.push({ name: label, abertos, encerrados: 0 });
       }
     } else if (chartPeriodo === 'semana') {
+      const map = new Map(serieDiaria.map(r => [r.periodo, r]));
       for (let i = 6; i >= 0; i--) {
         const date = subDays(today, i);
-        const dayName = days[date.getDay()];
-        const targetDateStr = format(date, 'yyyy-MM-dd');
-        
-        const abertosNoDia = protocolosFiltrados.filter(p => {
-          try {
-            const d = parseFlexDate(p.data);
-            return format(d, 'yyyy-MM-dd') === targetDateStr;
-          } catch { return false; }
-        }).length;
-        const encerradosNoDia = protocolosFiltrados.filter(p => {
-          if (p.status !== 'encerrado') return false;
-          const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-          if (!logEnc?.data) return false;
-          try {
-            const d = parseFlexDate(logEnc.data);
-            return format(d, 'yyyy-MM-dd') === targetDateStr;
-          } catch { return false; }
-        }).length;
-        
-        result.push({ name: `${dayName} ${format(date, 'dd')}`, abertos: abertosNoDia, encerrados: encerradosNoDia });
+        const key = format(date, 'yyyy-MM-dd');
+        const row = map.get(key);
+        result.push({
+          name: `${days[date.getDay()]} ${format(date, 'dd')}`,
+          abertos: row?.abertos ?? 0,
+          encerrados: row?.encerrados ?? 0,
+        });
       }
     } else {
-      // Últimos 4 meses
-      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const map = new Map(serieMensal.map(r => [r.periodo, r]));
       for (let i = 3; i >= 0; i--) {
         const monthDate = subMonths(today, i);
-        const monthStart = startOfMonth(monthDate);
-        const monthEnd = endOfMonth(monthDate);
-        const label = monthNames[monthDate.getMonth()];
-        
-        const abertos = protocolosFiltrados.filter(p => {
-          try {
-            const d = parseFlexDate(p.data);
-            return d >= monthStart && d <= monthEnd;
-          } catch { return false; }
-        }).length;
-        
-        const encerrados = protocolosFiltrados.filter(p => {
-          if (p.status !== 'encerrado') return false;
-          const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-          if (!logEnc?.data) return false;
-          try {
-            const d = parseFlexDate(logEnc.data);
-            return d >= monthStart && d <= monthEnd;
-          } catch { return false; }
-        }).length;
-        
-        result.push({ name: label, abertos, encerrados });
+        const key = format(monthDate, 'yyyy-MM');
+        const row = map.get(key);
+        result.push({
+          name: monthNames[monthDate.getMonth()],
+          abertos: row?.abertos ?? 0,
+          encerrados: row?.encerrados ?? 0,
+        });
       }
     }
-    
+
     return result;
-  }, [protocolosFiltrados, chartPeriodo]);
+  }, [protocolosFiltrados, chartPeriodo, serieDiaria, serieMensal]);
 
   // Protocolos recentes
   const recentProtocolos = useMemo(() => 
