@@ -615,6 +615,133 @@ export default function Dashboard() {
   };
 
 
+  // Helper: calcula intervalo (yyyy-MM-dd) com base no periodoFiltro/dateRange
+  const computeRangeFiltros = (): { inicio: string | null; fim: string | null; label: string } => {
+    const today = new Date();
+    if (periodoFiltro === 'hoje') {
+      const d = format(today, 'yyyy-MM-dd');
+      return { inicio: d, fim: d, label: `Hoje (${format(today, 'dd/MM/yyyy')})` };
+    }
+    if (periodoFiltro === 'semana') {
+      return { inicio: format(subDays(today, 6), 'yyyy-MM-dd'), fim: format(today, 'yyyy-MM-dd'), label: 'Últimos 7 dias' };
+    }
+    if (periodoFiltro === 'mes') {
+      return { inicio: format(startOfMonth(today), 'yyyy-MM-dd'), fim: format(endOfMonth(today), 'yyyy-MM-dd'), label: format(today, "MMMM 'de' yyyy", { locale: ptBR }) };
+    }
+    if (periodoFiltro === 'custom' && dateRange?.from) {
+      const ini = format(dateRange.from, 'yyyy-MM-dd');
+      const fim = format(dateRange.to ?? dateRange.from, 'yyyy-MM-dd');
+      return { inicio: ini, fim, label: `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to ?? dateRange.from, 'dd/MM/yyyy')}` };
+    }
+    return { inicio: null, fim: null, label: 'Todos os períodos' };
+  };
+
+  // Helper: calcula unidades respeitando admin/usuário e filtro selecionado
+  const computeUnidadesFiltros = (): { unidades: string[] | null; label: string } => {
+    if (!isAdmin) {
+      const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+      const permitidas = unidadesFiltro.length > 0
+        ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+        : userUnidades;
+      return { unidades: permitidas, label: permitidas.length > 0 ? permitidas.join(', ') : 'Nenhuma' };
+    }
+    if (unidadesFiltro.length > 0) return { unidades: unidadesFiltro, label: unidadesFiltro.join(', ') };
+    return { unidades: null, label: 'Todas as unidades' };
+  };
+
+  // Busca o resumo (sobras + trocas) via RPC respeitando filtros atuais
+  const fetchResumoExport = async () => {
+    const { unidades: unidadesParam, label: unidadesLabel } = computeUnidadesFiltros();
+    const { inicio, fim, label: periodoLabel } = computeRangeFiltros();
+
+    if (unidadesParam !== null && unidadesParam.length === 0) {
+      return {
+        rows: [
+          { categoria: 'Sobras', metrica: 'Total', valor: 0 },
+          { categoria: 'Trocas', metrica: 'Total', valor: 0 },
+        ],
+        unidadesLabel,
+        periodoLabel,
+      };
+    }
+
+    const { data, error } = await supabase.rpc('get_dashboard_resumo', {
+      p_unidades: unidadesParam,
+      p_data_inicio: inicio,
+      p_data_fim: fim,
+    });
+    if (error) throw error;
+
+    const row: Record<string, unknown> = ((Array.isArray(data) ? data[0] : data) || {}) as Record<string, unknown>;
+    const rows = [
+      { categoria: 'Sobras', metrica: 'Total', valor: Number(row.sobras_total) || 0 },
+      { categoria: 'Sobras', metrica: 'Pendente', valor: Number(row.sobras_pendente) || 0 },
+      { categoria: 'Sobras', metrica: 'Em Tratamento', valor: Number(row.sobras_andamento) || 0 },
+      { categoria: 'Sobras', metrica: 'Resolvido', valor: Number(row.sobras_resolvido) || 0 },
+      { categoria: 'Sobras', metrica: 'Erro de Carregamento', valor: Number(row.sobras_erro_carregamento) || 0 },
+      { categoria: 'Sobras', metrica: 'Erro de Entrega', valor: Number(row.sobras_erro_entrega) || 0 },
+      { categoria: 'Trocas', metrica: 'Total', valor: Number(row.trocas_total) || 0 },
+    ];
+    return { rows, unidadesLabel, periodoLabel };
+  };
+
+  const handleExportResumoCSV = async () => {
+    try {
+      const { rows, unidadesLabel, periodoLabel } = await fetchResumoExport();
+      const linhas = [
+        `Resumo do Dashboard - Sobras e Trocas`,
+        `Unidades;${unidadesLabel}`,
+        `Período;${periodoLabel}`,
+        `Gerado em;${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
+        '',
+        'Categoria;Métrica;Valor',
+        ...rows.map(r => `${r.categoria};${r.metrica};${r.valor}`),
+      ].join('\n');
+      const blob = new Blob([linhas], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `resumo_dashboard_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Resumo exportado em CSV');
+    } catch (err) {
+      console.error(err);
+      toast.error('Falha ao exportar CSV');
+    }
+  };
+
+  const handleExportResumoPDF = async () => {
+    try {
+      const { rows, unidadesLabel, periodoLabel } = await fetchResumoExport();
+      const { default: jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text('Resumo do Dashboard', 14, 18);
+      doc.setFontSize(10);
+      doc.text('Sobras e Trocas', 14, 25);
+      doc.setFontSize(9);
+      doc.text(`Unidades: ${unidadesLabel}`, 14, 33);
+      doc.text(`Período: ${periodoLabel}`, 14, 39);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 45);
+      autoTable(doc, {
+        startY: 52,
+        head: [['Categoria', 'Métrica', 'Valor']],
+        body: rows.map(r => [r.categoria, r.metrica, String(r.valor)]),
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [38, 92, 50] },
+      });
+      doc.save(`resumo_dashboard_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
+      toast.success('Resumo exportado em PDF');
+    } catch (err) {
+      console.error(err);
+      toast.error('Falha ao exportar PDF');
+    }
+  };
+
   // Contagem por tipo de reposição
   const contagemPorTipo = useMemo(() => {
     const inversao = protocolosFiltrados.filter(p => p.tipoReposicao === 'INVERSAO').length;
@@ -876,6 +1003,14 @@ export default function Dashboard() {
             <Button variant="outline" size="sm" onClick={handleDownloadCSV} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
               <Download size={14} className="mr-1.5" />
               CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportResumoCSV} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
+              <Download size={14} className="mr-1.5" />
+              Resumo CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportResumoPDF} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
+              <FileText size={14} className="mr-1.5" />
+              Resumo PDF
             </Button>
           </div>
         </div>
