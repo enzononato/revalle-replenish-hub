@@ -261,6 +261,8 @@ export default function Dashboard() {
   // Séries de protocolos abertos × encerrados via RPC (dia 7d e mês 6m)
   const [serieDiaria, setSerieDiaria] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
   const [serieMensal, setSerieMensal] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
+  const [seriesLoading, setSeriesLoading] = useState(false);
+  const [seriesError, setSeriesError] = useState<string | null>(null);
 
   useEffect(() => {
     const computeUnidades = (): string[] | null => {
