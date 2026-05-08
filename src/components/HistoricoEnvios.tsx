@@ -484,7 +484,7 @@ export default function HistoricoEnvios() {
             </CardHeader>
             <CardContent className="px-2 pb-2">
               <ScrollArea className="h-[400px]">
-                {successLogs.length === 0 ? (
+                {filteredSuccessLogs.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-8">Nenhum envio com sucesso encontrado</p>
                 ) : (
                   <Table>
