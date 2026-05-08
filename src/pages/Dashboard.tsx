@@ -360,52 +360,55 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [protocolosFiltrados]);
 
-  // TOP 5 Clientes PDVs por código (para buscar apenas os nomes necessários)
-  const topClientesPorCodigo = useMemo(() => {
-    const contagem: Record<string, number> = {};
-    protocolosFiltrados.forEach(p => {
-      const pdv = p.codigoPdv || 'Sem PDV';
-      contagem[pdv] = (contagem[pdv] || 0) + 1;
-    });
-
-    return Object.entries(contagem)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-  }, [protocolosFiltrados]);
-
-  // Mapa de código PDV -> nome PDV (somente TOP 5, evitando query em massa)
+  // TOP 5 PDVs via RPC (já vem com nome resolvido, com filtro de unidade aplicado no banco)
+  const [topPdvsRpc, setTopPdvsRpc] = useState<{ codigo: string; nome: string; total: number }[]>([]);
   const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const codigos = topClientesPorCodigo
-      .map(([codigo]) => codigo)
-      .filter((codigo) => codigo !== 'Sem PDV');
+    const fetchTopPdvs = async () => {
+      try {
+        let unidadesParam: string[] | null = null;
+        if (!isAdmin) {
+          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+          const permitidas = unidadesFiltro.length > 0
+            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+            : userUnidades;
+          unidadesParam = permitidas.length > 0 ? permitidas : [];
+        } else if (unidadesFiltro.length > 0) {
+          unidadesParam = unidadesFiltro;
+        }
 
-    if (codigos.length === 0) {
-      setPdvNamesMap({});
-      return;
-    }
+        if (unidadesParam !== null && unidadesParam.length === 0) {
+          setTopPdvsRpc([]);
+          setPdvNamesMap({});
+          return;
+        }
 
-    const fetchPdvNames = async () => {
-      const { data } = await supabase
-        .from('pdvs')
-        .select('codigo, nome')
-        .in('codigo', codigos);
+        const { data, error } = await supabase.rpc('get_dashboard_top_pdvs', {
+          p_unidades: unidadesParam,
+          p_data_inicio: null,
+          p_data_fim: null,
+          p_limite: 5,
+        });
 
-      if (!data) {
-        setPdvNamesMap({});
-        return;
+        if (error) throw error;
+
+        const rows = (data || []).map((r: { codigo: string; nome: string; total: number | string }) => ({
+          codigo: r.codigo,
+          nome: r.nome,
+          total: Number(r.total) || 0,
+        }));
+        setTopPdvsRpc(rows);
+
+        const map: Record<string, string> = {};
+        rows.forEach((r) => { map[r.codigo] = r.nome; });
+        setPdvNamesMap(map);
+      } catch (err) {
+        console.error('Erro ao buscar TOP PDVs:', err);
       }
-
-      const map: Record<string, string> = {};
-      data.forEach((p) => {
-        map[p.codigo] = p.nome;
-      });
-      setPdvNamesMap(map);
     };
-
-    fetchPdvNames();
-  }, [topClientesPorCodigo]);
+    fetchTopPdvs();
+  }, [isAdmin, user?.unidade, unidadesFiltro]);
 
   // Fetch sobras + trocas stats agregados via RPC (corrige limit antigo de 1000)
   useEffect(() => {
