@@ -576,38 +576,24 @@ export default function Dashboard() {
       .slice(0, 10);
   }, [protocolosFiltrados, pdvNamesMap]);
 
-  // 4. Taxa de Resolução por Período (Linha Dupla - últimos 6 meses)
+  // 4. Taxa de Resolução por Período (últimos 6 meses) — vem da RPC mensal
   const taxaResolucaoData = useMemo(() => {
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const today = new Date();
-    const result = [];
+    const map = new Map(serieMensal.map(r => [r.periodo, r]));
+    const result: { name: string; abertos: number; encerrados: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const monthDate = subMonths(today, i);
-      const mStart = startOfMonth(monthDate);
-      const mEnd = endOfMonth(monthDate);
-      const label = monthNames[monthDate.getMonth()];
-      
-      const abertos = protocolosFiltrados.filter(p => {
-        try {
-          const d = parseFlexDate(p.data);
-          return d >= mStart && d <= mEnd;
-        } catch { return false; }
-      }).length;
-      
-      const encerrados = protocolosFiltrados.filter(p => {
-        if (p.status !== 'encerrado') return false;
-        const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-        if (!logEnc?.data) return false;
-        try {
-          const d = parseFlexDate(logEnc.data);
-          return d >= mStart && d <= mEnd;
-        } catch { return false; }
-      }).length;
-      
-      result.push({ name: label, abertos, encerrados });
+      const key = format(monthDate, 'yyyy-MM');
+      const row = map.get(key);
+      result.push({
+        name: monthNames[monthDate.getMonth()],
+        abertos: row?.abertos ?? 0,
+        encerrados: row?.encerrados ?? 0,
+      });
     }
     return result;
-  }, [protocolosFiltrados]);
+  }, [serieMensal]);
 
   // Helper genérico para exportar dados de gráfico como CSV
   const exportChartCSV = (data: Record<string, unknown>[], headers: Record<string, string>, filename: string) => {
