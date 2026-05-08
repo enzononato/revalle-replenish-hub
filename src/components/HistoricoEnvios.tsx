@@ -41,6 +41,7 @@ interface HistoryLogRow {
 const WEBHOOK_URL = 'https://n8n.revalle.com.br/webhook/alteracao_pedidos';
 
 export default function HistoricoEnvios() {
+  const { user, isAdmin } = useAuth();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
