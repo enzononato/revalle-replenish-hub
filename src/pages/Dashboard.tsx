@@ -258,22 +258,88 @@ export default function Dashboard() {
     { name: 'Encerrados', value: stats.encerrados },
   ], [stats]);
 
+  // Séries de protocolos abertos × encerrados via RPC (dia 7d e mês 6m)
+  const [serieDiaria, setSerieDiaria] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
+  const [serieMensal, setSerieMensal] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
+
+  useEffect(() => {
+    const computeUnidades = (): string[] | null => {
+      if (!isAdmin) {
+        const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+        const permitidas = unidadesFiltro.length > 0
+          ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+          : userUnidades;
+        return permitidas;
+      }
+      return unidadesFiltro.length > 0 ? unidadesFiltro : null;
+    };
+
+    const unidadesParam = computeUnidades();
+    if (Array.isArray(unidadesParam) && unidadesParam.length === 0 && !isAdmin) {
+      setSerieDiaria([]);
+      setSerieMensal([]);
+      return;
+    }
+
+    const fetchSeries = async () => {
+      try {
+        const today = new Date();
+        const inicio7d = format(subDays(today, 6), 'yyyy-MM-dd');
+        const inicio6m = format(startOfMonth(subMonths(today, 5)), 'yyyy-MM-dd');
+        const fimHoje = format(today, 'yyyy-MM-dd');
+
+        const [diaria, mensal] = await Promise.all([
+          supabase.rpc('get_dashboard_protocolos_por_periodo', {
+            p_unidades: unidadesParam,
+            p_data_inicio: inicio7d,
+            p_data_fim: fimHoje,
+            p_granularidade: 'dia',
+          }),
+          supabase.rpc('get_dashboard_protocolos_por_periodo', {
+            p_unidades: unidadesParam,
+            p_data_inicio: inicio6m,
+            p_data_fim: fimHoje,
+            p_granularidade: 'mes',
+          }),
+        ]);
+
+        if (diaria.error) throw diaria.error;
+        if (mensal.error) throw mensal.error;
+
+        setSerieDiaria((diaria.data || []).map((r: { periodo: string; abertos: number | string; encerrados: number | string }) => ({
+          periodo: r.periodo,
+          abertos: Number(r.abertos) || 0,
+          encerrados: Number(r.encerrados) || 0,
+        })));
+        setSerieMensal((mensal.data || []).map((r: { periodo: string; abertos: number | string; encerrados: number | string }) => ({
+          periodo: r.periodo,
+          abertos: Number(r.abertos) || 0,
+          encerrados: Number(r.encerrados) || 0,
+        })));
+      } catch (err) {
+        console.error('Erro ao buscar séries do dashboard:', err);
+      }
+    };
+
+    fetchSeries();
+  }, [isAdmin, user?.unidade, unidadesFiltro]);
+
   // Dados do gráfico de barras (dinâmico por período)
   const barData = useMemo(() => {
     const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const today = new Date();
-    const result = [];
+    const result: { name: string; abertos: number; encerrados: number }[] = [];
 
     if (chartPeriodo === 'dia') {
-      // Últimas 24h em blocos de 4h
+      // Mantido em JS: granularidade por blocos de 4h não cabe na RPC
       for (let i = 5; i >= 0; i--) {
         const hourStart = new Date(today);
         hourStart.setHours(today.getHours() - i * 4, 0, 0, 0);
         const hourEnd = new Date(hourStart);
         hourEnd.setHours(hourStart.getHours() + 4);
         const label = `${format(hourStart, 'HH')}h`;
-        
+
         const abertos = protocolosFiltrados.filter(p => {
           try {
             const dataProtocolo = parseFlexDate(p.data);
@@ -286,61 +352,33 @@ export default function Dashboard() {
         result.push({ name: label, abertos, encerrados: 0 });
       }
     } else if (chartPeriodo === 'semana') {
+      const map = new Map(serieDiaria.map(r => [r.periodo, r]));
       for (let i = 6; i >= 0; i--) {
         const date = subDays(today, i);
-        const dayName = days[date.getDay()];
-        const targetDateStr = format(date, 'yyyy-MM-dd');
-        
-        const abertosNoDia = protocolosFiltrados.filter(p => {
-          try {
-            const d = parseFlexDate(p.data);
-            return format(d, 'yyyy-MM-dd') === targetDateStr;
-          } catch { return false; }
-        }).length;
-        const encerradosNoDia = protocolosFiltrados.filter(p => {
-          if (p.status !== 'encerrado') return false;
-          const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-          if (!logEnc?.data) return false;
-          try {
-            const d = parseFlexDate(logEnc.data);
-            return format(d, 'yyyy-MM-dd') === targetDateStr;
-          } catch { return false; }
-        }).length;
-        
-        result.push({ name: `${dayName} ${format(date, 'dd')}`, abertos: abertosNoDia, encerrados: encerradosNoDia });
+        const key = format(date, 'yyyy-MM-dd');
+        const row = map.get(key);
+        result.push({
+          name: `${days[date.getDay()]} ${format(date, 'dd')}`,
+          abertos: row?.abertos ?? 0,
+          encerrados: row?.encerrados ?? 0,
+        });
       }
     } else {
-      // Últimos 4 meses
-      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const map = new Map(serieMensal.map(r => [r.periodo, r]));
       for (let i = 3; i >= 0; i--) {
         const monthDate = subMonths(today, i);
-        const monthStart = startOfMonth(monthDate);
-        const monthEnd = endOfMonth(monthDate);
-        const label = monthNames[monthDate.getMonth()];
-        
-        const abertos = protocolosFiltrados.filter(p => {
-          try {
-            const d = parseFlexDate(p.data);
-            return d >= monthStart && d <= monthEnd;
-          } catch { return false; }
-        }).length;
-        
-        const encerrados = protocolosFiltrados.filter(p => {
-          if (p.status !== 'encerrado') return false;
-          const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-          if (!logEnc?.data) return false;
-          try {
-            const d = parseFlexDate(logEnc.data);
-            return d >= monthStart && d <= monthEnd;
-          } catch { return false; }
-        }).length;
-        
-        result.push({ name: label, abertos, encerrados });
+        const key = format(monthDate, 'yyyy-MM');
+        const row = map.get(key);
+        result.push({
+          name: monthNames[monthDate.getMonth()],
+          abertos: row?.abertos ?? 0,
+          encerrados: row?.encerrados ?? 0,
+        });
       }
     }
-    
+
     return result;
-  }, [protocolosFiltrados, chartPeriodo]);
+  }, [protocolosFiltrados, chartPeriodo, serieDiaria, serieMensal]);
 
   // Protocolos recentes
   const recentProtocolos = useMemo(() => 
@@ -360,52 +398,55 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [protocolosFiltrados]);
 
-  // TOP 5 Clientes PDVs por código (para buscar apenas os nomes necessários)
-  const topClientesPorCodigo = useMemo(() => {
-    const contagem: Record<string, number> = {};
-    protocolosFiltrados.forEach(p => {
-      const pdv = p.codigoPdv || 'Sem PDV';
-      contagem[pdv] = (contagem[pdv] || 0) + 1;
-    });
-
-    return Object.entries(contagem)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-  }, [protocolosFiltrados]);
-
-  // Mapa de código PDV -> nome PDV (somente TOP 5, evitando query em massa)
+  // TOP 5 PDVs via RPC (já vem com nome resolvido, com filtro de unidade aplicado no banco)
+  const [topPdvsRpc, setTopPdvsRpc] = useState<{ codigo: string; nome: string; total: number }[]>([]);
   const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const codigos = topClientesPorCodigo
-      .map(([codigo]) => codigo)
-      .filter((codigo) => codigo !== 'Sem PDV');
+    const fetchTopPdvs = async () => {
+      try {
+        let unidadesParam: string[] | null = null;
+        if (!isAdmin) {
+          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+          const permitidas = unidadesFiltro.length > 0
+            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+            : userUnidades;
+          unidadesParam = permitidas.length > 0 ? permitidas : [];
+        } else if (unidadesFiltro.length > 0) {
+          unidadesParam = unidadesFiltro;
+        }
 
-    if (codigos.length === 0) {
-      setPdvNamesMap({});
-      return;
-    }
+        if (unidadesParam !== null && unidadesParam.length === 0) {
+          setTopPdvsRpc([]);
+          setPdvNamesMap({});
+          return;
+        }
 
-    const fetchPdvNames = async () => {
-      const { data } = await supabase
-        .from('pdvs')
-        .select('codigo, nome')
-        .in('codigo', codigos);
+        const { data, error } = await supabase.rpc('get_dashboard_top_pdvs', {
+          p_unidades: unidadesParam,
+          p_data_inicio: null,
+          p_data_fim: null,
+          p_limite: 5,
+        });
 
-      if (!data) {
-        setPdvNamesMap({});
-        return;
+        if (error) throw error;
+
+        const rows = (data || []).map((r: { codigo: string; nome: string; total: number | string }) => ({
+          codigo: r.codigo,
+          nome: r.nome,
+          total: Number(r.total) || 0,
+        }));
+        setTopPdvsRpc(rows);
+
+        const map: Record<string, string> = {};
+        rows.forEach((r) => { map[r.codigo] = r.nome; });
+        setPdvNamesMap(map);
+      } catch (err) {
+        console.error('Erro ao buscar TOP PDVs:', err);
       }
-
-      const map: Record<string, string> = {};
-      data.forEach((p) => {
-        map[p.codigo] = p.nome;
-      });
-      setPdvNamesMap(map);
     };
-
-    fetchPdvNames();
-  }, [topClientesPorCodigo]);
+    fetchTopPdvs();
+  }, [isAdmin, user?.unidade, unidadesFiltro]);
 
   // Fetch sobras + trocas stats agregados via RPC (corrige limit antigo de 1000)
   useEffect(() => {
@@ -456,16 +497,14 @@ export default function Dashboard() {
     fetchResumo();
   }, [isAdmin, user?.unidade, unidadesFiltro]);
 
-  // TOP 5 Clientes PDVs (calculado dos protocolos reais)
-  const topClientesReal = useMemo(() => {
-    return topClientesPorCodigo
-      .map(([codigo, quantidade], index) => ({
-        id: `pdv-${index}`,
-        nome: pdvNamesMap[codigo] || codigo,
-        quantidade
-      }))
-      .sort((a, b) => b.quantidade - a.quantidade);
-  }, [topClientesPorCodigo, pdvNamesMap]);
+  // TOP 5 Clientes PDVs (vindo direto da RPC)
+  const topClientesReal = useMemo(() =>
+    topPdvsRpc.map((p, index) => ({
+      id: `pdv-${index}`,
+      nome: p.nome,
+      quantidade: p.total,
+    })),
+  [topPdvsRpc]);
 
   // TOP 5 Produtos (calculado dos protocolos reais)
   const topProdutosReal = useMemo(() => {
@@ -537,38 +576,24 @@ export default function Dashboard() {
       .slice(0, 10);
   }, [protocolosFiltrados, pdvNamesMap]);
 
-  // 4. Taxa de Resolução por Período (Linha Dupla - últimos 6 meses)
+  // 4. Taxa de Resolução por Período (últimos 6 meses) — vem da RPC mensal
   const taxaResolucaoData = useMemo(() => {
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const today = new Date();
-    const result = [];
+    const map = new Map(serieMensal.map(r => [r.periodo, r]));
+    const result: { name: string; abertos: number; encerrados: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const monthDate = subMonths(today, i);
-      const mStart = startOfMonth(monthDate);
-      const mEnd = endOfMonth(monthDate);
-      const label = monthNames[monthDate.getMonth()];
-      
-      const abertos = protocolosFiltrados.filter(p => {
-        try {
-          const d = parseFlexDate(p.data);
-          return d >= mStart && d <= mEnd;
-        } catch { return false; }
-      }).length;
-      
-      const encerrados = protocolosFiltrados.filter(p => {
-        if (p.status !== 'encerrado') return false;
-        const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-        if (!logEnc?.data) return false;
-        try {
-          const d = parseFlexDate(logEnc.data);
-          return d >= mStart && d <= mEnd;
-        } catch { return false; }
-      }).length;
-      
-      result.push({ name: label, abertos, encerrados });
+      const key = format(monthDate, 'yyyy-MM');
+      const row = map.get(key);
+      result.push({
+        name: monthNames[monthDate.getMonth()],
+        abertos: row?.abertos ?? 0,
+        encerrados: row?.encerrados ?? 0,
+      });
     }
     return result;
-  }, [protocolosFiltrados]);
+  }, [serieMensal]);
 
   // Helper genérico para exportar dados de gráfico como CSV
   const exportChartCSV = (data: Record<string, unknown>[], headers: Record<string, string>, filename: string) => {
