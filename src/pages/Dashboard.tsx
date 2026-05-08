@@ -459,16 +459,14 @@ export default function Dashboard() {
     fetchResumo();
   }, [isAdmin, user?.unidade, unidadesFiltro]);
 
-  // TOP 5 Clientes PDVs (calculado dos protocolos reais)
-  const topClientesReal = useMemo(() => {
-    return topClientesPorCodigo
-      .map(([codigo, quantidade], index) => ({
-        id: `pdv-${index}`,
-        nome: pdvNamesMap[codigo] || codigo,
-        quantidade
-      }))
-      .sort((a, b) => b.quantidade - a.quantidade);
-  }, [topClientesPorCodigo, pdvNamesMap]);
+  // TOP 5 Clientes PDVs (vindo direto da RPC)
+  const topClientesReal = useMemo(() =>
+    topPdvsRpc.map((p, index) => ({
+      id: `pdv-${index}`,
+      nome: p.nome,
+      quantidade: p.total,
+    })),
+  [topPdvsRpc]);
 
   // TOP 5 Produtos (calculado dos protocolos reais)
   const topProdutosReal = useMemo(() => {
