@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon, RefreshCw, Loader2, AlertTriangle, CheckCircle2, RotateCcw, History, Download, Trash2 } from 'lucide-react';
@@ -50,6 +51,30 @@ export default function HistoricoEnvios() {
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [editingPhone, setEditingPhone] = useState<Record<string, string>>({});
   const [isClearing, setIsClearing] = useState(false);
+  const [filterCodPdv, setFilterCodPdv] = useState('');
+  const [filterTelefone, setFilterTelefone] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'todos' | 'sucesso' | 'erro'>('todos');
+
+  const applyFilters = (rows: HistoryLogRow[]) => {
+    const cod = filterCodPdv.trim().toLowerCase();
+    const tel = filterTelefone.replace(/\D/g, '');
+    return rows.filter((r) => {
+      if (cod && !(r.cod_pdv || '').toLowerCase().includes(cod)) return false;
+      if (tel && !(r.telefone_pdv || '').replace(/\D/g, '').includes(tel)) return false;
+      return true;
+    });
+  };
+
+  const filteredErrorLogs = useMemo(
+    () => (filterStatus === 'sucesso' ? [] : applyFilters(errorLogs)),
+    [errorLogs, filterCodPdv, filterTelefone, filterStatus]
+  );
+  const filteredSuccessLogs = useMemo(
+    () => (filterStatus === 'erro' ? [] : applyFilters(successLogs)),
+    [successLogs, filterCodPdv, filterTelefone, filterStatus]
+  );
+
+  const hasFilters = filterCodPdv || filterTelefone || filterStatus !== 'todos' || dateFrom || dateTo;
 
   const handleClearErrors = async () => {
     if (errorLogs.length === 0) return;
@@ -288,7 +313,7 @@ export default function HistoricoEnvios() {
               Buscar
             </Button>
 
-            {(dateFrom || dateTo) && (
+            {(dateFrom || dateTo || filterCodPdv || filterTelefone || filterStatus !== 'todos') && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -296,12 +321,41 @@ export default function HistoricoEnvios() {
                 onClick={() => {
                   setDateFrom(undefined);
                   setDateTo(undefined);
+                  setFilterCodPdv('');
+                  setFilterTelefone('');
+                  setFilterStatus('todos');
                 }}
               >
                 Limpar filtros
               </Button>
             )}
           </div>
+        </div>
+
+        {/* Filtros adicionais */}
+        <div className="flex items-center gap-2 flex-wrap mt-3">
+          <Input
+            placeholder="Cód. PDV"
+            value={filterCodPdv}
+            onChange={(e) => setFilterCodPdv(e.target.value)}
+            className="h-8 text-xs w-[140px]"
+          />
+          <Input
+            placeholder="Telefone"
+            value={filterTelefone}
+            onChange={(e) => setFilterTelefone(e.target.value)}
+            className="h-8 text-xs w-[160px]"
+          />
+          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as 'todos' | 'sucesso' | 'erro')}>
+            <SelectTrigger className="h-8 text-xs w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos status</SelectItem>
+              <SelectItem value="sucesso">Sucesso</SelectItem>
+              <SelectItem value="erro">Erro</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
 
@@ -314,7 +368,7 @@ export default function HistoricoEnvios() {
                 <CardTitle className="text-sm flex items-center gap-2">
                   <AlertTriangle size={14} className="text-destructive" />
                   Erros
-                  <Badge variant="destructive" className="text-xs">{errorLogs.length}</Badge>
+                  <Badge variant="destructive" className="text-xs">{filteredErrorLogs.length}{hasFilters && errorLogs.length !== filteredErrorLogs.length ? `/${errorLogs.length}` : ''}</Badge>
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
@@ -363,7 +417,7 @@ export default function HistoricoEnvios() {
             </CardHeader>
             <CardContent className="px-2 pb-2">
               <ScrollArea className="h-[400px]">
-                {errorLogs.length === 0 ? (
+                {filteredErrorLogs.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-8">Nenhum erro encontrado</p>
                 ) : (
                   <Table>
@@ -378,7 +432,7 @@ export default function HistoricoEnvios() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {errorLogs.map((row) => (
+                      {filteredErrorLogs.map((row) => (
                         <TableRow key={row.id}>
                           <TableCell className="text-xs whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
                           <TableCell className="text-xs font-medium">{row.cod_pdv}</TableCell>
@@ -425,12 +479,12 @@ export default function HistoricoEnvios() {
               <CardTitle className="text-sm flex items-center gap-2">
                 <CheckCircle2 size={14} className="text-green-600" />
                 Enviados com Sucesso
-                <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{successLogs.length}</Badge>
+                <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{filteredSuccessLogs.length}{hasFilters && successLogs.length !== filteredSuccessLogs.length ? `/${successLogs.length}` : ''}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-2">
               <ScrollArea className="h-[400px]">
-                {successLogs.length === 0 ? (
+                {filteredSuccessLogs.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-8">Nenhum envio com sucesso encontrado</p>
                 ) : (
                   <Table>
@@ -444,7 +498,7 @@ export default function HistoricoEnvios() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {successLogs.map((row) => (
+                      {filteredSuccessLogs.map((row) => (
                         <TableRow key={row.id}>
                           <TableCell className="text-xs whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
                           <TableCell className="text-xs font-medium">{row.cod_pdv}</TableCell>
