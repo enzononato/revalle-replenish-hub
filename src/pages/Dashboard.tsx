@@ -400,111 +400,76 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [protocolosFiltrados]);
 
-  // TOP 5 PDVs via RPC (já vem com nome resolvido, com filtro de unidade aplicado no banco)
-  const [topPdvsRpc, setTopPdvsRpc] = useState<{ codigo: string; nome: string; total: number }[]>([]);
-  const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
-  const [topPdvsLoading, setTopPdvsLoading] = useState(false);
-  const [topPdvsError, setTopPdvsError] = useState<string | null>(null);
+  // TOP 5 PDVs via RPC com cache (já vem com nome resolvido, filtro de unidade no banco)
+  const topPdvsQuery = useQuery({
+    queryKey: ['dashboard', 'topPdvs', unidadesKey],
+    enabled: !skipQueries,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_dashboard_top_pdvs', {
+        p_unidades: unidadesParam,
+        p_data_inicio: null,
+        p_data_fim: null,
+        p_limite: 5,
+      });
+      if (error) throw error;
+      return (data || []).map((r: { codigo: string; nome: string; total: number | string }) => ({
+        codigo: r.codigo,
+        nome: r.nome,
+        total: Number(r.total) || 0,
+      }));
+    },
+  });
 
+  const topPdvsRpc = topPdvsQuery.data ?? [];
+  const topPdvsLoading = topPdvsQuery.isLoading || topPdvsQuery.isFetching;
+  const topPdvsError = topPdvsQuery.isError ? 'Não foi possível carregar o ranking de PDVs.' : null;
+  const pdvNamesMap = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    topPdvsRpc.forEach((r) => { map[r.codigo] = r.nome; });
+    return map;
+  }, [topPdvsRpc]);
+
+  // Resumo (sobras + trocas) agregado via RPC com cache (corrige limit antigo de 1000)
+  const resumoQuery = useQuery({
+    queryKey: ['dashboard', 'resumo', unidadesKey],
+    enabled: !skipQueries,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_dashboard_resumo', {
+        p_unidades: unidadesParam,
+        p_data_inicio: null,
+        p_data_fim: null,
+      });
+      if (error) throw error;
+      return Array.isArray(data) ? data[0] : data;
+    },
+  });
+
+  // Sincroniza resultados da query de resumo no estado existente (mantém consumidores intactos)
   useEffect(() => {
-    const fetchTopPdvs = async () => {
-      setTopPdvsLoading(true);
-      setTopPdvsError(null);
-      try {
-        let unidadesParam: string[] | null = null;
-        if (!isAdmin) {
-          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
-          const permitidas = unidadesFiltro.length > 0
-            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
-            : userUnidades;
-          unidadesParam = permitidas.length > 0 ? permitidas : [];
-        } else if (unidadesFiltro.length > 0) {
-          unidadesParam = unidadesFiltro;
-        }
+    if (skipQueries) {
+      setSobrasStats({ total: 0, pendente: 0, tratamento: 0, resolvido: 0, erroCarregamento: 0, erroEntrega: 0 });
+      setTrocasTotal(0);
+      return;
+    }
+    const row = resumoQuery.data;
+    if (!row) return;
+    setSobrasStats({
+      total: Number(row.sobras_total) || 0,
+      pendente: Number(row.sobras_pendente) || 0,
+      tratamento: Number(row.sobras_andamento) || 0,
+      resolvido: Number(row.sobras_resolvido) || 0,
+      erroCarregamento: Number(row.sobras_erro_carregamento) || 0,
+      erroEntrega: Number(row.sobras_erro_entrega) || 0,
+    });
+    setTrocasTotal(Number(row.trocas_total) || 0);
+  }, [resumoQuery.data, skipQueries]);
 
-        if (unidadesParam !== null && unidadesParam.length === 0) {
-          setTopPdvsRpc([]);
-          setPdvNamesMap({});
-          return;
-        }
-
-        const { data, error } = await supabase.rpc('get_dashboard_top_pdvs', {
-          p_unidades: unidadesParam,
-          p_data_inicio: null,
-          p_data_fim: null,
-          p_limite: 5,
-        });
-
-        if (error) throw error;
-
-        const rows = (data || []).map((r: { codigo: string; nome: string; total: number | string }) => ({
-          codigo: r.codigo,
-          nome: r.nome,
-          total: Number(r.total) || 0,
-        }));
-        setTopPdvsRpc(rows);
-
-        const map: Record<string, string> = {};
-        rows.forEach((r) => { map[r.codigo] = r.nome; });
-        setPdvNamesMap(map);
-      } catch (err) {
-        console.error('Erro ao buscar TOP PDVs:', err);
-        setTopPdvsError('Não foi possível carregar o ranking de PDVs.');
-      } finally {
-        setTopPdvsLoading(false);
-      }
-    };
-    fetchTopPdvs();
-  }, [isAdmin, user?.unidade, unidadesFiltro]);
-
-  // Fetch sobras + trocas stats agregados via RPC (corrige limit antigo de 1000)
-  useEffect(() => {
-    const fetchResumo = async () => {
-      try {
-        let unidadesParam: string[] | null = null;
-        if (!isAdmin) {
-          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
-          const unidadesPermitidas = unidadesFiltro.length > 0
-            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
-            : userUnidades;
-          unidadesParam = unidadesPermitidas.length > 0 ? unidadesPermitidas : [];
-        } else if (unidadesFiltro.length > 0) {
-          unidadesParam = unidadesFiltro;
-        }
-
-        // Se usuário não-admin não tem unidade permitida, zera tudo sem chamar
-        if (unidadesParam !== null && unidadesParam.length === 0) {
-          setSobrasStats({ total: 0, pendente: 0, tratamento: 0, resolvido: 0, erroCarregamento: 0, erroEntrega: 0 });
-          setTrocasTotal(0);
-          return;
-        }
-
-        const { data, error } = await supabase.rpc('get_dashboard_resumo', {
-          p_unidades: unidadesParam,
-          p_data_inicio: null,
-          p_data_fim: null,
-        });
-
-        if (error) throw error;
-
-        const row = Array.isArray(data) ? data[0] : data;
-        if (!row) return;
-
-        setSobrasStats({
-          total: Number(row.sobras_total) || 0,
-          pendente: Number(row.sobras_pendente) || 0,
-          tratamento: Number(row.sobras_andamento) || 0,
-          resolvido: Number(row.sobras_resolvido) || 0,
-          erroCarregamento: Number(row.sobras_erro_carregamento) || 0,
-          erroEntrega: Number(row.sobras_erro_entrega) || 0,
-        });
-        setTrocasTotal(Number(row.trocas_total) || 0);
-      } catch (err) {
-        console.error('Erro ao buscar resumo do dashboard:', err);
-      }
-    };
-    fetchResumo();
-  }, [isAdmin, user?.unidade, unidadesFiltro]);
 
   // TOP 5 Clientes PDVs (vindo direto da RPC)
   const topClientesReal = useMemo(() =>
