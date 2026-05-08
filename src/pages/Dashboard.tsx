@@ -261,6 +261,8 @@ export default function Dashboard() {
   // Séries de protocolos abertos × encerrados via RPC (dia 7d e mês 6m)
   const [serieDiaria, setSerieDiaria] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
   const [serieMensal, setSerieMensal] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
+  const [seriesLoading, setSeriesLoading] = useState(false);
+  const [seriesError, setSeriesError] = useState<string | null>(null);
 
   useEffect(() => {
     const computeUnidades = (): string[] | null => {
@@ -278,10 +280,14 @@ export default function Dashboard() {
     if (Array.isArray(unidadesParam) && unidadesParam.length === 0 && !isAdmin) {
       setSerieDiaria([]);
       setSerieMensal([]);
+      setSeriesLoading(false);
+      setSeriesError(null);
       return;
     }
 
     const fetchSeries = async () => {
+      setSeriesLoading(true);
+      setSeriesError(null);
       try {
         const today = new Date();
         const inicio7d = format(subDays(today, 6), 'yyyy-MM-dd');
@@ -318,6 +324,9 @@ export default function Dashboard() {
         })));
       } catch (err) {
         console.error('Erro ao buscar séries do dashboard:', err);
+        setSeriesError('Não foi possível carregar os gráficos. Tente novamente em instantes.');
+      } finally {
+        setSeriesLoading(false);
       }
     };
 
@@ -401,9 +410,13 @@ export default function Dashboard() {
   // TOP 5 PDVs via RPC (já vem com nome resolvido, com filtro de unidade aplicado no banco)
   const [topPdvsRpc, setTopPdvsRpc] = useState<{ codigo: string; nome: string; total: number }[]>([]);
   const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
+  const [topPdvsLoading, setTopPdvsLoading] = useState(false);
+  const [topPdvsError, setTopPdvsError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTopPdvs = async () => {
+      setTopPdvsLoading(true);
+      setTopPdvsError(null);
       try {
         let unidadesParam: string[] | null = null;
         if (!isAdmin) {
@@ -443,6 +456,9 @@ export default function Dashboard() {
         setPdvNamesMap(map);
       } catch (err) {
         console.error('Erro ao buscar TOP PDVs:', err);
+        setTopPdvsError('Não foi possível carregar o ranking de PDVs.');
+      } finally {
+        setTopPdvsLoading(false);
       }
     };
     fetchTopPdvs();
@@ -1130,13 +1146,31 @@ export default function Dashboard() {
           delay={500}
           variant="primary"
         />
-        <RankingCard
-          title="Top 5 Clientes (PDVs)"
-          icon={<Building2 className="text-sky-500" size={18} />}
-          items={topClientesReal}
-          delay={600}
-          variant="info"
-        />
+        <div className="relative">
+          <RankingCard
+            title="Top 5 Clientes (PDVs)"
+            icon={<Building2 className="text-sky-500" size={18} />}
+            items={topClientesReal}
+            delay={600}
+            variant="info"
+          />
+          {topPdvsError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-xl p-3">
+              <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md text-center">
+                <AlertTriangle size={14} />
+                {topPdvsError}
+              </div>
+            </div>
+          )}
+          {topPdvsLoading && !topPdvsError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-xl">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <RefreshCw size={14} className="animate-spin" />
+                Carregando ranking...
+              </div>
+            </div>
+          )}
+        </div>
         <RankingCard
           title="Top 5 Produtos"
           icon={<Package className="text-emerald-500" size={18} />}
@@ -1298,41 +1332,59 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={barData} margin={{ top: 28, right: 12, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.2))]} fontSize={11} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontSize: '11px'
-                }}
-              />
-              <Legend 
-                wrapperStyle={{ paddingTop: '10px' }}
-                formatter={(value) => (
-                  <span className="text-xs text-muted-foreground capitalize">{value}</span>
-                )}
-              />
-              <Bar
-                dataKey="abertos"
-                name="Abertos"
-                fill="hsl(38, 92%, 50%)"
-                radius={[4, 4, 0, 0]}
-                label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              />
-              <Bar
-                dataKey="encerrados"
-                name="Encerrados"
-                fill="hsl(160, 84%, 39%)"
-                radius={[4, 4, 0, 0]}
-                label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="relative">
+            {seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                  <AlertTriangle size={14} />
+                  {seriesError}
+                </div>
+              </div>
+            )}
+            {seriesLoading && !seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <RefreshCw size={14} className="animate-spin" />
+                  Carregando dados...
+                </div>
+              </div>
+            )}
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={barData} margin={{ top: 28, right: 12, left: -8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.2))]} fontSize={11} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '11px'
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '10px' }}
+                  formatter={(value) => (
+                    <span className="text-xs text-muted-foreground capitalize">{value}</span>
+                  )}
+                />
+                <Bar
+                  dataKey="abertos"
+                  name="Abertos"
+                  fill="hsl(38, 92%, 50%)"
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                />
+                <Bar
+                  dataKey="encerrados"
+                  name="Encerrados"
+                  fill="hsl(160, 84%, 39%)"
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Pie Chart */}
@@ -1483,17 +1535,35 @@ export default function Dashboard() {
               <Download size={12} className="mr-1" />CSV
             </Button>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={taxaResolucaoData} margin={{ top: 20, right: 12, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} fontSize={11} />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
-              <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-xs text-muted-foreground capitalize">{value}</span>} />
-              <Line type="monotone" dataKey="abertos" name="Abertos" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="encerrados" name="Encerrados" stroke="hsl(160, 84%, 39%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="relative">
+            {seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                  <AlertTriangle size={14} />
+                  {seriesError}
+                </div>
+              </div>
+            )}
+            {seriesLoading && !seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <RefreshCw size={14} className="animate-spin" />
+                  Carregando dados...
+                </div>
+              </div>
+            )}
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={taxaResolucaoData} margin={{ top: 20, right: 12, left: -8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} fontSize={11} />
+                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
+                <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-xs text-muted-foreground capitalize">{value}</span>} />
+                <Line type="monotone" dataKey="abertos" name="Abertos" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="encerrados" name="Encerrados" stroke="hsl(160, 84%, 39%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
