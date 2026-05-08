@@ -259,80 +259,72 @@ export default function Dashboard() {
     { name: 'Encerrados', value: stats.encerrados },
   ], [stats]);
 
-  // Séries de protocolos abertos × encerrados via RPC (dia 7d e mês 6m)
-  const [serieDiaria, setSerieDiaria] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
-  const [serieMensal, setSerieMensal] = useState<{ periodo: string; abertos: number; encerrados: number }[]>([]);
-  const [seriesLoading, setSeriesLoading] = useState(false);
-  const [seriesError, setSeriesError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const computeUnidades = (): string[] | null => {
-      if (!isAdmin) {
-        const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
-        const permitidas = unidadesFiltro.length > 0
-          ? unidadesFiltro.filter((u) => userUnidades.includes(u))
-          : userUnidades;
-        return permitidas;
-      }
-      return unidadesFiltro.length > 0 ? unidadesFiltro : null;
-    };
-
-    const unidadesParam = computeUnidades();
-    if (Array.isArray(unidadesParam) && unidadesParam.length === 0 && !isAdmin) {
-      setSerieDiaria([]);
-      setSerieMensal([]);
-      setSeriesLoading(false);
-      setSeriesError(null);
-      return;
+  // Parâmetro de unidades aplicado nas RPCs (compartilhado entre as 3 queries)
+  // null = sem filtro (admin sem seleção); [] = não-admin sem unidades permitidas (não chama)
+  const unidadesParam = useMemo<string[] | null>(() => {
+    if (!isAdmin) {
+      const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+      const permitidas = unidadesFiltro.length > 0
+        ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+        : userUnidades;
+      return permitidas;
     }
-
-    const fetchSeries = async () => {
-      setSeriesLoading(true);
-      setSeriesError(null);
-      try {
-        const today = new Date();
-        const inicio7d = format(subDays(today, 6), 'yyyy-MM-dd');
-        const inicio6m = format(startOfMonth(subMonths(today, 5)), 'yyyy-MM-dd');
-        const fimHoje = format(today, 'yyyy-MM-dd');
-
-        const [diaria, mensal] = await Promise.all([
-          supabase.rpc('get_dashboard_protocolos_por_periodo', {
-            p_unidades: unidadesParam,
-            p_data_inicio: inicio7d,
-            p_data_fim: fimHoje,
-            p_granularidade: 'dia',
-          }),
-          supabase.rpc('get_dashboard_protocolos_por_periodo', {
-            p_unidades: unidadesParam,
-            p_data_inicio: inicio6m,
-            p_data_fim: fimHoje,
-            p_granularidade: 'mes',
-          }),
-        ]);
-
-        if (diaria.error) throw diaria.error;
-        if (mensal.error) throw mensal.error;
-
-        setSerieDiaria((diaria.data || []).map((r: { periodo: string; abertos: number | string; encerrados: number | string }) => ({
-          periodo: r.periodo,
-          abertos: Number(r.abertos) || 0,
-          encerrados: Number(r.encerrados) || 0,
-        })));
-        setSerieMensal((mensal.data || []).map((r: { periodo: string; abertos: number | string; encerrados: number | string }) => ({
-          periodo: r.periodo,
-          abertos: Number(r.abertos) || 0,
-          encerrados: Number(r.encerrados) || 0,
-        })));
-      } catch (err) {
-        console.error('Erro ao buscar séries do dashboard:', err);
-        setSeriesError('Não foi possível carregar os gráficos. Tente novamente em instantes.');
-      } finally {
-        setSeriesLoading(false);
-      }
-    };
-
-    fetchSeries();
+    return unidadesFiltro.length > 0 ? unidadesFiltro : null;
   }, [isAdmin, user?.unidade, unidadesFiltro]);
+
+  const skipQueries = Array.isArray(unidadesParam) && unidadesParam.length === 0 && !isAdmin;
+  const unidadesKey = unidadesParam ? [...unidadesParam].sort().join(',') : '__all__';
+
+  // Séries de protocolos abertos × encerrados via RPC (dia 7d e mês 6m) com cache
+  const seriesQuery = useQuery({
+    queryKey: ['dashboard', 'series', unidadesKey],
+    enabled: !skipQueries,
+    staleTime: 60_000,         // 1 min: evita refetch ao trocar de aba/filtro repetido
+    gcTime: 5 * 60_000,        // mantém em cache 5 min
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const today = new Date();
+      const inicio7d = format(subDays(today, 6), 'yyyy-MM-dd');
+      const inicio6m = format(startOfMonth(subMonths(today, 5)), 'yyyy-MM-dd');
+      const fimHoje = format(today, 'yyyy-MM-dd');
+
+      const [diaria, mensal] = await Promise.all([
+        supabase.rpc('get_dashboard_protocolos_por_periodo', {
+          p_unidades: unidadesParam,
+          p_data_inicio: inicio7d,
+          p_data_fim: fimHoje,
+          p_granularidade: 'dia',
+        }),
+        supabase.rpc('get_dashboard_protocolos_por_periodo', {
+          p_unidades: unidadesParam,
+          p_data_inicio: inicio6m,
+          p_data_fim: fimHoje,
+          p_granularidade: 'mes',
+        }),
+      ]);
+
+      if (diaria.error) throw diaria.error;
+      if (mensal.error) throw mensal.error;
+
+      const mapRow = (r: { periodo: string; abertos: number | string; encerrados: number | string }) => ({
+        periodo: r.periodo,
+        abertos: Number(r.abertos) || 0,
+        encerrados: Number(r.encerrados) || 0,
+      });
+
+      return {
+        diaria: (diaria.data || []).map(mapRow),
+        mensal: (mensal.data || []).map(mapRow),
+      };
+    },
+  });
+
+  const serieDiaria = seriesQuery.data?.diaria ?? [];
+  const serieMensal = seriesQuery.data?.mensal ?? [];
+  const seriesLoading = seriesQuery.isLoading || seriesQuery.isFetching;
+  const seriesError = seriesQuery.isError
+    ? 'Não foi possível carregar os gráficos. Tente novamente em instantes.'
+    : null;
 
   // Dados do gráfico de barras (dinâmico por período)
   const barData = useMemo(() => {
