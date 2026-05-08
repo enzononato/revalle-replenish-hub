@@ -280,10 +280,14 @@ export default function Dashboard() {
     if (Array.isArray(unidadesParam) && unidadesParam.length === 0 && !isAdmin) {
       setSerieDiaria([]);
       setSerieMensal([]);
+      setSeriesLoading(false);
+      setSeriesError(null);
       return;
     }
 
     const fetchSeries = async () => {
+      setSeriesLoading(true);
+      setSeriesError(null);
       try {
         const today = new Date();
         const inicio7d = format(subDays(today, 6), 'yyyy-MM-dd');
@@ -320,6 +324,9 @@ export default function Dashboard() {
         })));
       } catch (err) {
         console.error('Erro ao buscar séries do dashboard:', err);
+        setSeriesError('Não foi possível carregar os gráficos. Tente novamente em instantes.');
+      } finally {
+        setSeriesLoading(false);
       }
     };
 
