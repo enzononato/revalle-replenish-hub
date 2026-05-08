@@ -870,6 +870,20 @@ export type Database = {
           unidade: string
         }[]
       }
+      get_dashboard_protocolos_por_dia: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_unidades?: string[]
+        }
+        Returns: {
+          aberto: number
+          dia: string
+          em_andamento: number
+          encerrado: number
+          total: number
+        }[]
+      }
       get_dashboard_protocolos_por_periodo: {
         Args: {
           p_data_fim?: string
