@@ -417,7 +417,7 @@ export default function HistoricoEnvios() {
             </CardHeader>
             <CardContent className="px-2 pb-2">
               <ScrollArea className="h-[400px]">
-                {errorLogs.length === 0 ? (
+                {filteredErrorLogs.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-8">Nenhum erro encontrado</p>
                 ) : (
                   <Table>
