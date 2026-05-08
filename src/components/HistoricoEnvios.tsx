@@ -51,6 +51,30 @@ export default function HistoricoEnvios() {
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [editingPhone, setEditingPhone] = useState<Record<string, string>>({});
   const [isClearing, setIsClearing] = useState(false);
+  const [filterCodPdv, setFilterCodPdv] = useState('');
+  const [filterTelefone, setFilterTelefone] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'todos' | 'sucesso' | 'erro'>('todos');
+
+  const applyFilters = (rows: HistoryLogRow[]) => {
+    const cod = filterCodPdv.trim().toLowerCase();
+    const tel = filterTelefone.replace(/\D/g, '');
+    return rows.filter((r) => {
+      if (cod && !(r.cod_pdv || '').toLowerCase().includes(cod)) return false;
+      if (tel && !(r.telefone_pdv || '').replace(/\D/g, '').includes(tel)) return false;
+      return true;
+    });
+  };
+
+  const filteredErrorLogs = useMemo(
+    () => (filterStatus === 'sucesso' ? [] : applyFilters(errorLogs)),
+    [errorLogs, filterCodPdv, filterTelefone, filterStatus]
+  );
+  const filteredSuccessLogs = useMemo(
+    () => (filterStatus === 'erro' ? [] : applyFilters(successLogs)),
+    [successLogs, filterCodPdv, filterTelefone, filterStatus]
+  );
+
+  const hasFilters = filterCodPdv || filterTelefone || filterStatus !== 'todos' || dateFrom || dateTo;
 
   const handleClearErrors = async () => {
     if (errorLogs.length === 0) return;
