@@ -313,7 +313,7 @@ export default function HistoricoEnvios() {
               Buscar
             </Button>
 
-            {(dateFrom || dateTo) && (
+            {(dateFrom || dateTo || filterCodPdv || filterTelefone || filterStatus !== 'todos') && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -321,12 +321,41 @@ export default function HistoricoEnvios() {
                 onClick={() => {
                   setDateFrom(undefined);
                   setDateTo(undefined);
+                  setFilterCodPdv('');
+                  setFilterTelefone('');
+                  setFilterStatus('todos');
                 }}
               >
                 Limpar filtros
               </Button>
             )}
           </div>
+        </div>
+
+        {/* Filtros adicionais */}
+        <div className="flex items-center gap-2 flex-wrap mt-3">
+          <Input
+            placeholder="Cód. PDV"
+            value={filterCodPdv}
+            onChange={(e) => setFilterCodPdv(e.target.value)}
+            className="h-8 text-xs w-[140px]"
+          />
+          <Input
+            placeholder="Telefone"
+            value={filterTelefone}
+            onChange={(e) => setFilterTelefone(e.target.value)}
+            className="h-8 text-xs w-[160px]"
+          />
+          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as 'todos' | 'sucesso' | 'erro')}>
+            <SelectTrigger className="h-8 text-xs w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos status</SelectItem>
+              <SelectItem value="sucesso">Sucesso</SelectItem>
+              <SelectItem value="erro">Erro</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
 
