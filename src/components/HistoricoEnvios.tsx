@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,7 @@ interface HistoryLogRow {
 const WEBHOOK_URL = 'https://n8n.revalle.com.br/webhook/alteracao_pedidos';
 
 export default function HistoricoEnvios() {
+  const { user, isAdmin } = useAuth();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,12 +80,45 @@ export default function HistoricoEnvios() {
   const fetchHistory = async () => {
     setIsLoading(true);
     try {
+      const userUnidades = (user?.unidade || '')
+        .split(',')
+        .map((u) => u.trim())
+        .filter(Boolean);
+
+      let codigosPermitidos: string[] | null = null;
+      if (!isAdmin && userUnidades.length > 0) {
+        const { data: pdvsData, error: pdvsError } = await supabase
+          .from('pdvs')
+          .select('codigo')
+          .in('unidade', userUnidades);
+
+        if (pdvsError) {
+          console.error('Erro ao buscar PDVs do usuário:', pdvsError);
+          toast.error('Erro ao filtrar por unidade');
+          setSuccessLogs([]);
+          setErrorLogs([]);
+          return;
+        }
+
+        codigosPermitidos = Array.from(new Set((pdvsData || []).map((p) => p.codigo)));
+
+        if (codigosPermitidos.length === 0) {
+          setSuccessLogs([]);
+          setErrorLogs([]);
+          return;
+        }
+      }
+
       let query = supabase
         .from('alteracao_pedidos_log')
         .select('id, cod_pdv, nome_pdv, telefone_pdv, status_pedido, mensagem_cliente, sucesso, erro_mensagem, created_at')
         .eq('oculto', false)
         .order('created_at', { ascending: false })
         .limit(500);
+
+      if (codigosPermitidos) {
+        query = query.in('cod_pdv', codigosPermitidos);
+      }
 
       if (dateFrom) {
         query = query.gte('created_at', format(dateFrom, 'yyyy-MM-dd') + 'T00:00:00');
@@ -110,7 +145,8 @@ export default function HistoricoEnvios() {
 
   useEffect(() => {
     fetchHistory();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.unidade, isAdmin]);
 
   const handleResend = async (row: HistoryLogRow) => {
     setResendingId(row.id);
