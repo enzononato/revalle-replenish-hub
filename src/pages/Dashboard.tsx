@@ -672,7 +672,7 @@ export default function Dashboard() {
     });
     if (error) throw error;
 
-    const row = (Array.isArray(data) ? data[0] : data) || {};
+    const row: Record<string, unknown> = ((Array.isArray(data) ? data[0] : data) || {}) as Record<string, unknown>;
     const rows = [
       { categoria: 'Sobras', metrica: 'Total', valor: Number(row.sobras_total) || 0 },
       { categoria: 'Sobras', metrica: 'Pendente', valor: Number(row.sobras_pendente) || 0 },
