@@ -479,7 +479,7 @@ export default function HistoricoEnvios() {
               <CardTitle className="text-sm flex items-center gap-2">
                 <CheckCircle2 size={14} className="text-green-600" />
                 Enviados com Sucesso
-                <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{successLogs.length}</Badge>
+                <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{filteredSuccessLogs.length}{hasFilters && successLogs.length !== filteredSuccessLogs.length ? `/${successLogs.length}` : ''}</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="px-2 pb-2">
