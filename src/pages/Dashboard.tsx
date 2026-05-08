@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
