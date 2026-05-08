@@ -1004,6 +1004,14 @@ export default function Dashboard() {
               <Download size={14} className="mr-1.5" />
               CSV
             </Button>
+            <Button variant="outline" size="sm" onClick={handleExportResumoCSV} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
+              <Download size={14} className="mr-1.5" />
+              Resumo CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportResumoPDF} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
+              <FileText size={14} className="mr-1.5" />
+              Resumo PDF
+            </Button>
           </div>
         </div>
       </div>
