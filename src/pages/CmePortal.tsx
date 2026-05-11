@@ -70,16 +70,10 @@ export default function CmePortal() {
     setSearchedPdv(code);
 
     const { data, error } = await supabase
-      .from('protocolos')
-      .select('id, numero, motorista_nome, motorista_unidade, codigo_pdv, data, hora, status, tipo_reposicao, causa, produtos, nota_fiscal, mapa, oculto, ativo')
-      .eq('codigo_pdv', code)
-      .eq('ativo', true)
-      .order('created_at', { ascending: false })
-      .limit(200);
+      .rpc('get_protocolos_by_codigo_pdv', { p_codigo: code });
 
     if (!error && data) {
-      const filtered = (data as any[]).filter(p => !p.oculto) as ProtocoloRow[];
-      setProtocolos(filtered);
+      setProtocolos(data as ProtocoloRow[]);
     } else {
       setProtocolos([]);
     }
