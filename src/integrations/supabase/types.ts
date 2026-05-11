@@ -926,6 +926,72 @@ export type Database = {
           total: number
         }[]
       }
+      get_protocolos_by_codigo_pdv: {
+        Args: { p_codigo: string }
+        Returns: {
+          arquivo_encerramento: string | null
+          ativo: boolean
+          causa: string | null
+          cliente_telefone: string | null
+          codigo_pdv: string | null
+          conferencia_status: string
+          confirmacao_conferente: Json
+          contato_email: string | null
+          contato_whatsapp: string | null
+          created_at: string | null
+          data: string
+          destino_final: string | null
+          encerrado_por_motorista_id: string | null
+          encerrado_por_motorista_nome: string | null
+          encerrado_por_tipo: string | null
+          enviado_encerrar: boolean | null
+          enviado_encerrar_erro: string | null
+          enviado_encerrar_status: string | null
+          enviado_lancar: boolean | null
+          enviado_lancar_erro: string | null
+          enviado_lancar_status: string | null
+          finalizado_em: string | null
+          finalizado_por_id: string | null
+          finalizado_por_nome: string | null
+          foto_entrega_mercadoria: string | null
+          foto_nota_fiscal_encerramento: string | null
+          fotos_protocolo: Json | null
+          habilitar_reenvio: boolean | null
+          hora: string
+          id: string
+          lancado: boolean | null
+          mapa: string | null
+          mensagem_encerramento: string | null
+          motorista_codigo: string | null
+          motorista_email: string | null
+          motorista_id: string | null
+          motorista_nome: string
+          motorista_unidade: string | null
+          motorista_whatsapp: string | null
+          nota_fiscal: string | null
+          numero: string
+          observacao_finalizacao: string | null
+          observacao_geral: string | null
+          observacoes_log: Json | null
+          oculto: boolean | null
+          produtos: Json | null
+          protocolo_origem_id: string | null
+          sla_16_enviado: boolean | null
+          sla_16_enviado_at: string | null
+          status: string
+          status_encerramento: string | null
+          status_envio: string | null
+          tipo_reposicao: string | null
+          ultimo_alerta_sla: number | null
+          validacao: boolean | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "protocolos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
