@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { StatCard } from '@/components/ui/StatCard';
 import { RankingCard } from '@/components/ui/RankingCard';
@@ -258,22 +259,89 @@ export default function Dashboard() {
     { name: 'Encerrados', value: stats.encerrados },
   ], [stats]);
 
+  // Parâmetro de unidades aplicado nas RPCs (compartilhado entre as 3 queries)
+  // null = sem filtro (admin sem seleção); [] = não-admin sem unidades permitidas (não chama)
+  const unidadesParam = useMemo<string[] | null>(() => {
+    if (!isAdmin) {
+      const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+      const permitidas = unidadesFiltro.length > 0
+        ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+        : userUnidades;
+      return permitidas;
+    }
+    return unidadesFiltro.length > 0 ? unidadesFiltro : null;
+  }, [isAdmin, user?.unidade, unidadesFiltro]);
+
+  const skipQueries = Array.isArray(unidadesParam) && unidadesParam.length === 0 && !isAdmin;
+  const unidadesKey = unidadesParam ? [...unidadesParam].sort().join(',') : '__all__';
+
+  // Séries de protocolos abertos × encerrados via RPC (dia 7d e mês 6m) com cache
+  const seriesQuery = useQuery({
+    queryKey: ['dashboard', 'series', unidadesKey],
+    enabled: !skipQueries,
+    staleTime: 60_000,         // 1 min: evita refetch ao trocar de aba/filtro repetido
+    gcTime: 5 * 60_000,        // mantém em cache 5 min
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const today = new Date();
+      const inicio7d = format(subDays(today, 6), 'yyyy-MM-dd');
+      const inicio6m = format(startOfMonth(subMonths(today, 5)), 'yyyy-MM-dd');
+      const fimHoje = format(today, 'yyyy-MM-dd');
+
+      const [diaria, mensal] = await Promise.all([
+        supabase.rpc('get_dashboard_protocolos_por_periodo', {
+          p_unidades: unidadesParam,
+          p_data_inicio: inicio7d,
+          p_data_fim: fimHoje,
+          p_granularidade: 'dia',
+        }),
+        supabase.rpc('get_dashboard_protocolos_por_periodo', {
+          p_unidades: unidadesParam,
+          p_data_inicio: inicio6m,
+          p_data_fim: fimHoje,
+          p_granularidade: 'mes',
+        }),
+      ]);
+
+      if (diaria.error) throw diaria.error;
+      if (mensal.error) throw mensal.error;
+
+      const mapRow = (r: { periodo: string; abertos: number | string; encerrados: number | string }) => ({
+        periodo: r.periodo,
+        abertos: Number(r.abertos) || 0,
+        encerrados: Number(r.encerrados) || 0,
+      });
+
+      return {
+        diaria: (diaria.data || []).map(mapRow),
+        mensal: (mensal.data || []).map(mapRow),
+      };
+    },
+  });
+
+  const serieDiaria = seriesQuery.data?.diaria ?? [];
+  const serieMensal = seriesQuery.data?.mensal ?? [];
+  const seriesLoading = seriesQuery.isLoading || seriesQuery.isFetching;
+  const seriesError = seriesQuery.isError
+    ? 'Não foi possível carregar os gráficos. Tente novamente em instantes.'
+    : null;
+
   // Dados do gráfico de barras (dinâmico por período)
   const barData = useMemo(() => {
     const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const today = new Date();
-    const result = [];
+    const result: { name: string; abertos: number; encerrados: number }[] = [];
 
     if (chartPeriodo === 'dia') {
-      // Últimas 24h em blocos de 4h
+      // Mantido em JS: granularidade por blocos de 4h não cabe na RPC
       for (let i = 5; i >= 0; i--) {
         const hourStart = new Date(today);
         hourStart.setHours(today.getHours() - i * 4, 0, 0, 0);
         const hourEnd = new Date(hourStart);
         hourEnd.setHours(hourStart.getHours() + 4);
         const label = `${format(hourStart, 'HH')}h`;
-        
+
         const abertos = protocolosFiltrados.filter(p => {
           try {
             const dataProtocolo = parseFlexDate(p.data);
@@ -286,61 +354,33 @@ export default function Dashboard() {
         result.push({ name: label, abertos, encerrados: 0 });
       }
     } else if (chartPeriodo === 'semana') {
+      const map = new Map(serieDiaria.map(r => [r.periodo, r]));
       for (let i = 6; i >= 0; i--) {
         const date = subDays(today, i);
-        const dayName = days[date.getDay()];
-        const targetDateStr = format(date, 'yyyy-MM-dd');
-        
-        const abertosNoDia = protocolosFiltrados.filter(p => {
-          try {
-            const d = parseFlexDate(p.data);
-            return format(d, 'yyyy-MM-dd') === targetDateStr;
-          } catch { return false; }
-        }).length;
-        const encerradosNoDia = protocolosFiltrados.filter(p => {
-          if (p.status !== 'encerrado') return false;
-          const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-          if (!logEnc?.data) return false;
-          try {
-            const d = parseFlexDate(logEnc.data);
-            return format(d, 'yyyy-MM-dd') === targetDateStr;
-          } catch { return false; }
-        }).length;
-        
-        result.push({ name: `${dayName} ${format(date, 'dd')}`, abertos: abertosNoDia, encerrados: encerradosNoDia });
+        const key = format(date, 'yyyy-MM-dd');
+        const row = map.get(key);
+        result.push({
+          name: `${days[date.getDay()]} ${format(date, 'dd')}`,
+          abertos: row?.abertos ?? 0,
+          encerrados: row?.encerrados ?? 0,
+        });
       }
     } else {
-      // Últimos 4 meses
-      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const map = new Map(serieMensal.map(r => [r.periodo, r]));
       for (let i = 3; i >= 0; i--) {
         const monthDate = subMonths(today, i);
-        const monthStart = startOfMonth(monthDate);
-        const monthEnd = endOfMonth(monthDate);
-        const label = monthNames[monthDate.getMonth()];
-        
-        const abertos = protocolosFiltrados.filter(p => {
-          try {
-            const d = parseFlexDate(p.data);
-            return d >= monthStart && d <= monthEnd;
-          } catch { return false; }
-        }).length;
-        
-        const encerrados = protocolosFiltrados.filter(p => {
-          if (p.status !== 'encerrado') return false;
-          const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-          if (!logEnc?.data) return false;
-          try {
-            const d = parseFlexDate(logEnc.data);
-            return d >= monthStart && d <= monthEnd;
-          } catch { return false; }
-        }).length;
-        
-        result.push({ name: label, abertos, encerrados });
+        const key = format(monthDate, 'yyyy-MM');
+        const row = map.get(key);
+        result.push({
+          name: monthNames[monthDate.getMonth()],
+          abertos: row?.abertos ?? 0,
+          encerrados: row?.encerrados ?? 0,
+        });
       }
     }
-    
+
     return result;
-  }, [protocolosFiltrados, chartPeriodo]);
+  }, [protocolosFiltrados, chartPeriodo, serieDiaria, serieMensal]);
 
   // Protocolos recentes
   const recentProtocolos = useMemo(() => 
@@ -360,132 +400,85 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [protocolosFiltrados]);
 
-  // TOP 5 Clientes PDVs por código (para buscar apenas os nomes necessários)
-  const topClientesPorCodigo = useMemo(() => {
-    const contagem: Record<string, number> = {};
-    protocolosFiltrados.forEach(p => {
-      const pdv = p.codigoPdv || 'Sem PDV';
-      contagem[pdv] = (contagem[pdv] || 0) + 1;
-    });
+  // TOP 5 PDVs via RPC com cache (já vem com nome resolvido, filtro de unidade no banco)
+  const topPdvsQuery = useQuery({
+    queryKey: ['dashboard', 'topPdvs', unidadesKey],
+    enabled: !skipQueries,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_dashboard_top_pdvs', {
+        p_unidades: unidadesParam,
+        p_data_inicio: null,
+        p_data_fim: null,
+        p_limite: 5,
+      });
+      if (error) throw error;
+      return (data || []).map((r: { codigo: string; nome: string; total: number | string }) => ({
+        codigo: r.codigo,
+        nome: r.nome,
+        total: Number(r.total) || 0,
+      }));
+    },
+  });
 
-    return Object.entries(contagem)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-  }, [protocolosFiltrados]);
+  const topPdvsRpc = topPdvsQuery.data ?? [];
+  const topPdvsLoading = topPdvsQuery.isLoading || topPdvsQuery.isFetching;
+  const topPdvsError = topPdvsQuery.isError ? 'Não foi possível carregar o ranking de PDVs.' : null;
+  const pdvNamesMap = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    topPdvsRpc.forEach((r) => { map[r.codigo] = r.nome; });
+    return map;
+  }, [topPdvsRpc]);
 
-  // Mapa de código PDV -> nome PDV (somente TOP 5, evitando query em massa)
-  const [pdvNamesMap, setPdvNamesMap] = useState<Record<string, string>>({});
+  // Resumo (sobras + trocas) agregado via RPC com cache (corrige limit antigo de 1000)
+  const resumoQuery = useQuery({
+    queryKey: ['dashboard', 'resumo', unidadesKey],
+    enabled: !skipQueries,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_dashboard_resumo', {
+        p_unidades: unidadesParam,
+        p_data_inicio: null,
+        p_data_fim: null,
+      });
+      if (error) throw error;
+      return Array.isArray(data) ? data[0] : data;
+    },
+  });
 
+  // Sincroniza resultados da query de resumo no estado existente (mantém consumidores intactos)
   useEffect(() => {
-    const codigos = topClientesPorCodigo
-      .map(([codigo]) => codigo)
-      .filter((codigo) => codigo !== 'Sem PDV');
-
-    if (codigos.length === 0) {
-      setPdvNamesMap({});
+    if (skipQueries) {
+      setSobrasStats({ total: 0, pendente: 0, tratamento: 0, resolvido: 0, erroCarregamento: 0, erroEntrega: 0 });
+      setTrocasTotal(0);
       return;
     }
+    const row = resumoQuery.data;
+    if (!row) return;
+    setSobrasStats({
+      total: Number(row.sobras_total) || 0,
+      pendente: Number(row.sobras_pendente) || 0,
+      tratamento: Number(row.sobras_andamento) || 0,
+      resolvido: Number(row.sobras_resolvido) || 0,
+      erroCarregamento: Number(row.sobras_erro_carregamento) || 0,
+      erroEntrega: Number(row.sobras_erro_entrega) || 0,
+    });
+    setTrocasTotal(Number(row.trocas_total) || 0);
+  }, [resumoQuery.data, skipQueries]);
 
-    const fetchPdvNames = async () => {
-      const { data } = await supabase
-        .from('pdvs')
-        .select('codigo, nome')
-        .in('codigo', codigos);
 
-      if (!data) {
-        setPdvNamesMap({});
-        return;
-      }
-
-      const map: Record<string, string> = {};
-      data.forEach((p) => {
-        map[p.codigo] = p.nome;
-      });
-      setPdvNamesMap(map);
-    };
-
-    fetchPdvNames();
-  }, [topClientesPorCodigo]);
-
-  // Fetch sobras stats from database
-  useEffect(() => {
-    const fetchSobrasStats = async () => {
-      try {
-        let baseQuery = supabase
-          .from('protocolos')
-          .select('status, causa, motorista_unidade')
-          .eq('tipo_reposicao', 'pos_rota')
-          .eq('ativo', true);
-
-        if (!isAdmin) {
-          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
-          const unidadesPermitidas = unidadesFiltro.length > 0
-            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
-            : userUnidades;
-
-          if (unidadesPermitidas.length > 0) {
-            baseQuery = baseQuery.in('motorista_unidade', unidadesPermitidas);
-          }
-        } else if (unidadesFiltro.length > 0) {
-          baseQuery = baseQuery.in('motorista_unidade', unidadesFiltro);
-        }
-
-        const { data, error } = await baseQuery
-          .order('created_at', { ascending: false })
-          .limit(1000);
-        if (error) throw error;
-
-        const filtered = data || [];
-
-        setSobrasStats({
-          total: filtered.length,
-          pendente: filtered.filter(s => s.status === 'aberto').length,
-          tratamento: filtered.filter(s => s.status === 'em_andamento').length,
-          resolvido: filtered.filter(s => s.status === 'encerrado').length,
-          erroCarregamento: filtered.filter(s => s.causa?.toUpperCase().includes('ERRO DE CARREGAMENTO')).length,
-          erroEntrega: filtered.filter(s => s.causa?.toUpperCase().includes('ERRO DE ENTREGA')).length,
-        });
-      } catch (err) {
-        console.error('Erro ao buscar sobras stats:', err);
-      }
-    };
-    fetchSobrasStats();
-
-    const fetchTrocasStats = async () => {
-      try {
-        let q = supabase
-          .from('protocolos')
-          .select('id', { count: 'exact', head: true })
-          .eq('tipo_reposicao', 'troca')
-          .eq('ativo', true);
-        if (!isAdmin) {
-          const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
-          const permitidas = unidadesFiltro.length > 0
-            ? unidadesFiltro.filter((u) => userUnidades.includes(u))
-            : userUnidades;
-          if (permitidas.length > 0) q = q.in('motorista_unidade', permitidas);
-        } else if (unidadesFiltro.length > 0) {
-          q = q.in('motorista_unidade', unidadesFiltro);
-        }
-        const { count } = await q;
-        setTrocasTotal(count || 0);
-      } catch (err) {
-        console.error('Erro ao buscar trocas stats:', err);
-      }
-    };
-    fetchTrocasStats();
-  }, [isAdmin, user?.unidade, unidadesFiltro]);
-
-  // TOP 5 Clientes PDVs (calculado dos protocolos reais)
-  const topClientesReal = useMemo(() => {
-    return topClientesPorCodigo
-      .map(([codigo, quantidade], index) => ({
-        id: `pdv-${index}`,
-        nome: pdvNamesMap[codigo] || codigo,
-        quantidade
-      }))
-      .sort((a, b) => b.quantidade - a.quantidade);
-  }, [topClientesPorCodigo, pdvNamesMap]);
+  // TOP 5 Clientes PDVs (vindo direto da RPC)
+  const topClientesReal = useMemo(() =>
+    topPdvsRpc.map((p, index) => ({
+      id: `pdv-${index}`,
+      nome: p.nome,
+      quantidade: p.total,
+    })),
+  [topPdvsRpc]);
 
   // TOP 5 Produtos (calculado dos protocolos reais)
   const topProdutosReal = useMemo(() => {
@@ -557,38 +550,24 @@ export default function Dashboard() {
       .slice(0, 10);
   }, [protocolosFiltrados, pdvNamesMap]);
 
-  // 4. Taxa de Resolução por Período (Linha Dupla - últimos 6 meses)
+  // 4. Taxa de Resolução por Período (últimos 6 meses) — vem da RPC mensal
   const taxaResolucaoData = useMemo(() => {
     const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const today = new Date();
-    const result = [];
+    const map = new Map(serieMensal.map(r => [r.periodo, r]));
+    const result: { name: string; abertos: number; encerrados: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const monthDate = subMonths(today, i);
-      const mStart = startOfMonth(monthDate);
-      const mEnd = endOfMonth(monthDate);
-      const label = monthNames[monthDate.getMonth()];
-      
-      const abertos = protocolosFiltrados.filter(p => {
-        try {
-          const d = parseFlexDate(p.data);
-          return d >= mStart && d <= mEnd;
-        } catch { return false; }
-      }).length;
-      
-      const encerrados = protocolosFiltrados.filter(p => {
-        if (p.status !== 'encerrado') return false;
-        const logEnc = safeObsLog(p.observacoesLog).find(l => l.acao?.startsWith('Encerrou o protocolo'));
-        if (!logEnc?.data) return false;
-        try {
-          const d = parseFlexDate(logEnc.data);
-          return d >= mStart && d <= mEnd;
-        } catch { return false; }
-      }).length;
-      
-      result.push({ name: label, abertos, encerrados });
+      const key = format(monthDate, 'yyyy-MM');
+      const row = map.get(key);
+      result.push({
+        name: monthNames[monthDate.getMonth()],
+        abertos: row?.abertos ?? 0,
+        encerrados: row?.encerrados ?? 0,
+      });
     }
     return result;
-  }, [protocolosFiltrados]);
+  }, [serieMensal]);
 
   // Helper genérico para exportar dados de gráfico como CSV
   const exportChartCSV = (data: Record<string, unknown>[], headers: Record<string, string>, filename: string) => {
@@ -609,6 +588,133 @@ export default function Dashboard() {
     toast.success(`Exportado: ${filename}`);
   };
 
+
+  // Helper: calcula intervalo (yyyy-MM-dd) com base no periodoFiltro/dateRange
+  const computeRangeFiltros = (): { inicio: string | null; fim: string | null; label: string } => {
+    const today = new Date();
+    if (periodoFiltro === 'hoje') {
+      const d = format(today, 'yyyy-MM-dd');
+      return { inicio: d, fim: d, label: `Hoje (${format(today, 'dd/MM/yyyy')})` };
+    }
+    if (periodoFiltro === 'semana') {
+      return { inicio: format(subDays(today, 6), 'yyyy-MM-dd'), fim: format(today, 'yyyy-MM-dd'), label: 'Últimos 7 dias' };
+    }
+    if (periodoFiltro === 'mes') {
+      return { inicio: format(startOfMonth(today), 'yyyy-MM-dd'), fim: format(endOfMonth(today), 'yyyy-MM-dd'), label: format(today, "MMMM 'de' yyyy", { locale: ptBR }) };
+    }
+    if (periodoFiltro === 'custom' && dateRange?.from) {
+      const ini = format(dateRange.from, 'yyyy-MM-dd');
+      const fim = format(dateRange.to ?? dateRange.from, 'yyyy-MM-dd');
+      return { inicio: ini, fim, label: `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to ?? dateRange.from, 'dd/MM/yyyy')}` };
+    }
+    return { inicio: null, fim: null, label: 'Todos os períodos' };
+  };
+
+  // Helper: calcula unidades respeitando admin/usuário e filtro selecionado
+  const computeUnidadesFiltros = (): { unidades: string[] | null; label: string } => {
+    if (!isAdmin) {
+      const userUnidades = user?.unidade?.split(',').map(u => u.trim()).filter(Boolean) || [];
+      const permitidas = unidadesFiltro.length > 0
+        ? unidadesFiltro.filter((u) => userUnidades.includes(u))
+        : userUnidades;
+      return { unidades: permitidas, label: permitidas.length > 0 ? permitidas.join(', ') : 'Nenhuma' };
+    }
+    if (unidadesFiltro.length > 0) return { unidades: unidadesFiltro, label: unidadesFiltro.join(', ') };
+    return { unidades: null, label: 'Todas as unidades' };
+  };
+
+  // Busca o resumo (sobras + trocas) via RPC respeitando filtros atuais
+  const fetchResumoExport = async () => {
+    const { unidades: unidadesParam, label: unidadesLabel } = computeUnidadesFiltros();
+    const { inicio, fim, label: periodoLabel } = computeRangeFiltros();
+
+    if (unidadesParam !== null && unidadesParam.length === 0) {
+      return {
+        rows: [
+          { categoria: 'Sobras', metrica: 'Total', valor: 0 },
+          { categoria: 'Trocas', metrica: 'Total', valor: 0 },
+        ],
+        unidadesLabel,
+        periodoLabel,
+      };
+    }
+
+    const { data, error } = await supabase.rpc('get_dashboard_resumo', {
+      p_unidades: unidadesParam,
+      p_data_inicio: inicio,
+      p_data_fim: fim,
+    });
+    if (error) throw error;
+
+    const row: Record<string, unknown> = ((Array.isArray(data) ? data[0] : data) || {}) as Record<string, unknown>;
+    const rows = [
+      { categoria: 'Sobras', metrica: 'Total', valor: Number(row.sobras_total) || 0 },
+      { categoria: 'Sobras', metrica: 'Pendente', valor: Number(row.sobras_pendente) || 0 },
+      { categoria: 'Sobras', metrica: 'Em Tratamento', valor: Number(row.sobras_andamento) || 0 },
+      { categoria: 'Sobras', metrica: 'Resolvido', valor: Number(row.sobras_resolvido) || 0 },
+      { categoria: 'Sobras', metrica: 'Erro de Carregamento', valor: Number(row.sobras_erro_carregamento) || 0 },
+      { categoria: 'Sobras', metrica: 'Erro de Entrega', valor: Number(row.sobras_erro_entrega) || 0 },
+      { categoria: 'Trocas', metrica: 'Total', valor: Number(row.trocas_total) || 0 },
+    ];
+    return { rows, unidadesLabel, periodoLabel };
+  };
+
+  const handleExportResumoCSV = async () => {
+    try {
+      const { rows, unidadesLabel, periodoLabel } = await fetchResumoExport();
+      const linhas = [
+        `Resumo do Dashboard - Sobras e Trocas`,
+        `Unidades;${unidadesLabel}`,
+        `Período;${periodoLabel}`,
+        `Gerado em;${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
+        '',
+        'Categoria;Métrica;Valor',
+        ...rows.map(r => `${r.categoria};${r.metrica};${r.valor}`),
+      ].join('\n');
+      const blob = new Blob([linhas], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `resumo_dashboard_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Resumo exportado em CSV');
+    } catch (err) {
+      console.error(err);
+      toast.error('Falha ao exportar CSV');
+    }
+  };
+
+  const handleExportResumoPDF = async () => {
+    try {
+      const { rows, unidadesLabel, periodoLabel } = await fetchResumoExport();
+      const { default: jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text('Resumo do Dashboard', 14, 18);
+      doc.setFontSize(10);
+      doc.text('Sobras e Trocas', 14, 25);
+      doc.setFontSize(9);
+      doc.text(`Unidades: ${unidadesLabel}`, 14, 33);
+      doc.text(`Período: ${periodoLabel}`, 14, 39);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 45);
+      autoTable(doc, {
+        startY: 52,
+        head: [['Categoria', 'Métrica', 'Valor']],
+        body: rows.map(r => [r.categoria, r.metrica, String(r.valor)]),
+        styles: { fontSize: 10 },
+        headStyles: { fillColor: [38, 92, 50] },
+      });
+      doc.save(`resumo_dashboard_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.pdf`);
+      toast.success('Resumo exportado em PDF');
+    } catch (err) {
+      console.error(err);
+      toast.error('Falha ao exportar PDF');
+    }
+  };
 
   // Contagem por tipo de reposição
   const contagemPorTipo = useMemo(() => {
@@ -872,6 +978,14 @@ export default function Dashboard() {
               <Download size={14} className="mr-1.5" />
               CSV
             </Button>
+            <Button variant="outline" size="sm" onClick={handleExportResumoCSV} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
+              <Download size={14} className="mr-1.5" />
+              Resumo CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportResumoPDF} className="h-8 text-xs bg-background/80 backdrop-blur-sm">
+              <FileText size={14} className="mr-1.5" />
+              Resumo PDF
+            </Button>
           </div>
         </div>
       </div>
@@ -990,13 +1104,31 @@ export default function Dashboard() {
           delay={500}
           variant="primary"
         />
-        <RankingCard
-          title="Top 5 Clientes (PDVs)"
-          icon={<Building2 className="text-sky-500" size={18} />}
-          items={topClientesReal}
-          delay={600}
-          variant="info"
-        />
+        <div className="relative">
+          <RankingCard
+            title="Top 5 Clientes (PDVs)"
+            icon={<Building2 className="text-sky-500" size={18} />}
+            items={topClientesReal}
+            delay={600}
+            variant="info"
+          />
+          {topPdvsError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-xl p-3">
+              <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md text-center">
+                <AlertTriangle size={14} />
+                {topPdvsError}
+              </div>
+            </div>
+          )}
+          {topPdvsLoading && !topPdvsError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-xl">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <RefreshCw size={14} className="animate-spin" />
+                Carregando ranking...
+              </div>
+            </div>
+          )}
+        </div>
         <RankingCard
           title="Top 5 Produtos"
           icon={<Package className="text-emerald-500" size={18} />}
@@ -1158,41 +1290,59 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={barData} margin={{ top: 28, right: 12, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.2))]} fontSize={11} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                  fontSize: '11px'
-                }}
-              />
-              <Legend 
-                wrapperStyle={{ paddingTop: '10px' }}
-                formatter={(value) => (
-                  <span className="text-xs text-muted-foreground capitalize">{value}</span>
-                )}
-              />
-              <Bar
-                dataKey="abertos"
-                name="Abertos"
-                fill="hsl(38, 92%, 50%)"
-                radius={[4, 4, 0, 0]}
-                label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              />
-              <Bar
-                dataKey="encerrados"
-                name="Encerrados"
-                fill="hsl(160, 84%, 39%)"
-                radius={[4, 4, 0, 0]}
-                label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="relative">
+            {seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                  <AlertTriangle size={14} />
+                  {seriesError}
+                </div>
+              </div>
+            )}
+            {seriesLoading && !seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <RefreshCw size={14} className="animate-spin" />
+                  Carregando dados...
+                </div>
+              </div>
+            )}
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={barData} margin={{ top: 28, right: 12, left: -8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax * 1.2))]} fontSize={11} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '11px'
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '10px' }}
+                  formatter={(value) => (
+                    <span className="text-xs text-muted-foreground capitalize">{value}</span>
+                  )}
+                />
+                <Bar
+                  dataKey="abertos"
+                  name="Abertos"
+                  fill="hsl(38, 92%, 50%)"
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                />
+                <Bar
+                  dataKey="encerrados"
+                  name="Encerrados"
+                  fill="hsl(160, 84%, 39%)"
+                  radius={[4, 4, 0, 0]}
+                  label={{ position: 'top', fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Pie Chart */}
@@ -1343,17 +1493,35 @@ export default function Dashboard() {
               <Download size={12} className="mr-1" />CSV
             </Button>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={taxaResolucaoData} margin={{ top: 20, right: 12, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-              <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} fontSize={11} />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
-              <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-xs text-muted-foreground capitalize">{value}</span>} />
-              <Line type="monotone" dataKey="abertos" name="Abertos" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="encerrados" name="Encerrados" stroke="hsl(160, 84%, 39%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="relative">
+            {seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                  <AlertTriangle size={14} />
+                  {seriesError}
+                </div>
+              </div>
+            )}
+            {seriesLoading && !seriesError && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-md">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <RefreshCw size={14} className="animate-spin" />
+                  Carregando dados...
+                </div>
+              </div>
+            )}
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={taxaResolucaoData} margin={{ top: 20, right: 12, left: -8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} fontSize={11} />
+                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '11px' }} />
+                <Legend wrapperStyle={{ paddingTop: '10px' }} formatter={(value) => <span className="text-xs text-muted-foreground capitalize">{value}</span>} />
+                <Line type="monotone" dataKey="abertos" name="Abertos" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="encerrados" name="Encerrados" stroke="hsl(160, 84%, 39%)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 

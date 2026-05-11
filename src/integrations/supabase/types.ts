@@ -870,6 +870,62 @@ export type Database = {
           unidade: string
         }[]
       }
+      get_dashboard_protocolos_por_dia: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_unidades?: string[]
+        }
+        Returns: {
+          aberto: number
+          dia: string
+          em_andamento: number
+          encerrado: number
+          total: number
+        }[]
+      }
+      get_dashboard_protocolos_por_periodo: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_granularidade?: string
+          p_unidades?: string[]
+        }
+        Returns: {
+          abertos: number
+          encerrados: number
+          periodo: string
+        }[]
+      }
+      get_dashboard_resumo: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_unidades?: string[]
+        }
+        Returns: {
+          sobras_andamento: number
+          sobras_erro_carregamento: number
+          sobras_erro_entrega: number
+          sobras_pendente: number
+          sobras_resolvido: number
+          sobras_total: number
+          trocas_total: number
+        }[]
+      }
+      get_dashboard_top_pdvs: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_limite?: number
+          p_unidades?: string[]
+        }
+        Returns: {
+          codigo: string
+          nome: string
+          total: number
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
