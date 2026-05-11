@@ -245,6 +245,8 @@ export default function Usuarios() {
         return <Truck className="text-info" size={18} />;
       case 'controle':
         return <ClipboardList className="text-warning" size={18} />;
+      case 'cme':
+        return <UserCircle className="text-emerald-600" size={18} />;
       default:
         return <UserCircle className="text-muted-foreground" size={18} />;
     }
@@ -258,6 +260,8 @@ export default function Usuarios() {
         return "bg-info/10 text-info border-info/20";
       case 'controle':
         return "bg-warning/10 text-warning border-warning/20";
+      case 'cme':
+        return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
       default:
         return "bg-muted text-muted-foreground border-border";
     }
