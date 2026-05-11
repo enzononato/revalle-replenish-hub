@@ -29,6 +29,7 @@ import MotoristaPortal from "./pages/MotoristaPortal";
 import RnLogin from "./pages/RnLogin";
 import RnPortal from "./pages/RnPortal";
 import RepresentantesNegocio from "./pages/RepresentantesNegocio";
+import CmePortal from "./pages/CmePortal";
 
 import LogsAuditoria from "./pages/LogsAuditoria";
 import Sobras from "./pages/Sobras";
@@ -59,6 +60,8 @@ const App = () => (
                   <Route path="/rn" element={<Navigate to="/rn/login" replace />} />
                   <Route path="/rn/login" element={<RnLogin />} />
                   <Route path="/rn/portal" element={<RnPortal />} />
+                  <Route path="/cme" element={<Navigate to="/cme/portal" replace />} />
+                  <Route path="/cme/portal" element={<CmePortal />} />
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route element={<MainLayout />}>
                     <Route path="/dashboard" element={<ProtocolosProvider><Dashboard /></ProtocolosProvider>} />

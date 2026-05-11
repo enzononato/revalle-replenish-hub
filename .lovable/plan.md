@@ -1,71 +1,70 @@
-## Recomendação
+## Objetivo
 
-**Sim, recomendo — mas de forma faseada, não tudo de uma vez.**
+Criar um novo perfil **CME** que faz login pelo sistema interno (email/senha), porém com acesso muito restrito: vê apenas uma única tela onde pesquisa por **código do PDV** e lista todos os protocolos daquele PDV (reposição, sobras e trocas), com permissão de **reenvio** igual ao RN. Não vê dashboard, não vê outras páginas.
 
-Hoje o Dashboard baixa ~8.000 protocolos ativos no navegador a cada acesso e calcula tudo em JS. Funciona, mas:
-- O `fetchSobrasStats` já tem `limit(1000)` — **acima de 1000 sobras as métricas ficam erradas** (bug latente).
-- O payload cresce linearmente: em 6 meses pode dobrar e começar a travar em conexões fracas.
-- Filtros de unidade/data são aplicados no cliente, então mesmo filtrando "Maio" o navegador baixa o histórico inteiro.
+## 1. Banco de dados
 
-Por outro lado, mover **tudo** para RPC tem custo: o Dashboard tem rankings, gráficos por dia, lead time, contagem por causa, etc. Reescrever tudo de uma vez é arriscado e demorado. Por isso proponho começar pelos pontos que **mais doem** e deixar os agregados leves como estão.
+- Adicionar `'cme'` ao enum `app_role` (já usado por `user_roles.role` e por `user_profiles.nivel`).
+- Não precisa de tabela nova — CME usa `user_profiles` + `user_roles` como qualquer usuário interno.
+- Sem alteração em RLS de `protocolos` (já é leitura pública para autenticados).
 
----
+## 2. Tipos e Auth no frontend
 
-## Plano faseado
+- `src/types/index.ts`: adicionar `'cme'` em `UserRole`.
+- `AuthContext` / hook de role: incluir `cme` na resolução de role (mesma lógica que admin/distribuicao/etc.).
+- `ProtectedRoute`: aceita `'cme'` quando listado em `allowedRoles`.
 
-### Fase 1 — Corrigir o bug das sobras e os contadores simples (prioridade alta)
+## 3. Roteamento e redirecionamento pós-login
 
-Criar uma RPC única que devolve os totais "mastigados" para os cards do topo:
+- Em `App.tsx`, após login, se `user.nivel === 'cme'` redirecionar para `/cme/portal`. Bloquear acesso a `/dashboard`, `/protocolos`, etc. (o `MainLayout` redireciona CME para `/cme/portal`).
+- Nova rota protegida `/cme/portal` (allowedRoles: `['cme', 'admin']` — admin pode visualizar para suporte).
 
-```
-get_dashboard_resumo(
-  p_unidades text[] default null,
-  p_data_inicio text default null,
-  p_data_fim text default null
-)
-```
+## 4. Sidebar
 
-Retorna em uma linha:
-- `total_protocolos`, `abertos`, `em_andamento`, `encerrados`
-- `sobras_total`, `sobras_pendente`, `sobras_andamento`, `sobras_resolvido`, `sobras_erro_carregamento`, `sobras_erro_entrega`
-- `trocas_total`
-- `lead_time_medio_dias`
+- `src/components/layout/Sidebar.tsx`: como CME só tem uma tela, ocultar a sidebar inteira para esse perfil **ou** mostrar apenas o item "Buscar por PDV" + perfil/sair.
+- Decisão: ocultar sidebar e usar header próprio (mesmo padrão visual do RN), para reforçar o escopo restrito.
 
-Substitui `fetchSobrasStats`, `fetchTrocasStats` e os `useMemo` de contagem básica no `Dashboard.tsx`. Resolve o limite de 1000 e elimina ~4 queries.
+## 5. Página `/cme/portal`
 
-### Fase 2 — Rankings e séries temporais (prioridade média)
+Nova página `src/pages/CmePortal.tsx`, inspirada em `RnPortal.tsx`:
 
-Duas RPCs adicionais:
+- Campo de busca por **código do PDV** (input + botão Pesquisar). Sem outros filtros.
+- Ao pesquisar, faz query em `protocolos`:
+  - `eq('codigo_pdv', codigo)`
+  - `eq('ativo', true)`
+  - `eq('oculto', false)` (ou `or` para null)
+  - **Sem** filtro de `motorista_unidade` (CME enxerga todas as unidades)
+  - **Sem** filtro de `tipo_reposicao` (inclui reposição, `pos_rota` e `troca`)
+  - Ordenar por `created_at DESC`
+- Resultado em tabela/cards com colunas: número, data/hora, status, tipo (reposição/sobra/troca), motorista, unidade, NF.
+- Tabs por status: Abertos, Em andamento, Encerrados, Todos.
+- Clique em uma linha abre modal de detalhes (reaproveitar `ProtocoloDetails` em modo somente leitura) com botão **Reenviar** quando aplicável (reaproveitar `RnReenvioModal` — ele já é genérico).
+- Header com nome do usuário CME, botão Sair (logout do AuthContext padrão).
 
-- `get_dashboard_top_pdvs(p_unidades, p_data_inicio, p_data_fim, p_limite)` — devolve os 5 PDVs com `codigo`, `nome` (via join com `pdvs`) e `total`. Elimina o segundo `fetch` que hoje busca os nomes depois.
-- `get_dashboard_protocolos_por_dia(p_unidades, p_data_inicio, p_data_fim)` — devolve `data, abertos, encerrados` para o gráfico.
+## 6. Cadastro de usuários CME
 
-### Fase 3 — Cache leve no front (opcional)
+- Em `src/pages/Usuarios.tsx`, adicionar `'cme'` à lista de níveis disponíveis no formulário (select).
+- Edge function `create-user` já trata roles via parâmetro — só precisa aceitar o novo valor (validar enum lá dentro).
+- Badge do nível em Sidebar/`getRoleBadge`: rótulo "CME".
 
-`useQuery` (TanStack) com `staleTime: 60s` em cima das RPCs. Hoje cada navegação refaz tudo.
+## 7. Mensagens / textos
 
-### O que **não** muda
-
-- `useProtocolosDB` continua existindo: a página de Protocolos precisa da lista bruta.
-- Filtros de unidade do usuário não-admin continuam aplicados (passados como parâmetro para a RPC).
-- Causa "Erro de Carregamento / Entrega" continua sendo `ILIKE` no campo `causa`.
-
----
+- Login usa o mesmo `/login` e mesmas mensagens.
+- Portal CME: título "Buscar Protocolos por PDV" e instrução curta no topo.
 
 ## Detalhes técnicos
 
-- RPCs `LANGUAGE sql STABLE SECURITY DEFINER` com `SET search_path = public`, seguindo o padrão das funções já existentes (`count_protocolos_por_unidade`).
-- Datas continuam como `text` no formato `DD/MM/YYYY` no banco — converter com `TO_DATE` dentro da RPC, igual ao que `count_protocolos_por_unidade` já faz.
-- Índices a avaliar depois da Fase 1: `(ativo, tipo_reposicao, motorista_unidade)` e um btree em `TO_DATE(data,'DD/MM/YYYY')` se as RPCs ficarem lentas.
-- Permissões: `GRANT EXECUTE ... TO authenticated` (não `anon`).
-- Como são `SECURITY DEFINER`, o filtro de unidade do usuário **deve** vir como parâmetro do front (igual ao padrão atual), nunca confiar no que veio sem checagem.
+- Não criar nova edge function de login — CME usa Supabase Auth normal.
+- Não mexer em RLS — `protocolos` já permite leitura para `authenticated`.
+- Migration necessária: `ALTER TYPE app_role ADD VALUE 'cme';`
+- Cuidado: `ALTER TYPE ... ADD VALUE` não pode rodar dentro de transação em algumas versões; rodar em migration isolada.
+- `Sidebar.tsx`: condicional `if (user?.nivel === 'cme') return null;` (ou render mínimo).
+- `MainLayout.tsx`: se `user.nivel === 'cme'` e rota não for `/cme/*`, redirecionar para `/cme/portal`.
+- `Login.tsx`: ajustar redirect pós-login para enviar CME diretamente para `/cme/portal`.
+- Reuso de componentes: `RnReenvioModal` já é parametrizado por protocolo; `ProtocoloDetails` aceita modo leitura.
 
----
+## Fora de escopo
 
-## Esforço estimado
-
-- Fase 1: ~1 sessão. Ganho imediato (bug das sobras + payload menor).
-- Fase 2: ~1 sessão. Ganho de performance percebida.
-- Fase 3: ~30 min. Ganho de fluidez ao navegar entre páginas.
-
-**Minha recomendação**: aprovar **Fase 1 agora** (corrige bug real e dá retorno alto com pouco código) e decidir Fases 2/3 depois de medir o resultado.
+- Não criar relatórios/exportação para CME.
+- Não permitir edição, encerramento, criação de trocas/sobras pelo CME.
+- Não criar tabela `cme_users` nem edge function dedicada.
