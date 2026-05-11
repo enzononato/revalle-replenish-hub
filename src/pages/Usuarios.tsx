@@ -38,13 +38,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-type UserRole = 'admin' | 'distribuicao' | 'conferente' | 'controle';
+type UserRole = 'admin' | 'distribuicao' | 'conferente' | 'controle' | 'cme';
 
 const nivelLabels: Record<UserRole, string> = {
   admin: 'Administrador',
   distribuicao: 'Distribuição',
   conferente: 'Conferente',
   controle: 'Controle',
+  cme: 'CME',
 };
 
 const nivelDescriptions: Record<UserRole, string> = {
@@ -52,6 +53,7 @@ const nivelDescriptions: Record<UserRole, string> = {
   distribuicao: 'Gerencia protocolos e distribuição',
   conferente: 'Confere e valida protocolos',
   controle: 'Lança e valida protocolos',
+  cme: 'Consulta protocolos por código de PDV',
 };
 
 export default function Usuarios() {
@@ -400,7 +402,7 @@ export default function Usuarios() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(['admin', 'distribuicao', 'conferente', 'controle'] as UserRole[]).map(nivel => (
+                    {(['admin', 'distribuicao', 'conferente', 'controle', 'cme'] as UserRole[]).map(nivel => (
                       <SelectItem key={nivel} value={nivel}>
                         <div className="flex items-center gap-2">
                           {getNivelIcon(nivel)}
