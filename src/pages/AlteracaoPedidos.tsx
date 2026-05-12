@@ -2,11 +2,12 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, FileText, Loader2, Send, StopCircle, RefreshCw, AlertTriangle, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Upload, FileText, Loader2, Send, AlertTriangle, CheckCircle2, RotateCcw, Clock, ListChecks } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import HistoricoEnvios from '@/components/HistoricoEnvios';
 
 interface PedidoRow {
@@ -19,6 +20,7 @@ interface PedidoRow {
 
 interface LogRow {
   id: string;
+  lote_id: string | null;
   cod_pdv: string;
   nome_pdv: string | null;
   telefone_pdv: string | null;
@@ -26,53 +28,38 @@ interface LogRow {
   mensagem_cliente: string | null;
   sucesso: boolean;
   erro_mensagem: string | null;
+  status: string;
+  scheduled_at: string | null;
   created_at: string;
 }
 
-const WEBHOOK_URL = 'https://n8n.revalle.com.br/webhook/alteracao_pedidos';
-
-const sleep = (ms: number, signal?: AbortSignal) =>
-  new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener('abort', () => {
-      clearTimeout(timer);
-      reject(new DOMException('Aborted', 'AbortError'));
-    });
-  });
+interface LoteRow {
+  id: string;
+  nome_arquivo: string | null;
+  total: number;
+  enviados: number;
+  falhas: number;
+  status: string;
+  enviado_por: string | null;
+  created_at: string;
+}
 
 function parseCSVLine(line: string): string[] {
   const fields: string[] = [];
   let current = '';
   let inQuotes = false;
   let i = 0;
-
   while (i < line.length) {
     const ch = line[i];
     if (inQuotes) {
       if (ch === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          current += '"';
-          i += 2;
-        } else {
-          inQuotes = false;
-          i++;
-        }
-      } else {
-        current += ch;
-        i++;
-      }
+        if (i + 1 < line.length && line[i + 1] === '"') { current += '"'; i += 2; }
+        else { inQuotes = false; i++; }
+      } else { current += ch; i++; }
     } else {
-      if (ch === '"') {
-        inQuotes = true;
-        i++;
-      } else if (ch === ',') {
-        fields.push(current.trim());
-        current = '';
-        i++;
-      } else {
-        current += ch;
-        i++;
-      }
+      if (ch === '"') { inQuotes = true; i++; }
+      else if (ch === ',') { fields.push(current.trim()); current = ''; i++; }
+      else { current += ch; i++; }
     }
   }
   fields.push(current.trim());
@@ -80,13 +67,10 @@ function parseCSVLine(line: string): string[] {
 }
 
 function parseCSV(text: string): PedidoRow[] {
-  // Remove BOM if present
   const clean = text.replace(/^\uFEFF/, '');
-  const lines = clean.split(/\r?\n/).filter(line => line.trim() !== '');
+  const lines = clean.split(/\r?\n/).filter(l => l.trim() !== '');
   if (lines.length < 2) return [];
-
   const headers = parseCSVLine(lines[0]);
-
   const colMap = {
     cod_pdv: headers.findIndex(h => /cod.*pdv/i.test(h)),
     nome_pdv: headers.findIndex(h => /nome.*pdv/i.test(h)),
@@ -94,19 +78,11 @@ function parseCSV(text: string): PedidoRow[] {
     status_pedido: headers.findIndex(h => /status/i.test(h)),
     mensagem_cliente: headers.findIndex(h => /mensagem/i.test(h)),
   };
-
   const rows: PedidoRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     let cols = parseCSVLine(lines[i]);
-    
-    // If the entire row was wrapped in quotes (single field containing all data),
-    // re-parse the unwrapped content
-    if (cols.length === 1 && cols[0].includes(',')) {
-      cols = parseCSVLine(cols[0]);
-    }
-    
+    if (cols.length === 1 && cols[0].includes(',')) cols = parseCSVLine(cols[0]);
     if (cols.every(c => c === '')) continue;
-
     rows.push({
       cod_pdv: cols[colMap.cod_pdv]?.trim() || '',
       nome_pdv: cols[colMap.nome_pdv]?.trim() || '',
@@ -118,99 +94,105 @@ function parseCSV(text: string): PedidoRow[] {
   return rows;
 }
 
+const LOG_FIELDS = 'id, lote_id, cod_pdv, nome_pdv, telefone_pdv, status_pedido, mensagem_cliente, sucesso, erro_mensagem, status, scheduled_at, created_at';
+
 export default function AlteracaoPedidos() {
   const [file, setFile] = useState<File | null>(null);
-  const [isSending, setIsSending] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [batchIds, setBatchIds] = useState<string[]>([]);
+  const [isEnqueuing, setIsEnqueuing] = useState(false);
+  const [currentLoteId, setCurrentLoteId] = useState<string | null>(null);
+  const [lote, setLote] = useState<LoteRow | null>(null);
   const [logRows, setLogRows] = useState<LogRow[]>([]);
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [recentLotes, setRecentLotes] = useState<LoteRow[]>([]);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [editingPhone, setEditingPhone] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [isPolling, setIsPolling] = useState(false);
 
-  // Auto-polling: after send completes, poll every 5s for 60s to catch async n8n updates
-  const startPolling = useCallback((ids: string[]) => {
-    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    setIsPolling(true);
-    let elapsed = 0;
-    const interval = setInterval(async () => {
-      elapsed += 5000;
-      if (elapsed > 60000) {
-        clearInterval(interval);
-        pollIntervalRef.current = null;
-        setIsPolling(false);
-        return;
-      }
-      try {
-        const { data } = await supabase
-          .from('alteracao_pedidos_log')
-          .select('id, cod_pdv, nome_pdv, telefone_pdv, status_pedido, mensagem_cliente, sucesso, erro_mensagem, created_at')
-          .in('id', ids);
-        if (data) setLogRows(data as LogRow[]);
-      } catch (e) {
-        console.error('Erro no polling:', e);
-      }
-    }, 5000);
-    pollIntervalRef.current = interval;
+  const fetchLote = useCallback(async (loteId: string) => {
+    const { data } = await supabase.from('alteracao_pedidos_lote').select('*').eq('id', loteId).single();
+    if (data) setLote(data as LoteRow);
   }, []);
 
+  const fetchLogs = useCallback(async (loteId: string) => {
+    const { data } = await supabase
+      .from('alteracao_pedidos_log')
+      .select(LOG_FIELDS)
+      .eq('lote_id', loteId)
+      .order('scheduled_at', { ascending: true });
+    if (data) setLogRows(data as LogRow[]);
+  }, []);
+
+  const fetchRecentLotes = useCallback(async () => {
+    const { data } = await supabase
+      .from('alteracao_pedidos_lote')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (data) setRecentLotes(data as LoteRow[]);
+  }, []);
+
+  useEffect(() => { fetchRecentLotes(); }, [fetchRecentLotes]);
+
+  // Realtime subscription on the active lote
   useEffect(() => {
-    return () => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    };
-  }, []);
+    if (!currentLoteId) return;
+    fetchLote(currentLoteId);
+    fetchLogs(currentLoteId);
+
+    const channel = supabase
+      .channel(`lote-${currentLoteId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'alteracao_pedidos_log',
+        filter: `lote_id=eq.${currentLoteId}`,
+      }, () => fetchLogs(currentLoteId))
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'alteracao_pedidos_lote',
+        filter: `id=eq.${currentLoteId}`,
+      }, (payload) => {
+        setLote(payload.new as LoteRow);
+        fetchRecentLotes();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [currentLoteId, fetchLote, fetchLogs, fetchRecentLotes]);
 
   const handleFile = (f: File) => {
-    if (!f.name.endsWith('.csv')) {
-      toast.error('Por favor, selecione um arquivo .csv');
-      return;
-    }
+    if (!f.name.endsWith('.csv')) { toast.error('Selecione um arquivo .csv'); return; }
     setFile(f);
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     dragRef.current?.classList.remove('border-primary');
     const f = e.dataTransfer.files[0];
     if (f) handleFile(f);
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    dragRef.current?.classList.add('border-primary');
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    dragRef.current?.classList.remove('border-primary');
-  }, []);
-
-  const handleStop = () => {
-    abortRef.current?.abort();
-  };
-
-  const fetchLogs = async (ids: string[]) => {
-    if (ids.length === 0) return;
-    setIsLoadingLogs(true);
+  const handleEnqueue = async () => {
+    if (!file) return;
+    setIsEnqueuing(true);
     try {
-      const { data, error } = await supabase
-        .from('alteracao_pedidos_log')
-        .select('id, cod_pdv, nome_pdv, telefone_pdv, status_pedido, mensagem_cliente, sucesso, erro_mensagem, created_at')
-        .in('id', ids);
+      const text = await file.text();
+      const rows = parseCSV(text);
+      if (rows.length === 0) { toast.error('Nenhuma linha válida no CSV.'); return; }
 
-      if (error) {
-        console.error('Erro ao buscar logs:', error);
-        return;
-      }
-      setLogRows((data as LogRow[]) || []);
+      const { data, error } = await supabase.functions.invoke('enfileirar-alteracoes', {
+        body: { rows, nome_arquivo: file.name },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Falha ao enfileirar');
+
+      toast.success(`Lote enfileirado (${data.total} mensagens). Processando em segundo plano.`);
+      setCurrentLoteId(data.lote_id);
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      fetchRecentLotes();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao enfileirar: ' + (err as Error).message);
     } finally {
-      setIsLoadingLogs(false);
+      setIsEnqueuing(false);
     }
   };
 
@@ -218,139 +200,38 @@ export default function AlteracaoPedidos() {
     setResendingId(row.id);
     try {
       const telefone = editingPhone[row.id] ?? row.telefone_pdv ?? '';
-
-      // Update phone in DB if changed
+      // Re-queue this single item: mark pending again with scheduled_at=now and update phone if changed
+      const updates: Record<string, unknown> = {
+        status: 'pending',
+        sucesso: true,
+        erro_mensagem: null,
+        scheduled_at: new Date().toISOString(),
+      };
       if (editingPhone[row.id] && editingPhone[row.id] !== row.telefone_pdv) {
-        await supabase
-          .from('alteracao_pedidos_log')
-          .update({ telefone_pdv: telefone, sucesso: true, erro_mensagem: null })
-          .eq('id', row.id);
-      } else {
-        // Reset status for retry
-        await supabase
-          .from('alteracao_pedidos_log')
-          .update({ sucesso: true, erro_mensagem: null })
-          .eq('id', row.id);
+        updates.telefone_pdv = telefone;
       }
-
-      await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cod_pdv: row.cod_pdv,
-          nome_pdv: row.nome_pdv,
-          telefone_pdv: telefone,
-          status_pedido: row.status_pedido,
-          mensagem_cliente: row.mensagem_cliente,
-          log_id: row.id,
-          id_alteracao: row.id,
-        }),
-      });
-
-      toast.success(`Reenvio do PDV ${row.cod_pdv} realizado!`);
-
-      // Refresh this row
-      if (batchIds.length > 0) {
-        await fetchLogs(batchIds);
-      }
+      await supabase.from('alteracao_pedidos_log').update(updates).eq('id', row.id);
+      toast.success(`Reenvio do PDV ${row.cod_pdv} agendado.`);
+      // Optionally trigger immediate processing
+      supabase.functions.invoke('processar-fila-alteracoes').catch(() => {});
     } catch (err) {
-      console.error('Erro ao reenviar:', err);
-      toast.error(`Erro ao reenviar PDV ${row.cod_pdv}`);
+      console.error(err);
+      toast.error('Erro ao reagendar reenvio.');
     } finally {
       setResendingId(null);
     }
   };
 
-  const handleSend = async () => {
-    if (!file) return;
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setIsSending(true);
-    setLogRows([]);
-    setBatchIds([]);
-    setEditingPhone({});
+  const handleClear = () => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; };
 
-    try {
-      const text = await file.text();
-      const rows = parseCSV(text);
+  const sentRows = logRows.filter(r => r.status === 'sent');
+  const failedRows = logRows.filter(r => r.status === 'failed');
+  const pendingRows = logRows.filter(r => r.status === 'pending');
 
-      if (rows.length === 0) {
-        toast.error('Nenhuma linha válida encontrada no CSV.');
-        setIsSending(false);
-        return;
-      }
-
-      setProgress({ current: 0, total: rows.length });
-      const ids: string[] = [];
-
-      for (let i = 0; i < rows.length; i++) {
-        if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
-
-        setProgress({ current: i + 1, total: rows.length });
-
-        const { data: logData, error: logError } = await supabase
-          .from('alteracao_pedidos_log')
-          .insert({
-            cod_pdv: rows[i].cod_pdv,
-            nome_pdv: rows[i].nome_pdv,
-            telefone_pdv: rows[i].telefone_pdv,
-            status_pedido: rows[i].status_pedido,
-            mensagem_cliente: rows[i].mensagem_cliente,
-            sucesso: true,
-          })
-          .select('id')
-          .single();
-
-        if (logError) {
-          console.error('Erro ao inserir log:', logError);
-          toast.error(`Erro ao registrar linha ${i + 1} no banco.`);
-          continue;
-        }
-
-        const logId = logData.id;
-        ids.push(logId);
-
-        await fetch(WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...rows[i], log_id: logId, id_alteracao: logId }),
-          signal: controller.signal,
-        });
-
-        if (i < rows.length - 1) {
-          await sleep(10000, controller.signal);
-        }
-      }
-
-      setBatchIds(ids);
-      toast.success('Envio concluído! Atualizando status automaticamente...');
-      setFile(null);
-      setProgress({ current: 0, total: 0 });
-      if (fileInputRef.current) fileInputRef.current.value = '';
-
-      await fetchLogs(ids);
-      // Start auto-polling to catch async webhook results
-      startPolling(ids);
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        toast.warning(`Envio interrompido. ${progress.current} de ${progress.total} enviado(s).`);
-      } else {
-        console.error('Erro ao enviar:', err);
-        toast.error('Erro ao enviar dados. Verifique o console.');
-      }
-    } finally {
-      setIsSending(false);
-      abortRef.current = null;
-    }
-  };
-
-  const handleClear = () => {
-    setFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const failedRows = logRows.filter(r => !r.sucesso);
-  const successRows = logRows.filter(r => r.sucesso);
+  const total = lote?.total ?? logRows.length;
+  const done = (lote?.enviados ?? sentRows.length) + (lote?.falhas ?? failedRows.length);
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const etaSec = pendingRows.length * 10;
 
   return (
     <div className="space-y-4">
@@ -360,7 +241,7 @@ export default function AlteracaoPedidos() {
           Alteração nos Pedidos
         </h1>
         <p className="text-muted-foreground mt-0.5 text-sm">
-          Envie alterações de pedidos via CSV para o webhook
+          Envie o CSV e feche a página — o sistema processa em segundo plano com intervalo de 10 segundos por mensagem.
         </p>
       </div>
 
@@ -378,9 +259,9 @@ export default function AlteracaoPedidos() {
           <div
             ref={dragRef}
             onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => !isSending && fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); dragRef.current?.classList.add('border-primary'); }}
+            onDragLeave={(e) => { e.preventDefault(); dragRef.current?.classList.remove('border-primary'); }}
+            onClick={() => !isEnqueuing && fileInputRef.current?.click()}
             className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
           >
             <input
@@ -388,11 +269,8 @@ export default function AlteracaoPedidos() {
               type="file"
               accept=".csv"
               className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleFile(f);
-              }}
-              disabled={isSending}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              disabled={isEnqueuing}
             />
             <Upload className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
             {file ? (
@@ -401,9 +279,7 @@ export default function AlteracaoPedidos() {
                   <FileText size={16} className="text-primary" />
                   {file.name}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(1)} KB
-                </p>
+                <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
               </div>
             ) : (
               <div className="space-y-1">
@@ -417,151 +293,101 @@ export default function AlteracaoPedidos() {
             )}
           </div>
 
-          {isSending && progress.total > 0 && (
-            <div className="bg-muted/50 rounded-lg p-4 text-center">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary mb-2" />
-              <p className="text-sm font-medium text-foreground">
-                Enviando {progress.current} de {progress.total}...
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Intervalo de 10s entre cada envio
-              </p>
-            </div>
-          )}
-
           <div className="flex gap-3">
-            <Button
-              onClick={handleSend}
-              disabled={!file || isSending}
-              className="btn-primary-gradient"
-            >
-              {isSending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando {progress.current}/{progress.total}...
-                </>
+            <Button onClick={handleEnqueue} disabled={!file || isEnqueuing} className="btn-primary-gradient">
+              {isEnqueuing ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
               ) : (
-                <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Processar e Enviar Mensagens
-                </>
+                <><Send className="mr-2 h-4 w-4" /> Enviar</>
               )}
             </Button>
-
-            {isSending && (
-              <Button variant="destructive" onClick={handleStop}>
-                <StopCircle className="mr-2 h-4 w-4" />
-                Parar Envio
-              </Button>
-            )}
-
-            {file && !isSending && (
-              <Button variant="outline" onClick={handleClear}>
-                Limpar
-              </Button>
+            {file && !isEnqueuing && (
+              <Button variant="outline" onClick={handleClear}>Limpar</Button>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Resultado do envio */}
-      {batchIds.length > 0 && !isSending && (
+      {/* Active batch progress */}
+      {currentLoteId && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                Resultado do Envio
-              </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fetchLogs(batchIds)}
-                disabled={isLoadingLogs}
-              >
-                {isLoadingLogs ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                Atualizar Status
-              </Button>
-              {isPolling && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Atualizando automaticamente...
-                </span>
-              )}
-            </div>
-            <CardDescription>
-              <span className="text-green-600 font-medium">{successRows.length} sucesso(s)</span>
-              {' · '}
-              <span className="text-destructive font-medium">{failedRows.length} erro(s)</span>
-              {' · '}
-              {logRows.length} total
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              Lote em andamento
+              {lote?.status === 'concluido' && <Badge className="bg-green-600 hover:bg-green-700 text-white">Concluído</Badge>}
+              {lote?.status === 'processando' && <Badge variant="secondary">Processando</Badge>}
+            </CardTitle>
+            {lote?.nome_arquivo && (
+              <CardDescription className="font-medium">{lote.nome_arquivo}</CardDescription>
+            )}
           </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Barra de progresso destacada */}
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-2xl font-bold tabular-nums">
+                    {done} <span className="text-muted-foreground text-base font-medium">de {total} enviados</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">{pct}% concluído</p>
+                </div>
+                {pendingRows.length > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                      <Clock size={12} /> Tempo restante
+                    </p>
+                    <p className="text-sm font-medium">~{Math.ceil(etaSec / 60)} min</p>
+                  </div>
+                )}
+              </div>
+              <Progress value={pct} className="h-3" />
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                <span className="text-green-600 font-medium">✓ {sentRows.length} enviados</span>
+                <span className="text-destructive font-medium">✕ {failedRows.length} erros</span>
+                <span className="text-muted-foreground">⏳ {pendingRows.length} na fila</span>
+              </div>
+            </div>
 
-          <CardContent>
             <ScrollArea className="max-h-[500px]">
               <div className="space-y-2">
-                {/* Erros primeiro */}
-                {failedRows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex flex-col gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <AlertTriangle size={16} className="text-destructive shrink-0" />
-                        <p className="text-sm font-medium text-foreground truncate">
-                          PDV: {row.cod_pdv} {row.nome_pdv ? `— ${row.nome_pdv}` : ''}
-                        </p>
-                        <Badge variant="destructive" className="shrink-0">Erro</Badge>
-                      </div>
+                {failedRows.map(row => (
+                  <div key={row.id} className="flex flex-col gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <AlertTriangle size={16} className="text-destructive shrink-0" />
+                      <p className="text-sm font-medium truncate">PDV: {row.cod_pdv} {row.nome_pdv ? `— ${row.nome_pdv}` : ''}</p>
+                      <Badge variant="destructive" className="shrink-0">Erro</Badge>
                     </div>
-                    {row.erro_mensagem && (
-                      <p className="text-xs text-muted-foreground ml-6">{row.erro_mensagem}</p>
-                    )}
+                    {row.erro_mensagem && <p className="text-xs text-muted-foreground ml-6">{row.erro_mensagem}</p>}
                     <div className="flex items-center gap-2 ml-6">
                       <Input
                         placeholder="Telefone"
                         className="h-8 text-xs w-44"
                         value={editingPhone[row.id] ?? row.telefone_pdv ?? ''}
-                        onChange={(e) =>
-                          setEditingPhone((prev) => ({ ...prev, [row.id]: e.target.value }))
-                        }
+                        onChange={(e) => setEditingPhone(prev => ({ ...prev, [row.id]: e.target.value }))}
                       />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs"
-                        disabled={resendingId === row.id}
-                        onClick={() => handleResend(row)}
-                      >
-                        {resendingId === row.id ? (
-                          <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        ) : (
-                          <RotateCcw className="mr-1 h-3 w-3" />
-                        )}
+                      <Button size="sm" variant="outline" className="h-8 text-xs"
+                        disabled={resendingId === row.id} onClick={() => handleResend(row)}>
+                        {resendingId === row.id ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RotateCcw className="mr-1 h-3 w-3" />}
                         Reenviar
                       </Button>
                     </div>
                   </div>
                 ))}
-
-                {/* Sucessos */}
-                {successRows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <CheckCircle2 size={16} className="text-green-600 shrink-0" />
-                      <p className="text-sm font-medium text-foreground truncate">
-                        PDV: {row.cod_pdv} {row.nome_pdv ? `— ${row.nome_pdv}` : ''}
-                      </p>
-                      <Badge className="shrink-0 bg-green-600 hover:bg-green-700 text-white">OK</Badge>
-                    </div>
+                {pendingRows.slice(0, 20).map(row => (
+                  <div key={row.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border">
+                    <Clock size={16} className="text-muted-foreground shrink-0" />
+                    <p className="text-sm truncate flex-1">PDV: {row.cod_pdv} {row.nome_pdv ? `— ${row.nome_pdv}` : ''}</p>
+                    <Badge variant="outline" className="shrink-0">Na fila</Badge>
+                  </div>
+                ))}
+                {pendingRows.length > 20 && (
+                  <p className="text-xs text-muted-foreground text-center">+{pendingRows.length - 20} aguardando…</p>
+                )}
+                {sentRows.map(row => (
+                  <div key={row.id} className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <CheckCircle2 size={16} className="text-green-600 shrink-0" />
+                    <p className="text-sm font-medium truncate flex-1">PDV: {row.cod_pdv} {row.nome_pdv ? `— ${row.nome_pdv}` : ''}</p>
+                    <Badge className="shrink-0 bg-green-600 hover:bg-green-700 text-white">OK</Badge>
                   </div>
                 ))}
               </div>
@@ -570,7 +396,48 @@ export default function AlteracaoPedidos() {
         </Card>
       )}
 
-      {/* Histórico completo */}
+      {/* Recent batches */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <ListChecks size={18} />
+            Lotes recentes
+          </CardTitle>
+          <CardDescription>Clique em um lote para acompanhar o progresso.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {recentLotes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum lote ainda.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentLotes.map(l => {
+                const lpct = l.total > 0 ? Math.round(((l.enviados + l.falhas) / l.total) * 100) : 0;
+                return (
+                  <button
+                    key={l.id}
+                    onClick={() => setCurrentLoteId(l.id)}
+                    className={`w-full text-left p-3 rounded-lg border transition-colors ${currentLoteId === l.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{l.nome_arquivo || 'Sem nome'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(l.created_at).toLocaleString('pt-BR')} · {l.enviados}/{l.total} enviados · {l.falhas} erros
+                        </p>
+                      </div>
+                      {l.status === 'concluido'
+                        ? <Badge className="bg-green-600 hover:bg-green-700 text-white">Concluído</Badge>
+                        : <Badge variant="secondary">Processando</Badge>}
+                    </div>
+                    <Progress value={lpct} className="mt-2 h-1.5" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <HistoricoEnvios />
     </div>
   );

@@ -31,7 +31,7 @@ type NavItem = {
   icon: typeof LayoutDashboard;
   label: string;
   path: string;
-  roles: ('admin' | 'distribuicao' | 'conferente' | 'controle')[];
+  roles: ('admin' | 'distribuicao' | 'conferente' | 'controle' | 'cme')[];
 };
 
 const navItems: NavItem[] = [
@@ -59,6 +59,8 @@ const getRoleBadge = (role: string) => {
       return { label: 'Conferente', variant: 'outline' as const };
     case 'controle':
       return { label: 'Controle', variant: 'outline' as const };
+    case 'cme':
+      return { label: 'CME', variant: 'outline' as const };
     default:
       return { label: role, variant: 'outline' as const };
   }
@@ -73,6 +75,10 @@ export function Sidebar() {
   const { theme, setTheme } = useTheme();
 
   const userRole = user?.nivel || 'conferente';
+
+  // CME tem acesso restrito apenas ao /cme/portal — não exibir sidebar
+  if (userRole === 'cme') return null;
+
   const filteredNavItems = navItems.filter(item => item.roles.includes(userRole));
   const roleBadge = getRoleBadge(userRole);
 

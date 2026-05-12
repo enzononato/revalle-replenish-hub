@@ -72,43 +72,102 @@ export type Database = {
       }
       alteracao_pedidos_log: {
         Row: {
+          attempts: number
           cod_pdv: string
           created_at: string
           enviado_por: string | null
           erro_mensagem: string | null
           id: string
+          lote_id: string | null
           mensagem_cliente: string | null
           nome_pdv: string | null
           oculto: boolean
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
           status_pedido: string | null
           sucesso: boolean
           telefone_pdv: string | null
         }
         Insert: {
+          attempts?: number
           cod_pdv: string
           created_at?: string
           enviado_por?: string | null
           erro_mensagem?: string | null
           id?: string
+          lote_id?: string | null
           mensagem_cliente?: string | null
           nome_pdv?: string | null
           oculto?: boolean
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
           status_pedido?: string | null
           sucesso?: boolean
           telefone_pdv?: string | null
         }
         Update: {
+          attempts?: number
           cod_pdv?: string
           created_at?: string
           enviado_por?: string | null
           erro_mensagem?: string | null
           id?: string
+          lote_id?: string | null
           mensagem_cliente?: string | null
           nome_pdv?: string | null
           oculto?: boolean
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
           status_pedido?: string | null
           sucesso?: boolean
           telefone_pdv?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alteracao_pedidos_log_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "alteracao_pedidos_lote"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alteracao_pedidos_lote: {
+        Row: {
+          created_at: string
+          enviado_por: string | null
+          enviados: number
+          falhas: number
+          id: string
+          nome_arquivo: string | null
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enviado_por?: string | null
+          enviados?: number
+          falhas?: number
+          id?: string
+          nome_arquivo?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enviado_por?: string | null
+          enviados?: number
+          falhas?: number
+          id?: string
+          nome_arquivo?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -926,6 +985,72 @@ export type Database = {
           total: number
         }[]
       }
+      get_protocolos_by_codigo_pdv: {
+        Args: { p_codigo: string }
+        Returns: {
+          arquivo_encerramento: string | null
+          ativo: boolean
+          causa: string | null
+          cliente_telefone: string | null
+          codigo_pdv: string | null
+          conferencia_status: string
+          confirmacao_conferente: Json
+          contato_email: string | null
+          contato_whatsapp: string | null
+          created_at: string | null
+          data: string
+          destino_final: string | null
+          encerrado_por_motorista_id: string | null
+          encerrado_por_motorista_nome: string | null
+          encerrado_por_tipo: string | null
+          enviado_encerrar: boolean | null
+          enviado_encerrar_erro: string | null
+          enviado_encerrar_status: string | null
+          enviado_lancar: boolean | null
+          enviado_lancar_erro: string | null
+          enviado_lancar_status: string | null
+          finalizado_em: string | null
+          finalizado_por_id: string | null
+          finalizado_por_nome: string | null
+          foto_entrega_mercadoria: string | null
+          foto_nota_fiscal_encerramento: string | null
+          fotos_protocolo: Json | null
+          habilitar_reenvio: boolean | null
+          hora: string
+          id: string
+          lancado: boolean | null
+          mapa: string | null
+          mensagem_encerramento: string | null
+          motorista_codigo: string | null
+          motorista_email: string | null
+          motorista_id: string | null
+          motorista_nome: string
+          motorista_unidade: string | null
+          motorista_whatsapp: string | null
+          nota_fiscal: string | null
+          numero: string
+          observacao_finalizacao: string | null
+          observacao_geral: string | null
+          observacoes_log: Json | null
+          oculto: boolean | null
+          produtos: Json | null
+          protocolo_origem_id: string | null
+          sla_16_enviado: boolean | null
+          sla_16_enviado_at: string | null
+          status: string
+          status_encerramento: string | null
+          status_envio: string | null
+          tipo_reposicao: string | null
+          ultimo_alerta_sla: number | null
+          validacao: boolean | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "protocolos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -939,7 +1064,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "distribuicao" | "conferente" | "controle"
+      app_role: "admin" | "distribuicao" | "conferente" | "controle" | "cme"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1067,7 +1192,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "distribuicao", "conferente", "controle"],
+      app_role: ["admin", "distribuicao", "conferente", "controle", "cme"],
     },
   },
 } as const

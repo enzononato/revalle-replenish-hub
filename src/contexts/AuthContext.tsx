@@ -6,7 +6,7 @@ import { useAuditLog } from '@/hooks/useAuditLog';
 import { classifyAuthError, friendlyMessage, withRetry } from '@/lib/authErrorHandling';
 
 const AUTH_USER_CACHE_KEY = 'auth_user_cache_v1';
-const APP_ROLES: UserRole[] = ['admin', 'distribuicao', 'conferente', 'controle'];
+const APP_ROLES: UserRole[] = ['admin', 'distribuicao', 'conferente', 'controle', 'cme'];
 
 const isValidRole = (value: unknown): value is UserRole =>
   typeof value === 'string' && APP_ROLES.includes(value as UserRole);

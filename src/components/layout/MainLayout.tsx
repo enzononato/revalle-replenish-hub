@@ -9,7 +9,7 @@ import { GuidedTour } from '@/components/GuidedTour';
 import { supabase } from '@/integrations/supabase/client';
 
 export function MainLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -49,6 +49,11 @@ export function MainLayout() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Usuários CME só podem acessar o portal CME
+  if (user?.nivel === 'cme') {
+    return <Navigate to="/cme/portal" replace />;
   }
 
   return (

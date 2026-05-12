@@ -38,13 +38,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-type UserRole = 'admin' | 'distribuicao' | 'conferente' | 'controle';
+type UserRole = 'admin' | 'distribuicao' | 'conferente' | 'controle' | 'cme';
 
 const nivelLabels: Record<UserRole, string> = {
   admin: 'Administrador',
   distribuicao: 'Distribuição',
   conferente: 'Conferente',
   controle: 'Controle',
+  cme: 'CME',
 };
 
 const nivelDescriptions: Record<UserRole, string> = {
@@ -52,6 +53,7 @@ const nivelDescriptions: Record<UserRole, string> = {
   distribuicao: 'Gerencia protocolos e distribuição',
   conferente: 'Confere e valida protocolos',
   controle: 'Lança e valida protocolos',
+  cme: 'Consulta protocolos por código de PDV',
 };
 
 export default function Usuarios() {
@@ -243,6 +245,8 @@ export default function Usuarios() {
         return <Truck className="text-info" size={18} />;
       case 'controle':
         return <ClipboardList className="text-warning" size={18} />;
+      case 'cme':
+        return <UserCircle className="text-emerald-600" size={18} />;
       default:
         return <UserCircle className="text-muted-foreground" size={18} />;
     }
@@ -256,6 +260,8 @@ export default function Usuarios() {
         return "bg-info/10 text-info border-info/20";
       case 'controle':
         return "bg-warning/10 text-warning border-warning/20";
+      case 'cme':
+        return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
       default:
         return "bg-muted text-muted-foreground border-border";
     }
@@ -400,7 +406,7 @@ export default function Usuarios() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(['admin', 'distribuicao', 'conferente', 'controle'] as UserRole[]).map(nivel => (
+                    {(['admin', 'distribuicao', 'conferente', 'controle', 'cme'] as UserRole[]).map(nivel => (
                       <SelectItem key={nivel} value={nivel}>
                         <div className="flex items-center gap-2">
                           {getNivelIcon(nivel)}

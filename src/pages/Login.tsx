@@ -8,7 +8,7 @@ import { Truck, Lock, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Login() {
-  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, login, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,8 +25,8 @@ export default function Login() {
   }
 
   if (isAuthenticated) {
-    // Todos vão para Dashboard
-    return <Navigate to="/dashboard" replace />;
+    const target = user?.nivel === 'cme' ? '/cme/portal' : '/dashboard';
+    return <Navigate to={target} replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +37,7 @@ export default function Login() {
       const result = await login(email, password);
       if (result.success) {
         toast.success('Login realizado com sucesso!');
+        // Usa o redirect do <Navigate> acima ao re-renderizar (já trata CME)
         navigate('/dashboard');
       } else {
         toast.error(result.error || 'Email ou senha inválidos');
