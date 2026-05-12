@@ -1,70 +1,88 @@
-## Objetivo
+# Envio assíncrono de Alteração de Pedidos
 
-Criar um novo perfil **CME** que faz login pelo sistema interno (email/senha), porém com acesso muito restrito: vê apenas uma única tela onde pesquisa por **código do PDV** e lista todos os protocolos daquele PDV (reposição, sobras e trocas), com permissão de **reenvio** igual ao RN. Não vê dashboard, não vê outras páginas.
+Hoje o envio roda no navegador, com `sleep(10s)` entre cada linha. O usuário precisa ficar na aba aberta o tempo todo. A solução é mover o disparo para o backend: o site só **enfileira**, e um worker no servidor envia os webhooks no ritmo certo.
 
-## 1. Banco de dados
+## Como vai funcionar
 
-- Adicionar `'cme'` ao enum `app_role` (já usado por `user_roles.role` e por `user_profiles.nivel`).
-- Não precisa de tabela nova — CME usa `user_profiles` + `user_roles` como qualquer usuário interno.
-- Sem alteração em RLS de `protocolos` (já é leitura pública para autenticados).
+```text
+[Navegador]
+  1. Upload do CSV → chama edge function "enfileirar"
+  2. Recebe lote_id e fecha (pode sair da página)
+       │
+       ▼
+[Banco]
+  alteracao_pedidos_lote   (1 linha por upload)
+  alteracao_pedidos_log    (N linhas, status=pending, scheduled_at espaçado de 10s)
+       ▲
+       │  pg_cron a cada 1 min
+[Edge Function "processar-fila-alteracoes"]
+  3. Busca itens pending com scheduled_at <= now()
+  4. Dispara webhook do n8n
+  5. Marca como sent ou failed
+       │
+       ▼
+[Navegador (Realtime)]
+  Mostra "X de Y enviados" em tempo real,
+  mesmo se o usuário recarregar ou voltar depois.
+```
 
-## 2. Tipos e Auth no frontend
+O intervalo de **10 segundos entre mensagens é mantido**, só que controlado no servidor, não no navegador.
 
-- `src/types/index.ts`: adicionar `'cme'` em `UserRole`.
-- `AuthContext` / hook de role: incluir `cme` na resolução de role (mesma lógica que admin/distribuicao/etc.).
-- `ProtectedRoute`: aceita `'cme'` quando listado em `allowedRoles`.
+## Mudanças no banco (1 migração)
 
-## 3. Roteamento e redirecionamento pós-login
+**Nova tabela `alteracao_pedidos_lote`**
+- nome do arquivo, total de itens, total enviados, total com erro, status (`processando` / `concluido`), quem disparou.
 
-- Em `App.tsx`, após login, se `user.nivel === 'cme'` redirecionar para `/cme/portal`. Bloquear acesso a `/dashboard`, `/protocolos`, etc. (o `MainLayout` redireciona CME para `/cme/portal`).
-- Nova rota protegida `/cme/portal` (allowedRoles: `['cme', 'admin']` — admin pode visualizar para suporte).
+**Tabela `alteracao_pedidos_log` ganha colunas**
+- `lote_id` (referência ao lote)
+- `status` (`pending` / `sent` / `failed`)
+- `scheduled_at` (quando o item pode ser disparado — usado para respeitar os 10s)
+- `attempts` (contador de tentativas)
+- `sent_at` (timestamp do envio efetivo)
 
-## 4. Sidebar
+**Realtime** habilitado em `alteracao_pedidos_log` para a UI atualizar sozinha.
 
-- `src/components/layout/Sidebar.tsx`: como CME só tem uma tela, ocultar a sidebar inteira para esse perfil **ou** mostrar apenas o item "Buscar por PDV" + perfil/sair.
-- Decisão: ocultar sidebar e usar header próprio (mesmo padrão visual do RN), para reforçar o escopo restrito.
+**`pg_cron`** agendando `processar-fila-alteracoes` a cada 1 minuto.
 
-## 5. Página `/cme/portal`
+## Mudanças no backend (2 Edge Functions novas)
 
-Nova página `src/pages/CmePortal.tsx`, inspirada em `RnPortal.tsx`:
+**`enfileirar-alteracoes`**
+- Recebe as linhas já parseadas do CSV.
+- Cria 1 registro em `alteracao_pedidos_lote`.
+- Insere todas as linhas em `alteracao_pedidos_log` com `status=pending` e `scheduled_at = now() + (i * 10s)`.
+- Retorna `{ lote_id, total }` em menos de 1 segundo.
 
-- Campo de busca por **código do PDV** (input + botão Pesquisar). Sem outros filtros.
-- Ao pesquisar, faz query em `protocolos`:
-  - `eq('codigo_pdv', codigo)`
-  - `eq('ativo', true)`
-  - `eq('oculto', false)` (ou `or` para null)
-  - **Sem** filtro de `motorista_unidade` (CME enxerga todas as unidades)
-  - **Sem** filtro de `tipo_reposicao` (inclui reposição, `pos_rota` e `troca`)
-  - Ordenar por `created_at DESC`
-- Resultado em tabela/cards com colunas: número, data/hora, status, tipo (reposição/sobra/troca), motorista, unidade, NF.
-- Tabs por status: Abertos, Em andamento, Encerrados, Todos.
-- Clique em uma linha abre modal de detalhes (reaproveitar `ProtocoloDetails` em modo somente leitura) com botão **Reenviar** quando aplicável (reaproveitar `RnReenvioModal` — ele já é genérico).
-- Header com nome do usuário CME, botão Sair (logout do AuthContext padrão).
+**`processar-fila-alteracoes`** (chamada pelo `pg_cron`)
+- Pega até N itens `pending` com `scheduled_at <= now()`, ordenados por data agendada.
+- Para cada item: dispara `POST` no webhook do n8n, marca como `sent` (ou `failed` com mensagem de erro e incrementa `attempts`).
+- Atualiza os contadores no `alteracao_pedidos_lote`. Quando `enviados + falhas == total`, marca o lote como `concluido`.
+- Idempotente: se o cron rodar enquanto outro ainda processa, usa `FOR UPDATE SKIP LOCKED` para não duplicar envios.
 
-## 6. Cadastro de usuários CME
+## Mudanças no frontend (`src/pages/AlteracaoPedidos.tsx`)
 
-- Em `src/pages/Usuarios.tsx`, adicionar `'cme'` à lista de níveis disponíveis no formulário (select).
-- Edge function `create-user` já trata roles via parâmetro — só precisa aceitar o novo valor (validar enum lá dentro).
-- Badge do nível em Sidebar/`getRoleBadge`: rótulo "CME".
+- Botão **"Processar e Enviar"** agora só:
+  1. Faz parse do CSV (já existe).
+  2. Chama `enfileirar-alteracoes` com as linhas.
+  3. Mostra toast "Lote enfileirado, processando em segundo plano".
+  4. Abre o painel de progresso do lote atual.
+- Painel de progresso assina **Realtime** em `alteracao_pedidos_log` filtrado por `lote_id`. Mostra:
+  - Barra de progresso (`enviados / total`).
+  - Estimativa de término (`(total - enviados) * 10s`).
+  - Lista de sucessos e erros, igual hoje.
+- Nova aba **"Lotes recentes"**: lista os últimos lotes do usuário com status, progresso e data — permite reabrir um lote que ainda está rodando ou um já finalizado.
+- O botão **Reenviar** individual continua funcionando: marca o item como `pending` de novo com `scheduled_at = now()` para o worker pegar no próximo tick.
+- Remove o `sleep(10000)`, o `AbortController`, o `startPolling` e o "Parar Envio" (cancelamento ficou para depois).
 
-## 7. Mensagens / textos
+## Detalhes técnicos relevantes
 
-- Login usa o mesmo `/login` e mesmas mensagens.
-- Portal CME: título "Buscar Protocolos por PDV" e instrução curta no topo.
+- O webhook do n8n continua sendo `https://n8n.revalle.com.br/webhook/alteracao_pedidos`, payload idêntico ao atual (incluindo `log_id` / `id_alteracao`), então **o n8n não precisa mudar**.
+- `scheduled_at` espaçado garante o ritmo de 10s mesmo se o cron rodar de minuto em minuto: o worker pode disparar 6 itens por execução (60s / 10s) sem violar o intervalo.
+- Tolerância a falhas: se o webhook falhar, item vira `failed` com `erro_mensagem`. Não há retry automático nesta versão (o usuário usa o botão "Reenviar" como hoje).
+- `pg_cron` e `pg_net` precisam estar habilitados — a migração faz isso.
+- O agendamento do cron é inserido via `supabase--insert` (não migração) porque contém URL e chave do projeto.
 
-## Detalhes técnicos
+## Fora de escopo (combinado)
 
-- Não criar nova edge function de login — CME usa Supabase Auth normal.
-- Não mexer em RLS — `protocolos` já permite leitura para `authenticated`.
-- Migration necessária: `ALTER TYPE app_role ADD VALUE 'cme';`
-- Cuidado: `ALTER TYPE ... ADD VALUE` não pode rodar dentro de transação em algumas versões; rodar em migration isolada.
-- `Sidebar.tsx`: condicional `if (user?.nivel === 'cme') return null;` (ou render mínimo).
-- `MainLayout.tsx`: se `user.nivel === 'cme'` e rota não for `/cme/*`, redirecionar para `/cme/portal`.
-- `Login.tsx`: ajustar redirect pós-login para enviar CME diretamente para `/cme/portal`.
-- Reuso de componentes: `RnReenvioModal` já é parametrizado por protocolo; `ProtocoloDetails` aceita modo leitura.
-
-## Fora de escopo
-
-- Não criar relatórios/exportação para CME.
-- Não permitir edição, encerramento, criação de trocas/sobras pelo CME.
-- Não criar tabela `cme_users` nem edge function dedicada.
+- Cancelar lote em andamento.
+- Mudar o intervalo de 10s ou torná-lo configurável.
+- Retry automático de itens com falha.

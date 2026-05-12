@@ -72,43 +72,102 @@ export type Database = {
       }
       alteracao_pedidos_log: {
         Row: {
+          attempts: number
           cod_pdv: string
           created_at: string
           enviado_por: string | null
           erro_mensagem: string | null
           id: string
+          lote_id: string | null
           mensagem_cliente: string | null
           nome_pdv: string | null
           oculto: boolean
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string
           status_pedido: string | null
           sucesso: boolean
           telefone_pdv: string | null
         }
         Insert: {
+          attempts?: number
           cod_pdv: string
           created_at?: string
           enviado_por?: string | null
           erro_mensagem?: string | null
           id?: string
+          lote_id?: string | null
           mensagem_cliente?: string | null
           nome_pdv?: string | null
           oculto?: boolean
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
           status_pedido?: string | null
           sucesso?: boolean
           telefone_pdv?: string | null
         }
         Update: {
+          attempts?: number
           cod_pdv?: string
           created_at?: string
           enviado_por?: string | null
           erro_mensagem?: string | null
           id?: string
+          lote_id?: string | null
           mensagem_cliente?: string | null
           nome_pdv?: string | null
           oculto?: boolean
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string
           status_pedido?: string | null
           sucesso?: boolean
           telefone_pdv?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alteracao_pedidos_log_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "alteracao_pedidos_lote"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alteracao_pedidos_lote: {
+        Row: {
+          created_at: string
+          enviado_por: string | null
+          enviados: number
+          falhas: number
+          id: string
+          nome_arquivo: string | null
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enviado_por?: string | null
+          enviados?: number
+          falhas?: number
+          id?: string
+          nome_arquivo?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enviado_por?: string | null
+          enviados?: number
+          falhas?: number
+          id?: string
+          nome_arquivo?: string | null
+          status?: string
+          total?: number
+          updated_at?: string
         }
         Relationships: []
       }
