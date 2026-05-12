@@ -296,9 +296,9 @@ export default function AlteracaoPedidos() {
           <div className="flex gap-3">
             <Button onClick={handleEnqueue} disabled={!file || isEnqueuing} className="btn-primary-gradient">
               {isEnqueuing ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enfileirando...</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
               ) : (
-                <><Send className="mr-2 h-4 w-4" /> Enfileirar e Enviar em Segundo Plano</>
+                <><Send className="mr-2 h-4 w-4" /> Enviar</>
               )}
             </Button>
             {file && !isEnqueuing && (
@@ -317,21 +317,36 @@ export default function AlteracaoPedidos() {
               {lote?.status === 'concluido' && <Badge className="bg-green-600 hover:bg-green-700 text-white">Concluído</Badge>}
               {lote?.status === 'processando' && <Badge variant="secondary">Processando</Badge>}
             </CardTitle>
-            <CardDescription>
-              {lote?.nome_arquivo && <span className="font-medium">{lote.nome_arquivo} · </span>}
-              <span className="text-green-600 font-medium">{sentRows.length} enviados</span>{' · '}
-              <span className="text-destructive font-medium">{failedRows.length} erros</span>{' · '}
-              <span>{pendingRows.length} na fila</span>
-              {pendingRows.length > 0 && (
-                <span className="ml-2 inline-flex items-center gap-1 text-muted-foreground">
-                  <Clock size={12} /> ~{Math.ceil(etaSec / 60)} min restantes
-                </span>
-              )}
-            </CardDescription>
+            {lote?.nome_arquivo && (
+              <CardDescription className="font-medium">{lote.nome_arquivo}</CardDescription>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
-            <Progress value={pct} />
-            <p className="text-xs text-muted-foreground text-center">{done} de {total} ({pct}%)</p>
+            {/* Barra de progresso destacada */}
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-2xl font-bold tabular-nums">
+                    {done} <span className="text-muted-foreground text-base font-medium">de {total} enviados</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">{pct}% concluído</p>
+                </div>
+                {pendingRows.length > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                      <Clock size={12} /> Tempo restante
+                    </p>
+                    <p className="text-sm font-medium">~{Math.ceil(etaSec / 60)} min</p>
+                  </div>
+                )}
+              </div>
+              <Progress value={pct} className="h-3" />
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                <span className="text-green-600 font-medium">✓ {sentRows.length} enviados</span>
+                <span className="text-destructive font-medium">✕ {failedRows.length} erros</span>
+                <span className="text-muted-foreground">⏳ {pendingRows.length} na fila</span>
+              </div>
+            </div>
 
             <ScrollArea className="max-h-[500px]">
               <div className="space-y-2">
