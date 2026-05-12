@@ -296,9 +296,9 @@ export default function AlteracaoPedidos() {
           <div className="flex gap-3">
             <Button onClick={handleEnqueue} disabled={!file || isEnqueuing} className="btn-primary-gradient">
               {isEnqueuing ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enfileirando...</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</>
               ) : (
-                <><Send className="mr-2 h-4 w-4" /> Enfileirar e Enviar em Segundo Plano</>
+                <><Send className="mr-2 h-4 w-4" /> Enviar</>
               )}
             </Button>
             {file && !isEnqueuing && (
