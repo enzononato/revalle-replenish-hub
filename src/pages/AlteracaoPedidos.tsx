@@ -94,7 +94,6 @@ function parseCSV(text: string): PedidoRow[] {
   return rows;
 }
 
-const WEBHOOK_URL = 'https://n8n.revalle.com.br/webhook/alteracao_pedidos';
 const LOG_FIELDS = 'id, lote_id, cod_pdv, nome_pdv, telefone_pdv, status_pedido, mensagem_cliente, sucesso, erro_mensagem, status, scheduled_at, created_at';
 
 export default function AlteracaoPedidos() {
