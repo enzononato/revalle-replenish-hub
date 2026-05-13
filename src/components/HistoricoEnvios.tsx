@@ -476,11 +476,23 @@ export default function HistoricoEnvios() {
           {/* Tabela de Sucessos */}
           <Card className="border-green-500/30">
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-green-600" />
-                Enviados com Sucesso
-                <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{filteredSuccessLogs.length}{hasFilters && successLogs.length !== filteredSuccessLogs.length ? `/${successLogs.length}` : ''}</Badge>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-green-600" />
+                  Enviados com Sucesso
+                  <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{filteredSuccessLogs.length}{hasFilters && successLogs.length !== filteredSuccessLogs.length ? `/${successLogs.length}` : ''}</Badge>
+                </CardTitle>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-2"
+                  onClick={handleDownloadSuccessCsv}
+                  disabled={successLogs.length === 0}
+                >
+                  <Download className="h-3 w-3 mr-1" />
+                  CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="px-2 pb-2">
               <ScrollArea className="h-[400px]">
