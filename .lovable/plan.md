@@ -1,21 +1,20 @@
-# Ajustes na página Alteração de Pedidos
+## Mudanças
 
-Dois ajustes pequenos de UI em `src/pages/AlteracaoPedidos.tsx`:
+### 1. Confirmação: envios já são salvos
+Todo item enviado pela página *Alteração nos Pedidos* (sucesso ou erro) já é gravado em `alteracao_pedidos_log` pela edge function `processar-fila-alteracoes` e aparece automaticamente no Histórico de Envios. Nada a alterar.
 
-## 1. Texto do botão
+### 2. Visualização para distribuicao / controle
+Mantém-se o filtro atual por unidade (não-admin vê apenas registros dos PDVs da própria unidade). A UI já é idêntica à do admin — todos os filtros (datas, cód. PDV, telefone, status), tabelas e botões são renderizados para todos os perfis com acesso (admin, distribuicao, controle). Nada a alterar.
 
-Trocar **"Enfileirar e Enviar em Segundo Plano"** por simplesmente **"Enviar"**.
+### 3. Novo botão "CSV" para enviados com sucesso
+Em `src/components/HistoricoEnvios.tsx`, no card "Enviados com Sucesso", adicionar um botão **CSV** (mesmo estilo do botão de erros), que:
+- Exporta `successLogs` (respeitando o filtro de datas aplicado na busca).
+- Colunas: Data, Cod. PDV, Nome PDV, Telefone PDV, Status Pedido, Mensagem Cliente.
+- Nome do arquivo: `enviados_sucesso_YYYY-MM-DD_HHmm.csv`.
+- Desabilitado quando não há sucessos.
 
-Durante o envio (`isEnqueuing = true`), o botão mostra **"Enviando..."** com o spinner.
+Reaproveita o mesmo padrão de geração CSV (BOM UTF-8 + aspas duplas escapadas) já usado para erros.
 
-## 2. Barra de progresso em tempo real, mais destacada
-
-Hoje o progresso já existe dentro do card "Lote em andamento" e atualiza via Realtime. Vou:
-
-- Mover a barra de progresso para o **topo do card**, em destaque, sempre visível enquanto o lote está em andamento.
-- Mostrar acima da barra: `X de Y enviados (Z%)` em fonte maior.
-- Mostrar abaixo: tempo estimado restante (`pendentes × 10s`, formatado em min) e contadores enviados / erros / na fila.
-- Manter a lista detalhada de itens (erros, fila, sucessos) abaixo, como hoje.
-- A barra continua atualizando sozinha via Realtime — sem precisar recarregar.
-
-Nada muda no backend, nas tabelas ou nas edge functions.
+## Observações
+- Os filtros de data já existem no header do Histórico — eles continuam controlando o que entra no CSV (porque a exportação usa os logs já carregados em memória).
+- Nenhuma mudança em RLS, edge functions, banco ou rotas.

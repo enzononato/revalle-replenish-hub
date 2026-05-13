@@ -112,10 +112,37 @@ export default function HistoricoEnvios() {
 
       let codigosPermitidos: string[] | null = null;
       if (!isAdmin && userUnidades.length > 0) {
+        // Tolerância: usuário pode ter salvo o nome ("Revalle Juazeiro"),
+        // o código longo ("RJZ") ou o curto ("JZ"). PDVs usam o curto.
+        // Resolvemos via tabela `unidades` e expandimos todas as variações.
+        const { data: unidadesData } = await supabase
+          .from('unidades')
+          .select('codigo, nome');
+
+        const norm = (s: string) => s.trim().toLowerCase();
+        const expanded = new Set<string>();
+        for (const u of userUnidades) {
+          const n = norm(u);
+          expanded.add(u);
+          // se token começar com 'R' tenta versão curta
+          if (u.length > 1 && /^R/i.test(u)) expanded.add(u.slice(1));
+          // procura match por nome ou código na tabela unidades
+          const match = (unidadesData || []).find(
+            (row) => norm(row.nome) === n || norm(row.codigo) === n,
+          );
+          if (match) {
+            expanded.add(match.codigo);
+            expanded.add(match.nome);
+            if (match.codigo.length > 1 && /^R/i.test(match.codigo)) {
+              expanded.add(match.codigo.slice(1));
+            }
+          }
+        }
+
         const { data: pdvsData, error: pdvsError } = await supabase
           .from('pdvs')
           .select('codigo')
-          .in('unidade', userUnidades);
+          .in('unidade', Array.from(expanded));
 
         if (pdvsError) {
           console.error('Erro ao buscar PDVs do usuário:', pdvsError);
@@ -209,6 +236,33 @@ export default function HistoricoEnvios() {
     } finally {
       setResendingId(null);
     }
+  };
+
+  const handleDownloadSuccessCsv = () => {
+    if (successLogs.length === 0) {
+      toast.error('Nenhum envio com sucesso para exportar');
+      return;
+    }
+    const headers = ['Data', 'Cod. PDV', 'Nome PDV', 'Telefone PDV', 'Status Pedido', 'Mensagem Cliente'];
+    const rows = successLogs.map(r => [
+      formatDate(r.created_at),
+      r.cod_pdv,
+      r.nome_pdv || '',
+      r.telefone_pdv || '',
+      r.status_pedido || '',
+      r.mensagem_cliente || '',
+    ]);
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `enviados_sucesso_${format(new Date(), 'yyyy-MM-dd_HHmm')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV de enviados baixado!');
   };
 
   const formatDate = (dateStr: string) => {
@@ -476,11 +530,23 @@ export default function HistoricoEnvios() {
           {/* Tabela de Sucessos */}
           <Card className="border-green-500/30">
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-green-600" />
-                Enviados com Sucesso
-                <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{filteredSuccessLogs.length}{hasFilters && successLogs.length !== filteredSuccessLogs.length ? `/${successLogs.length}` : ''}</Badge>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-green-600" />
+                  Enviados com Sucesso
+                  <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{filteredSuccessLogs.length}{hasFilters && successLogs.length !== filteredSuccessLogs.length ? `/${successLogs.length}` : ''}</Badge>
+                </CardTitle>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-2"
+                  onClick={handleDownloadSuccessCsv}
+                  disabled={successLogs.length === 0}
+                >
+                  <Download className="h-3 w-3 mr-1" />
+                  CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="px-2 pb-2">
               <ScrollArea className="h-[400px]">
