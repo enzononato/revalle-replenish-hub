@@ -211,6 +211,33 @@ export default function HistoricoEnvios() {
     }
   };
 
+  const handleDownloadSuccessCsv = () => {
+    if (successLogs.length === 0) {
+      toast.error('Nenhum envio com sucesso para exportar');
+      return;
+    }
+    const headers = ['Data', 'Cod. PDV', 'Nome PDV', 'Telefone PDV', 'Status Pedido', 'Mensagem Cliente'];
+    const rows = successLogs.map(r => [
+      formatDate(r.created_at),
+      r.cod_pdv,
+      r.nome_pdv || '',
+      r.telefone_pdv || '',
+      r.status_pedido || '',
+      r.mensagem_cliente || '',
+    ]);
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `enviados_sucesso_${format(new Date(), 'yyyy-MM-dd_HHmm')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV de enviados baixado!');
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       return format(new Date(dateStr), 'dd/MM/yyyy HH:mm', { locale: ptBR });
@@ -476,11 +503,23 @@ export default function HistoricoEnvios() {
           {/* Tabela de Sucessos */}
           <Card className="border-green-500/30">
             <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-green-600" />
-                Enviados com Sucesso
-                <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{filteredSuccessLogs.length}{hasFilters && successLogs.length !== filteredSuccessLogs.length ? `/${successLogs.length}` : ''}</Badge>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-green-600" />
+                  Enviados com Sucesso
+                  <Badge className="text-xs bg-green-600 hover:bg-green-700 text-white">{filteredSuccessLogs.length}{hasFilters && successLogs.length !== filteredSuccessLogs.length ? `/${successLogs.length}` : ''}</Badge>
+                </CardTitle>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-2"
+                  onClick={handleDownloadSuccessCsv}
+                  disabled={successLogs.length === 0}
+                >
+                  <Download className="h-3 w-3 mr-1" />
+                  CSV
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="px-2 pb-2">
               <ScrollArea className="h-[400px]">
