@@ -112,10 +112,37 @@ export default function HistoricoEnvios() {
 
       let codigosPermitidos: string[] | null = null;
       if (!isAdmin && userUnidades.length > 0) {
+        // Tolerância: usuário pode ter salvo o nome ("Revalle Juazeiro"),
+        // o código longo ("RJZ") ou o curto ("JZ"). PDVs usam o curto.
+        // Resolvemos via tabela `unidades` e expandimos todas as variações.
+        const { data: unidadesData } = await supabase
+          .from('unidades')
+          .select('codigo, nome');
+
+        const norm = (s: string) => s.trim().toLowerCase();
+        const expanded = new Set<string>();
+        for (const u of userUnidades) {
+          const n = norm(u);
+          expanded.add(u);
+          // se token começar com 'R' tenta versão curta
+          if (u.length > 1 && /^R/i.test(u)) expanded.add(u.slice(1));
+          // procura match por nome ou código na tabela unidades
+          const match = (unidadesData || []).find(
+            (row) => norm(row.nome) === n || norm(row.codigo) === n,
+          );
+          if (match) {
+            expanded.add(match.codigo);
+            expanded.add(match.nome);
+            if (match.codigo.length > 1 && /^R/i.test(match.codigo)) {
+              expanded.add(match.codigo.slice(1));
+            }
+          }
+        }
+
         const { data: pdvsData, error: pdvsError } = await supabase
           .from('pdvs')
           .select('codigo')
-          .in('unidade', userUnidades);
+          .in('unidade', Array.from(expanded));
 
         if (pdvsError) {
           console.error('Erro ao buscar PDVs do usuário:', pdvsError);
