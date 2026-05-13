@@ -211,6 +211,33 @@ export default function HistoricoEnvios() {
     }
   };
 
+  const handleDownloadSuccessCsv = () => {
+    if (successLogs.length === 0) {
+      toast.error('Nenhum envio com sucesso para exportar');
+      return;
+    }
+    const headers = ['Data', 'Cod. PDV', 'Nome PDV', 'Telefone PDV', 'Status Pedido', 'Mensagem Cliente'];
+    const rows = successLogs.map(r => [
+      formatDate(r.created_at),
+      r.cod_pdv,
+      r.nome_pdv || '',
+      r.telefone_pdv || '',
+      r.status_pedido || '',
+      r.mensagem_cliente || '',
+    ]);
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `enviados_sucesso_${format(new Date(), 'yyyy-MM-dd_HHmm')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV de enviados baixado!');
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       return format(new Date(dateStr), 'dd/MM/yyyy HH:mm', { locale: ptBR });
