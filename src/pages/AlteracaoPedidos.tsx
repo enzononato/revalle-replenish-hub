@@ -409,31 +409,33 @@ export default function AlteracaoPedidos() {
           {recentLotes.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum lote ainda.</p>
           ) : (
-            <div className="space-y-2">
-              {recentLotes.map(l => {
-                const lpct = l.total > 0 ? Math.round(((l.enviados + l.falhas) / l.total) * 100) : 0;
-                return (
-                  <button
-                    key={l.id}
-                    onClick={() => setCurrentLoteId(l.id)}
-                    className={`w-full text-left p-3 rounded-lg border transition-colors ${currentLoteId === l.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{l.nome_arquivo || 'Sem nome'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(l.created_at).toLocaleString('pt-BR')} · {l.enviados}/{l.total} enviados · {l.falhas} erros
-                        </p>
+            <ScrollArea className="h-[280px] pr-3">
+              <div className="space-y-2">
+                {recentLotes.map(l => {
+                  const lpct = l.total > 0 ? Math.round(((l.enviados + l.falhas) / l.total) * 100) : 0;
+                  return (
+                    <button
+                      key={l.id}
+                      onClick={() => setCurrentLoteId(l.id)}
+                      className={`w-full text-left p-3 rounded-lg border transition-colors ${currentLoteId === l.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{l.nome_arquivo || 'Sem nome'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(l.created_at).toLocaleString('pt-BR')} · {l.enviados}/{l.total} enviados · {l.falhas} erros
+                          </p>
+                        </div>
+                        {l.status === 'concluido'
+                          ? <Badge className="bg-green-600 hover:bg-green-700 text-white">Concluído</Badge>
+                          : <Badge variant="secondary">Processando</Badge>}
                       </div>
-                      {l.status === 'concluido'
-                        ? <Badge className="bg-green-600 hover:bg-green-700 text-white">Concluído</Badge>
-                        : <Badge variant="secondary">Processando</Badge>}
-                    </div>
-                    <Progress value={lpct} className="mt-2 h-1.5" />
-                  </button>
-                );
-              })}
-            </div>
+                      <Progress value={lpct} className="mt-2 h-1.5" />
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
