@@ -409,7 +409,7 @@ export default function AlteracaoPedidos() {
           {recentLotes.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum lote ainda.</p>
           ) : (
-            <ScrollArea className="max-h-[280px]">
+            <ScrollArea className="h-[280px] pr-3">
               <div className="space-y-2">
                 {recentLotes.map(l => {
                   const lpct = l.total > 0 ? Math.round(((l.enviados + l.falhas) / l.total) * 100) : 0;
