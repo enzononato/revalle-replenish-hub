@@ -510,10 +510,12 @@ export default function Protocolos({ scope = 'reposicao' }: ProtocolosProps = {}
     <div className="space-y-4">
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-          <FileText className="text-primary" size={24} />
-          Reposição
+          {scope === 'troca' ? <Repeat className="text-primary" size={24} /> : <FileText className="text-primary" size={24} />}
+          {scope === 'troca' ? 'Trocas' : 'Reposição'}
         </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Gerencie as reposições</p>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          {scope === 'troca' ? 'Protocolos de troca abertos pelos RNs' : 'Gerencie as reposições'}
+        </p>
       </div>
 
       {/* Smart Search */}
