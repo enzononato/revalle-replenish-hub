@@ -929,6 +929,10 @@ export type Database = {
           unidade: string
         }[]
       }
+      generate_protocolo_numero: {
+        Args: { p_causa?: string; p_tipo: string }
+        Returns: string
+      }
       get_dashboard_protocolos_por_dia: {
         Args: {
           p_data_fim?: string

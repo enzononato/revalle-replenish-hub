@@ -21,6 +21,7 @@ import { Loader2, CheckCircle, MapPin, FileText, Tag, AlertTriangle, Camera, X, 
 import { format, parseISO } from 'date-fns';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import CameraCapture from '@/components/CameraCapture';
 
 interface PosRotaProps {
@@ -195,7 +196,7 @@ export function PosRota({ motorista }: PosRotaProps) {
 
     try {
       const agora = new Date();
-      const numero = `POSROTA-${format(agora, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
+      const numero = await gerarNumeroProtocolo('pos_rota');
 
       const produtosValidos = produtos.filter(p => p.nome.trim() && p.quantidade >= 1);
 
