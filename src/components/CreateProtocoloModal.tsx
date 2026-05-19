@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { Protocolo, Produto, Motorista, FotosProtocolo } from '@/types';
 import { mockMotoristas } from '@/data/mockData';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 
 interface CreateProtocoloModalProps {
   open: boolean;
@@ -162,7 +163,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
     setFotoAvaria(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedMotorista) {
       toast.error('Selecione um motorista');
       return;
