@@ -7,6 +7,7 @@ import { useAddProtocolo } from '@/hooks/useAddProtocolo';
 import { useOfflineProtocolos } from '@/hooks/useOfflineProtocolos';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import { getCustomPhotoUrl } from '@/utils/urlHelpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

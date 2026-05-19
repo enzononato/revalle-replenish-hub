@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import CameraCapture from '@/components/CameraCapture';
 import { formatPhone, isValidPhone } from '@/lib/phone';
 import type { Representante } from '@/contexts/RnAuthContext';

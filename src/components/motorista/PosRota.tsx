@@ -21,6 +21,7 @@ import { Loader2, CheckCircle, MapPin, FileText, Tag, AlertTriangle, Camera, X, 
 import { format, parseISO } from 'date-fns';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import CameraCapture from '@/components/CameraCapture';
 
 interface PosRotaProps {
