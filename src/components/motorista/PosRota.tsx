@@ -196,7 +196,15 @@ export function PosRota({ motorista }: PosRotaProps) {
 
     try {
       const agora = new Date();
-      const numero = await gerarNumeroProtocolo('pos_rota');
+      let numero: string;
+      try {
+        numero = await gerarNumeroProtocolo('pos_rota');
+      } catch (err) {
+        toast({ title: 'Erro', description: 'Erro ao gerar número do protocolo. Tente novamente.', variant: 'destructive' });
+        console.error('Falha RPC generate_protocolo_numero:', err);
+        setIsSubmitting(false);
+        return;
+      }
 
       const produtosValidos = produtos.filter(p => p.nome.trim() && p.quantidade >= 1);
 

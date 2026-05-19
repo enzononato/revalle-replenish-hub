@@ -548,7 +548,13 @@ export default function MotoristaPortal() {
     // Se estiver online, gera no backend; offline cai no fallback local
     let numero: string;
     if (isOnline) {
-      numero = await gerarNumeroProtocolo('reposicao', tipoReposicao);
+      try {
+        numero = await gerarNumeroProtocolo('reposicao', tipoReposicao);
+      } catch (err) {
+        toast({ title: 'Erro', description: 'Erro ao gerar número do protocolo. Tente novamente.', variant: 'destructive' });
+        console.error('Falha RPC generate_protocolo_numero:', err);
+        return;
+      }
     } else {
       numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
     }
