@@ -85,7 +85,23 @@ const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
   return !!observacoesLog?.some(log => log.acao === 'Reabriu o protocolo');
 };
 
-export default function Protocolos() {
+const TROCA_CAUSAS = [
+  '01 - Vencido',
+  '02 - Embalagem Avariada',
+  '05 - Mal Cheio',
+  '06 - Sem data de Validade',
+  '09 - Produto Impróprio',
+  'Vencido',
+  'Impureza',
+  'Mal cheiro',
+  'Fora do Prazo Comercial',
+];
+
+interface ProtocolosProps {
+  scope?: 'reposicao' | 'troca';
+}
+
+export default function Protocolos({ scope = 'reposicao' }: ProtocolosProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, isControle, user } = useAuth();
