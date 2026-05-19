@@ -237,7 +237,8 @@ export default function Protocolos({ scope = 'reposicao' }: ProtocolosProps = {}
           (validadoFilter === 'sim' && p.validacao) ||
           (validadoFilter === 'nao' && !p.validacao);
 
-        const tipoMatch = tipoFilter === 'todos' || p.tipoReposicao === tipoFilter;
+        const tipoMatch = tipoFilter === 'todos'
+          || (scope === 'troca' ? (p.causa === tipoFilter) : (p.tipoReposicao === tipoFilter));
 
         return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
       })
