@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { Protocolo, Produto, Motorista, FotosProtocolo } from '@/types';
 import { mockMotoristas } from '@/data/mockData';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 
 interface CreateProtocoloModalProps {
   open: boolean;
@@ -162,7 +163,7 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
     setFotoAvaria(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedMotorista) {
       toast.error('Selecione um motorista');
       return;
@@ -206,7 +207,14 @@ const CreateProtocoloModal = ({ open, onClose, onCreateProtocolo }: CreateProtoc
     }
 
     const now = new Date();
-    const protocoloNumero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    let protocoloNumero: string;
+    try {
+      protocoloNumero = await gerarNumeroProtocolo('reposicao', tipoReposicao);
+    } catch (err) {
+      toast.error('Erro ao gerar número do protocolo. Tente novamente.');
+      console.error('Falha RPC generate_protocolo_numero:', err);
+      return;
+    }
 
     const fotosProtocolo: FotosProtocolo = {
       fotoMotoristaPdv: fotoMotoristaPdv || undefined,

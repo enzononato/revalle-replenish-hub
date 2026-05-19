@@ -21,6 +21,7 @@ import { Loader2, CheckCircle, MapPin, FileText, Tag, AlertTriangle, Camera, X, 
 import { format, parseISO } from 'date-fns';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import CameraCapture from '@/components/CameraCapture';
 
 interface PosRotaProps {
@@ -79,7 +80,9 @@ export function PosRota({ motorista }: PosRotaProps) {
   const [loadingSobras, setLoadingSobras] = useState(false);
   const [contadores, setContadores] = useState({ pendentes: 0, tratamento: 0, resolvido: 0 });
 
-  const canSubmit = mapa.trim() && placa.trim() && produtos.some(p => p.nome.trim() && p.quantidade >= 1) && fotos.length > 0;
+  const placaRegex = /^[A-Z]{3}-?[0-9]{4}$|^[A-Z]{3}[0-9][A-Z][0-9]{2}$/;
+  const placaValida = placaRegex.test(placa.trim().toUpperCase());
+  const canSubmit = mapa.trim() && placaValida && notaFiscal.trim() && produtos.some(p => p.nome.trim() && p.quantidade >= 1) && fotos.length > 0;
 
   // Fetch sobras do motorista
   const fetchSobras = useCallback(async (statusFilter: string) => {
@@ -195,7 +198,15 @@ export function PosRota({ motorista }: PosRotaProps) {
 
     try {
       const agora = new Date();
-      const numero = `POSROTA-${format(agora, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
+      let numero: string;
+      try {
+        numero = await gerarNumeroProtocolo('pos_rota');
+      } catch (err) {
+        toast({ title: 'Erro', description: 'Erro ao gerar número do protocolo. Tente novamente.', variant: 'destructive' });
+        console.error('Falha RPC generate_protocolo_numero:', err);
+        setIsSubmitting(false);
+        return;
+      }
 
       const produtosValidos = produtos.filter(p => p.nome.trim() && p.quantidade >= 1);
 
@@ -697,32 +708,42 @@ export function PosRota({ motorista }: PosRotaProps) {
                     <Input
                       placeholder="Número do mapa"
                       value={mapa}
-                      onChange={(e) => setMapa(e.target.value)}
+                      onChange={(e) => setMapa(e.target.value.replace(/\D/g, ''))}
+                      inputMode="numeric"
                       className="h-11 text-sm"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium text-muted-foreground">Placa do Veículo *</Label>
                     <Input
-                      placeholder="Ex: ABC1D23"
+                      placeholder="ABC-1234 ou ABC1D23"
                       value={placa}
-                      onChange={(e) => setPlaca(e.target.value.toUpperCase())}
-                      maxLength={7}
+                      onChange={(e) => {
+                        const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                        setPlaca(raw);
+                      }}
+                      maxLength={8}
                       className="h-11 text-sm uppercase"
                     />
+                    {placa.trim() && !placaValida && (
+                      <p className="text-xs text-destructive">Formato inválido. Use LLL-NNNN ou LLLNLNN.</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal *</Label>
                   <Input
-                    placeholder="Número da nota fiscal (opcional)"
+                    placeholder="Número da nota fiscal"
                     value={notaFiscal}
-                    onChange={(e) => setNotaFiscal(e.target.value)}
+                    onChange={(e) => setNotaFiscal(e.target.value.replace(/\D/g, ''))}
+                    inputMode="numeric"
                     className="h-11 text-sm"
                   />
                 </div>
+
               </div>
             </div>
+
 
             {/* Produtos */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">

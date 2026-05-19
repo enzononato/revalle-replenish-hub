@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotoParaStorage } from '@/utils/uploadFotoStorage';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import CameraCapture from '@/components/CameraCapture';
 import { formatPhone, isValidPhone } from '@/lib/phone';
 import type { Representante } from '@/contexts/RnAuthContext';
@@ -181,9 +182,15 @@ export function TrocaForm({ representante }: TrocaFormProps) {
 
     try {
       const agora = new Date();
-      const numero = `TROCA-${format(agora, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 100)
-        .toString()
-        .padStart(2, '0')}`;
+      let numero: string;
+      try {
+        numero = await gerarNumeroProtocolo('troca');
+      } catch (err) {
+        toast.error('Erro ao gerar número do protocolo. Tente novamente.');
+        console.error('Falha RPC generate_protocolo_numero:', err);
+        setIsSubmitting(false);
+        return;
+      }
 
       const fotosUrls: string[] = [];
       for (let i = 0; i < fotos.length; i++) {

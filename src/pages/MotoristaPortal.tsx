@@ -7,6 +7,7 @@ import { useAddProtocolo } from '@/hooks/useAddProtocolo';
 import { useOfflineProtocolos } from '@/hooks/useOfflineProtocolos';
 import { compressImage } from '@/utils/imageCompression';
 import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import { getCustomPhotoUrl } from '@/utils/urlHelpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -544,7 +545,19 @@ export default function MotoristaPortal() {
     }
 
     const now = new Date();
-    const numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    // Se estiver online, gera no backend; offline cai no fallback local
+    let numero: string;
+    if (isOnline) {
+      try {
+        numero = await gerarNumeroProtocolo('reposicao', tipoReposicao);
+      } catch (err) {
+        toast({ title: 'Erro', description: 'Erro ao gerar número do protocolo. Tente novamente.', variant: 'destructive' });
+        console.error('Falha RPC generate_protocolo_numero:', err);
+        return;
+      }
+    } else {
+      numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    }
 
     const produtosFormatados = validProdutos.map(p => {
       const parts = p.produto.split(' - ');

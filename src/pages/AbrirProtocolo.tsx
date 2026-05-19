@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
+import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import {
   Select,
   SelectContent,
@@ -222,7 +223,14 @@ export default function AbrirProtocolo() {
     }
 
     const now = new Date();
-    const protocoloNumero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    let protocoloNumero: string;
+    try {
+      protocoloNumero = await gerarNumeroProtocolo('reposicao', tipoReposicao);
+    } catch (err) {
+      toast.error('Erro ao gerar número do protocolo. Tente novamente.');
+      console.error('Falha RPC generate_protocolo_numero:', err);
+      return;
+    }
 
     // Iniciar upload com progresso
     setIsUploading(true);
