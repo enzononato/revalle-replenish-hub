@@ -181,9 +181,7 @@ export function TrocaForm({ representante }: TrocaFormProps) {
 
     try {
       const agora = new Date();
-      const numero = `TROCA-${format(agora, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 100)
-        .toString()
-        .padStart(2, '0')}`;
+      const numero = await gerarNumeroProtocolo('troca');
 
       const fotosUrls: string[] = [];
       for (let i = 0; i < fotos.length; i++) {

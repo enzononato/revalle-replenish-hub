@@ -195,7 +195,7 @@ export function PosRota({ motorista }: PosRotaProps) {
 
     try {
       const agora = new Date();
-      const numero = `POSROTA-${format(agora, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
+      const numero = await gerarNumeroProtocolo('pos_rota');
 
       const produtosValidos = produtos.filter(p => p.nome.trim() && p.quantidade >= 1);
 

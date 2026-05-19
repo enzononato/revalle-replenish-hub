@@ -544,7 +544,13 @@ export default function MotoristaPortal() {
     }
 
     const now = new Date();
-    const numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    // Se estiver online, gera no backend; offline cai no fallback local
+    let numero: string;
+    if (isOnline) {
+      numero = await gerarNumeroProtocolo('reposicao', tipoReposicao);
+    } else {
+      numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    }
 
     const produtosFormatados = validProdutos.map(p => {
       const parts = p.produto.split(' - ');
