@@ -25,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Phone, Download, Plus, EyeOff, Trash2, FileText, RefreshCw, AlertCircle, Clock } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Phone, Download, Plus, EyeOff, Trash2, FileText, RefreshCw, AlertCircle, Clock, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { differenceInDays, parseISO, format, isAfter, isBefore, parse, isToday } from 'date-fns';
