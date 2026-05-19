@@ -25,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Phone, Download, Plus, EyeOff, Trash2, FileText, RefreshCw, AlertCircle, Clock } from 'lucide-react';
+import { Eye, CheckCircle, XCircle, Send, Filter, X, MoreVertical, Phone, Download, Plus, EyeOff, Trash2, FileText, RefreshCw, AlertCircle, Clock, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { differenceInDays, parseISO, format, isAfter, isBefore, parse, isToday } from 'date-fns';
@@ -85,7 +85,23 @@ const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
   return !!observacoesLog?.some(log => log.acao === 'Reabriu o protocolo');
 };
 
-export default function Protocolos() {
+const TROCA_CAUSAS = [
+  '01 - Vencido',
+  '02 - Embalagem Avariada',
+  '05 - Mal Cheio',
+  '06 - Sem data de Validade',
+  '09 - Produto Impróprio',
+  'Vencido',
+  'Impureza',
+  'Mal cheiro',
+  'Fora do Prazo Comercial',
+];
+
+interface ProtocolosProps {
+  scope?: 'reposicao' | 'troca';
+}
+
+export default function Protocolos({ scope = 'reposicao' }: ProtocolosProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { canValidate, canLaunch, isAdmin, isDistribuicao, isConferente, isControle, user } = useAuth();
@@ -158,8 +174,12 @@ export default function Protocolos() {
     return protocolos
       .filter(p => {
         if (p.oculto) return false;
-        if (p.tipoReposicao === 'pos_rota') return false;
-        if (p.tipoReposicao === 'troca') return false;
+        if (scope === 'troca') {
+          if (p.tipoReposicao !== 'troca') return false;
+        } else {
+          if (p.tipoReposicao === 'pos_rota') return false;
+          if (p.tipoReposicao === 'troca') return false;
+        }
 
         if (!isAdmin) {
           if (unidadesFiltro.length > 0) {
@@ -217,7 +237,8 @@ export default function Protocolos() {
           (validadoFilter === 'sim' && p.validacao) ||
           (validadoFilter === 'nao' && !p.validacao);
 
-        const tipoMatch = tipoFilter === 'todos' || p.tipoReposicao === tipoFilter;
+        const tipoMatch = tipoFilter === 'todos'
+          || (scope === 'troca' ? (p.causa === tipoFilter) : (p.tipoReposicao === tipoFilter));
 
         return searchMatch && statusMatch && periodoMatch && dataInicialMatch && dataFinalMatch && lancadoMatch && validadoMatch && tipoMatch;
       })
@@ -240,6 +261,7 @@ export default function Protocolos() {
     lancadoFilter,
     validadoFilter,
     tipoFilter,
+    scope,
   ]);
 
   // Pagination calculations
@@ -488,10 +510,12 @@ export default function Protocolos() {
     <div className="space-y-4">
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-          <FileText className="text-primary" size={24} />
-          Reposição
+          {scope === 'troca' ? <Repeat className="text-primary" size={24} /> : <FileText className="text-primary" size={24} />}
+          {scope === 'troca' ? 'Trocas' : 'Reposição'}
         </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Gerencie as reposições</p>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          {scope === 'troca' ? 'Protocolos de troca abertos pelos RNs' : 'Gerencie as reposições'}
+        </p>
       </div>
 
       {/* Smart Search */}
@@ -503,8 +527,8 @@ export default function Protocolos() {
           className="flex-1"
         />
         <div className="flex gap-2">
-          {/* Botão Criar Protocolo - Apenas Admin */}
-          {isAdmin && (
+          {/* Botão Criar Protocolo - Apenas Admin, oculto em Trocas */}
+          {isAdmin && scope !== 'troca' && (
             <Button 
               onClick={() => setShowCreateModal(true)}
               size="sm"
@@ -640,9 +664,17 @@ export default function Protocolos() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="INVERSAO">Inversão</SelectItem>
-                  <SelectItem value="AVARIA">Avaria</SelectItem>
-                  <SelectItem value="FALTA">Falta</SelectItem>
+                  {scope === 'troca' ? (
+                    TROCA_CAUSAS.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="INVERSAO">Inversão</SelectItem>
+                      <SelectItem value="AVARIA">Avaria</SelectItem>
+                      <SelectItem value="FALTA">Falta</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

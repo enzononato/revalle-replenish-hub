@@ -1,72 +1,55 @@
-
 ## Objetivo
 
-Mover a geração do `protocolos.numero` para o backend, com unicidade garantida e prefixo derivado do tipo de protocolo.
+A página `/trocas` precisa ter **exatamente as mesmas funcionalidades** da página `/protocolos` (Reposição) — confirmação de envio, reenvio, validar, lançar, encerrar, histórico de envios, filtros de data/lançado/validado/unidade, SLA, paginação, exportação, ações em massa, modal de detalhes etc. Hoje ela é uma listagem simplificada de leitura+encerrar, sem nenhuma dessas features.
 
-## Formato final
+## Estratégia
 
-```
-{PREFIXO}-{AAAAMMDDHHMMSS}{NN}
-```
-- `AAAAMMDDHHMMSS` = timestamp UTC-3 (America/Sao_Paulo) no momento da geração.
-- `NN` = 2 dígitos aleatórios (00–99).
-- Exemplo: `RPA-2026051914305247`.
+Transformar `Protocolos.tsx` em um componente parametrizado por **escopo** (`reposicao` | `troca`) e fazer `Trocas.tsx` virar um wrapper que renderiza o mesmo componente com `scope="troca"`. Isso garante 100% de paridade de features hoje e no futuro — qualquer melhoria na página de Protocolos aparece automaticamente em Trocas.
 
-## Mapa de prefixos
+## Mudanças
 
-| Origem | `p_tipo` | `p_causa` | Prefixo |
-|---|---|---|---|
-| Reposição – Avaria | `reposicao` | `avaria` | **RPA** |
-| Reposição – Falta | `reposicao` | `falta` | **RPF** |
-| Reposição – Inversão | `reposicao` | `inversao` | **RPI** |
-| Reposição – outras causas | `reposicao` | qualquer outra | **RP** + primeira letra da causa (uppercase, sem acento) |
-| Pós-Rota / Sobra | `pos_rota` | — | **POSROTA** |
-| Troca (RN) | `troca` | — | **TROCA** |
-| Vendedor (futuro mobile) | `venda` | — | **VENDA** |
-| Sobra automática de inversão | `sobra_auto` | — | `${numero_origem}-S` (mantém regra atual) |
+### 1. `src/pages/Protocolos.tsx`
 
-A função normaliza `p_causa` (UPPER + unaccent) para gerar a inicial.
+- Receber prop opcional `scope?: 'reposicao' | 'troca'` (default `'reposicao'`).
+- **Filtro de dados** (linhas 161-162 do `useMemo`):
+  - `scope === 'reposicao'` → exclui `pos_rota` e `troca` (comportamento atual).
+  - `scope === 'troca'` → inclui apenas `tipo_reposicao === 'troca'`.
+- **Cabeçalho da página**:
+  - Reposição: título "Protocolos" + ícone `FileText` (atual).
+  - Troca: título "Trocas" + ícone `Repeat` + subtítulo "Protocolos de troca abertos pelos RNs".
+- **Filtro "Tipo"** (linha 637):
+  - Reposição: mantém `Inversão / Avaria / Falta` (atual).
+  - Troca: substitui pelas causas reais de troca presentes no banco — `01 - Vencido`, `02 - Embalagem Avariada`, `05 - Mal Cheio`, `06 - Sem data de Validade`, `09 - Produto Impróprio`, `Vencido`, `Impureza`, `Mal cheiro`, `Fora do Prazo Comercial`. O matching usa `p.causa` em vez de `p.tipoReposicao` quando `scope === 'troca'`.
+- **Botão "Novo protocolo"** (`CreateProtocoloModal`): oculto em `scope === 'troca'` (trocas são criadas pelos RNs via `TrocaForm`).
+- Demais blocos (lista, ações, modal `ProtocoloDetails`, `HistoricoEnvios`, webhooks, audit log, SLA) **não mudam** — funcionam igual para qualquer protocolo, independentemente do tipo.
 
-## Mudanças no banco (migration)
+### 2. `src/pages/Trocas.tsx`
 
-1. **RPC** `public.generate_protocolo_numero(p_tipo text, p_causa text default null) returns text`:
-   - `SECURITY DEFINER`, `search_path = public`.
-   - Calcula prefixo conforme tabela acima.
-   - Loop com até 10 tentativas: gera `numero` candidato → verifica `SELECT 1 FROM protocolos WHERE numero = candidato` → retorna na 1ª livre.
-   - Se 10 tentativas falharem, levanta exceção (extremamente improvável).
-2. **Unique index** `CREATE UNIQUE INDEX protocolos_numero_unique ON public.protocolos (numero);`
-   - Caso a migration falhe por duplicidade pré-existente, eu listo as duplicatas para você decidir como tratar antes de seguir.
-3. **GRANT EXECUTE** da função para `anon, authenticated` (front-end consome via `supabase.rpc`).
+Substituir o conteúdo atual (515 linhas) por um wrapper de 4 linhas:
 
-## Mudanças no frontend
-
-Remover a geração local de `numero` em:
-- `src/pages/AbrirProtocolo.tsx`
-- `src/components/CreateProtocoloModal.tsx`
-- `src/pages/MotoristaPortal.tsx` (avaria/inversão)
-- `src/components/motorista/PosRota.tsx`
-- `src/components/rn/TrocaForm.tsx`
-- `src/utils/criarSobraDeProtocolo.ts` (continua com sufixo `-S` do número original — não usa RPC)
-
-Em cada ponto, substituir por:
-```ts
-const { data: numero, error } = await supabase.rpc('generate_protocolo_numero', {
-  p_tipo: 'reposicao',   // ou 'pos_rota' / 'troca' / 'venda'
-  p_causa: causa ?? null // só relevante para reposicao
-});
-if (error || !numero) throw error ?? new Error('Falha ao gerar número');
+```tsx
+import Protocolos from './Protocolos';
+export default function Trocas() {
+  return <Protocolos scope="troca" />;
+}
 ```
 
-Não existe nenhum outro caminho de criação de protocolo no app (varrido na investigação anterior), então com isso 100% dos novos números passam pelo backend.
+A página atual de Trocas é descartada — todas as ações específicas (marcar em andamento, encerrar, excluir) já existem no fluxo de `ProtocoloDetails` usado em Protocolos, com mais recursos.
 
-## Compatibilidade
+### 3. Roteamento
 
-- Números antigos (PROTOC-/POSROTA-/TROCA-) continuam válidos — a UNIQUE não os altera.
-- Webhooks e n8n recebem `numero` no payload exatamente como hoje, só muda o prefixo.
-- Tipos TypeScript de `src/integrations/supabase/types.ts` são regenerados após a migration (automático).
+`src/App.tsx` continua importando `Trocas` em `/trocas` — nenhuma mudança.
 
-## Verificação pós-deploy
+## Detalhes técnicos
 
-- Abrir 1 protocolo de cada tipo no preview e conferir o prefixo gerado.
-- Conferir no banco `SELECT numero FROM protocolos ORDER BY created_at DESC LIMIT 5;`.
+- O `ProtocolosContext` já carrega **todos** os protocolos (inclusive trocas e pós-rota), então não precisa de mudança no contexto nem nova query.
+- `ProtocoloDetails`, `HistoricoEnvios` e os webhooks de envio/encerramento já são genéricos quanto ao `tipo_reposicao`.
+- Visibilidade por unidade (admin vs. não-admin) é a mesma lógica de hoje em Protocolos, então RNs/distribuição continuam vendo só a(s) sua(s) unidade(s).
+- URL params (`?status=`, `?periodo=`, `?tipo=`, `?unidade=`) seguem funcionando em `/trocas`.
 
+## Verificação após implementar
+
+1. Abrir `/trocas` → mesma UI da página Protocolos, com título "Trocas", listando apenas `tipo_reposicao = 'troca'`.
+2. Confirmar que aparecem: botões Validar, Lançar, Enviar, Reenviar, Encerrar; chips de SLA; filtros de data/lançado/validado/unidade; paginação; histórico de envios no modal.
+3. Filtro Tipo mostra as causas de troca (Vencido, Embalagem Avariada, etc.).
+4. Abrir `/protocolos` → continua sem listar trocas nem pós-rota (comportamento atual preservado).
