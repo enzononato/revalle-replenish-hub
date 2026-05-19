@@ -86,15 +86,14 @@ const foiReaberto = (observacoesLog?: ObservacaoLog[]): boolean => {
 };
 
 const TROCA_CAUSAS = [
-  '01 - Vencido',
-  '02 - Embalagem Avariada',
-  '05 - Mal Cheio',
-  '06 - Sem data de Validade',
-  '09 - Produto Impróprio',
   'Vencido',
+  'Embalagem Avariada',
+  'Sabor Alterado',
   'Impureza',
   'Mal cheiro',
+  'Sem data de Validade',
   'Fora do Prazo Comercial',
+  'Produto Impróprio',
 ];
 
 interface ProtocolosProps {
