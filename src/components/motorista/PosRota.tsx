@@ -82,7 +82,7 @@ export function PosRota({ motorista }: PosRotaProps) {
 
   const placaRegex = /^[A-Z]{3}-?[0-9]{4}$|^[A-Z]{3}[0-9][A-Z][0-9]{2}$/;
   const placaValida = placaRegex.test(placa.trim().toUpperCase());
-  const canSubmit = mapa.trim() && placaValida && produtos.some(p => p.nome.trim() && p.quantidade >= 1) && fotos.length > 0;
+  const canSubmit = mapa.trim() && placaValida && notaFiscal.trim() && produtos.some(p => p.nome.trim() && p.quantidade >= 1) && fotos.length > 0;
 
   // Fetch sobras do motorista
   const fetchSobras = useCallback(async (statusFilter: string) => {
