@@ -527,8 +527,8 @@ export default function Protocolos({ scope = 'reposicao' }: ProtocolosProps = {}
           className="flex-1"
         />
         <div className="flex gap-2">
-          {/* Botão Criar Protocolo - Apenas Admin */}
-          {isAdmin && (
+          {/* Botão Criar Protocolo - Apenas Admin, oculto em Trocas */}
+          {isAdmin && scope !== 'troca' && (
             <Button 
               onClick={() => setShowCreateModal(true)}
               size="sm"
