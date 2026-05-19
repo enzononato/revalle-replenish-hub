@@ -182,7 +182,15 @@ export function TrocaForm({ representante }: TrocaFormProps) {
 
     try {
       const agora = new Date();
-      const numero = await gerarNumeroProtocolo('troca');
+      let numero: string;
+      try {
+        numero = await gerarNumeroProtocolo('troca');
+      } catch (err) {
+        toast.error('Erro ao gerar número do protocolo. Tente novamente.');
+        console.error('Falha RPC generate_protocolo_numero:', err);
+        setIsSubmitting(false);
+        return;
+      }
 
       const fotosUrls: string[] = [];
       for (let i = 0; i < fotos.length; i++) {

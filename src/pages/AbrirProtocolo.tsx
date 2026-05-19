@@ -223,7 +223,14 @@ export default function AbrirProtocolo() {
     }
 
     const now = new Date();
-    const protocoloNumero = await gerarNumeroProtocolo('reposicao', tipoReposicao);
+    let protocoloNumero: string;
+    try {
+      protocoloNumero = await gerarNumeroProtocolo('reposicao', tipoReposicao);
+    } catch (err) {
+      toast.error('Erro ao gerar número do protocolo. Tente novamente.');
+      console.error('Falha RPC generate_protocolo_numero:', err);
+      return;
+    }
 
     // Iniciar upload com progresso
     setIsUploading(true);
