@@ -731,15 +731,16 @@ export function PosRota({ motorista }: PosRotaProps) {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">Nota Fiscal *</Label>
                   <Input
-                    placeholder="Número da nota fiscal (opcional)"
+                    placeholder="Número da nota fiscal"
                     value={notaFiscal}
                     onChange={(e) => setNotaFiscal(e.target.value.replace(/\D/g, ''))}
                     inputMode="numeric"
                     className="h-11 text-sm"
                   />
                 </div>
+
               </div>
             </div>
 
