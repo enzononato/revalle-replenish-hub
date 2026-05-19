@@ -708,19 +708,26 @@ export function PosRota({ motorista }: PosRotaProps) {
                     <Input
                       placeholder="Número do mapa"
                       value={mapa}
-                      onChange={(e) => setMapa(e.target.value)}
+                      onChange={(e) => setMapa(e.target.value.replace(/\D/g, ''))}
+                      inputMode="numeric"
                       className="h-11 text-sm"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-medium text-muted-foreground">Placa do Veículo *</Label>
                     <Input
-                      placeholder="Ex: ABC1D23"
+                      placeholder="ABC-1234 ou ABC1D23"
                       value={placa}
-                      onChange={(e) => setPlaca(e.target.value.toUpperCase())}
-                      maxLength={7}
+                      onChange={(e) => {
+                        const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                        setPlaca(raw);
+                      }}
+                      maxLength={8}
                       className="h-11 text-sm uppercase"
                     />
+                    {placa.trim() && !placaValida && (
+                      <p className="text-xs text-destructive">Formato inválido. Use LLL-NNNN ou LLLNLNN.</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -728,12 +735,14 @@ export function PosRota({ motorista }: PosRotaProps) {
                   <Input
                     placeholder="Número da nota fiscal (opcional)"
                     value={notaFiscal}
-                    onChange={(e) => setNotaFiscal(e.target.value)}
+                    onChange={(e) => setNotaFiscal(e.target.value.replace(/\D/g, ''))}
+                    inputMode="numeric"
                     className="h-11 text-sm"
                   />
                 </div>
               </div>
             </div>
+
 
             {/* Produtos */}
             <div className="bg-card rounded-xl shadow-sm border border-border/50 overflow-hidden">
