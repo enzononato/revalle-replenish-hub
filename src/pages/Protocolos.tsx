@@ -174,8 +174,12 @@ export default function Protocolos({ scope = 'reposicao' }: ProtocolosProps = {}
     return protocolos
       .filter(p => {
         if (p.oculto) return false;
-        if (p.tipoReposicao === 'pos_rota') return false;
-        if (p.tipoReposicao === 'troca') return false;
+        if (scope === 'troca') {
+          if (p.tipoReposicao !== 'troca') return false;
+        } else {
+          if (p.tipoReposicao === 'pos_rota') return false;
+          if (p.tipoReposicao === 'troca') return false;
+        }
 
         if (!isAdmin) {
           if (unidadesFiltro.length > 0) {
