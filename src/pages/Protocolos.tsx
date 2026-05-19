@@ -261,6 +261,7 @@ export default function Protocolos({ scope = 'reposicao' }: ProtocolosProps = {}
     lancadoFilter,
     validadoFilter,
     tipoFilter,
+    scope,
   ]);
 
   // Pagination calculations
