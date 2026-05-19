@@ -664,9 +664,17 @@ export default function Protocolos({ scope = 'reposicao' }: ProtocolosProps = {}
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="INVERSAO">Inversão</SelectItem>
-                  <SelectItem value="AVARIA">Avaria</SelectItem>
-                  <SelectItem value="FALTA">Falta</SelectItem>
+                  {scope === 'troca' ? (
+                    TROCA_CAUSAS.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="INVERSAO">Inversão</SelectItem>
+                      <SelectItem value="AVARIA">Avaria</SelectItem>
+                      <SelectItem value="FALTA">Falta</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
