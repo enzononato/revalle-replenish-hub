@@ -78,7 +78,7 @@ const App = () => (
                       path="/trocas" 
                       element={
                         <ProtectedRoute allowedRoles={['admin', 'distribuicao', 'controle']}>
-                          <Trocas />
+                          <ProtocolosProvider><Trocas /></ProtocolosProvider>
                         </ProtectedRoute>
                       } 
                     />
