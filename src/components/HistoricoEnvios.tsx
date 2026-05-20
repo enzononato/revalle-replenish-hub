@@ -599,7 +599,7 @@ export default function HistoricoEnvios() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredSuccessLogs.map((row) => (
+                      {sucessosPaginados.map((row) => (
                         <TableRow key={row.id}>
                           <TableCell className="text-xs whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
                           <TableCell className="text-xs font-medium">{row.cod_pdv}</TableCell>
@@ -612,8 +612,21 @@ export default function HistoricoEnvios() {
                   </Table>
                 )}
               </ScrollArea>
+              {filteredSuccessLogs.length > ITENS_POR_PAGINA && (
+                <div className="flex items-center justify-between gap-2 px-2 pt-2 border-t mt-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    {(paginaSucessos - 1) * ITENS_POR_PAGINA + 1}-{Math.min(paginaSucessos * ITENS_POR_PAGINA, filteredSuccessLogs.length)} de {filteredSuccessLogs.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" disabled={paginaSucessos === 1} onClick={() => setPaginaSucessos(p => Math.max(1, p - 1))}>Anterior</Button>
+                    <span className="text-[11px] text-muted-foreground px-1">{paginaSucessos}/{totalPaginasSucessos}</span>
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" disabled={paginaSucessos >= totalPaginasSucessos} onClick={() => setPaginaSucessos(p => Math.min(totalPaginasSucessos, p + 1))}>Próxima</Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
         </div>
       </CardContent>
     </Card>
