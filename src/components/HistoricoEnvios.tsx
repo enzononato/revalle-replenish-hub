@@ -41,6 +41,8 @@ interface HistoryLogRow {
 
 const WEBHOOK_URL = 'https://n8n.revalle.com.br/webhook/alteracao_pedidos';
 
+const ITENS_POR_PAGINA = 10;
+
 export default function HistoricoEnvios() {
   const { user, isAdmin } = useAuth();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
@@ -54,6 +56,8 @@ export default function HistoricoEnvios() {
   const [filterCodPdv, setFilterCodPdv] = useState('');
   const [filterTelefone, setFilterTelefone] = useState('');
   const [filterStatus, setFilterStatus] = useState<'todos' | 'sucesso' | 'erro'>('todos');
+  const [paginaErros, setPaginaErros] = useState(1);
+  const [paginaSucessos, setPaginaSucessos] = useState(1);
 
   const applyFilters = (rows: HistoryLogRow[]) => {
     const cod = filterCodPdv.trim().toLowerCase();
@@ -74,7 +78,17 @@ export default function HistoricoEnvios() {
     [successLogs, filterCodPdv, filterTelefone, filterStatus]
   );
 
+  // Resetar paginação ao mudar filtros/dados
+  useEffect(() => { setPaginaErros(1); }, [filterCodPdv, filterTelefone, filterStatus, errorLogs]);
+  useEffect(() => { setPaginaSucessos(1); }, [filterCodPdv, filterTelefone, filterStatus, successLogs]);
+
+  const totalPaginasErros = Math.max(1, Math.ceil(filteredErrorLogs.length / ITENS_POR_PAGINA));
+  const totalPaginasSucessos = Math.max(1, Math.ceil(filteredSuccessLogs.length / ITENS_POR_PAGINA));
+  const errosPaginados = filteredErrorLogs.slice((paginaErros - 1) * ITENS_POR_PAGINA, paginaErros * ITENS_POR_PAGINA);
+  const sucessosPaginados = filteredSuccessLogs.slice((paginaSucessos - 1) * ITENS_POR_PAGINA, paginaSucessos * ITENS_POR_PAGINA);
+
   const hasFilters = filterCodPdv || filterTelefone || filterStatus !== 'todos' || dateFrom || dateTo;
+
 
   const handleClearErrors = async () => {
     if (errorLogs.length === 0) return;
