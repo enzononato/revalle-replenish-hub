@@ -111,11 +111,11 @@ export function PosRota({ motorista }: PosRotaProps) {
     try {
       const [pRes, tRes, rRes] = await Promise.all([
         supabase.from('protocolos').select('id', { count: 'exact', head: true })
-          .eq('tipo_reposicao', 'pos_rota').eq('motorista_codigo', motorista.codigo).eq('status', 'aberto').eq('ativo', true),
+          .eq('tipo_reposicao', 'pos_rota').eq('motorista_codigo', motorista.codigo).eq('status', 'aberto').eq('ativo', true).or('oculto.is.null,oculto.eq.false'),
         supabase.from('protocolos').select('id', { count: 'exact', head: true })
-          .eq('tipo_reposicao', 'pos_rota').eq('motorista_codigo', motorista.codigo).eq('status', 'em_andamento').eq('ativo', true),
+          .eq('tipo_reposicao', 'pos_rota').eq('motorista_codigo', motorista.codigo).eq('status', 'em_andamento').eq('ativo', true).or('oculto.is.null,oculto.eq.false'),
         supabase.from('protocolos').select('id', { count: 'exact', head: true })
-          .eq('tipo_reposicao', 'pos_rota').eq('motorista_codigo', motorista.codigo).eq('status', 'encerrado').eq('ativo', true),
+          .eq('tipo_reposicao', 'pos_rota').eq('motorista_codigo', motorista.codigo).eq('status', 'encerrado').eq('ativo', true).or('oculto.is.null,oculto.eq.false'),
       ]);
       setContadores({
         pendentes: pRes.count || 0,
