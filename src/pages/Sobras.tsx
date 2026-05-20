@@ -302,9 +302,9 @@ export default function Sobras() {
 
   const fetchContadores = useCallback(async () => {
     const [pRes, tRes, rRes] = await Promise.all([
-      supabase.from('protocolos').select('*', { count: 'exact', head: true }).eq('tipo_reposicao', 'pos_rota').eq('status', 'aberto').eq('ativo', true),
-      supabase.from('protocolos').select('*', { count: 'exact', head: true }).eq('tipo_reposicao', 'pos_rota').eq('status', 'em_andamento').eq('ativo', true),
-      supabase.from('protocolos').select('*', { count: 'exact', head: true }).eq('tipo_reposicao', 'pos_rota').eq('status', 'encerrado').eq('ativo', true),
+      supabase.from('protocolos').select('*', { count: 'exact', head: true }).eq('tipo_reposicao', 'pos_rota').eq('status', 'aberto').eq('ativo', true).or('oculto.is.null,oculto.eq.false'),
+      supabase.from('protocolos').select('*', { count: 'exact', head: true }).eq('tipo_reposicao', 'pos_rota').eq('status', 'em_andamento').eq('ativo', true).or('oculto.is.null,oculto.eq.false'),
+      supabase.from('protocolos').select('*', { count: 'exact', head: true }).eq('tipo_reposicao', 'pos_rota').eq('status', 'encerrado').eq('ativo', true).or('oculto.is.null,oculto.eq.false'),
     ]);
     setContadores({
       pendente: pRes.count || 0,

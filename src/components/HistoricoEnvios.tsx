@@ -41,6 +41,8 @@ interface HistoryLogRow {
 
 const WEBHOOK_URL = 'https://n8n.revalle.com.br/webhook/alteracao_pedidos';
 
+const ITENS_POR_PAGINA = 10;
+
 export default function HistoricoEnvios() {
   const { user, isAdmin } = useAuth();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
@@ -54,6 +56,8 @@ export default function HistoricoEnvios() {
   const [filterCodPdv, setFilterCodPdv] = useState('');
   const [filterTelefone, setFilterTelefone] = useState('');
   const [filterStatus, setFilterStatus] = useState<'todos' | 'sucesso' | 'erro'>('todos');
+  const [paginaErros, setPaginaErros] = useState(1);
+  const [paginaSucessos, setPaginaSucessos] = useState(1);
 
   const applyFilters = (rows: HistoryLogRow[]) => {
     const cod = filterCodPdv.trim().toLowerCase();
@@ -74,7 +78,17 @@ export default function HistoricoEnvios() {
     [successLogs, filterCodPdv, filterTelefone, filterStatus]
   );
 
+  // Resetar paginação ao mudar filtros/dados
+  useEffect(() => { setPaginaErros(1); }, [filterCodPdv, filterTelefone, filterStatus, errorLogs]);
+  useEffect(() => { setPaginaSucessos(1); }, [filterCodPdv, filterTelefone, filterStatus, successLogs]);
+
+  const totalPaginasErros = Math.max(1, Math.ceil(filteredErrorLogs.length / ITENS_POR_PAGINA));
+  const totalPaginasSucessos = Math.max(1, Math.ceil(filteredSuccessLogs.length / ITENS_POR_PAGINA));
+  const errosPaginados = filteredErrorLogs.slice((paginaErros - 1) * ITENS_POR_PAGINA, paginaErros * ITENS_POR_PAGINA);
+  const sucessosPaginados = filteredSuccessLogs.slice((paginaSucessos - 1) * ITENS_POR_PAGINA, paginaSucessos * ITENS_POR_PAGINA);
+
   const hasFilters = filterCodPdv || filterTelefone || filterStatus !== 'todos' || dateFrom || dateTo;
+
 
   const handleClearErrors = async () => {
     if (errorLogs.length === 0) return;
@@ -303,115 +317,123 @@ export default function HistoricoEnvios() {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <History size={18} />
-            Histórico de Envios
-          </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Date From */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'w-[150px] justify-start text-left font-normal h-8 text-xs',
-                    !dateFrom && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-1 h-3 w-3" />
-                  {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Data início'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dateFrom}
-                  onSelect={setDateFrom}
-                  initialFocus
-                  className={cn('p-3 pointer-events-auto')}
-                />
-              </PopoverContent>
-            </Popover>
+      <CardHeader className="space-y-4">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <History size={18} />
+          Histórico de Envios
+        </CardTitle>
 
-            {/* Date To */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'w-[150px] justify-start text-left font-normal h-8 text-xs',
-                    !dateTo && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-1 h-3 w-3" />
-                  {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'Data fim'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dateTo}
-                  onSelect={setDateTo}
-                  initialFocus
-                  className={cn('p-3 pointer-events-auto')}
-                />
-              </PopoverContent>
-            </Popover>
+        {/* Barra de filtros organizada */}
+        <div className="rounded-md border bg-muted/30 p-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 items-end">
+            {/* Data início */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Data início</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn('justify-start text-left font-normal h-8 text-xs w-full', !dateFrom && 'text-muted-foreground')}
+                  >
+                    <CalendarIcon className="mr-1 h-3 w-3 shrink-0" />
+                    {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Selecionar'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className={cn('p-3 pointer-events-auto')} />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-            <Button size="sm" variant="outline" className="h-8" onClick={fetchHistory} disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
-              Buscar
-            </Button>
+            {/* Data fim */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Data fim</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn('justify-start text-left font-normal h-8 text-xs w-full', !dateTo && 'text-muted-foreground')}
+                  >
+                    <CalendarIcon className="mr-1 h-3 w-3 shrink-0" />
+                    {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'Selecionar'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className={cn('p-3 pointer-events-auto')} />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-            {(dateFrom || dateTo || filterCodPdv || filterTelefone || filterStatus !== 'todos') && (
-              <Button
-                size="sm"
-                variant="ghost"
+            {/* Cód. PDV */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Cód. PDV</label>
+              <Input
+                placeholder="Buscar código"
+                value={filterCodPdv}
+                onChange={(e) => setFilterCodPdv(e.target.value)}
                 className="h-8 text-xs"
-                onClick={() => {
-                  setDateFrom(undefined);
-                  setDateTo(undefined);
-                  setFilterCodPdv('');
-                  setFilterTelefone('');
-                  setFilterStatus('todos');
-                }}
-              >
-                Limpar filtros
-              </Button>
-            )}
+              />
+            </div>
+
+            {/* Telefone */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Telefone</label>
+              <Input
+                placeholder="Buscar telefone"
+                value={filterTelefone}
+                onChange={(e) => setFilterTelefone(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+
+            {/* Status */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Status</label>
+              <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as 'todos' | 'sucesso' | 'erro')}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="sucesso">Sucesso</SelectItem>
+                  <SelectItem value="erro">Erro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ações */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">&nbsp;</label>
+              <div className="flex items-center gap-1">
+                <Button size="sm" variant="outline" className="h-8 text-xs flex-1" onClick={fetchHistory} disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <RefreshCw className="mr-1 h-3 w-3" />}
+                  Buscar
+                </Button>
+                {hasFilters && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 text-xs px-2"
+                    onClick={() => {
+                      setDateFrom(undefined);
+                      setDateTo(undefined);
+                      setFilterCodPdv('');
+                      setFilterTelefone('');
+                      setFilterStatus('todos');
+                    }}
+                    title="Limpar filtros"
+                  >
+                    Limpar
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Filtros adicionais */}
-        <div className="flex items-center gap-2 flex-wrap mt-3">
-          <Input
-            placeholder="Cód. PDV"
-            value={filterCodPdv}
-            onChange={(e) => setFilterCodPdv(e.target.value)}
-            className="h-8 text-xs w-[140px]"
-          />
-          <Input
-            placeholder="Telefone"
-            value={filterTelefone}
-            onChange={(e) => setFilterTelefone(e.target.value)}
-            className="h-8 text-xs w-[160px]"
-          />
-          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as 'todos' | 'sucesso' | 'erro')}>
-            <SelectTrigger className="h-8 text-xs w-[140px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos status</SelectItem>
-              <SelectItem value="sucesso">Sucesso</SelectItem>
-              <SelectItem value="erro">Erro</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </CardHeader>
+
 
       <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -486,7 +508,7 @@ export default function HistoricoEnvios() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredErrorLogs.map((row) => (
+                      {errosPaginados.map((row) => (
                         <TableRow key={row.id}>
                           <TableCell className="text-xs whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
                           <TableCell className="text-xs font-medium">{row.cod_pdv}</TableCell>
@@ -524,8 +546,21 @@ export default function HistoricoEnvios() {
                   </Table>
                 )}
               </ScrollArea>
+              {filteredErrorLogs.length > ITENS_POR_PAGINA && (
+                <div className="flex items-center justify-between gap-2 px-2 pt-2 border-t mt-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    {(paginaErros - 1) * ITENS_POR_PAGINA + 1}-{Math.min(paginaErros * ITENS_POR_PAGINA, filteredErrorLogs.length)} de {filteredErrorLogs.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" disabled={paginaErros === 1} onClick={() => setPaginaErros(p => Math.max(1, p - 1))}>Anterior</Button>
+                    <span className="text-[11px] text-muted-foreground px-1">{paginaErros}/{totalPaginasErros}</span>
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" disabled={paginaErros >= totalPaginasErros} onClick={() => setPaginaErros(p => Math.min(totalPaginasErros, p + 1))}>Próxima</Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
 
           {/* Tabela de Sucessos */}
           <Card className="border-green-500/30">
@@ -564,7 +599,7 @@ export default function HistoricoEnvios() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredSuccessLogs.map((row) => (
+                      {sucessosPaginados.map((row) => (
                         <TableRow key={row.id}>
                           <TableCell className="text-xs whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
                           <TableCell className="text-xs font-medium">{row.cod_pdv}</TableCell>
@@ -577,8 +612,21 @@ export default function HistoricoEnvios() {
                   </Table>
                 )}
               </ScrollArea>
+              {filteredSuccessLogs.length > ITENS_POR_PAGINA && (
+                <div className="flex items-center justify-between gap-2 px-2 pt-2 border-t mt-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    {(paginaSucessos - 1) * ITENS_POR_PAGINA + 1}-{Math.min(paginaSucessos * ITENS_POR_PAGINA, filteredSuccessLogs.length)} de {filteredSuccessLogs.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" disabled={paginaSucessos === 1} onClick={() => setPaginaSucessos(p => Math.max(1, p - 1))}>Anterior</Button>
+                    <span className="text-[11px] text-muted-foreground px-1">{paginaSucessos}/{totalPaginasSucessos}</span>
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" disabled={paginaSucessos >= totalPaginasSucessos} onClick={() => setPaginaSucessos(p => Math.min(totalPaginasSucessos, p + 1))}>Próxima</Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
         </div>
       </CardContent>
     </Card>
