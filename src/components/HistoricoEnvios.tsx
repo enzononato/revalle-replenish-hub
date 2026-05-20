@@ -508,7 +508,7 @@ export default function HistoricoEnvios() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredErrorLogs.map((row) => (
+                      {errosPaginados.map((row) => (
                         <TableRow key={row.id}>
                           <TableCell className="text-xs whitespace-nowrap">{formatDate(row.created_at)}</TableCell>
                           <TableCell className="text-xs font-medium">{row.cod_pdv}</TableCell>
@@ -546,8 +546,21 @@ export default function HistoricoEnvios() {
                   </Table>
                 )}
               </ScrollArea>
+              {filteredErrorLogs.length > ITENS_POR_PAGINA && (
+                <div className="flex items-center justify-between gap-2 px-2 pt-2 border-t mt-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    {(paginaErros - 1) * ITENS_POR_PAGINA + 1}-{Math.min(paginaErros * ITENS_POR_PAGINA, filteredErrorLogs.length)} de {filteredErrorLogs.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" disabled={paginaErros === 1} onClick={() => setPaginaErros(p => Math.max(1, p - 1))}>Anterior</Button>
+                    <span className="text-[11px] text-muted-foreground px-1">{paginaErros}/{totalPaginasErros}</span>
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" disabled={paginaErros >= totalPaginasErros} onClick={() => setPaginaErros(p => Math.min(totalPaginasErros, p + 1))}>Próxima</Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
 
           {/* Tabela de Sucessos */}
           <Card className="border-green-500/30">
