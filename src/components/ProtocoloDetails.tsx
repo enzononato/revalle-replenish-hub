@@ -512,7 +512,7 @@ export function ProtocoloDetails({
         mapa: protocolo.mapa,
         notaFiscal: protocolo.notaFiscal,
         codigoPdv: protocolo.codigoPdv,
-        tipoReposicao: protocolo.tipoReposicao,
+        tipoReposicao: (protocolo.tipoReposicao || '').toUpperCase(),
         causa: protocolo.causa,
         motoristaNome: protocolo.motorista.nome,
         motoristaCodigo: protocolo.motorista.codigo,
@@ -527,8 +527,10 @@ export function ProtocoloDetails({
         fotos: {
           fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
           fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
-          fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
+          fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || ''),
+          fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || []
         },
+        fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || [],
         mensagemEncerramento: mensagemEncerramento || '',
         arquivoEncerramentoUrl: arquivoUrl,
         usuarioEncerramento: {
