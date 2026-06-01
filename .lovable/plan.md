@@ -1,55 +1,80 @@
-## Objetivo
+## Bugs encontrados no fluxo end-to-end de Troca
 
-A página `/trocas` precisa ter **exatamente as mesmas funcionalidades** da página `/protocolos` (Reposição) — confirmação de envio, reenvio, validar, lançar, encerrar, histórico de envios, filtros de data/lançado/validado/unidade, SLA, paginação, exportação, ações em massa, modal de detalhes etc. Hoje ela é uma listagem simplificada de leitura+encerrar, sem nenhuma dessas features.
+### 1. Fotos da troca não vão no webhook n8n (criação) — **bug funcional**
+`TrocaForm.tsx` linha 264-279: o `webhookPayload` enviado ao n8n na criação **não inclui o array de fotos**. As fotos são salvas em `fotos_protocolo.fotosTroca` no banco (confirmado em produção: 100% das trocas têm fotos no DB), mas o n8n não as recebe — então a mensagem WhatsApp de lançamento da troca sai sem imagens.
 
-## Estratégia
+Comparação: o webhook de reposição envia bloco `fotos: { fotoMotoristaPdv, fotoLoteProduto, fotoAvaria }`. Para troca precisamos enviar `fotos: { fotosTroca: [urls] }` (ou `fotosTroca: [urls]` no topo do payload, alinhado com o que n8n espera).
 
-Transformar `Protocolos.tsx` em um componente parametrizado por **escopo** (`reposicao` | `troca`) e fazer `Trocas.tsx` virar um wrapper que renderiza o mesmo componente com `scope="troca"`. Isso garante 100% de paridade de features hoje e no futuro — qualquer melhoria na página de Protocolos aparece automaticamente em Trocas.
+### 2. Fotos da troca também ausentes no webhook de encerramento — **bug funcional**
+`ProtocoloDetails.tsx`:
+- `handleEncerrarProtocolo` linhas 527-531
+- `handleReenviarWhatsapp` (modo `encerrar`) linhas 663-667
+- `handleReenviarWhatsapp` (modo `lancar`) linhas 626-630
 
-## Mudanças
+Todos enviam apenas `fotoMotoristaPdv/fotoLoteProduto/fotoAvaria` (vazios em trocas). Quando uma troca é encerrada ou tem WhatsApp reenviado, **as fotos da troca são perdidas** no payload n8n.
 
-### 1. `src/pages/Protocolos.tsx`
+Mesma falha em `RnReenvioModal.tsx` linhas 73-110 e em `CmePortal.tsx` (que reaproveita `RnReenvioModal`).
 
-- Receber prop opcional `scope?: 'reposicao' | 'troca'` (default `'reposicao'`).
-- **Filtro de dados** (linhas 161-162 do `useMemo`):
-  - `scope === 'reposicao'` → exclui `pos_rota` e `troca` (comportamento atual).
-  - `scope === 'troca'` → inclui apenas `tipo_reposicao === 'troca'`.
-- **Cabeçalho da página**:
-  - Reposição: título "Protocolos" + ícone `FileText` (atual).
-  - Troca: título "Trocas" + ícone `Repeat` + subtítulo "Protocolos de troca abertos pelos RNs".
-- **Filtro "Tipo"** (linha 637):
-  - Reposição: mantém `Inversão / Avaria / Falta` (atual).
-  - Troca: substitui pelas causas reais de troca presentes no banco — `01 - Vencido`, `02 - Embalagem Avariada`, `05 - Mal Cheio`, `06 - Sem data de Validade`, `09 - Produto Impróprio`, `Vencido`, `Impureza`, `Mal cheiro`, `Fora do Prazo Comercial`. O matching usa `p.causa` em vez de `p.tipoReposicao` quando `scope === 'troca'`.
-- **Botão "Novo protocolo"** (`CreateProtocoloModal`): oculto em `scope === 'troca'` (trocas são criadas pelos RNs via `TrocaForm`).
-- Demais blocos (lista, ações, modal `ProtocoloDetails`, `HistoricoEnvios`, webhooks, audit log, SLA) **não mudam** — funcionam igual para qualquer protocolo, independentemente do tipo.
+### 3. Casing inconsistente de `tipoReposicao` — **risco de bug no n8n**
+- `TrocaForm` criação → `tipoReposicao: 'TROCA'` (uppercase)
+- `ProtocoloDetails.handleEncerrarProtocolo` (linha 515) → `protocolo.tipoReposicao` = `'troca'` (lowercase)
+- `ProtocoloDetails.handleReenviarWhatsapp` lançar (linha 623) → `'TROCA'` (uppercase)
+- `ProtocoloDetails.handleReenviarWhatsapp` encerrar (linha 651) → `'troca'` (lowercase)
+- `RnReenvioModal` lançar (84) → uppercase / encerrar (102) → lowercase
 
-### 2. `src/pages/Trocas.tsx`
+Se o n8n decide o template/roteamento por esse campo, encerramentos podem cair em fluxo errado.
 
-Substituir o conteúdo atual (515 linhas) por um wrapper de 4 linhas:
+### 4. Campo `emailContato` ausente no webhook de criação de troca — **bug menor**
+`TrocaForm` coleta `emailContato` mas o payload n8n (linha 264-279) não inclui `emailContato` nem `motoristaEmail`. O webhook de reposição inclui. Se o n8n dispara e-mail, trocas nunca recebem.
 
-```tsx
-import Protocolos from './Protocolos';
-export default function Trocas() {
-  return <Protocolos scope="troca" />;
-}
-```
+### 5. `RnReenvioModal` não preserva `motoristaCodigo` nem `unidade real` no payload de encerramento — **bug menor**
+Linhas 91-110: usa `representante.unidade` (do RN logado) em vez de `motorista_unidade` do protocolo, podendo enviar unidade errada caso um RN reenvie protocolo aberto por outro RN da mesma rede.
 
-A página atual de Trocas é descartada — todas as ações específicas (marcar em andamento, encerrar, excluir) já existem no fluxo de `ProtocoloDetails` usado em Protocolos, com mais recursos.
+### 6. Conferente/Lançamento na página `/trocas` — **bug de UX**
+`Protocolos.tsx` é compartilhado entre `/protocolos` e `/trocas`. Em scope='troca':
+- O botão "Criar Protocolo" é ocultado corretamente (linha 530).
+- Porém as colunas/toggles de **Lançado** e **Validado** continuam visíveis na tabela e o `handleEncerrarProtocolo` exige `validacao=true` antes de lançar. Trocas não passam por Conferência/Distribuição, então esses controles são confusos e bloqueiam encerramento normal.
 
-### 3. Roteamento
+Verificar com o usuário se devemos esconder/desabilitar esses controles em scope='troca' (corrigir junto da renderização da tabela e do `handleToggleLancado`).
 
-`src/App.tsx` continua importando `Trocas` em `/trocas` — nenhuma mudança.
+### 7. `motorista_codigo` sem CPF cai em `'RN-'` — **edge case**
+`TrocaForm` linha 209/222: `RN-${cpfRn}` — se o RN não tem CPF cadastrado, fica `RN-` (string vazia). Como `representantes.cpf` é `NOT NULL`, na prática não ocorre, mas vale validar antes do insert para evitar registros corrompidos no futuro.
 
-## Detalhes técnicos
+---
 
-- O `ProtocolosContext` já carrega **todos** os protocolos (inclusive trocas e pós-rota), então não precisa de mudança no contexto nem nova query.
-- `ProtocoloDetails`, `HistoricoEnvios` e os webhooks de envio/encerramento já são genéricos quanto ao `tipo_reposicao`.
-- Visibilidade por unidade (admin vs. não-admin) é a mesma lógica de hoje em Protocolos, então RNs/distribuição continuam vendo só a(s) sua(s) unidade(s).
-- URL params (`?status=`, `?periodo=`, `?tipo=`, `?unidade=`) seguem funcionando em `/trocas`.
+## Plano de correção (em build)
 
-## Verificação após implementar
+**Fix obrigatórios (1, 2, 3, 4):**
 
-1. Abrir `/trocas` → mesma UI da página Protocolos, com título "Trocas", listando apenas `tipo_reposicao = 'troca'`.
-2. Confirmar que aparecem: botões Validar, Lançar, Enviar, Reenviar, Encerrar; chips de SLA; filtros de data/lançado/validado/unidade; paginação; histórico de envios no modal.
-3. Filtro Tipo mostra as causas de troca (Vencido, Embalagem Avariada, etc.).
-4. Abrir `/protocolos` → continua sem listar trocas nem pós-rota (comportamento atual preservado).
+1. **`src/components/rn/TrocaForm.tsx`** (`handleSubmit`):
+   - Acrescentar ao `webhookPayload`:
+     ```
+     fotos: { fotosTroca: fotosUrls },
+     emailContato: emailContato || '',
+     motoristaEmail: emailContato || '',
+     ```
+
+2. **`src/components/ProtocoloDetails.tsx`** — criar helper único `buildFotosWebhookPayload(protocolo)` que retorna:
+   ```
+   {
+     fotoMotoristaPdv, fotoLoteProduto, fotoAvaria,
+     fotosTroca: protocolo.fotosProtocolo?.fotosTroca ?? []
+   }
+   ```
+   Usar nos 3 locais (linhas 527, 626, 663).
+
+3. **`src/components/rn/RnReenvioModal.tsx`** — incluir `fotos: { ...fotosTroca... }` no payload e padronizar `tipoReposicao` em UPPERCASE em ambos `lancar` e `encerrar`.
+
+4. **Padronizar casing**: alinhar todos os webhooks para `tipoReposicao: (protocolo.tipoReposicao || '').toUpperCase()` nos 5 pontos listados.
+
+5. **`RnReenvioModal`** — usar `motorista_unidade` (campo já consultado no select) em vez de `representante.unidade`. Pequeno ajuste no `select(...)` e nos payloads.
+
+**Decisão pendente (item 6 — UX da página /trocas):**
+Se devo ou não esconder os toggles de "Lançado"/"Validado" e simplificar o encerramento de trocas (sem exigir validação prévia). Vou perguntar antes de implementar.
+
+**Não-bug (validado em produção):**
+- Geração de número `TROCA-YYYYMMDDHHMMSSrr` funcionando.
+- Storage de fotos em `fotos-protocolos` salvando URLs com domínio customizado `reposicao.revalle.com.br/functions/v1/foto-proxy/...`.
+- RPC `get_dashboard_resumo` conta `trocas_total` corretamente (filtra `oculto=false`).
+- "Minhas Trocas" no `RnPortal` lista por `motorista_id` + `ativo=true` — OK.
+- Visualização de fotos no `ProtocoloDetails` já corrigida na mensagem anterior.
