@@ -270,11 +270,16 @@ export function TrocaForm({ representante }: TrocaFormProps) {
         codigoPdv: codigoPdv.trim(),
         notaFiscal: notaFiscal.trim(),
         motoristaNome: representante.nome,
+        motoristaCodigo: `RN-${cpfRn}`,
+        motoristaEmail: emailContato || '',
         unidade: representante.unidade,
         tipoReposicao: 'TROCA',
         causa,
         produtos: produtosPayload,
+        fotos: { fotosTroca: fotosUrls },
+        fotosTroca: fotosUrls,
         whatsappContato: whatsapp,
+        emailContato: emailContato || '',
         observacaoGeral: observacao.trim() || '',
       };
 
