@@ -16,6 +16,7 @@ interface ProtocoloRow {
   id: string;
   numero: string;
   motorista_nome: string;
+  motorista_unidade?: string | null;
   codigo_pdv: string | null;
   data: string;
   hora: string;
@@ -25,6 +26,7 @@ interface ProtocoloRow {
   produtos: any;
   nota_fiscal: string | null;
   mapa: string | null;
+  fotos_protocolo?: any;
 }
 
 interface RnReenvioModalProps {
