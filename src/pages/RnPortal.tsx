@@ -15,6 +15,7 @@ interface ProtocoloRow {
   id: string;
   numero: string;
   motorista_nome: string;
+  motorista_unidade?: string | null;
   codigo_pdv: string | null;
   data: string;
   hora: string;
@@ -24,6 +25,7 @@ interface ProtocoloRow {
   produtos: any;
   nota_fiscal: string | null;
   mapa: string | null;
+  fotos_protocolo?: any;
 }
 
 type View = 'dashboard' | 'troca' | 'buscar' | 'minhas-trocas';
@@ -83,7 +85,7 @@ export default function RnPortal() {
 
     const { data, error } = await supabase
       .from('protocolos')
-      .select('id, numero, motorista_nome, codigo_pdv, data, hora, status, tipo_reposicao, causa, produtos, nota_fiscal, mapa')
+      .select('id, numero, motorista_nome, motorista_unidade, codigo_pdv, data, hora, status, tipo_reposicao, causa, produtos, nota_fiscal, mapa, fotos_protocolo')
       .eq('motorista_unidade', representante.unidade)
       .in('status', statusFilter)
       .eq('codigo_pdv', code)
@@ -99,7 +101,7 @@ export default function RnPortal() {
     setIsLoadingTrocas(true);
     const { data, error } = await supabase
       .from('protocolos')
-      .select('id, numero, motorista_nome, codigo_pdv, data, hora, status, tipo_reposicao, causa, produtos, nota_fiscal, mapa')
+      .select('id, numero, motorista_nome, motorista_unidade, codigo_pdv, data, hora, status, tipo_reposicao, causa, produtos, nota_fiscal, mapa, fotos_protocolo')
       .eq('tipo_reposicao', 'troca')
       .eq('motorista_id', representante.id)
       .eq('ativo', true)

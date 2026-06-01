@@ -512,7 +512,7 @@ export function ProtocoloDetails({
         mapa: protocolo.mapa,
         notaFiscal: protocolo.notaFiscal,
         codigoPdv: protocolo.codigoPdv,
-        tipoReposicao: protocolo.tipoReposicao,
+        tipoReposicao: (protocolo.tipoReposicao || '').toUpperCase(),
         causa: protocolo.causa,
         motoristaNome: protocolo.motorista.nome,
         motoristaCodigo: protocolo.motorista.codigo,
@@ -527,8 +527,10 @@ export function ProtocoloDetails({
         fotos: {
           fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
           fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
-          fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
+          fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || ''),
+          fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || []
         },
+        fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || [],
         mensagemEncerramento: mensagemEncerramento || '',
         arquivoEncerramentoUrl: arquivoUrl,
         usuarioEncerramento: {
@@ -626,8 +628,10 @@ export function ProtocoloDetails({
           fotos: {
             fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
             fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
-            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || '',
+            fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || []
           },
+          fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || [],
           whatsappContato: numeroContatoReenvio,
           emailContato: protocolo.contatoEmail || '',
           observacaoGeral: protocolo.observacaoGeral || ''
@@ -648,7 +652,7 @@ export function ProtocoloDetails({
           mapa: protocolo.mapa,
           notaFiscal: protocolo.notaFiscal,
           codigoPdv: protocolo.codigoPdv,
-          tipoReposicao: protocolo.tipoReposicao,
+          tipoReposicao: (protocolo.tipoReposicao || '').toUpperCase(),
           causa: protocolo.causa,
           motoristaNome: protocolo.motorista.nome,
           motoristaCodigo: protocolo.motorista.codigo,
@@ -663,8 +667,10 @@ export function ProtocoloDetails({
           fotos: {
             fotoMotoristaPdv: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoMotoristaPdv || ''),
             fotoLoteProduto: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoLoteProduto || ''),
-            fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || '')
+            fotoAvaria: getCustomPhotoUrl(protocolo.fotosProtocolo?.fotoAvaria || ''),
+            fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || []
           },
+          fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || [],
           mensagemEncerramento: protocolo.mensagemEncerramento || '',
           arquivoEncerramentoUrl: protocolo.arquivoEncerramento,
           usuarioEncerramento: logEncerramento ? {
