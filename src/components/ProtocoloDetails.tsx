@@ -318,6 +318,12 @@ export function ProtocoloDetails({
     if (protocolo.fotosProtocolo.fotoAvaria) {
       todasFotos.push({ url: getDirectStorageUrl(protocolo.fotosProtocolo.fotoAvaria), label: 'Avaria' });
     }
+    const fotosTroca = (protocolo.fotosProtocolo as any).fotosTroca;
+    if (Array.isArray(fotosTroca)) {
+      fotosTroca.forEach((foto: string, index: number) => {
+        if (foto) todasFotos.push({ url: getDirectStorageUrl(foto), label: `Troca ${index + 1}` });
+      });
+    }
   }
 
   // Coletar fotos de encerramento (apenas para protocolos encerrados) - usa URL direta do Storage
