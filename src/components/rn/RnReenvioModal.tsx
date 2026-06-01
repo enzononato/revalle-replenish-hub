@@ -69,6 +69,10 @@ export function RnReenvioModal({ protocolo, open, onClose, representante }: RnRe
     if (!telefoneValido) return;
     setEnviando(true);
 
+    const fotosTroca = protocolo.fotos_protocolo?.fotosTroca || [];
+    const unidadeProtocolo = protocolo.motorista_unidade || representante.unidade;
+    const tipoRep = (protocolo.tipo_reposicao || '').toUpperCase();
+
     try {
       let webhookPayload: Record<string, unknown>;
 
@@ -82,10 +86,17 @@ export function RnReenvioModal({ protocolo, open, onClose, representante }: RnRe
           codigoPdv: protocolo.codigo_pdv || '',
           notaFiscal: protocolo.nota_fiscal || '',
           motoristaNome: protocolo.motorista_nome,
-          unidade: representante.unidade,
-          tipoReposicao: (protocolo.tipo_reposicao || '').toUpperCase(),
+          unidade: unidadeProtocolo,
+          tipoReposicao: tipoRep,
           causa: protocolo.causa || '',
           produtos: prods,
+          fotos: {
+            fotoMotoristaPdv: protocolo.fotos_protocolo?.fotoMotoristaPdv || '',
+            fotoLoteProduto: protocolo.fotos_protocolo?.fotoLoteProduto || '',
+            fotoAvaria: protocolo.fotos_protocolo?.fotoAvaria || '',
+            fotosTroca,
+          },
+          fotosTroca,
           whatsappContato: telefone,
           observacaoGeral: ''
         };
@@ -101,13 +112,20 @@ export function RnReenvioModal({ protocolo, open, onClose, representante }: RnRe
           mapa: protocolo.mapa,
           notaFiscal: protocolo.nota_fiscal,
           codigoPdv: protocolo.codigo_pdv,
-          tipoReposicao: protocolo.tipo_reposicao,
+          tipoReposicao: tipoRep,
           causa: protocolo.causa,
           motoristaNome: protocolo.motorista_nome,
-          unidade: representante.unidade,
+          unidade: unidadeProtocolo,
           clienteTelefone: telefone,
           contatoWhatsapp: telefone,
           produtos: prods,
+          fotos: {
+            fotoMotoristaPdv: protocolo.fotos_protocolo?.fotoMotoristaPdv || '',
+            fotoLoteProduto: protocolo.fotos_protocolo?.fotoLoteProduto || '',
+            fotoAvaria: protocolo.fotos_protocolo?.fotoAvaria || '',
+            fotosTroca,
+          },
+          fotosTroca,
           mensagemEncerramento: '',
         };
       }
