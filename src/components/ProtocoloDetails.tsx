@@ -628,8 +628,10 @@ export function ProtocoloDetails({
           fotos: {
             fotoMotoristaPdv: protocolo.fotosProtocolo?.fotoMotoristaPdv || '',
             fotoLoteProduto: protocolo.fotosProtocolo?.fotoLoteProduto || '',
-            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || ''
+            fotoAvaria: protocolo.fotosProtocolo?.fotoAvaria || '',
+            fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || []
           },
+          fotosTroca: (protocolo.fotosProtocolo as any)?.fotosTroca || [],
           whatsappContato: numeroContatoReenvio,
           emailContato: protocolo.contatoEmail || '',
           observacaoGeral: protocolo.observacaoGeral || ''
