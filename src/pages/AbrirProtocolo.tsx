@@ -241,7 +241,6 @@ export default function AbrirProtocolo() {
     // Dedupe defensivo: aborta se já existe protocolo idêntico nos últimos 60s
     try {
       const since = new Date(Date.now() - 60_000).toISOString();
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data: dup } = await supabase
         .from('protocolos')
         .select('numero')
