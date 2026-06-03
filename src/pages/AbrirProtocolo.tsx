@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
+import { supabase } from '@/integrations/supabase/client';
 import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import {
   Select,
@@ -72,6 +73,7 @@ export default function AbrirProtocolo() {
   const [protocoloCriado, setProtocoloCriado] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const submittingRef = useRef(false);
   
   // Driver selection state
   const [selectedMotorista, setSelectedMotorista] = useState<Motorista | null>(null);
@@ -178,6 +180,10 @@ export default function AbrirProtocolo() {
   };
 
   const handleSubmit = async () => {
+    if (submittingRef.current || isUploading) return;
+    submittingRef.current = true;
+    setIsUploading(true);
+    try {
     if (!selectedMotorista) {
       toast.error('Selecione um motorista');
       return;
@@ -232,8 +238,28 @@ export default function AbrirProtocolo() {
       return;
     }
 
-    // Iniciar upload com progresso
-    setIsUploading(true);
+    // Dedupe defensivo: aborta se já existe protocolo idêntico nos últimos 60s
+    try {
+      const since = new Date(Date.now() - 60_000).toISOString();
+      const { data: dup } = await supabase
+        .from('protocolos')
+        .select('numero')
+        .eq('motorista_id', selectedMotorista.id)
+        .eq('codigo_pdv', codigoPdv.trim())
+        .eq('nota_fiscal', notaFiscal.trim())
+        .eq('tipo_reposicao', tipoReposicao)
+        .gte('created_at', since)
+        .limit(1)
+        .maybeSingle();
+      if (dup?.numero) {
+        toast.error(`Já existe o protocolo ${dup.numero} criado há instantes para este PDV/NF.`);
+        return;
+      }
+    } catch (e) {
+      console.warn('Dedupe check falhou (seguindo mesmo assim):', e);
+    }
+
+    // Mostrar progresso do upload (isUploading já está true desde o início)
     setUploadProgress({
       fotoMotoristaPdv: 'pending',
       fotoLoteProduto: 'pending',
@@ -251,8 +277,7 @@ export default function AbrirProtocolo() {
       (progress) => setUploadProgress(progress)
     );
 
-    setIsUploading(false);
-    setUploadProgress(null);
+
 
     // Validar se os uploads foram bem-sucedidos
     if (!fotosUrls.fotoMotoristaPdv) {
@@ -357,6 +382,14 @@ export default function AbrirProtocolo() {
     addProtocolo(novoProtocolo);
     setProtocoloCriado(protocoloNumero);
     toast.success('Protocolo criado com sucesso!');
+    } catch (err) {
+      console.error('Erro inesperado ao criar protocolo:', err);
+      toast.error('Erro ao criar protocolo. Tente novamente.');
+    } finally {
+      submittingRef.current = false;
+      setIsUploading(false);
+      setUploadProgress(null);
+    }
   };
 
   const handleNovoProtocolo = () => {

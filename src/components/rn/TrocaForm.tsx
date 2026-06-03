@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -176,8 +176,12 @@ export function TrocaForm({ representante }: TrocaFormProps) {
     setDadosCriado(null);
   };
 
+  const submittingRef = useRef(false);
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
+    if (submittingRef.current || isSubmitting) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -314,6 +318,7 @@ export function TrocaForm({ representante }: TrocaFormProps) {
       console.error('Erro ao registrar troca:', err);
       toast.error('Erro ao registrar troca. Tente novamente.');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };

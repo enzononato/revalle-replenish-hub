@@ -1,80 +1,56 @@
-## Bugs encontrados no fluxo end-to-end de Troca
+## Diagnóstico
 
-### 1. Fotos da troca não vão no webhook n8n (criação) — **bug funcional**
-`TrocaForm.tsx` linha 264-279: o `webhookPayload` enviado ao n8n na criação **não inclui o array de fotos**. As fotos são salvas em `fotos_protocolo.fotosTroca` no banco (confirmado em produção: 100% das trocas têm fotos no DB), mas o n8n não as recebe — então a mensagem WhatsApp de lançamento da troca sai sem imagens.
+Ontem (02/06) o motorista Uellinton Galvão gerou **9 protocolos idênticos** do mesmo PDV `25761` / NF `889112` / causa `FALTA DE PALLET MONTADO` em ~10 segundos (19:30:26 → 19:30:36), todos com números RPF distintos. Mesmo padrão se repetiu em outra leva de 1–2 duplicatas.
 
-Comparação: o webhook de reposição envia bloco `fotos: { fotoMotoristaPdv, fotoLoteProduto, fotoAvaria }`. Para troca precisamos enviar `fotos: { fotosTroca: [urls] }` (ou `fotosTroca: [urls]` no topo do payload, alinhado com o que n8n espera).
+Olhando `src/pages/MotoristaPortal.tsx` (`handleSubmit`, linha 485), o botão "Enviar" tem `disabled={isCompressing || isUploading}`, mas `setIsUploading(true)` só é chamado **muito depois**, após:
+1. ~15 validações síncronas
+2. `await gerarNumeroProtocolo(...)` (RPC de rede)
+3. Início do upload das fotos
 
-### 2. Fotos da troca também ausentes no webhook de encerramento — **bug funcional**
-`ProtocoloDetails.tsx`:
-- `handleEncerrarProtocolo` linhas 527-531
-- `handleReenviarWhatsapp` (modo `encerrar`) linhas 663-667
-- `handleReenviarWhatsapp` (modo `lancar`) linhas 626-630
+Em conexão móvel lenta o botão fica "preso" por alguns segundos sem feedback. O motorista toca de novo. Como nada bloqueia chamadas concorrentes de `handleSubmit`, cada toque dispara um pipeline próprio, gera um número novo via RPC e insere uma linha. O mesmo problema existe em `src/pages/AbrirProtocolo.tsx` (`isUploading` só vira `true` na linha 236, depois do `gerarNumeroProtocolo`) e em `src/components/rn/TrocaForm.tsx` (`setIsSubmitting` no início está OK, mas sem trava por ref → re-render pode permitir corrida em casos extremos).
 
-Todos enviam apenas `fotoMotoristaPdv/fotoLoteProduto/fotoAvaria` (vazios em trocas). Quando uma troca é encerrada ou tem WhatsApp reenviado, **as fotos da troca são perdidas** no payload n8n.
+Não há nenhum índice/constraint de deduplicação no banco nem checagem "já existe protocolo igual recente?" antes do insert.
 
-Mesma falha em `RnReenvioModal.tsx` linhas 73-110 e em `CmePortal.tsx` (que reaproveita `RnReenvioModal`).
+## Correção
 
-### 3. Casing inconsistente de `tipoReposicao` — **risco de bug no n8n**
-- `TrocaForm` criação → `tipoReposicao: 'TROCA'` (uppercase)
-- `ProtocoloDetails.handleEncerrarProtocolo` (linha 515) → `protocolo.tipoReposicao` = `'troca'` (lowercase)
-- `ProtocoloDetails.handleReenviarWhatsapp` lançar (linha 623) → `'TROCA'` (uppercase)
-- `ProtocoloDetails.handleReenviarWhatsapp` encerrar (linha 651) → `'troca'` (lowercase)
-- `RnReenvioModal` lançar (84) → uppercase / encerrar (102) → lowercase
+### 1. `src/pages/MotoristaPortal.tsx` — trava imediata
+- Criar `submittingRef = useRef(false)`.
+- No topo de `handleSubmit`, antes de qualquer validação/await:
+  ```ts
+  if (submittingRef.current || isUploading) return;
+  submittingRef.current = true;
+  setIsUploading(true);
+  ```
+- Liberar (`submittingRef.current = false; setIsUploading(false)`) em **todos** os retornos (validação falhou, erro de RPC, erro de upload, sucesso) via `try/finally`.
+- Hoje `setIsUploading(true)` só ocorre depois do `gerarNumeroProtocolo`; mover para o início resolve a janela de corrida.
 
-Se o n8n decide o template/roteamento por esse campo, encerramentos podem cair em fluxo errado.
+### 2. `src/pages/AbrirProtocolo.tsx` — mesma trava
+- Aplicar o mesmo padrão `submittingRef` + `setIsUploading(true)` no topo do `handleSubmit` (linha 180), envolvendo tudo em `try/finally`.
 
-### 4. Campo `emailContato` ausente no webhook de criação de troca — **bug menor**
-`TrocaForm` coleta `emailContato` mas o payload n8n (linha 264-279) não inclui `emailContato` nem `motoristaEmail`. O webhook de reposição inclui. Se o n8n dispara e-mail, trocas nunca recebem.
+### 3. `src/components/rn/TrocaForm.tsx` — reforçar
+- Adicionar `submittingRef` igual, ainda que o `setIsSubmitting(true)` atual já ajude. Mantém o padrão consistente.
 
-### 5. `RnReenvioModal` não preserva `motoristaCodigo` nem `unidade real` no payload de encerramento — **bug menor**
-Linhas 91-110: usa `representante.unidade` (do RN logado) em vez de `motorista_unidade` do protocolo, podendo enviar unidade errada caso um RN reenvie protocolo aberto por outro RN da mesma rede.
+### 4. Dedupe defensivo no servidor (rede do motorista pode reenviar)
+- Antes do `supabase.from('protocolos').insert(...)` em MotoristaPortal/AbrirProtocolo, fazer um `select` rápido:
+  ```ts
+  const { data: dup } = await supabase
+    .from('protocolos')
+    .select('numero, created_at')
+    .eq('motorista_id', motoristaId)
+    .eq('codigo_pdv', codigoPdv.trim())
+    .eq('nota_fiscal', notaFiscal.trim())
+    .eq('tipo_reposicao', tipoReposicao)
+    .eq('causa', causa)
+    .gte('created_at', new Date(Date.now() - 60_000).toISOString())
+    .limit(1)
+    .maybeSingle();
+  if (dup) { toast('Protocolo já registrado há instantes'); return; }
+  ```
+  Janela de 60s evita 99% dos toques múltiplos sem bloquear reenvio legítimo posterior.
 
-### 6. Conferente/Lançamento na página `/trocas` — **bug de UX**
-`Protocolos.tsx` é compartilhado entre `/protocolos` e `/trocas`. Em scope='troca':
-- O botão "Criar Protocolo" é ocultado corretamente (linha 530).
-- Porém as colunas/toggles de **Lançado** e **Validado** continuam visíveis na tabela e o `handleEncerrarProtocolo` exige `validacao=true` antes de lançar. Trocas não passam por Conferência/Distribuição, então esses controles são confusos e bloqueiam encerramento normal.
+### 5. Marcar os 8 duplicados de ontem como ocultos
+- Manter o `RPF-2026060219304397` (primeiro, 19:30:26) e setar `oculto=true` nos outros 8 da mesma janela. Faço via migration de UPDATE quando aprovado, com lista explícita de `numero`.
 
-Verificar com o usuário se devemos esconder/desabilitar esses controles em scope='troca' (corrigir junto da renderização da tabela e do `handleToggleLancado`).
+## Resumo do que causou
 
-### 7. `motorista_codigo` sem CPF cai em `'RN-'` — **edge case**
-`TrocaForm` linha 209/222: `RN-${cpfRn}` — se o RN não tem CPF cadastrado, fica `RN-` (string vazia). Como `representantes.cpf` é `NOT NULL`, na prática não ocorre, mas vale validar antes do insert para evitar registros corrompidos no futuro.
-
----
-
-## Plano de correção (em build)
-
-**Fix obrigatórios (1, 2, 3, 4):**
-
-1. **`src/components/rn/TrocaForm.tsx`** (`handleSubmit`):
-   - Acrescentar ao `webhookPayload`:
-     ```
-     fotos: { fotosTroca: fotosUrls },
-     emailContato: emailContato || '',
-     motoristaEmail: emailContato || '',
-     ```
-
-2. **`src/components/ProtocoloDetails.tsx`** — criar helper único `buildFotosWebhookPayload(protocolo)` que retorna:
-   ```
-   {
-     fotoMotoristaPdv, fotoLoteProduto, fotoAvaria,
-     fotosTroca: protocolo.fotosProtocolo?.fotosTroca ?? []
-   }
-   ```
-   Usar nos 3 locais (linhas 527, 626, 663).
-
-3. **`src/components/rn/RnReenvioModal.tsx`** — incluir `fotos: { ...fotosTroca... }` no payload e padronizar `tipoReposicao` em UPPERCASE em ambos `lancar` e `encerrar`.
-
-4. **Padronizar casing**: alinhar todos os webhooks para `tipoReposicao: (protocolo.tipoReposicao || '').toUpperCase()` nos 5 pontos listados.
-
-5. **`RnReenvioModal`** — usar `motorista_unidade` (campo já consultado no select) em vez de `representante.unidade`. Pequeno ajuste no `select(...)` e nos payloads.
-
-**Decisão pendente (item 6 — UX da página /trocas):**
-Se devo ou não esconder os toggles de "Lançado"/"Validado" e simplificar o encerramento de trocas (sem exigir validação prévia). Vou perguntar antes de implementar.
-
-**Não-bug (validado em produção):**
-- Geração de número `TROCA-YYYYMMDDHHMMSSrr` funcionando.
-- Storage de fotos em `fotos-protocolos` salvando URLs com domínio customizado `reposicao.revalle.com.br/functions/v1/foto-proxy/...`.
-- RPC `get_dashboard_resumo` conta `trocas_total` corretamente (filtra `oculto=false`).
-- "Minhas Trocas" no `RnPortal` lista por `motorista_id` + `ativo=true` — OK.
-- Visualização de fotos no `ProtocoloDetails` já corrigida na mensagem anterior.
+Botão de envio sem trava imediata + RPC de número de protocolo demorada em rede instável → motorista tocou várias vezes → cada toque rodou um `handleSubmit` em paralelo → 9 inserts com números diferentes mas mesmos dados.
