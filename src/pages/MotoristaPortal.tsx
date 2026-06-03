@@ -587,6 +587,7 @@ export default function MotoristaPortal() {
       } catch (e) {
         console.warn('Dedupe check falhou (seguindo mesmo assim):', e);
       }
+    }
 
     const produtosFormatados = validProdutos.map(p => {
       const parts = p.produto.split(' - ');
