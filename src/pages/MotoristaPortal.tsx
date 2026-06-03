@@ -484,6 +484,11 @@ export default function MotoristaPortal() {
   };
 
   const handleSubmit = async () => {
+    // Trava de submissão concorrente (evita duplicatas por múltiplos toques)
+    if (submittingRef.current || isUploading) return;
+    submittingRef.current = true;
+    setIsUploading(true);
+    try {
     // Validations
     if (!mapa.trim()) {
       toast({ title: 'Erro', description: 'Preencha o campo MAPA', variant: 'destructive' });
