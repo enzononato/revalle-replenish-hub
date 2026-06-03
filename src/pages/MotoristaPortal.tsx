@@ -188,6 +188,7 @@ export default function MotoristaPortal() {
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
   const [isCompressing, setIsCompressing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const submittingRef = useRef(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   // Estado para guardar dados do protocolo criado (usados na tela de sucesso)
@@ -483,6 +484,11 @@ export default function MotoristaPortal() {
   };
 
   const handleSubmit = async () => {
+    // Trava de submissão concorrente (evita duplicatas por múltiplos toques)
+    if (submittingRef.current || isUploading) return;
+    submittingRef.current = true;
+    setIsUploading(true);
+    try {
     // Validations
     if (!mapa.trim()) {
       toast({ title: 'Erro', description: 'Preencha o campo MAPA', variant: 'destructive' });
@@ -559,6 +565,30 @@ export default function MotoristaPortal() {
       numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
     }
 
+    // Dedupe defensivo: se já existe protocolo idêntico do mesmo motorista nos últimos 60s, aborta
+    if (isOnline) {
+      try {
+        const since = new Date(Date.now() - 60_000).toISOString();
+        const { data: dup } = await supabase
+          .from('protocolos')
+          .select('numero')
+          .eq('motorista_id', motorista.id)
+          .eq('codigo_pdv', codigoPdv.trim())
+          .eq('nota_fiscal', notaFiscal.trim())
+          .eq('tipo_reposicao', tipoReposicao)
+          .eq('causa', causa)
+          .gte('created_at', since)
+          .limit(1)
+          .maybeSingle();
+        if (dup?.numero) {
+          toast({ title: 'Protocolo já registrado', description: `Já existe o protocolo ${dup.numero} criado há instantes para este PDV/NF.`, variant: 'destructive' });
+          return;
+        }
+      } catch (e) {
+        console.warn('Dedupe check falhou (seguindo mesmo assim):', e);
+      }
+    }
+
     const produtosFormatados = validProdutos.map(p => {
       const parts = p.produto.split(' - ');
       const codigo = parts[0] || '';
@@ -612,8 +642,7 @@ export default function MotoristaPortal() {
     }
 
     try {
-      // Iniciar upload com progresso
-      setIsUploading(true);
+      // Mostrar progresso do upload (isUploading já está true desde o início)
       setUploadProgress({
         fotoMotoristaPdv: 'pending',
         fotoLoteProduto: 'pending',
@@ -631,8 +660,7 @@ export default function MotoristaPortal() {
         (progress) => setUploadProgress(progress)
       );
 
-      setIsUploading(false);
-      setUploadProgress(null);
+
 
       // Validar se os uploads foram bem-sucedidos
       if (!fotosUrls.fotoMotoristaPdv) {
@@ -803,6 +831,11 @@ export default function MotoristaPortal() {
         description: 'Erro ao criar protocolo. Verifique sua conexão e tente novamente.',
         variant: 'destructive'
       });
+    }
+    } finally {
+      submittingRef.current = false;
+      setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
