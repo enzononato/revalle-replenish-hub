@@ -833,6 +833,11 @@ export default function MotoristaPortal() {
         variant: 'destructive'
       });
     }
+    } finally {
+      submittingRef.current = false;
+      setIsUploading(false);
+      setUploadProgress(null);
+    }
   };
 
   // Open camera for a specific field
