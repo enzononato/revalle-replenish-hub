@@ -237,8 +237,29 @@ export default function AbrirProtocolo() {
       return;
     }
 
-    // Iniciar upload com progresso
-    setIsUploading(true);
+    // Dedupe defensivo: aborta se já existe protocolo idêntico nos últimos 60s
+    try {
+      const since = new Date(Date.now() - 60_000).toISOString();
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: dup } = await supabase
+        .from('protocolos')
+        .select('numero')
+        .eq('motorista_id', selectedMotorista.id)
+        .eq('codigo_pdv', codigoPdv.trim())
+        .eq('nota_fiscal', notaFiscal.trim())
+        .eq('tipo_reposicao', tipoReposicao)
+        .gte('created_at', since)
+        .limit(1)
+        .maybeSingle();
+      if (dup?.numero) {
+        toast.error(`Já existe o protocolo ${dup.numero} criado há instantes para este PDV/NF.`);
+        return;
+      }
+    } catch (e) {
+      console.warn('Dedupe check falhou (seguindo mesmo assim):', e);
+    }
+
+    // Mostrar progresso do upload (isUploading já está true desde o início)
     setUploadProgress({
       fotoMotoristaPdv: 'pending',
       fotoLoteProduto: 'pending',
@@ -256,8 +277,7 @@ export default function AbrirProtocolo() {
       (progress) => setUploadProgress(progress)
     );
 
-    setIsUploading(false);
-    setUploadProgress(null);
+
 
     // Validar se os uploads foram bem-sucedidos
     if (!fotosUrls.fotoMotoristaPdv) {
