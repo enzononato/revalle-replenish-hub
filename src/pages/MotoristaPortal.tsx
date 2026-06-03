@@ -565,6 +565,29 @@ export default function MotoristaPortal() {
       numero = `PROTOC-${format(now, 'yyyyMMddHHmmss')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
     }
 
+    // Dedupe defensivo: se já existe protocolo idêntico do mesmo motorista nos últimos 60s, aborta
+    if (isOnline) {
+      try {
+        const since = new Date(Date.now() - 60_000).toISOString();
+        const { data: dup } = await supabase
+          .from('protocolos')
+          .select('numero')
+          .eq('motorista_id', motorista.id)
+          .eq('codigo_pdv', codigoPdv.trim())
+          .eq('nota_fiscal', notaFiscal.trim())
+          .eq('tipo_reposicao', tipoReposicao)
+          .eq('causa', causa)
+          .gte('created_at', since)
+          .limit(1)
+          .maybeSingle();
+        if (dup?.numero) {
+          toast({ title: 'Protocolo já registrado', description: `Já existe o protocolo ${dup.numero} criado há instantes para este PDV/NF.`, variant: 'destructive' });
+          return;
+        }
+      } catch (e) {
+        console.warn('Dedupe check falhou (seguindo mesmo assim):', e);
+      }
+
     const produtosFormatados = validProdutos.map(p => {
       const parts = p.produto.split(' - ');
       const codigo = parts[0] || '';
