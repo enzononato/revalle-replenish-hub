@@ -176,8 +176,12 @@ export function TrocaForm({ representante }: TrocaFormProps) {
     setDadosCriado(null);
   };
 
+  const submittingRef = useRef(false);
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
+    if (submittingRef.current || isSubmitting) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
 
     try {
