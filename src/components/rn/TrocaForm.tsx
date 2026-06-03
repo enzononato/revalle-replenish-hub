@@ -318,6 +318,7 @@ export function TrocaForm({ representante }: TrocaFormProps) {
       console.error('Erro ao registrar troca:', err);
       toast.error('Erro ao registrar troca. Tente novamente.');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
