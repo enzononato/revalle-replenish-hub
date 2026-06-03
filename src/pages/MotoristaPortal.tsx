@@ -188,6 +188,7 @@ export default function MotoristaPortal() {
   const [numeroProtocolo, setNumeroProtocolo] = useState('');
   const [isCompressing, setIsCompressing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const submittingRef = useRef(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   // Estado para guardar dados do protocolo criado (usados na tela de sucesso)
