@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { uploadFotosProtocolo, UploadProgress } from '@/utils/uploadFotoStorage';
+import { supabase } from '@/integrations/supabase/client';
 import { gerarNumeroProtocolo } from '@/utils/gerarNumeroProtocolo';
 import {
   Select,
