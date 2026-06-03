@@ -179,6 +179,10 @@ export default function AbrirProtocolo() {
   };
 
   const handleSubmit = async () => {
+    if (submittingRef.current || isUploading) return;
+    submittingRef.current = true;
+    setIsUploading(true);
+    try {
     if (!selectedMotorista) {
       toast.error('Selecione um motorista');
       return;
