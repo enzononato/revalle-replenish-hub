@@ -642,8 +642,7 @@ export default function MotoristaPortal() {
     }
 
     try {
-      // Iniciar upload com progresso
-      setIsUploading(true);
+      // Mostrar progresso do upload (isUploading já está true desde o início)
       setUploadProgress({
         fotoMotoristaPdv: 'pending',
         fotoLoteProduto: 'pending',
@@ -661,8 +660,7 @@ export default function MotoristaPortal() {
         (progress) => setUploadProgress(progress)
       );
 
-      setIsUploading(false);
-      setUploadProgress(null);
+
 
       // Validar se os uploads foram bem-sucedidos
       if (!fotosUrls.fotoMotoristaPdv) {
