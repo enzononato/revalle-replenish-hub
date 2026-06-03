@@ -72,6 +72,7 @@ export default function AbrirProtocolo() {
   const [protocoloCriado, setProtocoloCriado] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const submittingRef = useRef(false);
   
   // Driver selection state
   const [selectedMotorista, setSelectedMotorista] = useState<Motorista | null>(null);
