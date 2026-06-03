@@ -382,6 +382,14 @@ export default function AbrirProtocolo() {
     addProtocolo(novoProtocolo);
     setProtocoloCriado(protocoloNumero);
     toast.success('Protocolo criado com sucesso!');
+    } catch (err) {
+      console.error('Erro inesperado ao criar protocolo:', err);
+      toast.error('Erro ao criar protocolo. Tente novamente.');
+    } finally {
+      submittingRef.current = false;
+      setIsUploading(false);
+      setUploadProgress(null);
+    }
   };
 
   const handleNovoProtocolo = () => {
